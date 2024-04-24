@@ -1,0 +1,4 @@
+name: LIMPI
+version: '${version}'
+main: com.github.lupi13.limpi.LIMPI
+api-version: '1.20'

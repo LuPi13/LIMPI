@@ -1,10 +1,11 @@
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm'
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = 'com.github.lupi13'
-version = '0.0.1'
+version = '0.0.2'
 
 repositories {
     mavenCentral()
@@ -21,9 +22,10 @@ repositories {
 dependencies {
     compileOnly "org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
 }
 
-def targetJavaVersion = 21
+def targetJavaVersion = 17
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     if (JavaVersion.current() < javaVersion) {
@@ -48,11 +50,12 @@ processResources {
     }
 }
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
-jar {
-    archiveFileName = 'LIMPI.jar'
-    destinationDirectory = file("D:\\Project\\IntelliJ\\LIMPI")
+shadowJar {
+    archiveFileName = 'LIMPI-'+version+'.jar'
+    //destinationDirectory = file("D:\\Project\\IntelliJ\\LIMPI")
+    destinationDirectory = file("D:\\BungeeCord\\nonproxytestserver\\plugins")
     manifest {
         attributes 'Main-Class': 'com.github.lupi13.limpi.LIMPI'
     }

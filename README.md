@@ -11,6 +11,7 @@
 - - -
 
 ## 2. Changed log
+- 0.0.2: 실행 시 쌈@뽕한 아스키 아트 출력, 플레이어 별 데이터 파일 입/출력(LIMPI\playersinfo\\{uuid}.yml)
 - 0.0.1: gradle wrapper, Kotlin, git initiate (FIRST COMMIT)
 
 - - -

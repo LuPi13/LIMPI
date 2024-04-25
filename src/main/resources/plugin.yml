@@ -2,3 +2,14 @@ name: LIMPI
 version: '${version}'
 main: com.github.lupi13.limpi.LIMPI
 api-version: '1.20'
+authors: [LuPi13]
+description: "LIMPI: LuPi13's Integrated Minecraft Plug-In"
+website: https://github.com/LuPi13/LIMPI
+commands:
+  test:
+    description: tester command
+    usage: /test ...
+  financial:
+    description: command about money, check, stock, etc.
+    usage: /financial ...
+    aliases: [fi, fc]

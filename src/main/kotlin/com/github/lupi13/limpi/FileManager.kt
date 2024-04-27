@@ -67,6 +67,11 @@ class FileManager {
             val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
             return YamlConfiguration.loadConfiguration(file)
         }
+        fun getPlayerData(player: Player): FileConfiguration {
+            val uuid = player.uniqueId
+            val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
+            return YamlConfiguration.loadConfiguration(file)
+        }
 
 
         fun savePlayerData(player: Player, config: FileConfiguration) {
@@ -81,13 +86,13 @@ class FileManager {
 
         /**
          * String 형태의 플레이어이름으로 해당 유저의 config 반환
-         * @param[name] displayname in String
+         * @param[name] displayName in String
          * @return 플레이어정보파일의 FileConfiguration, 못찾으면 null
          */
-        fun findPlayerData(name: String): FileConfiguration? {
-            for (player in Bukkit.getOfflinePlayers()) {
-                if (player.name.equals(name)) {
-                    return getPlayerData(player)
+        fun findPlayerByName(name: String): Player? {
+            for (player in Bukkit.getOfflinePlayers() + Bukkit.getOnlinePlayers()) {
+                if (player.name.equals(name, true)) {
+                    return player.player
                 }
             }
             return null

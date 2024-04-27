@@ -36,7 +36,7 @@ class LIMPI : JavaPlugin() {
         println("$blue|   |___   |   |   |       |  |    ___|  |   |$white .       .     .-.. . --.")
         println("$blue|       |  |   |   | ||_|| |  |   |      |   |$white |-.. .  |  . .|-'.'| --|")
         println("$blue|_______|  |___|   |_|   |_|  |___|      |___|$white `-''-|  '-''-''  ''-'--'")
-        println("                                                  `-'      ver 0.0.2")
+        println("                                                  `-'      ver 0.0.3")
     }
 
     override fun onDisable() {

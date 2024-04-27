@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.github.lupi13'
-version = '0.0.2'
+version = '0.0.3'
 
 repositories {
     mavenCentral()
@@ -20,12 +20,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly "org.spigotmc:spigot-api:1.20.4-R0.1-SNAPSHOT"
+    compileOnly "org.spigotmc:spigot-api:1.20.5-R0.1-SNAPSHOT"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
 }
 
-def targetJavaVersion = 17
+def targetJavaVersion = 21
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     if (JavaVersion.current() < javaVersion) {
@@ -50,7 +50,7 @@ processResources {
     }
 }
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 shadowJar {
     archiveFileName = 'LIMPI-'+version+'.jar'

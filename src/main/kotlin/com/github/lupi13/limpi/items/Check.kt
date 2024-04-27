@@ -46,12 +46,12 @@ class Check(ask: Long, issuer: Player?): ItemStack(), Listener {
         if (isCheck(item) && item != null && (event.action == Action.RIGHT_CLICK_BLOCK || event.action == Action.RIGHT_CLICK_AIR)) {
             val displayName = item.itemMeta!!.displayName
             val value = displayName.substring(6, displayName.length - 4)
-            var config = FileManager.getPlayerData(player)
+            val config = FileManager.getPlayerData(player)
             config["money"] = config.getLong("money") + value.toLong()
             FileManager.savePlayerData(player, config)
             item.amount -= 1
             player.sendMessage(ChatColor.GREEN.toString() + player.displayName + ChatColor.WHITE + "님의 계좌에 " + ChatColor.GOLD + value + ChatColor.WHITE + "원을 추가했습니다.")
-            player.playSound(player.location, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
+            player.playSound(player, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
         }
     }
 }

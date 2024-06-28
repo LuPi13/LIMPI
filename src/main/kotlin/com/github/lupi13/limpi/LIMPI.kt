@@ -1,6 +1,7 @@
 package com.github.lupi13.limpi
 
 import com.github.lupi13.limpi.commands.Financial
+import com.github.lupi13.limpi.commands.FinancialTab
 import com.github.lupi13.limpi.events.JoinAndQuit
 import com.github.lupi13.limpi.items.Check
 import org.bukkit.plugin.java.JavaPlugin
@@ -25,6 +26,7 @@ class LIMPI : JavaPlugin() {
         logger.info("Command setting...")
         getCommand("test")!!.setExecutor(Tester())
         getCommand("financial")!!.setExecutor(Financial())
+        getCommand("financial")!!.setTabCompleter(FinancialTab())
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         val blue = "\u001B[36m"
@@ -36,7 +38,7 @@ class LIMPI : JavaPlugin() {
         println("$blue|   |___   |   |   |       |  |    ___|  |   |$white .       .     .-.. . --.")
         println("$blue|       |  |   |   | ||_|| |  |   |      |   |$white |-.. .  |  . .|-'.'| --|")
         println("$blue|_______|  |___|   |_|   |_|  |___|      |___|$white `-''-|  '-''-''  ''-'--'")
-        println("                                                  `-'      ver 0.0.3")
+        println("                                                  `-'      ver 0.0.4")
     }
 
     override fun onDisable() {

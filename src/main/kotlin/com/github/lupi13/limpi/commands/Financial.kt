@@ -9,6 +9,7 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.entity.Player
+import kotlin.math.absoluteValue
 
 class Financial: CommandExecutor {
 
@@ -48,8 +49,7 @@ class Financial: CommandExecutor {
                     sender.sendMessage(ChatColor.RED.toString() + "- - - 이하 관리자 전용 명령어 - - -")
                     sender.sendMessage(ChatColor.GREEN.toString() + "/financial spy <플레이어>" + ChatColor.WHITE + ": 대상의 계좌의 돈을 보여줍니다.")
                     sender.sendMessage(ChatColor.GREEN.toString() + "/financial set <플레이어> <금액>" + ChatColor.WHITE + ": 대상의 계좌의 돈을 입력한 금액으로 설정합니다.")
-                    sender.sendMessage(ChatColor.GREEN.toString() + "/financial add <플레이어> <금액>" + ChatColor.WHITE + ": 대상의 계좌에 입력한 금액을 추가합니다.")
-                    sender.sendMessage(ChatColor.GREEN.toString() + "/financial subtract <플레이어> <금액>" + ChatColor.WHITE + ": 대상의 계좌에 입력한 금액을 차감합니다.")
+                    sender.sendMessage(ChatColor.GREEN.toString() + "/financial add <플레이어> <금액>" + ChatColor.WHITE + ": 대상의 계좌에 입력한 금액을 추가합니다. 금액에 음수를 적을 시 돈을 차감합니다.")
                 }
                 return true
             }
@@ -163,8 +163,7 @@ class Financial: CommandExecutor {
                         }
 
                         config["money"] = money - (value * 1.05).toLong()
-                        println(value * 1.05)
-                        targetConfig["money"] = money + value
+                        targetConfig["money"] = targetConfig.getLong("money") + value
                         FileManager.savePlayerData(sender, config)
                         FileManager.savePlayerData(target, targetConfig)
                         sender.sendMessage("${playerDisplay(target)}님에게 ${moneyDisplay(value)}원을 보냈습니다.")
@@ -181,6 +180,88 @@ class Financial: CommandExecutor {
                 }
                 else {
                     sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial wire <플레이어> <금액>")
+                }
+            }
+
+
+            //  /fc set <player> <Long>
+            if (args[0].equals("set", true)) {
+                if (!sender.isOp) {
+                    sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                    return true
+                }
+                if (args.size == 3) {
+                    val targetName: String = args[1]
+                    try {
+                        val target: Player = FileManager.findPlayerByName(targetName)!!
+                        val targetConfig: FileConfiguration = FileManager.getPlayerData(target)
+
+                        val value: Long
+                        try {
+                            value = args[2].toLong()
+                        } catch (e: Exception) {
+                            sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "는 올바르지 않은 숫자입니다!")
+                            return true
+                        }
+
+                        if (value < 0) {
+                            sender.sendMessage(ChatColor.YELLOW.toString() + "나쁜 사람...")
+                        }
+
+                        targetConfig["money"] = value
+                        FileManager.savePlayerData(target, targetConfig)
+                        sender.sendMessage("${playerDisplay(target)}님의 계좌를 ${moneyDisplay(value)}원으로 설정했습니다.")
+                        sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
+                        target.sendMessage("${playerDisplay(target)}님의 계좌가 ${moneyDisplay(value)}원으로 설정되었습니다.")
+                        target.playSound(target, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
+                        return true
+
+                    } catch (e: Exception) {
+                        sender.sendMessage(ChatColor.RED.toString() + "해당 플레이어를 찾을 수 없습니다!")
+                        return true
+                    }
+                }
+                else {
+                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial set <플레이어> <금액>")
+                }
+            }
+
+
+            //  /fc add <player> <Long>
+            if (args[0].equals("add", true)) {
+                if (!sender.isOp) {
+                    sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                    return true
+                }
+                if (args.size == 3) {
+                    val targetName: String = args[1]
+                    try {
+                        val target: Player = FileManager.findPlayerByName(targetName)!!
+                        val targetConfig: FileConfiguration = FileManager.getPlayerData(target)
+
+                        val value: Long
+                        try {
+                            value = args[2].toLong()
+                        } catch (e: Exception) {
+                            sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "는 올바르지 않은 숫자입니다!")
+                            return true
+                        }
+
+                        targetConfig["money"] = value + targetConfig.getLong("money")
+                        FileManager.savePlayerData(target, targetConfig)
+                        sender.sendMessage("${playerDisplay(target)}님의 계좌에 ${moneyDisplay(value.absoluteValue)}원을 ${if (value > 0) "추가" else "차감"}했습니다.")
+                        sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
+                        target.sendMessage("${playerDisplay(target)}님의 계좌에 ${moneyDisplay(value.absoluteValue)}원이 ${if (value > 0) "추가" else "차감"}되었습니다.")
+                        target.playSound(target, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
+                        return true
+
+                    } catch (e: Exception) {
+                        sender.sendMessage(ChatColor.RED.toString() + "해당 플레이어를 찾을 수 없습니다!")
+                        return true
+                    }
+                }
+                else {
+                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial add <플레이어> <금액>")
                 }
             }
         }

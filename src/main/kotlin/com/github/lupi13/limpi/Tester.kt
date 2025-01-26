@@ -17,12 +17,12 @@ class Tester: CommandExecutor {
             player.inventory.addItem(Check(args[0].toLong(), player))
             var item: ItemStack = ItemStack(Material.IRON_INGOT, 1)
             var meta: ItemMeta = item.itemMeta!!
+            meta.setDisplayName("test tofu")
             var food: FoodComponent = meta.food
             food.nutrition = 1
             food.saturation = 10f
-            food.eatSeconds = 10f
             meta.setFood(food)
-            item.itemMeta = meta
+            item.setItemMeta(meta)
             player.inventory.addItem(item)
         }
         return true

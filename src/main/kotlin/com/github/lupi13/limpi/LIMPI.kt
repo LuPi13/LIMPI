@@ -2,13 +2,15 @@ package com.github.lupi13.limpi
 
 import com.github.lupi13.limpi.commands.Financial
 import com.github.lupi13.limpi.commands.FinancialTab
-import com.github.lupi13.limpi.events.JoinAndQuit
+import com.github.lupi13.limpi.events.*
 import com.github.lupi13.limpi.items.Check
 import org.bukkit.plugin.java.JavaPlugin
+import java.io.PrintStream
 
 class LIMPI : JavaPlugin() {
     override fun onEnable() {
         // Plugin startup logic
+        System.setOut(PrintStream(System.out, true, "UTF-8"))
         var time = System.currentTimeMillis()
         logger.info("File setting...")
         FileManager.setup()
@@ -20,13 +22,18 @@ class LIMPI : JavaPlugin() {
         logger.info("Events Registering...")
         server.pluginManager.registerEvents(JoinAndQuit(), this)
         server.pluginManager.registerEvents(Check(0, null), this)
+        server.pluginManager.registerEvents(SellEvents(), this)
+        server.pluginManager.registerEvents(ShopEvents(), this)
+        server.pluginManager.registerEvents(StockEvents(), this)
+        server.pluginManager.registerEvents(MarketEvents(), this)
+        StockEvents.stockFlow()
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         time = System.currentTimeMillis()
         logger.info("Command setting...")
         getCommand("test")!!.setExecutor(Tester())
         getCommand("financial")!!.setExecutor(Financial())
-        getCommand("financial")!!.setTabCompleter(FinancialTab())
+        getCommand("financial")!!.tabCompleter = FinancialTab()
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         val blue = "\u001B[36m"
@@ -38,7 +45,7 @@ class LIMPI : JavaPlugin() {
         println("$blue|   |___   |   |   |       |  |    ___|  |   |$white .       .     .-.. . --.")
         println("$blue|       |  |   |   | ||_|| |  |   |      |   |$white |-.. .  |  . .|-'.'| --|")
         println("$blue|_______|  |___|   |_|   |_|  |___|      |___|$white `-''-|  '-''-''  ''-'--'")
-        println("                                                  `-'      ver 0.0.4")
+        println("                                                  `-'      ver 0.0.5")
     }
 
     override fun onDisable() {

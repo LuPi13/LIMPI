@@ -1,0 +1,7 @@
+InitialMoney: 10000  # 첫 소지금
+DefaultShopRatio: 5  # 기본 상점 비율(미사용)
+StockMinimumRatio: 0.7  # 주식의 변동 최소 배율
+StockMaximumRatio: 1.3  # 주식의 변동 최대 배율
+StockStandardDeviation: 0.1  # 주식 변동 표준 편차(추천: (최대배율 - 최소배율) / 5)
+StockPriceDrag: 0.1  # 주식의 가격 회귀율, 반드시 1 이하로 할 것, 0으로 두면 중앙복귀 조정이 없으며 가격이 0으로 수렴할 수 있음
+StockInterval: 10  # 주식의 변동 주기 (분), 2 이상, 60의 약수로 설정할 것

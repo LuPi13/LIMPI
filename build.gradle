@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.github.lupi13'
-version = '0.0.4'
+version = '0.0.5'
 
 repositories {
     mavenCentral()
@@ -20,8 +20,9 @@ repositories {
 }
 
 dependencies {
-    compileOnly "org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT"
+    compileOnly "org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
 }
 

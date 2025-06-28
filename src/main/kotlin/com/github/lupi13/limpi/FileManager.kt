@@ -192,7 +192,7 @@ class FileManager {
             val uuid = player.uniqueId
             val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
             val config = YamlConfiguration.loadConfiguration(file)
-            config["name"] = player.displayName
+            config["name"] = player.name
             config["money"] = plugin.config.getLong("InitialMoney")
             savePlayerData(player, config)
         }

@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi
 
+import com.github.lupi13.limpi.abilities.AbilityManager
+import com.github.lupi13.limpi.abilities.SafetyFirst
 import com.github.lupi13.limpi.commands.Financial
 import com.github.lupi13.limpi.commands.FinancialTab
 import com.github.lupi13.limpi.events.*
@@ -21,19 +23,25 @@ class LIMPI : JavaPlugin() {
         time = System.currentTimeMillis()
         logger.info("Events Registering...")
         server.pluginManager.registerEvents(JoinAndQuit(), this)
-        server.pluginManager.registerEvents(Check(0, null), this)
-        server.pluginManager.registerEvents(SellEvents(), this)
-        server.pluginManager.registerEvents(ShopEvents(), this)
-        server.pluginManager.registerEvents(StockEvents(), this)
-        server.pluginManager.registerEvents(MarketEvents(), this)
-        StockEvents.stockFlow()
+        if (config.getBoolean("EnableFinancialSystem")) {
+            server.pluginManager.registerEvents(Check(), this)
+            server.pluginManager.registerEvents(SellEvents(), this)
+            server.pluginManager.registerEvents(ShopEvents(), this)
+            server.pluginManager.registerEvents(StockEvents(), this)
+            server.pluginManager.registerEvents(MarketEvents(), this)
+            StockEvents.stockFlow()
+        }
+        if (config.getBoolean("EnableAbilitySystem")) {
+            AbilityManager.registerAbilities()
+        }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         time = System.currentTimeMillis()
         logger.info("Command setting...")
-        getCommand("test")!!.setExecutor(Tester())
-        getCommand("financial")!!.setExecutor(Financial())
-        getCommand("financial")!!.tabCompleter = FinancialTab()
+        if (config.getBoolean("EnableFinancialSystem")) {
+            getCommand("financial")!!.setExecutor(Financial())
+            getCommand("financial")!!.tabCompleter = FinancialTab()
+        }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         val blue = "\u001B[36m"

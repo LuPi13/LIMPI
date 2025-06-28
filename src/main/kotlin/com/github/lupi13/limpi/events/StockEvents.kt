@@ -4,14 +4,13 @@ import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.commands.Financial
-import net.md_5.bungee.api.ChatMessageType
-import net.md_5.bungee.api.chat.BaseComponent
-import net.md_5.bungee.api.chat.ClickEvent
-import net.md_5.bungee.api.chat.HoverEvent
-import net.md_5.bungee.api.chat.TextComponent
-import net.md_5.bungee.api.chat.hover.content.Text
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.ClickEvent
+import net.kyori.adventure.text.event.HoverEvent
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Bukkit
-import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Player
@@ -37,7 +36,6 @@ class StockEvents : Listener {
         val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
         var fluctToggle = false
         var beforePrice: MutableMap<String, Int> = HashMap()
-        var stockBook: ItemStack? = null
 
 
         /**
@@ -58,24 +56,27 @@ class StockEvents : Listener {
             return (currentPrice * random).toInt()
         }
 
-        fun writeStock(stock: String): String {
+        fun writeStock(stock: String): Component {
             val stockConfig = FileManager.getStockConfig()
             val stockPrice = stockConfig.getInt("$stock.currentPrice")
             val stockBefore = beforePrice[stock]!!
             val stockChange = stockPrice - stockBefore
             val stockChangePercent = ((stockChange.toDouble() / stockBefore) * 100 + 100).toInt()
-            var disp = ""
-            if (stockChangePercent == 100) {
-                disp = "-100%"
+            val disp = if (stockChangePercent == 100) {
+                Component.text("-100%", NamedTextColor.BLACK)
+            } else if (stockChangePercent >= 100) {
+                Component.text("▲${stockChangePercent}%", NamedTextColor.RED)
+            } else {
+                Component.text("▼${stockChangePercent}%", NamedTextColor.BLUE)
             }
-            else if (stockChangePercent >= 100) {
-                disp = "${ChatColor.RED}▲${stockChangePercent}%${ChatColor.BLACK}"
-            }
-            else {
-                disp = "${ChatColor.BLUE}▼${stockChangePercent}%${ChatColor.BLACK}"
-            }
-            return "${ChatColor.DARK_AQUA}${stock} (${stockConfig.getString("$stock.code")})${ChatColor.BLACK}: \n" +
-                    "${Financial.moneyDisplay(stockBefore)}${ChatColor.BLACK}->${Financial.moneyDisplay(stockPrice)}${ChatColor.BLACK}\n(${disp})\n"
+            return Component.text("${stockConfig.getString("$stock.name")} ($stock)", NamedTextColor.DARK_AQUA)
+                .append(Component.text(":\n", NamedTextColor.BLACK))
+                .append(Financial.moneyDisplay(stockBefore))
+                .append(Component.text("->", NamedTextColor.BLACK))
+                .append(Financial.moneyDisplay(stockPrice))
+                .append(Component.text("\n(", NamedTextColor.BLACK))
+                .append(disp)
+                .append(Component.text(")\n\n", NamedTextColor.BLACK))
         }
 
         fun stockFlow() {
@@ -94,18 +95,18 @@ class StockEvents : Listener {
                                     stockConfig["${item}.currentPrice"] = currentPrice
                                 }
                                 FileManager.saveStock()
-                                plugin.server.broadcastMessage("${ChatColor.GREEN}주식 가격이 변동되었습니다.")
+                                plugin.server.broadcast(Component.text("주식 가격이 변동되었습니다.", NamedTextColor.GREEN))
 
 
-                                val stockShow: BaseComponent = TextComponent("${ChatColor.LIGHT_PURPLE}여기를 눌러 주식 변동을 확인하세요.")
-                                stockShow.hoverEvent = HoverEvent(HoverEvent.Action.SHOW_TEXT, Text("/fc stock show"))
-                                stockShow.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/fc stock show")
+                                val stockShow = Component.text("여기를 눌러 주식 변동을 확인하세요.", NamedTextColor.LIGHT_PURPLE)
+                                    .hoverEvent(HoverEvent.showText(Component.text("/fc stock show")))
+                                    .clickEvent(ClickEvent.runCommand("/fc stock show"))
 
                                 for (player in Functions.getOnlinePlayers()) {
-                                    if (player.openInventory.title.equals(StockGUIName)) {
+                                    if (player.openInventory.title() == StockGUIName) {
                                         openStockGUI(player)
                                     }
-                                    player.spigot().sendMessage(ChatMessageType.CHAT, stockShow)
+                                    player.sendMessage(stockShow)
                                 }
 
 
@@ -116,7 +117,7 @@ class StockEvents : Listener {
                         if (plugin.server.onlinePlayers.isNotEmpty()) {
                             if (!fluctToggle) {
                                 fluctToggle = true
-                                plugin.server.broadcastMessage("${ChatColor.YELLOW}주식이 1분 후 변동됩니다!")
+                                plugin.server.broadcast(Component.text("주식이 1분 후 변동됩니다!", NamedTextColor.YELLOW))
                             }
                         }
                     }
@@ -131,7 +132,6 @@ class StockEvents : Listener {
 
                 val book = ItemStack(Material.WRITTEN_BOOK, 1)
                 val meta: BookMeta = book.itemMeta as BookMeta
-                val pages = mutableListOf<String>()
                 val time = System.currentTimeMillis()
                 val instant = Instant.ofEpochMilli(time)
                 val zoneId = ZoneId.systemDefault()
@@ -141,8 +141,9 @@ class StockEvents : Listener {
                 val timeFormat = DateTimeFormatter.ofPattern("HH시 mm분")
                 val time1 = zonedDateTime.format(timeFormat)
 
-                var page = StringBuilder()
-                page.append("\n${ChatColor.DARK_GREEN}${date}\n${time1} 부\n\n ${ChatColor.BLACK}${ChatColor.BOLD}주식 가격 변동\n\n\n\n")
+                var page: Component
+                page = Component.text("\n${date}\n${time1} 부\n\n", NamedTextColor.DARK_GREEN)
+                    .append(Component.text("주식 가격 변동\n\n\n\n", NamedTextColor.BLACK, TextDecoration.BOLD))
 
                 var initialSum = 0
                 var currentSum = 0
@@ -154,9 +155,9 @@ class StockEvents : Listener {
                 }
                 val LOSPI = (currentSum - initialSum) / initialSum.toDouble() * 100 + 100
                 val stringLOSPI = if (LOSPI >= 100.0) {
-                    "${ChatColor.RED}▲${String.format("%.2f", LOSPI)}"
+                    Component.text("▲${String.format("%.2f", LOSPI)}%", NamedTextColor.RED)
                 } else {
-                    "${ChatColor.BLUE}▼${String.format("%.2f", LOSPI)}"
+                    Component.text("▼${String.format("%.2f", LOSPI)}%", NamedTextColor.BLUE)
                 }
 
                 val standDatetime = FileManager.getMiscConfig()["lastStockStand"] as String
@@ -169,81 +170,85 @@ class StockEvents : Listener {
                 val standDate = "${standYear}년 ${standMonth}월 ${standDay}일"
                 val standTime = "${standHour}시 ${standMinute}분"
 
-                page.append("LOSPI: ${stringLOSPI}%${ChatColor.BLACK}\n(기준 시점: ${standDate} ${standTime})\n\n")
+                page = page.append(Component.text("LOSPI: ", NamedTextColor.BLACK)
+                    .append(stringLOSPI)
+                    .append(Component.text("\n(기준 시점: $standDate ${standTime})\n\n", NamedTextColor.BLACK)))
 
-                pages.add(page.toString())
-                page = StringBuilder()
-                page.append("\n")
-                var line = 1;
+                meta.addPages(page)
+                page = Component.text("")
+                var line = 1
                 for (item in stock) {
                     if (line == stock.size) {
-                        page.append(writeStock(item))
-                        pages.add(page.toString())
-                        page = StringBuilder()
-                        page.append("\n")
+                        page = page.append(writeStock(item))
+                        meta.addPages(page)
                         break
                     }
                     if (line % 3 != 0) {
-                        page.append(writeStock(item))
-                        page.append("\n")
+                        page = page.append(writeStock(item))
                     } else {
-                        page.append(writeStock(item))
-                        pages.add(page.toString())
-                        page = StringBuilder()
-                        page.append("\n")
+                        page = page.append(writeStock(item))
+                        meta.addPages(page)
+                        page = Component.text("")
                     }
                     line += 1
                 }
 
-                meta.pages = pages
-                meta.setDisplayName("stockFluct")
+                meta.customName(Component.text("stockFluct"))
                 meta.author = "LIMPI"
                 meta.title = "주식 가격 변동"
                 meta.generation = BookMeta.Generation.ORIGINAL
                 book.itemMeta = meta
                 player.openBook(book)
             } catch (e: Exception) {
-                player.sendMessage("${ChatColor.RED}지금은 이용할 수 없습니다. (서버가 재시작 되고 주식이 변하지 않았을 경우, 조회할 수 없습니다.)")
+                player.sendMessage(Component.text("지금은 이용할 수 없습니다. (서버가 재시작 되고 주식이 변하지 않았을 경우, 조회할 수 없습니다.)", NamedTextColor.RED))
             }
         }
 
-        val StockGUIName = "${ChatColor.AQUA}${ChatColor.BOLD}LIMPI: 주식창"
+        val StockGUIName = Component.text("LIMPI: 주식창", NamedTextColor.AQUA, TextDecoration.BOLD)
         fun openStockGUI(player: Player) {
             val stockGUI = Bukkit.createInventory(player, 54, StockGUIName)
             val stockConfig = FileManager.getStockConfig()
             val playerConfig = FileManager.getPlayerData(player)
             var index = 0
-            for (item in stockConfig.getKeys(false)) {
-                val stockItem = ItemStack(Functions.toMaterial(stockConfig.getString("$item.material")!!))
+            for (code in stockConfig.getKeys(false)) {
+                val stockItem = ItemStack(Functions.toMaterial(stockConfig.getString("$code.material")!!))
                 val stockMeta = stockItem.itemMeta
-                val stockLore = mutableListOf<String>()
-                var stockChange = ""
+                val stockLore = mutableListOf<Component>()
+                var stockChange: Component
                 try {
-                    val beforePrice = beforePrice[item]!!
-                    val currentPrice = stockConfig.getInt("$item.currentPrice")
+                    val beforePrice = beforePrice[code]!!
+                    val currentPrice = stockConfig.getInt("$code.currentPrice")
                     val percent = ((currentPrice.toDouble() / beforePrice) * 100).toInt()
-                    if (percent == 100) {
-                        stockChange = "${ChatColor.WHITE}-100%"
-                    }
-                    else if (percent >= 100) {
-                        stockChange = "${ChatColor.RED}▲${percent}%"
-                    }
-                    else {
-                        stockChange = "${ChatColor.BLUE}▼${percent}%"
+                    stockChange = if (percent == 100) {
+                        Component.text("-100%", NamedTextColor.WHITE)
+                    } else if (percent >= 100) {
+                        Component.text("▲${percent}%", NamedTextColor.RED)
+                    } else {
+                        Component.text("${percent}%", NamedTextColor.BLUE)
                     }
                 } catch (e: Exception) {
-                    stockChange = "${ChatColor.WHITE}-(확인 불가)"
+                    stockChange = Component.text("-(확인 불가)", NamedTextColor.WHITE)
                 }
-                stockMeta!!.setDisplayName("${ChatColor.WHITE}${item} (${stockConfig.getString("$item.code")})")
-                stockLore.add("${ChatColor.WHITE}현재 가격: ${ChatColor.YELLOW}${stockConfig.getInt("$item.currentPrice")}${ChatColor.WHITE}원, " +
-                        "현재 보유 금액: ${Financial.moneyDisplay(playerConfig.getInt("money"))}원")
-                val stockCount = playerConfig.getInt("stock.$item")
-                stockLore.add("${ChatColor.WHITE}보유 주식: ${ChatColor.GREEN}${stockCount}${ChatColor.WHITE}주, " +
-                        "최근 변동: ${stockChange}")
-                stockLore.add("${ChatColor.WHITE}총 가치: ${Financial.moneyDisplay(stockCount * stockConfig.getInt("$item.currentPrice"))}원")
-                stockLore.add("${ChatColor.WHITE}좌클릭하여 매수, 우클릭하여 매도합니다.")
-                stockLore.add("${ChatColor.WHITE}Shift를 누르고 클릭하면 100주/전량 거래합니다.")
-                stockMeta.lore = stockLore
+                stockMeta!!.customName(Component.text("${stockConfig.getString("$code.name")} (${code})", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+                stockLore.add(Component.text("현재 가격: ", NamedTextColor.WHITE)
+                    .append(Financial.moneyDisplay(stockConfig.getInt("$code.currentPrice")))
+                    .append(Component.text("원, 현재 보유 금액: ", NamedTextColor.WHITE))
+                    .append(Financial.moneyDisplay(playerConfig.getInt("money")))
+                    .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false))
+
+                val stockCount = playerConfig.getInt("stock.${code}.count")
+                stockLore.add(Component.text("보유 주식: ", NamedTextColor.WHITE)
+                    .append(Component.text("$stockCount", NamedTextColor.GREEN))
+                    .append(Component.text("주, 최근 변동: ", NamedTextColor.WHITE))
+                    .append(stockChange).decoration(TextDecoration.ITALIC, false))
+                stockLore.add(Component.text("총투자금액: ", NamedTextColor.WHITE)
+                    .append(Financial.moneyDisplay(playerConfig.getInt("stock.$code.averagePrice") * stockCount))
+                    .append(Component.text("원, 현재가치: ", NamedTextColor.WHITE))
+                    .append(Financial.moneyDisplay(stockCount * stockConfig.getInt("$code.currentPrice")))
+                    .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false))
+                stockLore.add(Component.text("좌클릭하여 매수, 우클릭하여 매도합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+                stockLore.add(Component.text("Shift를 누르면 100주/전량 거래합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+                stockMeta.lore(stockLore)
                 for (itemFlag in ItemFlag.entries) {
                     stockMeta.addItemFlags(itemFlag)
                 }
@@ -258,17 +263,18 @@ class StockEvents : Listener {
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
-        if (event.view.title == StockGUIName) {
+        if (event.view.title() == StockGUIName) {
             val player = event.whoClicked as Player
-            val stockGUI = event.view.topInventory
             val stockConfig = FileManager.getStockConfig()
             val playerConfig = FileManager.getPlayerData(player)
             val item = event.currentItem
             if (item != null && item.hasItemMeta()) {
                 val itemMeta = item.itemMeta!!
-                val stockName = itemMeta.displayName.substring(2, itemMeta.displayName.indexOf(" ("))
-                val stockCount = playerConfig.getInt("stock.$stockName")
-                val stockPrice = stockConfig.getInt("$stockName.currentPrice")
+                var stockCode = PlainTextComponentSerializer.plainText().serialize(item.displayName())
+                val stockName = stockCode.substring(1, stockCode.length - 8)
+                stockCode = stockCode.substring(stockCode.length - 6, stockCode.length - 2)
+                val stockCount = playerConfig.getInt("stock.${stockCode}.count")
+                val stockPrice = stockConfig.getInt("$stockCode.currentPrice")
                 var count = 1
 
                 if (event.isLeftClick) {
@@ -276,13 +282,17 @@ class StockEvents : Listener {
                         if (event.isShiftClick) {
                             count = min(playerConfig.getInt("money") / stockPrice, 100)
                         }
-                        playerConfig["stock.$stockName"] = stockCount + count
+                        playerConfig["stock.${stockCode}.count"] = stockCount + count
+                        playerConfig["stock.${stockCode}.averagePrice"] =
+                            ((playerConfig.getInt("stock.${stockCode}.averagePrice") * stockCount + (stockPrice * count)) / (stockCount + count))
                         playerConfig["money"] = playerConfig.getInt("money") - (stockPrice * count)
                         player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-                        player.sendMessage("${ChatColor.AQUA}${stockName} ${ChatColor.GREEN}${count}${ChatColor.WHITE}주 매수 완료.")
+                        player.sendMessage(Component.text("$stockName (${stockCode})", NamedTextColor.AQUA)
+                            .append(Component.text(" $count", NamedTextColor.GREEN))
+                            .append(Component.text("주 매수 완료.", NamedTextColor.WHITE)))
                     }
                     else {
-                        player.sendMessage("${ChatColor.RED}돈이 부족합니다!")
+                        player.sendMessage(Component.text("돈이 부족합니다!", NamedTextColor.RED))
                         player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
                     }
                 }
@@ -292,13 +302,17 @@ class StockEvents : Listener {
                         if (event.isShiftClick) {
                             count = min(stockCount, 100)
                         }
-                        playerConfig["stock.$stockName"] = stockCount - count
+                        playerConfig["stock.${stockCode}.count"] = stockCount - count
+                        playerConfig["stock.${stockCode}.averagePrice"] =
+                            if (stockCount - count == 0) 0 else ((playerConfig.getInt("stock.${stockCode}.averagePrice") * stockCount - (stockPrice * count)) / (stockCount - count))
                         playerConfig["money"] = playerConfig.getInt("money") + (stockPrice * count)
                         player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-                        player.sendMessage("${ChatColor.AQUA}${stockName} ${ChatColor.GREEN}${count}${ChatColor.WHITE}주 매도 완료.")
+                        player.sendMessage(Component.text("$stockName (${stockCode})", NamedTextColor.AQUA)
+                            .append(Component.text(" $count", NamedTextColor.GREEN))
+                            .append(Component.text("주 매도 완료.", NamedTextColor.WHITE)))
                     }
                     else {
-                        player.sendMessage("${ChatColor.RED}주식이 부족합니다!")
+                        player.sendMessage(Component.text("보유 주식이 없습니다!", NamedTextColor.RED))
                         player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
                     }
                 }

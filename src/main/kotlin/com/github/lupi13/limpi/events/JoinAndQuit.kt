@@ -18,6 +18,5 @@ class JoinAndQuit: Listener {
         if (!player.hasPlayedBefore()) {
             FileManager.makePlayerData(player)
         }
-        //player.sendMessage("joined.")
     }
 }

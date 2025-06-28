@@ -10,8 +10,8 @@ version = '0.0.5'
 repositories {
     mavenCentral()
     maven {
-        name = "spigotmc-repo"
-        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
+        name = "papermc"
+        url = "https://repo.papermc.io/repository/maven-public/"
     }
     maven {
         name = "sonatype"
@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly "org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT"
+    compileOnly "io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
@@ -56,7 +56,7 @@ kotlin {
 shadowJar {
     archiveFileName = 'LIMPI-'+version+'.jar'
     //destinationDirectory = file("D:\\Project\\IntelliJ\\LIMPI")
-    destinationDirectory = file("D:\\BungeeCord\\nonproxytestserver\\plugins")
+    destinationDirectory = file("D:\\BungeeCord\\papernonproxytestserver\\plugins")
     manifest {
         attributes 'Main-Class': 'com.github.lupi13.limpi.LIMPI'
     }

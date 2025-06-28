@@ -13,7 +13,7 @@ class Functions {
         val allMaterials = Material.entries.map { it.name.lowercase(Locale.getDefault()) }
 
         fun getOnlinePlayers(): List<Player> {
-            var playerList = mutableListOf<Player>()
+            val playerList = mutableListOf<Player>()
             plugin.server.onlinePlayers.forEach {playerList.add(it)}
 
             return playerList
@@ -28,7 +28,7 @@ class Functions {
         }
 
         fun getAllPlayers(): List<Player> {
-            var playerList = mutableListOf<Player>()
+            val playerList = mutableListOf<Player>()
             plugin.server.offlinePlayers.forEach {playerList.add(it as Player)}
 
             return playerList
@@ -74,7 +74,7 @@ class Functions {
          */
         fun getDateTime(): String {
             val now = Calendar.getInstance()
-            return "${now.get(Calendar.YEAR)}-${now.get(Calendar.MONTH) + 1}-${now.get(Calendar.DATE)} ${now.get(Calendar.HOUR_OF_DAY)}:${now.get(Calendar.MINUTE)}:${now.get(Calendar.SECOND)}"
+            return "${now[Calendar.YEAR]}-${now[Calendar.MONTH] + 1}-${now[Calendar.DATE]} ${now[Calendar.HOUR_OF_DAY]}:${now[Calendar.MINUTE]}:${now[Calendar.SECOND]}"
         }
     }
 }

@@ -3,8 +3,11 @@ package com.github.lupi13.limpi.events
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.LIMPI
+import com.github.lupi13.limpi.commands.Financial
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
-import org.bukkit.ChatColor
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -32,7 +35,7 @@ class ShopEvents : Listener {
             return (ratio * sellPrice).toInt()
         }
 
-        val shopGUIName = "${ChatColor.DARK_GREEN}${ChatColor.BOLD}LIMPI: 구매창"
+        val shopGUIName = Component.text("LIMPI: 구매창", NamedTextColor.DARK_GREEN, TextDecoration.BOLD)
 
         fun openShopGUI(player: Player) {
             val shopGUI: Inventory = Bukkit.createInventory(player, 54, shopGUIName)
@@ -40,11 +43,16 @@ class ShopEvents : Listener {
             for (names in FileManager.getShopRatioConfig().getKeys(false)) {
                 val item = ItemStack(Functions.toMaterial(names), 1)
                 val meta = item.itemMeta
-                val lore: MutableList<String> = ArrayList()
-                lore.add("${ChatColor.WHITE}가격: ${ChatColor.YELLOW}${getShopPrice(item)}${ChatColor.WHITE}원, 현재 보유 금액: ${ChatColor.GOLD}${FileManager.getPlayerData(player)["money"]}${ChatColor.WHITE}원")
-                lore.add("${ChatColor.WHITE}좌클릭하여 구매합니다.")
-                lore.add("${ChatColor.WHITE}Shift를 누르고 클릭하면 1세트/최대한 많이 구매합니다.")
-                meta!!.lore = lore
+                val lore: MutableList<Component> = ArrayList()
+                lore.add(Component.text("가격: ", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
+                    .append(Financial.moneyDisplay(getShopPrice(item)).decoration(TextDecoration.ITALIC, false))
+                    .append(Component.text("원, 현재 보유 금액: ", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+                    .append(Financial.moneyDisplay(FileManager.getPlayerData(player)["money"] as Int).decoration(TextDecoration.ITALIC, false))
+                    .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false))
+//                lore.add(Component.text(("${NamedTextColor.WHITE}가격: ${NamedTextColor.YELLOW}${getShopPrice(item)}${NamedTextColor.WHITE}원, 현재 보유 금액: ${NamedTextColor.GOLD}${FileManager.getPlayerData(player)["money"]}${NamedTextColor.WHITE}원")))
+//                lore.add(Component.text("${NamedTextColor.WHITE}좌클릭하여 구매합니다."))
+//                lore.add(Component.text("${NamedTextColor.WHITE}Shift를 누르고 클릭하면 1세트/최대한 많이 구매합니다."))
+                meta!!.lore(lore)
                 item.itemMeta = meta
                 shopGUI.setItem(i, item)
                 i += 1
@@ -55,7 +63,7 @@ class ShopEvents : Listener {
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
-        if (event.view.title == shopGUIName) {
+        if (event.view.title() == shopGUIName) {
             val shopGUI = event.view.topInventory
             val player = event.whoClicked as Player
 
@@ -66,7 +74,7 @@ class ShopEvents : Listener {
                 val price = getShopPrice(item)
                 var count = 1
                 if (event.click.isShiftClick) {
-                    count = Math.min(item.maxStackSize, money / price)
+                    count = item.maxStackSize.coerceAtMost(money / price)
                 }
                 if (event.click.isLeftClick) {
                     if (money >= price) {
@@ -75,15 +83,21 @@ class ShopEvents : Listener {
                             FileManager.savePlayerData(player, config)
                             player.inventory.addItem(ItemStack(item.type, count))
                             player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-                            player.sendMessage("${ChatColor.AQUA}${item.type.toString().lowercase(Locale.getDefault())} ${ChatColor.GREEN}$count${ChatColor.WHITE}개 구매 완료.")
+                            player.sendMessage(Component.text(item.type.toString().lowercase(Locale.getDefault()), NamedTextColor.AQUA)
+                                .append(Component.text(" $count", NamedTextColor.GREEN))
+                                .append(Component.text("개 구매 완료.", NamedTextColor.WHITE)))
                             openShopGUI(player)
                         }
                         else {
-                            player.sendMessage("${ChatColor.RED}인벤토리가 가득 찼습니다.")
+                            player.sendMessage(Component.text("인벤토리가 가득 찼습니다.", NamedTextColor.RED))
                             player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
                         }
                     } else {
-                        player.sendMessage("${ChatColor.RED}돈이 부족합니다! ${ChatColor.GREEN}${player.displayName}${ChatColor.RED}님은 현재 계좌에 ${ChatColor.GOLD}$money${ChatColor.RED}원 있습니다.")
+                        player.sendMessage(Component.text("돈이 부족합니다! ", NamedTextColor.RED)
+                            .append(Financial.playerDisplay(player))
+                            .append(Component.text("님은 현재 계좌에 ", NamedTextColor.RED))
+                            .append(Financial.moneyDisplay(money))
+                            .append(Component.text("원 있습니다.", NamedTextColor.RED)))
                         player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
                     }
                 }

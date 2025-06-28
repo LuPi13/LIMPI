@@ -2,8 +2,11 @@ package com.github.lupi13.limpi.events
 
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.LIMPI
+import com.github.lupi13.limpi.commands.Financial
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
-import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Player
@@ -33,16 +36,17 @@ class SellEvents : Listener {
             }
         }
 
-        val SellGUIName = "${ChatColor.YELLOW}${ChatColor.BOLD}LIMPI: 판매창"
+        val SellGUIName = Component.text("LIMPI: 판매창", NamedTextColor.YELLOW, TextDecoration.BOLD)
 
         fun openSellGUI(player: Player) {
             val sellGUI: Inventory = Bukkit.createInventory(player, 54, SellGUIName)
             val close = ItemStack(Material.GOLD_INGOT, 1)
             val meta = close.itemMeta
-            val lore: MutableList<String> = ArrayList()
-            meta!!.setDisplayName("${ChatColor.RED}판매")
-            lore.add("${ChatColor.GOLD}0${ChatColor.WHITE} 원")
-            meta.lore = lore
+            val lore: MutableList<Component> = ArrayList()
+            meta!!.customName(Component.text("판매", NamedTextColor.RED))
+            lore.add(Component.text("0", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false))
+            meta.lore(lore)
             close.itemMeta = meta
             sellGUI.setItem(53, close)
             player.openInventory(sellGUI)
@@ -52,16 +56,16 @@ class SellEvents : Listener {
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
-        if (event.view.title == SellGUIName) {
+        if (event.view.title() == SellGUIName) {
             val player = event.whoClicked as Player
             val sellGUI = event.view.topInventory
 
             if (timer.containsKey(player) && timer[player]!! >= 0) {
-                player.sendMessage("${ChatColor.DARK_RED}판매중에 클릭하지 마세요.")
+                player.sendMessage(Component.text("판매중입니다. 잠시만 기다려주세요.", NamedTextColor.RED))
                 event.isCancelled = true
             }
 
-            if (event.currentItem != null && event.currentItem!!.hasItemMeta() && event.currentItem!!.itemMeta!!.displayName == "${ChatColor.RED}판매") {
+            if (event.currentItem != null && event.currentItem!!.hasItemMeta() && event.currentItem!!.itemMeta!!.customName() == Component.text("판매", NamedTextColor.RED)) {
                 var count = 0
                 for (i in 0..52) {
                     if (sellGUI.getItem(i) != null) {
@@ -91,7 +95,8 @@ class SellEvents : Listener {
                                 val config = FileManager.getPlayerData(player)
                                 config["money"] = config.getLong("money") + preprofit
                                 FileManager.savePlayerData(player, config)
-                                player.sendMessage("${ChatColor.GOLD}$preprofit${ChatColor.WHITE}원이 계좌에 입금되었습니다.")
+                                player.sendMessage(Financial.moneyDisplay(preprofit)
+                                    .append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE)))
                                 player.closeInventory()
                                 timer[player] = -2
                                 cancel()
@@ -102,7 +107,7 @@ class SellEvents : Listener {
                         }
                     }.runTaskTimer(plugin, 0L, 1L)
                 } else {
-                    player.sendMessage("${ChatColor.RED}아이템을 올려놓고 눌러주세요.")
+                    player.sendMessage(Component.text("아이템을 올려놓고 눌러주세요.", NamedTextColor.RED))
                 }
                 event.isCancelled = true
             }
@@ -111,7 +116,7 @@ class SellEvents : Listener {
 
     @EventHandler
     fun onInventoryClose(event: InventoryCloseEvent) {
-        if (event.view.title == SellGUIName) {
+        if (event.view.title() == SellGUIName) {
             val player = event.player as Player
             if (!(timer.containsKey(player) && timer[player]!! >= 0)) {
                 for (i in 0..52) {
@@ -135,18 +140,19 @@ fun sellTask(player: Player, inventory: Inventory) {
             var price = 0
             for (item in inventory) {
                 if (item != null) {
-                    if (!(item.hasItemMeta() && item.itemMeta!!.displayName == "${ChatColor.RED}판매")) {
+                    if (!(item.hasItemMeta() && item.itemMeta!!.customName() == Component.text("판매", NamedTextColor.RED))) {
                         price += SellEvents.getSellPrice(item)
                     }
                 }
             }
             val close = inventory.getItem(53)
             val meta = close!!.itemMeta
-            val lore = meta!!.lore
-            lore!![0] = "${ChatColor.GOLD}$price${ChatColor.WHITE} 원"
+            val lore = meta!!.lore()
+            lore!![0] = Financial.moneyDisplay(price).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text("원", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
             if (SellEvents.timer.containsKey(player) && SellEvents.timer[player]!! >= 0) {
                 if (lore.size <= 1) {
-                    lore.add("${ChatColor.YELLOW}처리중")
+                    lore.add(Component.text("처리중", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false))
                 } else {
                     val multi = (SellEvents.timer[player]!! / 2) % 3
                     val dot = when (multi) {
@@ -155,10 +161,10 @@ fun sellTask(player: Player, inventory: Inventory) {
                         2 -> "..."
                         else -> ""
                     }
-                    lore[1] = "${ChatColor.YELLOW}처리중${dot}"
+                    lore[1] = Component.text("처리중${dot}", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false)
                 }
             }
-            meta.lore = lore
+            meta.lore(lore)
             close.itemMeta = meta
             SellEvents.profit[player] = price
         }

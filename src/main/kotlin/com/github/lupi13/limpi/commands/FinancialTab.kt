@@ -1,14 +1,11 @@
 package com.github.lupi13.limpi.commands
 
-import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.FileManager.Companion.getStockConfig
 import com.github.lupi13.limpi.Functions
-import org.bukkit.Material
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.util.StringUtil
-import java.util.*
 
 class FinancialTab: TabCompleter {
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): MutableList<String>? {
@@ -23,6 +20,7 @@ class FinancialTab: TabCompleter {
                 list.add("sell")
                 list.add("shop")
                 list.add("stock")
+                list.add("market")
                 if (sender.isOp) {
                     list.add("spy")
                     list.add("set")
@@ -46,6 +44,12 @@ class FinancialTab: TabCompleter {
                     list.add("remove")
                     list.add("refix")
                 }
+                StringUtil.copyPartialMatches(args[1], list, completions)
+            }
+
+            if (args.size == 2 && args[0] == "market") {
+                list.add("add")
+                list.add("remove")
                 StringUtil.copyPartialMatches(args[1], list, completions)
             }
 

@@ -4,7 +4,10 @@ import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.events.*
 import com.github.lupi13.limpi.items.Check
-import org.bukkit.ChatColor
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.command.Command
@@ -24,28 +27,42 @@ class Financial: CommandExecutor {
         /**
          * 이름 표시 앞에 연두색, 뒤에 흰색 넣어줌
          */
-        fun playerDisplay(player: Player): String {
-            return ChatColor.GREEN.toString() + player.name + ChatColor.WHITE
+        fun playerDisplay(player: Player): Component {
+            return Component.text(player.name, NamedTextColor.GREEN, TextDecoration.BOLD)
+                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
         }
-        fun playerDisplay(player: String): String {
-            return ChatColor.GREEN.toString() + player + ChatColor.WHITE
+        fun playerDisplay(player: String): Component {
+            return Component.text(player, NamedTextColor.GREEN, TextDecoration.BOLD)
+                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
         }
 
         /**
          * 돈 표시 앞에 금색, 뒤에 흰색 넣어줌
          */
-        fun moneyDisplay(value: Long): String {
-            return ChatColor.GOLD.toString() + value + ChatColor.WHITE
+        fun moneyDisplay(value: Long): Component {
+            return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
+                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
         }
-        fun moneyDisplay(value: Double): String {
-            return ChatColor.GOLD.toString() + value + ChatColor.WHITE
+        fun moneyDisplay(value: Double): Component {
+            return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
+                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
         }
-        fun moneyDisplay(value: Int): String {
-            return ChatColor.GOLD.toString() + value + ChatColor.WHITE
+        fun moneyDisplay(value: Int): Component {
+            return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
+                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
+        }
+        fun moneyDisplay(value: String): Component {
+            return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
+                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
         }
     }
 
-    override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
+    override fun onCommand(
+        sender: CommandSender,
+        command: Command,
+        label: String,
+        args: Array<out String>
+    ): Boolean {
         if (sender is Player) {
             val config = FileManager.getPlayerData(sender)
             val money = config.getLong("money")
@@ -55,47 +72,74 @@ class Financial: CommandExecutor {
                 val meta = book.itemMeta as BookMeta
                 meta.title = "/financial 도움말"
                 meta.author = "LIMPI"
-                val pages = mutableListOf<String>()
-                var page = StringBuilder()
-                page.append(ChatColor.DARK_AQUA.toString() + ChatColor.BOLD + "\n\n[/financial 도움말]\n" +
-                        "${ChatColor.RESET}${ChatColor.GRAY}/fi, /fc 로도 입력할 수 있습니다.")
-                pages.add(page.toString())
-                page = StringBuilder()
-                page.append(ChatColor.GREEN.toString() + "/financial help" + ChatColor.BLACK + ": 이 도움말을 보여줍니다.\n\n" +
-                        ChatColor.GREEN.toString() + "/financial me" + ChatColor.BLACK + ": 현재 본인 계좌의 돈을 보여줍니다.\n\n" +
-                        ChatColor.GREEN.toString() + "/financial check <금액>" + ChatColor.BLACK + ": 입력한 금액의 수표를 작성합니다. 우클릭하여 사용 가능합니다. ${ChatColor.STRIKETHROUGH}모루로 이름 바꾸면 재밌어집니다.")
-                pages.add(page.toString())
-                page = StringBuilder()
-                page.append(ChatColor.GREEN.toString() + "/financial send <플레이어> <금액>" + ChatColor.BLACK + ": 입력한 금액을 대상 플레이어에게 송금합니다. 수수료 5%가 부과됩니다.\n\n" +
-                        ChatColor.GREEN.toString() + "/financial sell" + ChatColor.BLACK + ": 아이템을 판매하는 창을 엽니다. 판매할 아이템을 넣고 오른쪽 아래 금을 클릭하면 판매됩니다.\n\n" +
-                        ChatColor.GREEN.toString() + "/financial shop" + ChatColor.BLACK + ": 아이템을 구매하는 창을 엽니다.")
-                pages.add(page.toString())
-                page = StringBuilder()
-                page.append(ChatColor.GREEN.toString() + "/financial stock" + ChatColor.BLACK + ": 주식 시장을 엽니다.\n\n" +
-                        ChatColor.GREEN.toString() + "/financial stock show" + ChatColor.BLACK + ": 주식 정보를 확인합니다.")
-                pages.add(page.toString())
+
+                // 책 작성
+                var page = Component.text("\n\n[/financial 도움말]\n", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
+                page = page.append(Component.text("/fi, /fc 로도 입력할 수 있습니다.", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                meta.addPages( page)
+
+                page = Component.text("/financial help", NamedTextColor.GREEN)
+                page = page.append(Component.text(": 이 도움말을 보여줍니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text("/financial me", NamedTextColor.GREEN))
+                page = page.append(Component.text(": 현재 본인 계좌의 돈을 보여줍니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text("/financial check <금액>", NamedTextColor.GREEN))
+                page = page.append(Component.text(": 입력한 금액의 수표를 작성합니다. 우클릭하여 사용 가능합니다. ", NamedTextColor.BLACK))
+                meta.addPages(page)
+
+                page = Component.text("/financial send <플레이어> <금액>", NamedTextColor.GREEN)
+                page = page.append(Component.text(": 입력한 금액을 대상 플레이어에게 송금합니다. 수수료 5%가 부과됩니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text("/financial sell", NamedTextColor.GREEN))
+                page = page.append(Component.text(": 아이템을 판매하는 창을 엽니다. 판매할 아이템을 넣고 오른쪽 아래 금을 클릭하면 판매됩니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text("/financial shop", NamedTextColor.GREEN))
+                page = page.append(Component.text(": 아이템을 구매하는 창을 엽니다.\n\n", NamedTextColor.BLACK))
+                meta.addPages(page)
+
+                page = Component.text("/financial stock", NamedTextColor.GREEN)
+                page = page.append(Component.text(": 주식 시장을 엽니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text("/financial market", NamedTextColor.GREEN))
+                page = page.append(Component.text(": 유저간 거래가 가능한 장터 창을 엽니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text("/financial market add <코드> <가격>", NamedTextColor.GREEN))
+                page = page.append(Component.text(": 손에 든 아이템을 장터에 추가합니다. 코드는 대문자 알파벳, 숫자로 이루어진 4글자입니다.\n\n", NamedTextColor.BLACK))
+                meta.addPages(page)
+
+                page = Component.text("/financial market remove <코드>", NamedTextColor.GREEN)
+                page = page.append(Component.text(": 장터에서 아이템을 삭제합니다.\n\n", NamedTextColor.BLACK))
+                meta.addPages(page)
+
                 if (sender.isOp) {
-                    page = StringBuilder()
-                    page.append(ChatColor.RED.toString() + "이하 관리자 전용 명령어\n" +
-                            ChatColor.GREEN.toString() + "/financial spy <플레이어>" + ChatColor.BLACK + ": 대상의 계좌의 돈을 보여줍니다.\n\n" +
-                            ChatColor.GREEN.toString() + "/financial set <플레이어> <금액>" + ChatColor.BLACK + ": 대상의 계좌의 돈을 입력한 금액으로 설정합니다.\n\n" +
-                            ChatColor.GREEN.toString() + "/financial add <플레이어> <금액>" + ChatColor.BLACK + ": 대상의 계좌에 입력한 금액을 추가합니다. 금액에 음수를 적을 시 돈을 차감합니다.")
-                    pages.add(page.toString())
-                    page = StringBuilder()
-                    page.append(ChatColor.GREEN.toString() + "/financial sell set <아이템> <금액>" + ChatColor.BLACK + ": 아이템의 판매가격을 설정합니다.\n\n" +
-                            ChatColor.GREEN.toString() + "/financial sell remove <아이템>" + ChatColor.BLACK + ": 아이템의 판매가격을 삭제합니다.\n\n" +
-                            ChatColor.GREEN.toString() + "/financial shop set <아이템> <비율>" + ChatColor.BLACK + ": 아이템의 구매가격비율을 설정합니다. sell 가격 * 비율이 구매가격이 됩니다.")
-                    pages.add(page.toString())
-                    page = StringBuilder()
-                    page.append(ChatColor.GREEN.toString() + "/financial shop remove <아이템>" + ChatColor.BLACK + ": 아이템의 구매가격비율을 삭제합니다.\n\n" +
-                            ChatColor.GREEN.toString() + "/financial stock add <이름> <코드> <아이템> <가격>" + ChatColor.BLACK + ": 주식을 추가합니다.\n\n" +
-                            ChatColor.GREEN.toString() + "/financial stock remove <이름>" + ChatColor.BLACK + ": 주식을 삭제합니다.")
-                    pages.add(page.toString())
-                    page = StringBuilder()
-                    page.append(ChatColor.GREEN.toString() + "/financial stock refix <이름> <코드> <아이템> <가격>" + ChatColor.BLACK + ": 주식의 기준 가격을 현재 가격으로 재설정합니다. 주식의 가격은 기준 가격을 향하게 미세하게 조정됩니다.")
-                    pages.add(page.toString())
+                    page = Component.text("이하 관리자 전용 명령어\n", NamedTextColor.RED)
+                    page = page.append(Component.text("/financial spy <플레이어>", NamedTextColor.GREEN).decoration(TextDecoration.BOLD, false))
+                    page = page.append(Component.text(": 대상의 계좌의 돈을 보여줍니다.\n\n", NamedTextColor.BLACK))
+                    page = page.append(Component.text("/financial set <플레이어> <금액>", NamedTextColor.GREEN))
+                    page = page.append(Component.text(": 대상의 계좌의 돈을 입력한 금액으로 설정합니다.\n\n", NamedTextColor.BLACK))
+                    page = page.append(Component.text("/financial add <플레이어> <금액>", NamedTextColor.GREEN))
+                    page = page.append(Component.text(": 대상의 계좌에 입력한 금액을 추가합니다. 금액에 음수를 적을 시 돈을 차감합니다.\n\n", NamedTextColor.BLACK))
+                    meta.addPages(page)
+
+                    page = Component.text("/financial sell set <아이템> <금액>", NamedTextColor.GREEN)
+                    page = page.append(Component.text(": 아이템의 판매가격을 설정합니다.\n\n", NamedTextColor.BLACK))
+                    page = page.append(Component.text("/financial sell remove <아이템>", NamedTextColor.GREEN))
+                    page = page.append(Component.text(": 아이템의 판매가격을 삭제합니다.\n\n", NamedTextColor.BLACK))
+                    page = page.append(Component.text("/financial shop set <아이템> <비율>", NamedTextColor.GREEN))
+                    page = page.append(Component.text(": 아이템의 구매가격비율을 설정합니다. sell 가격 * 비율이 구매가격이 됩니다.\n\n", NamedTextColor.BLACK))
+                    meta.addPages(page)
+
+                    page = Component.text("/financial shop remove <아이템>", NamedTextColor.GREEN)
+                    page = page.append(Component.text(": 아이템의 구매가격비율을 삭제합니다.\n\n", NamedTextColor.BLACK))
+                    page = page.append(Component.text("/financial stock add <이름> <코드> <아이템> <가격>", NamedTextColor.GREEN))
+                    page = page.append(Component.text(": 주식을 추가합니다. 이름은 주식의 이름, 코드는 주식의 코드, 아이템은 주식의 아이템, 가격은 주식의 기준 가격입니다.\n\n", NamedTextColor.BLACK))
+                    meta.addPages(page)
+
+                    page = Component.text("/financial stock refix <이름> <코드> <아이템> <가격>", NamedTextColor.GREEN)
+                    page = page.append(Component.text(": 주식의 기준 가격을 현재 가격으로 재설정합니다. 주식의 가격은 기준 가격을 향하게 미세하게 조정됩니다.\n\n", NamedTextColor.BLACK))
+                    page = page.append(Component.text("/financial stock remove <이름>", NamedTextColor.GREEN))
+                    page = page.append(Component.text(": 주식을 삭제합니다.\n\n", NamedTextColor.BLACK))
+                    meta.addPages(page)
+                    page = Component.text("/financial market remove <코드>", NamedTextColor.GREEN)
+                    page = page.append(Component.text(": 다른 사람이 장터에 올린 아이템을 강제로 제거합니다.\n\n", NamedTextColor.BLACK))
+                    meta.addPages(page)
                 }
-                meta.pages = pages
+
                 book.itemMeta = meta
                 sender.openBook(book)
                 return true
@@ -104,14 +148,18 @@ class Financial: CommandExecutor {
 
             //  /fc me
             if (args[0].equals("me", true)) {
-                sender.sendMessage(playerDisplay(sender) + "님의 계좌에는 " + moneyDisplay(money) + "원이 있습니다.")
+                sender.sendMessage(playerDisplay(sender)
+                    .append(Component.text("님의 계좌에는 ", NamedTextColor.WHITE))
+                    .append(moneyDisplay(money))
+                    .append(Component.text("원이 있습니다.", NamedTextColor.WHITE)))
+
             }
 
 
             //  /fc spy <player>
             if (args[0].equals("spy", true)) {
                 if (!sender.isOp) {
-                    sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                    sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                     return true
                 }
                 if (args.size == 2) {
@@ -119,14 +167,17 @@ class Financial: CommandExecutor {
                     try {
                         val target: Player = FileManager.findPlayerByName(targetName)!!
                         val targetConfig: FileConfiguration = FileManager.getPlayerData(target)
-                        sender.sendMessage(playerDisplay(targetName) + "님의 계좌에는 " + moneyDisplay(targetConfig.getLong("money")) + "원이 있습니다.")
+                        sender.sendMessage(playerDisplay(target)
+                            .append(Component.text("님의 계좌에는 ", NamedTextColor.WHITE))
+                            .append(moneyDisplay(targetConfig.getLong("money")))
+                            .append(Component.text("원이 있습니다.", NamedTextColor.WHITE)))
                     } catch (e: Exception) {
-                        sender.sendMessage(ChatColor.RED.toString() + "해당 플레이어를 찾을 수 없습니다!")
+                        sender.sendMessage(Component.text("해당 플레이어를 찾을 수 없습니다!", NamedTextColor.RED))
                         return true
                     }
                 }
                 else {
-                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial spy <플레이어>")
+                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial spy <플레이어>", NamedTextColor.RED))
                     return true
                 }
             }
@@ -139,39 +190,44 @@ class Financial: CommandExecutor {
                     try {
                         value = args[1].toLong()
                     } catch (e: Exception) {
-                        sender.sendMessage(ChatColor.YELLOW.toString() + args[1] + ChatColor.RED + "는 올바르지 않은 숫자입니다!")
+                        sender.sendMessage(Component.text(args[1], NamedTextColor.YELLOW)
+                            .append(Component.text("는 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
                         return true
                     }
                     if (value <= 0) {
                         if (sender.isOp) {
-                            sender.sendMessage(ChatColor.YELLOW.toString() + "어디에... 쓰시려구요...?")
+                            sender.sendMessage(Component.text("어디에... 쓰시려구요...?", NamedTextColor.YELLOW))
                         }
                         else {
-                            sender.sendMessage(ChatColor.YELLOW.toString() + "대출 안돼요")
+                            sender.sendMessage(Component.text("대출 안돼요", NamedTextColor.YELLOW))
                             return true
                         }
                     }
 
                     if (value >= money) {
-                        sender.sendMessage(ChatColor.RED.toString() + "돈이 부족합니다! " + playerDisplay(sender) + ChatColor.RED + "님은 현재 계좌에 " + moneyDisplay(money) + ChatColor.RED + "원 있습니다.")
+                        sender.sendMessage(Component.text("돈이 부족합니다! ", NamedTextColor.RED)
+                            .append(playerDisplay(sender))
+                            .append(Component.text("님은 현재 계좌에 ", NamedTextColor.RED))
+                            .append(moneyDisplay(money))
+                            .append(Component.text("원이 있습니다.", NamedTextColor.RED)))
                         return true
                     }
 
-                    if (Functions.validInventoryIndex(sender, Check(value, sender)) == null) {
-                        sender.sendMessage(ChatColor.RED.toString() + "인벤토리가 가득 찼습니다!")
+                    if (Functions.validInventoryIndex(sender, Check.getCheck(value, sender)) == null) {
+                        sender.sendMessage(Component.text("인벤토리가 가득 찼습니다!", NamedTextColor.RED))
                         return true
                     }
 
 
                     config["money"] = money - value
                     FileManager.savePlayerData(sender, config)
-                    sender.inventory.addItem(Check(value, sender))
-                    sender.sendMessage("수표가 발행되었습니다.")
+                    sender.inventory.addItem(Check.getCheck(value, sender))
+                    sender.sendMessage(Component.text("수표가 발행되었습니다."))
                     sender.playSound(sender, Sound.ENTITY_VILLAGER_WORK_CARTOGRAPHER, 1F, 1.3F)
                     return true
                 }
                 else {
-                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial check <금액>")
+                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial check <금액>", NamedTextColor.RED))
                     return true
                 }
             }
@@ -186,7 +242,7 @@ class Financial: CommandExecutor {
                         val targetConfig: FileConfiguration = FileManager.getPlayerData(target)
 
                         if (target == sender) {
-                            sender.sendMessage(ChatColor.RED.toString() + "안돼 돌아가")
+                            sender.sendMessage(Component.text("자기 자신에게 송금할 수 없습니다!", NamedTextColor.RED))
                             return true
                         }
 
@@ -194,22 +250,27 @@ class Financial: CommandExecutor {
                         try {
                             value = args[2].toLong()
                         } catch (e: Exception) {
-                            sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "는 올바르지 않은 숫자입니다!")
+                            sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
+                                .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
                             return true
                         }
 
                         if ((value * 1.05).toLong() > money) {
-                            sender.sendMessage(ChatColor.RED.toString() + "돈이 부족합니다! " + playerDisplay(sender) + ChatColor.RED + "님은 현재 계좌에 " + moneyDisplay(money) + ChatColor.RED + "원 있습니다.")
-                            sender.sendMessage(ChatColor.RED.toString() + "송금 시에는 5%의 수수료가 송금자에게로부터 추가로 부과됩니다.")
+                            sender.sendMessage(Component.text("돈이 부족합니다! ", NamedTextColor.RED)
+                                .append(playerDisplay(sender))
+                                .append(Component.text("님은 현재 계좌에 ", NamedTextColor.RED))
+                                .append(moneyDisplay(money))
+                                .append(Component.text("원이 있습니다.", NamedTextColor.RED)))
+                            sender.sendMessage(Component.text("송금 시에는 5%의 수수료가 송금자에게로부터 추가로 부과됩니다.", NamedTextColor.RED))
                             return true
                         }
 
                         if (value <= 0) {
                             if (sender.isOp) {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + "나쁜 사람...")
+                                sender.sendMessage(Component.text("나쁜 사람...", NamedTextColor.YELLOW))
                             }
                             else {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + "그러면 못써요")
+                                sender.sendMessage(Component.text("그러면 못써요", NamedTextColor.YELLOW))
                                 return true
                             }
                         }
@@ -218,20 +279,28 @@ class Financial: CommandExecutor {
                         targetConfig["money"] = targetConfig.getLong("money") + value
                         FileManager.savePlayerData(sender, config)
                         FileManager.savePlayerData(target, targetConfig)
-                        sender.sendMessage("${playerDisplay(target)}님에게 ${moneyDisplay(value)}원을 보냈습니다.")
-                        sender.sendMessage("수수료 5%(${moneyDisplay((value * 1.05).toLong())}원)가 추가로 차감되었습니다.")
+                        sender.sendMessage(playerDisplay(target)
+                            .append(Component.text("님에게 ", NamedTextColor.WHITE))
+                            .append(moneyDisplay(value))
+                            .append(Component.text("원을 송금했습니다.", NamedTextColor.WHITE)))
+                        sender.sendMessage(Component.text("수수료 5%(${moneyDisplay((value * 0.05).toLong())}원)가 추가로 차감되었습니다.", NamedTextColor.WHITE))
                         sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
-                        target.sendMessage("${playerDisplay(sender)}님이 ${playerDisplay(target)}님에게 ${moneyDisplay(value)}원을 송금했습니다.")
+                        target.sendMessage(playerDisplay(sender)
+                            .append(Component.text("님이 ", NamedTextColor.WHITE))
+                            .append(playerDisplay(target))
+                            .append(Component.text("님에게 ", NamedTextColor.WHITE))
+                            .append(moneyDisplay(value))
+                            .append(Component.text("원을 송금했습니다.", NamedTextColor.WHITE)))
                         target.playSound(target, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
                         return true
 
                     } catch (e: Exception) {
-                        sender.sendMessage(ChatColor.RED.toString() + "해당 플레이어를 찾을 수 없습니다!")
+                        sender.sendMessage(Component.text("해당 플레이어를 찾을 수 없습니다!", NamedTextColor.RED))
                         return true
                     }
                 }
                 else {
-                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial send <플레이어> <금액>")
+                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial send <플레이어> <금액>", NamedTextColor.RED))
                 }
             }
 
@@ -239,7 +308,7 @@ class Financial: CommandExecutor {
             //  /fc set <player> <Long>
             if (args[0].equals("set", true)) {
                 if (!sender.isOp) {
-                    sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                    sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                     return true
                 }
                 if (args.size == 3) {
@@ -252,29 +321,37 @@ class Financial: CommandExecutor {
                         try {
                             value = args[2].toLong()
                         } catch (e: Exception) {
-                            sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "는 올바르지 않은 숫자입니다!")
+                            sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
+                                .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
                             return true
                         }
 
                         if (value < 0) {
-                            sender.sendMessage(ChatColor.YELLOW.toString() + "나쁜 사람...")
+                            sender.sendMessage(Component.text("나쁜 사람...", NamedTextColor.YELLOW))
                         }
 
                         targetConfig["money"] = value
                         FileManager.savePlayerData(target, targetConfig)
-                        sender.sendMessage("${playerDisplay(target)}님의 계좌를 ${moneyDisplay(value)}원으로 설정했습니다.")
+                        sender.sendMessage(playerDisplay(target)
+                            .append(Component.text("님의 계좌를 ", NamedTextColor.WHITE))
+                            .append(moneyDisplay(value))
+                            .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE)))
                         sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
-                        target.sendMessage("${playerDisplay(target)}님의 계좌가 ${moneyDisplay(value)}원으로 설정되었습니다.")
+
+                        target.sendMessage(playerDisplay(target)
+                            .append(Component.text("님의 계좌가 ", NamedTextColor.WHITE))
+                            .append(moneyDisplay(value)
+                            .append(Component.text("원으로 설정되었습니다.", NamedTextColor.WHITE))))
                         target.playSound(target, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
                         return true
 
                     } catch (e: Exception) {
-                        sender.sendMessage(ChatColor.RED.toString() + "해당 플레이어를 찾을 수 없습니다!")
+                        sender.sendMessage(Component.text("해당 플레이어를 찾을 수 없습니다!", NamedTextColor.RED))
                         return true
                     }
                 }
                 else {
-                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial set <플레이어> <금액>")
+                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial set <플레이어> <금액>", NamedTextColor.RED))
                 }
             }
 
@@ -282,7 +359,7 @@ class Financial: CommandExecutor {
             //  /fc add <player> <Long>
             if (args[0].equals("add", true)) {
                 if (!sender.isOp) {
-                    sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                    sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                     return true
                 }
                 if (args.size == 3) {
@@ -295,25 +372,37 @@ class Financial: CommandExecutor {
                         try {
                             value = args[2].toLong()
                         } catch (e: Exception) {
-                            sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "는 올바르지 않은 숫자입니다!")
+                            sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
+                                .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
                             return true
                         }
 
                         targetConfig["money"] = value + targetConfig.getLong("money")
                         FileManager.savePlayerData(target, targetConfig)
-                        sender.sendMessage("${playerDisplay(target)}님의 계좌에 ${moneyDisplay(value.absoluteValue)}원을 ${if (value > 0) "추가" else "차감"}했습니다.")
+                        sender.sendMessage(playerDisplay(target)
+                            .append(Component.text("님의 계좌에 ", NamedTextColor.WHITE))
+                            .append(moneyDisplay(value.absoluteValue))
+                            .append(Component.text("원을 ", NamedTextColor.WHITE))
+                            .append(Component.text(if (value > 0) "추가" else "차감", NamedTextColor.YELLOW))
+                            .append(Component.text("했습니다.", NamedTextColor.WHITE)))
                         sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
-                        target.sendMessage("${playerDisplay(target)}님의 계좌에 ${moneyDisplay(value.absoluteValue)}원이 ${if (value > 0) "추가" else "차감"}되었습니다.")
+
+                        target.sendMessage(playerDisplay(target)
+                            .append(Component.text("님의 계좌에 ", NamedTextColor.WHITE))
+                            .append(moneyDisplay(value.absoluteValue))
+                            .append(Component.text("원이 ", NamedTextColor.WHITE))
+                            .append(Component.text(if (value > 0) "추가" else "차감", NamedTextColor.YELLOW))
+                            .append(Component.text("되었습니다.", NamedTextColor.WHITE)))
                         target.playSound(target, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
                         return true
 
                     } catch (e: Exception) {
-                        sender.sendMessage(ChatColor.RED.toString() + "해당 플레이어를 찾을 수 없습니다!")
+                        sender.sendMessage(Component.text("해당 플레이어를 찾을 수 없습니다!", NamedTextColor.RED))
                         return true
                     }
                 }
                 else {
-                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial add <플레이어> <금액>")
+                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial add <플레이어> <금액>", NamedTextColor.RED))
                 }
             }
 
@@ -330,28 +419,33 @@ class Financial: CommandExecutor {
                         if (args.size == 4) {
                             val material = Functions.toMaterial(args[2])
                             if (material == Material.AIR) {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "은(는) 올바르지 않은 아이템입니다!")
+                                sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
+                                    .append(Component.text("은(는) 올바르지 않은 아이템입니다!", NamedTextColor.RED)))
                                 return true
                             }
                             val price: Long
                             try {
                                 price = args[3].toLong()
                             } catch (e: Exception) {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + args[3] + ChatColor.RED + "는 올바르지 않은 숫자입니다!")
+                                sender.sendMessage(Component.text(args[3], NamedTextColor.YELLOW)
+                                    .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
                                 return true
                             }
                             FileManager.getSellPriceConfig()[material.name.lowercase(Locale.getDefault())] = price
                             FileManager.saveSellPrice()
-                            sender.sendMessage("${material.name.lowercase(Locale.getDefault())}의 판매가격을 ${moneyDisplay(price)}원으로 설정했습니다.")
+                            sender.sendMessage(Component.text(material.name.lowercase(Locale.getDefault()), NamedTextColor.YELLOW)
+                                .append(Component.text("의 판매가격을 ", NamedTextColor.WHITE))
+                                .append(moneyDisplay(price))
+                                .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE)))
                             return true
                             }
                         else {
-                            sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial sell set <아이템> <금액>")
+                            sender.sendMessage(Component.text("잘못된 형식입니다. /financial sell set <아이템> <금액>", NamedTextColor.RED))
                             return true
                         }
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                         return true
                     }
                 }
@@ -360,26 +454,28 @@ class Financial: CommandExecutor {
                         if (args.size == 3) {
                             val material = Functions.toMaterial(args[2])
                             if (material == Material.AIR) {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "은(는) 올바르지 않은 아이템입니다!")
+                                sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
+                                    .append(Component.text("은(는) 올바르지 않은 아이템입니다!", NamedTextColor.RED)))
                                 return true
                             }
                             FileManager.getSellPriceConfig()[material.name.lowercase(Locale.getDefault())] = null
                             FileManager.saveSellPrice()
-                            sender.sendMessage("${material.name.lowercase(Locale.getDefault())}의 판매가격을 삭제했습니다.")
+                            sender.sendMessage(Component.text(material.name.lowercase(Locale.getDefault()), NamedTextColor.YELLOW)
+                                .append(Component.text("의 판매가격을 삭제했습니다.", NamedTextColor.WHITE)))
                             return true
                         }
                         else {
-                            sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial sell remove <아이템>")
+                            sender.sendMessage(Component.text("잘못된 형식입니다. /financial sell remove <아이템>", NamedTextColor.RED))
                             return true
                         }
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                         return true
                     }
                 }
                 else {
-                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial sell [set/remove]")
+                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial sell [set/remove]", NamedTextColor.RED))
                     return true
                 }
             }
@@ -396,28 +492,33 @@ class Financial: CommandExecutor {
                         if (args.size == 4) {
                             val material = Functions.toMaterial(args[2])
                             if (material == Material.AIR) {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "은(는) 올바르지 않은 아이템입니다!")
+                                sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
+                                    .append(Component.text("은(는) 올바르지 않은 아이템입니다!", NamedTextColor.RED)))
                                 return true
                             }
                             val ratio: Double
                             try {
                                 ratio = args[3].toDouble()
                             } catch (e: Exception) {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + args[3] + ChatColor.RED + "는 올바르지 않은 숫자입니다!")
+                                sender.sendMessage(Component.text(args[3], NamedTextColor.YELLOW)
+                                    .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
                                 return true
                             }
                             FileManager.getShopRatioConfig()[material.name.lowercase(Locale.getDefault())] = ratio
                             FileManager.saveShopRatio()
-                            sender.sendMessage("${material.name.lowercase(Locale.getDefault())}의 구매가격비율을 ${moneyDisplay(ratio)}배로 설정했습니다.")
+                            sender.sendMessage(Component.text(material.name.lowercase(Locale.getDefault()), NamedTextColor.YELLOW)
+                                .append(Component.text("의 구매가격비율을 ", NamedTextColor.WHITE))
+                                .append(moneyDisplay(ratio))
+                                .append(Component.text("배로 설정했습니다.", NamedTextColor.WHITE)))
                             return true
                         }
                         else {
-                            sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial shop set <아이템> <비율>")
+                            sender.sendMessage(Component.text("잘못된 형식입니다. /financial shop set <아이템> <비율>", NamedTextColor.RED))
                             return true
                         }
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                         return true
                     }
                 }
@@ -426,26 +527,28 @@ class Financial: CommandExecutor {
                         if (args.size == 3) {
                             val material = Functions.toMaterial(args[2])
                             if (material == Material.AIR) {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + args[2] + ChatColor.RED + "은(는) 올바르지 않은 아이템입니다!")
+                                sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
+                                    .append(Component.text("은(는) 올바르지 않은 아이템입니다!", NamedTextColor.RED)))
                                 return true
                             }
                             FileManager.getShopRatioConfig()[material.name.lowercase(Locale.getDefault())] = null
                             FileManager.saveShopRatio()
-                            sender.sendMessage("${material.name.lowercase(Locale.getDefault())}의 구매가격비율을 삭제했습니다.")
+                            sender.sendMessage(Component.text(material.name.lowercase(Locale.getDefault()), NamedTextColor.YELLOW)
+                                .append(Component.text("의 구매가격비율을 삭제했습니다.", NamedTextColor.WHITE)))
                             return true
                         }
                         else {
-                            sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial shop remove <아이템>")
+                            sender.sendMessage(Component.text("잘못된 형식입니다. /financial shop remove <아이템>", NamedTextColor.RED))
                             return true
                         }
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                         return true
                     }
                 }
                 else {
-                    sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial shop [set/remove]")
+                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial shop [set/remove]", NamedTextColor.RED))
                     return true
                 }
             }
@@ -463,7 +566,7 @@ class Financial: CommandExecutor {
                         return true
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial stock show")
+                        sender.sendMessage(Component.text("잘못된 형식입니다. /financial stock show", NamedTextColor.RED))
                         return true
                     }
                 }
@@ -471,38 +574,38 @@ class Financial: CommandExecutor {
                 var stockConfig = FileManager.getStockConfig()
                 if (args[1].equals("add", true)) {
                     if (!sender.isOp) {
-                        sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                         return true
                     }
                     if (args.size == 6) {
                         if (stockConfig.getKeys(false).size >= 54) {
-                            sender.sendMessage(ChatColor.RED.toString() + "주식은 최대 54개까지 생성 가능합니다.")
+                            sender.sendMessage(Component.text("주식은 최대 54개까지 생성 가능합니다.", NamedTextColor.RED))
                             return true
                         }
 
                         val name = args[2]
                         if (stockConfig.getKeys(false).contains(name)) {
-                            sender.sendMessage(ChatColor.RED.toString() + "이미 존재하는 주식입니다.")
+                            sender.sendMessage(Component.text("이미 존재하는 주식입니다.", NamedTextColor.RED))
                             return true
                         }
                         if (name == "all") {
-                            sender.sendMessage(ChatColor.RED.toString() + "시스템 예약어는 사용할 수 없습니다.")
+                            sender.sendMessage(Component.text("주식 이름으로 'all'은 사용할 수 없습니다.", NamedTextColor.RED))
                             return true
                         }
 
                         val code = args[3]
                         if (!Pattern.matches("[0-9A-Z]{4}", code)) {
-                            sender.sendMessage(ChatColor.RED.toString() + "코드는 대문자 알파벳과 숫자로만 이루어진 4글자로 입력해주세요.")
+                            sender.sendMessage(Component.text("코드는 대문자 알파벳과 숫자로만 이루어진 4글자로 입력해주세요.", NamedTextColor.RED))
                             return true
                         }
-                        if(stockConfig.getKeys(false).any { stockConfig.getString("$it.code") == code }) {
-                            sender.sendMessage(ChatColor.RED.toString() + "이미 존재하는 코드입니다.")
+                        if (stockConfig.getKeys(false).contains(code)) {
+                            sender.sendMessage(Component.text("이미 존재하는 코드입니다.", NamedTextColor.RED))
                             return true
                         }
 
                         val item = Functions.toMaterial(args[4])
                         if (item == Material.AIR) {
-                            sender.sendMessage(ChatColor.RED.toString() + "올바르지 않은 아이템입니다.")
+                            sender.sendMessage(Component.text("올바르지 않은 아이템입니다.", NamedTextColor.RED))
                             return true
                         }
 
@@ -513,31 +616,34 @@ class Financial: CommandExecutor {
                                 throw Exception()
                             }
                         } catch (e: Exception) {
-                            sender.sendMessage(ChatColor.RED.toString() + "올바르지 않은 가격입니다.")
+                            sender.sendMessage(Component.text(args[5], NamedTextColor.YELLOW)
+                                .append(Component.text("은(는) 올바르지 않은 가격입니다! 양수의 정수로 입력해주세요.", NamedTextColor.RED)))
                             return true
                         }
 
-                        stockConfig["$name.code"] = code
-                        stockConfig["$name.material"] = item.name
-                        stockConfig["$name.initialPrice"] = price
-                        stockConfig["$name.currentPrice"] = price
+                        stockConfig["$code.name"] = name
+                        stockConfig["$code.material"] = item.name
+                        stockConfig["$code.initialPrice"] = price
+                        stockConfig["$code.currentPrice"] = price
                         FileManager.saveStock()
 
                         val miscConfig = FileManager.getMiscConfig()
                         miscConfig["lastStockStand"] = Functions.getDateTime()
                         FileManager.saveMisc()
 
-                        sender.sendMessage("주식 ${ChatColor.AQUA}$name(${code})${ChatColor.WHITE}을(를) 추가했습니다.")
+                        sender.sendMessage(Component.text("주식 ", NamedTextColor.WHITE)
+                            .append(Component.text("${name}(${code})", NamedTextColor.AQUA))
+                            .append(Component.text("을(를) 추가했습니다.", NamedTextColor.WHITE)))
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial stock add <이름> <코드> <아이템> <가격>")
+                        sender.sendMessage(Component.text("잘못된 형식입니다. /financial stock add <이름> <코드> <아이템> <가격>", NamedTextColor.RED))
                         return true
                     }
                 }
 
                 if (args[1].equals("remove", true)) {
                     if (!sender.isOp) {
-                        sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                         return true
                     }
                     if (args.size == 3) {
@@ -558,7 +664,7 @@ class Financial: CommandExecutor {
                             miscConfig["lastStockStand"] = Functions.getDateTime()
                             FileManager.saveMisc()
 
-                            sender.sendMessage("모든 주식을 삭제했습니다.")
+                            sender.sendMessage(Component.text("모든 주식을 삭제했습니다.", NamedTextColor.WHITE))
                             return true
                         }
                         if (stockConfig.getKeys(false).contains(name)) {
@@ -574,23 +680,25 @@ class Financial: CommandExecutor {
                             miscConfig["lastStockStand"] = Functions.getDateTime()
                             FileManager.saveMisc()
 
-                            sender.sendMessage("주식 ${ChatColor.AQUA}$name${ChatColor.WHITE}을(를) 삭제했습니다.")
+                            sender.sendMessage(Component.text("주식 ", NamedTextColor.WHITE)
+                                .append(Component.text(name, NamedTextColor.AQUA))
+                                .append(Component.text("을(를) 삭제했습니다.", NamedTextColor.WHITE)))
                             return true
                         }
                         else {
-                            sender.sendMessage(ChatColor.RED.toString() + "존재하지 않는 주식입니다.")
+                            sender.sendMessage(Component.text("존재하지 않는 주식입니다.", NamedTextColor.RED))
                             return true
                         }
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial stock remove [<이름>/all]")
+                        sender.sendMessage(Component.text("잘못된 형식입니다. /financial stock remove [<이름>/all]", NamedTextColor.RED))
                         return true
                     }
                 }
 
                 if (args[1].equals("refix", true)) {
                     if (!sender.isOp) {
-                        sender.sendMessage(ChatColor.RED.toString() + "권한이 부족합니다!")
+                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
                         return true
                     }
 
@@ -607,7 +715,7 @@ class Financial: CommandExecutor {
                             miscConfig["lastStockStand"] = Functions.getDateTime()
                             FileManager.saveMisc()
 
-                            sender.sendMessage("모든 주식의 현재 가격을 초기 가격으로 설정했습니다.")
+                            sender.sendMessage(Component.text("모든 주식의 현재 가격을 초기 가격으로 설정했습니다.", NamedTextColor.WHITE))
                             return true
                         }
                         if (stockConfig.getKeys(false).contains(name)) {
@@ -618,16 +726,18 @@ class Financial: CommandExecutor {
                             miscConfig["lastStockStand"] = Functions.getDateTime()
                             FileManager.saveMisc()
 
-                            sender.sendMessage("주식 ${ChatColor.AQUA}${name}${ChatColor.WHITE}의 현재 가격을 초기 가격으로 설정했습니다.")
+                            sender.sendMessage(Component.text("주식 ", NamedTextColor.WHITE)
+                                .append(Component.text(name, NamedTextColor.AQUA))
+                                .append(Component.text("의 현재 가격을 초기 가격으로 설정했습니다.", NamedTextColor.WHITE)))
                             return true
                         }
                         else {
-                            sender.sendMessage(ChatColor.RED.toString() + "존재하지 않는 주식입니다.")
+                            sender.sendMessage(Component.text("존재하지 않는 주식입니다.", NamedTextColor.RED))
                             return true
                         }
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial stock refix [<이름>/all]")
+                        sender.sendMessage(Component.text("잘못된 형식입니다. /financial stock refix [<이름>/all]", NamedTextColor.RED))
                         return true
                     }
                 }
@@ -642,12 +752,12 @@ class Financial: CommandExecutor {
                 }
                 else if (args[1].equals("add", true)) {
                     if (args.size != 4) {
-                        sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial market add <코드> <가격>")
+                        sender.sendMessage(Component.text("잘못된 형식입니다. /financial market add <코드> <가격>", NamedTextColor.RED))
                         return true
                     }
                     val code = args[2]
                     if (!Pattern.matches("[0-9A-Z]{4}", code)) {
-                        sender.sendMessage(ChatColor.RED.toString() + "코드는 대문자 알파벳과 숫자로만 이루어진 4글자로 입력해주세요.")
+                        sender.sendMessage(Component.text("코드는 대문자 알파벳과 숫자로만 이루어진 4글자로 입력해주세요.", NamedTextColor.RED))
                         return true
                     }
                     val price: Int
@@ -657,43 +767,46 @@ class Financial: CommandExecutor {
                             throw Exception()
                         }
                     } catch (e: Exception) {
-                        sender.sendMessage(ChatColor.RED.toString() + "올바르지 않은 가격입니다.")
+                        sender.sendMessage(Component.text(args[3], NamedTextColor.YELLOW)
+                            .append(Component.text("은(는) 올바르지 않은 가격입니다!", NamedTextColor.RED)))
                         return true
                     }
 
                     if (sender.inventory.itemInMainHand.type == Material.AIR) {
-                        sender.sendMessage(ChatColor.RED.toString() + "손에 아이템을 들고 있어야 합니다.")
+                        sender.sendMessage(Component.text("손에 아이템을 들고 있어야 합니다.", NamedTextColor.RED))
                         return true
                     }
 
                     val marketConfig = FileManager.getMarketConfig()
 
                     if (marketConfig.getKeys(false).size >= 54) {
-                        sender.sendMessage(ChatColor.RED.toString() + "장터에 아이템이 가득 찼습니다. (54개 이상은 업데이트 예정)")
+                        sender.sendMessage(Component.text("장터에 아이템이 가득 찼습니다. (54개 이상은 업데이트 예정)", NamedTextColor.RED))
                         return true
                     }
 
                     if (marketConfig.getKeys(false).contains(code)) {
-                        sender.sendMessage(ChatColor.RED.toString() + "이미 존재하는 코드입니다.")
+                        sender.sendMessage(Component.text("이미 존재하는 코드입니다.", NamedTextColor.RED))
                         return true
                     }
 
                     val item = sender.inventory.itemInMainHand
-                    var name = item.itemMeta?.displayName
-                    if (name == null || name == "") {
+                    var name = PlainTextComponentSerializer.plainText().serialize(item.displayName())
+                    name = name.substring(1, name.length - 1)
+                    if (name == "") {
                         name = item.type.name
                     }
 
                     marketConfig["$code.item"] = item
                     marketConfig["$code.price"] = price
                     marketConfig["$code.seller"] = sender.name
+                    sender.sendMessage(Component.text(name, NamedTextColor.GREEN)
+                        .append(Component.text("을(를) 장터에 추가했습니다.", NamedTextColor.WHITE)))
                     sender.inventory.setItemInMainHand(ItemStack(Material.AIR))
-                    sender.sendMessage("${ChatColor.GREEN}${name}을(를) 장터에 추가했습니다.")
                     FileManager.saveMarket()
                 }
                 else if (args[1].equals("remove", true)) {
                     if (args.size != 3) {
-                        sender.sendMessage(ChatColor.RED.toString() + "잘못된 형식입니다. /financial market remove <코드>")
+                        sender.sendMessage(Component.text("잘못된 형식입니다. /financial market remove <코드>", NamedTextColor.RED))
                         return true
                     }
                     val code = args[2]
@@ -701,18 +814,19 @@ class Financial: CommandExecutor {
                     if (marketConfig.getKeys(false).contains(code)) {
                         if (marketConfig.getString("$code.seller") != sender.name) {
                             if (sender.isOp) {
-                                sender.sendMessage(ChatColor.YELLOW.toString() + "관리자 권한으로 삭제합니다.")
+                                sender.sendMessage(Component.text("다른 사람의 아이템을 관리자 권한으로 삭제합니다.", NamedTextColor.YELLOW))
                             }
                             else {
-                                sender.sendMessage(ChatColor.RED.toString() + "다른 사람이 등록한 아이템은 삭제할 수 없습니다.")
+                                sender.sendMessage(Component.text("다른 사람이 등록한 아이템은 삭제할 수 없습니다.", NamedTextColor.RED))
                                 return true
                             }
                         }
                         val item = marketConfig.getItemStack("$code.item")!!
-                        var name = ""
+                        var name: String
                         try {
-                            var name = item.itemMeta?.displayName
-                            if (name == null || name == "") {
+                            name = PlainTextComponentSerializer.plainText().serialize(item.displayName())
+                            name = name.substring(1, name.length - 1)
+                            if (name == "") {
                                 name = item.type.name
                             }
                         }
@@ -723,11 +837,12 @@ class Financial: CommandExecutor {
                             sender.inventory.addItem(item)
                         }
                         marketConfig.set(code, null)
-                        sender.sendMessage("${ChatColor.GREEN}${name}을(를) 장터에서 삭제했습니다.")
+                        sender.sendMessage(Component.text(name, NamedTextColor.GREEN)
+                            .append(Component.text("을(를) 장터에서 삭제했습니다.", NamedTextColor.WHITE)))
                         FileManager.saveMarket()
                     }
                     else {
-                        sender.sendMessage(ChatColor.RED.toString() + "존재하지 않는 코드입니다.")
+                        sender.sendMessage(Component.text("존재하지 않는 코드입니다.", NamedTextColor.RED))
                     }
                 }
             }

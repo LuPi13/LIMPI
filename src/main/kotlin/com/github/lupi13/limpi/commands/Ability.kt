@@ -3,6 +3,7 @@ package com.github.lupi13.limpi.commands
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.abilities.Grade
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
@@ -121,9 +122,106 @@ class Ability: CommandExecutor {
                     meta.addPages(page)
                 }
 
-                page = Component.text("뽑기 확률\n", NamedTextColor.GREEN)
+                page = Component.text("뽑기 확률\n", NamedTextColor.DARK_AQUA)
                 page = page.append(Grade.LEGENDARY.displayGrade
-                    .append(Component.text("등급은 ")))
+                    .append(Component.text("등급의 기본 등장 확률은 ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("LEGENDARYProbability.Base") * 100}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("입니다.\n단, 마지막으로 ", NamedTextColor.BLACK))
+                    .append(Grade.LEGENDARY.displayGrade)
+                    .append(Component.text("등급을 뽑은 후 ", NamedTextColor.BLACK))
+                    .append(Component.text(plugin.config.getInt("LEGENDARYProbability.IncreaseCount"), NamedTextColor.DARK_GREEN))
+                    .append(Component.text("번부터, 확률이 ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("LEGENDARYProbability.Increment") * 100}%p", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("씩 증가합니다.\n 즉, ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getInt("LEGENDARYProbability.IncreaseCount")}", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("번 째는 ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("LEGENDARYProbability.Base") * 100 + plugin.config.getDouble("LEGENDARYProbability.Increment") * 100}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text(", ${plugin.config.getInt("LEGENDARYProbability.IncreaseCount") + 1}번 째는 , NamedTextColor.BLACK"))
+                    .append(Component.text("${plugin.config.getDouble("LEGENDARYProbability.Base") * 100 + plugin.config.getDouble("LEGENDARYProbability.Increment") * 200}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("의 확률로 등장합니다.\n평균적으로 ", NamedTextColor.BLACK))
+                    .append(Component.text("${getExpected(Grade.LEGENDARY).toInt()}", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("번에 한 번씩 등장합니다.\n\n", NamedTextColor.BLACK))
+                    .append(Grade.LEGENDARY.displayGrade)
+                    .append(Component.text(" 등급이 등장할 때, ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("LEGENDARYProbability.PickUp") * 100}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("의 확률로, 현재 픽업 능력이 등장합니다. 만약 연속해서 ", NamedTextColor.BLACK))
+                    .append(Component.text(plugin.config.getInt("LEGENDARYProbability.SemiCeiling"), NamedTextColor.DARK_GREEN))
+                    .append(Component.text("번 "))
+                    .append(Grade.LEGENDARY.displayGrade)
+                    .append(Component.text("등급을 뽑지 못하면, 다음 ", NamedTextColor.BLACK))
+                    .append(Grade.LEGENDARY.displayGrade)
+                    .append(Component.text("등급은 픽업 능력이 확정적으로 등장합니다.", NamedTextColor.DARK_GREEN)))
+                meta.addPages(page)
+
+
+                page = Component.text("", NamedTextColor.BLACK)
+                    .append(Grade.LEGENDARY.displayGrade)
+                    .append(Component.text("등급의 능력이 등장하지 않았을 때, ", NamedTextColor.BLACK))
+                    .append(Grade.EPIC.displayGrade)
+                    .append(Component.text("등급의 기본 등장 확률은 ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("EPICProbability.Base") * 100}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("입니다.\n단, 마지막으로 ", NamedTextColor.BLACK))
+                    .append(Grade.EPIC.displayGrade)
+                    .append(Component.text("등급을 뽑은 후 ", NamedTextColor.BLACK))
+                    .append(Component.text(plugin.config.getInt("EPICProbability.IncreaseCount"), NamedTextColor.DARK_GREEN))
+                    .append(Component.text("번부터, 확률이 ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("EPICProbability.Increment") * 100}%p", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("씩 증가합니다.\n 즉, ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getInt("EPICProbability.IncreaseCount")}", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("번 째는 ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("EPICProbability.Base") * 100 + plugin.config.getDouble("LEGENDARYProbability.Increment") * 100}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text(", ${plugin.config.getInt("EPICProbability.IncreaseCount") + 1}번 째는 , NamedTextColor.BLACK"))
+                    .append(Component.text("${plugin.config.getDouble("EPICProbability.Base") * 100 + plugin.config.getDouble("LEGENDARYProbability.Increment") * 200}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("의 확률로 등장합니다.\n평균적으로 ", NamedTextColor.BLACK))
+                    .append(Component.text("${getExpected(Grade.EPIC).toInt()}", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("번에 한 번씩 등장합니다.\n\n", NamedTextColor.BLACK))
+                    .append(Grade.EPIC.displayGrade)
+                    .append(Component.text(" 등급이 등장할 때, ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("EPICProbability.PickUp") * 100}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("의 확률로, 현재 픽업 능력이 등장합니다. 만약 연속해서 ", NamedTextColor.BLACK))
+                    .append(Component.text(plugin.config.getInt("EPICProbability.SemiCeiling"), NamedTextColor.DARK_GREEN))
+                    .append(Component.text("번 "))
+                    .append(Grade.EPIC.displayGrade)
+                    .append(Component.text("등급을 뽑지 못하면, 다음 ", NamedTextColor.BLACK))
+                    .append(Grade.EPIC.displayGrade)
+                    .append(Component.text("등급은 픽업 능력이 확정적으로 등장합니다.", NamedTextColor.DARK_GREEN))
+                meta.addPages(page)
+
+                page = Component.text("", NamedTextColor.BLACK)
+                    .append(Grade.LEGENDARY.displayGrade)
+                    .append(Component.text(", ", NamedTextColor.BLACK))
+                    .append(Grade.EPIC.displayGrade)
+                    .append(Component.text("등급의 능력이 등장하지 않았을 때, ", NamedTextColor.BLACK))
+                    .append(Grade.TROLL.displayGrade)
+                    .append(Component.text("등급의 기본 등장 확률은 ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("TROLLProbability") * 100}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("입니다."))
+
+                if (plugin.config.getBoolean("ForceTroll")) {
+                    page = page.append(Grade.TROLL.displayGrade)
+                        .append(Component.text(" 등급이 등장하면, 해당 능력이 ", NamedTextColor.BLACK))
+                        .append(Component.text("강제 적용", NamedTextColor.RED))
+                        .append(Component.text("됩니다.", NamedTextColor.BLACK))
+                }
+
+                meta.addPages(page)
+
+                page = Component.text("", NamedTextColor.BLACK)
+                    .append(Grade.LEGENDARY.displayGrade)
+                    .append(Component.text(", ", NamedTextColor.BLACK))
+                    .append(Grade.EPIC.displayGrade)
+                    .append(Component.text(", ", NamedTextColor.BLACK))
+                    .append(Grade.TROLL.displayGrade)
+                    .append(Component.text("등급의 능력이 등장하지 않았을 때, ", NamedTextColor.BLACK))
+                    .append(Grade.RARE.displayGrade)
+                    .append(Component.text(" 등급이 ", NamedTextColor.BLACK))
+                    .append(Component.text("${plugin.config.getDouble("RAREProbability") * 100}%", NamedTextColor.DARK_GREEN))
+                    .append(Component.text("의 확률로 등장합니다.\n", NamedTextColor.BLACK))
+                    .append(Grade.RARE.displayGrade)
+                    .append(Component.text(" 등급까지 등장하지 않는다면, ", NamedTextColor.BLACK))
+                    .append(Grade.COMMON.displayGrade)
+                    .append(Component.text(" 등급의 능력이 등장합니다.", NamedTextColor.BLACK))
+
                 meta.addPages(page)
 
                 book.itemMeta = meta

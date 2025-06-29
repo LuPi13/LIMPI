@@ -2,6 +2,7 @@ package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.FileManager
 import org.bukkit.OfflinePlayer
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 
 object AbilityManager {
@@ -36,5 +37,27 @@ object AbilityManager {
     fun getPlayerAbilityCodeName(player: Player): String? {
         val config = FileManager.getPlayerData(player)
         return config.getString("ability")
+    }
+
+    /**
+     * 플레이어의 능력을 codeName으로 저장합니다.
+     * @param player 능력을 저장할 플레이어
+     * @param codeName 저장할 능력의 codeName(String)
+     */
+    fun setPlayerAbility(player: Player, codeName: String) {
+        val config = FileManager.getPlayerData(player)
+        config.set("ability", codeName)
+        FileManager.savePlayerData(player, config)
+    }
+
+    /**
+     * 플레이어의 attributes를 초기화합니다.
+     */
+    fun resetPlayerAttributes(player: Player) {
+        for (attribute in Attribute.entries) {
+            player.getAttribute(attribute)?.let {
+                it.baseValue = it.defaultValue
+            }
+        }
     }
 }

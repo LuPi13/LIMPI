@@ -1,7 +1,8 @@
 package com.github.lupi13.limpi
 
 import com.github.lupi13.limpi.abilities.AbilityManager
-import com.github.lupi13.limpi.abilities.SafetyFirst
+import com.github.lupi13.limpi.commands.Ability
+import com.github.lupi13.limpi.commands.AbilityTab
 import com.github.lupi13.limpi.commands.Financial
 import com.github.lupi13.limpi.commands.FinancialTab
 import com.github.lupi13.limpi.events.*
@@ -41,6 +42,10 @@ class LIMPI : JavaPlugin() {
         if (config.getBoolean("EnableFinancialSystem")) {
             getCommand("financial")!!.setExecutor(Financial())
             getCommand("financial")!!.tabCompleter = FinancialTab()
+        }
+        if (config.getBoolean("EnableAbilitySystem")) {
+            getCommand("ability")!!.setExecutor(Ability())
+            getCommand("ability")!!.tabCompleter = AbilityTab()
         }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 

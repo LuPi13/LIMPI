@@ -25,10 +25,6 @@ object SafetyFirst : Ability(
     restrictedSlot = null,
     attribute = Attribute.NONE
 ) {
-    val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
-    override fun registerEvents() {
-        Bukkit.getServer().pluginManager.registerEvents(this, plugin)
-    }
 
     @EventHandler
     fun onPlayerInteract(event: PlayerInteractEvent) {

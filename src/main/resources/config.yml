@@ -20,12 +20,19 @@ LEGENDARYProbability:  # LEGENDARY 등급 등장 확률
   Base: 0.005  # 기본 뽑기 확률
   Increment: 0.05  # 뽑기 확률 증가량
   IncreaseCount: 81  # 위의 증가량이 적용되기 시작하는 횟수
+  PickUp: 0.5  # LEGENDARY 픽업 능력 확률
+  SemiCeiling: 1  # 이 값만큼의 픽업이 아닌 능력을 뽑으면, 다음 LEGENDARY 능력은 픽업 능력으로 고정됨
 
 EPICProbability:  # EPIC 등급 등장 확률
   Base: 0.03  # 기본 뽑기 확률
   Increment: 0.3  # 뽑기 확률 증가량
   IncreaseCount: 7  # 위의 증가량이 적용되기 시작하는 횟수
+  PickUp: 0.5  # EPIC 픽업 능력 확률
+  SemiCeiling: 1  # 이 값만큼의 픽업이 아닌 능력을 뽑으면, 다음 EPIC 능력은 픽업 능력으로 고정됨
 
-TROLLProbability: 0.01  # TROLL 등급 등장 확률
+TROLLProbability: 0.01  # LEGENDARY, EPIC이 등장하지 않았을 때, TROLL 등급 등장 확률
 ForceTroll: true  # TROLL 능력이 뽑기에서 등장 시 강제 적용 여부
+
+RAREProbability: 0.3  # LEGENDARY, EPIC, TROLL이 등장하지 않았을 때, RARE 등급 등장 확률
+
 

@@ -1,11 +1,15 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.LIMPI
 import com.google.common.collect.Lists
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.event.Listener
 import org.bukkit.inventory.ItemStack
+import org.bukkit.plugin.Plugin
+import org.bukkit.plugin.java.JavaPlugin
 
 abstract class Ability(
     val grade: Grade,
@@ -16,11 +20,14 @@ abstract class Ability(
     val restrictedSlot: Int?,
     val attribute: Attribute
 ) : Listener {
-    abstract fun registerEvents()
+    protected open val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
+    open fun registerEvents() {
+        Bukkit.getServer().pluginManager.registerEvents(this, plugin)
+    }
     open fun startTask() {
     }
     fun getItem(): ItemStack {
-        val item: ItemStack = ItemStack(material, 1)
+        val item = ItemStack(material, 1)
         val meta = item.itemMeta
         meta.itemName(displayName
             .append(Component.text(" ")).append(attribute.displayAttribute)
@@ -33,7 +40,7 @@ abstract class Ability(
 }
 
 enum class Grade(val displayGrade: Component) {
-    TROLL(Component.text("(TROLL)", NamedTextColor.DARK_PURPLE)),
+    TROLL(Component.text("(TROLL)", NamedTextColor.DARK_GRAY)),
     COMMON(Component.text("(COMMON)", NamedTextColor.WHITE)),
     RARE(Component.text("(RARE)", NamedTextColor.DARK_AQUA)),
     EPIC(Component.text("(EPIC)", NamedTextColor.DARK_PURPLE)),

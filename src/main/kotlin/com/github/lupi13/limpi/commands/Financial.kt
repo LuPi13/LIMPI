@@ -2,6 +2,8 @@ package com.github.lupi13.limpi.commands
 
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
+import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
+import com.github.lupi13.limpi.Functions.Companion.playerDisplay
 import com.github.lupi13.limpi.events.*
 import com.github.lupi13.limpi.items.Check
 import net.kyori.adventure.text.Component
@@ -24,39 +26,7 @@ import kotlin.math.absoluteValue
 class Financial: CommandExecutor {
 
     companion object {
-        /**
-         * 이름 표시 앞에 연두색, 뒤에 흰색 넣어줌
-         */
-        fun playerDisplay(player: Player): Component {
-            return Component.text(player.name, NamedTextColor.GREEN, TextDecoration.BOLD)
-                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
-        }
-        fun playerDisplay(player: String): Component {
-            return Component.text(player, NamedTextColor.GREEN, TextDecoration.BOLD)
-                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
-        }
-
-        /**
-         * 돈 표시 앞에 금색, 뒤에 흰색 넣어줌
-         */
-        fun moneyDisplay(value: Long): Component {
-            return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
-                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
-        }
-        fun moneyDisplay(value: Double): Component {
-            return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
-                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
-        }
-        fun moneyDisplay(value: Int): Component {
-            return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
-                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
-        }
-        fun moneyDisplay(value: String): Component {
-            return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
-                .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
-        }
     }
-
     override fun onCommand(
         sender: CommandSender,
         command: Command,
@@ -283,7 +253,9 @@ class Financial: CommandExecutor {
                             .append(Component.text("님에게 ", NamedTextColor.WHITE))
                             .append(moneyDisplay(value))
                             .append(Component.text("원을 송금했습니다.", NamedTextColor.WHITE)))
-                        sender.sendMessage(Component.text("수수료 5%(${moneyDisplay((value * 0.05).toLong())}원)가 추가로 차감되었습니다.", NamedTextColor.WHITE))
+                        sender.sendMessage(Component.text("수수료 5%(", NamedTextColor.WHITE)
+                            .append(moneyDisplay((value * 0.05).toLong()))
+                            .append(Component.text("원)가 추가로 차감되었습니다.", NamedTextColor.WHITE)))
                         sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
                         target.sendMessage(playerDisplay(sender)
                             .append(Component.text("님이 ", NamedTextColor.WHITE))
@@ -711,9 +683,7 @@ class Financial: CommandExecutor {
                             }
                             FileManager.saveStock()
 
-                            val miscConfig = FileManager.getMiscConfig()
-                            miscConfig["lastStockStand"] = Functions.getDateTime()
-                            FileManager.saveMisc()
+                            stockConfig["lastStockStand"] = Functions.getDateTime()
 
                             sender.sendMessage(Component.text("모든 주식의 현재 가격을 초기 가격으로 설정했습니다.", NamedTextColor.WHITE))
                             return true

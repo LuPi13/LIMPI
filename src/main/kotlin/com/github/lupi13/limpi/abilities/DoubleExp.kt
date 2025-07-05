@@ -9,13 +9,12 @@ import org.bukkit.event.player.PlayerExpChangeEvent
 
 object DoubleExp : Ability(
     grade = Grade.EPIC,
-    displayName = Component.text("경험치 보너스"),
+    element = Element.NONE,
+    displayName = Component.text("경험치 보너스", NamedTextColor.YELLOW),
     codeName = "double_exp",
     material = Material.EXPERIENCE_BOTTLE,
     description = listOf(
-        Component.text("경험치 획득량이 2배로 증가합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)),
-    restrictedSlot = null,
-    attribute = Attribute.EXPLOSIVE
+        Component.text("경험치 획득량이 2배로 증가합니다.", NamedTextColor.WHITE))
 ) {
     @EventHandler
     fun onPlayerGainExp(event: PlayerExpChangeEvent) {

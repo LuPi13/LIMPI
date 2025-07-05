@@ -6,10 +6,12 @@ authors: [LuPi13]
 description: "LIMPI: LuPi13's Integrated Minecraft Plug-In"
 website: https://github.com/LuPi13/LIMPI
 commands:
-  test:
-    description: tester command
-    usage: /test ...
   financial:
     description: command about money, check, stock, etc.
     usage: 잘못된 사용법이거나, config.yml에서 financial 시스템이 비활성화 되어 있습니다.
     aliases: [fi, fc]
+
+  ability:
+    description: command about ability, gacha, etc.
+    usage: 잘못된 사용법이거나, config.yml에서 ability 시스템이 비활성화 되어 있습니다.
+    aliases: [ab]

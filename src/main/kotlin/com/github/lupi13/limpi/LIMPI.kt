@@ -14,13 +14,21 @@ class LIMPI : JavaPlugin() {
     override fun onEnable() {
         // Plugin startup logic
         System.setOut(PrintStream(System.out, true, "UTF-8"))
+
+        // File Setting
         var time = System.currentTimeMillis()
         logger.info("File setting...")
-        FileManager.setup()
         config.options().copyDefaults()
         saveDefaultConfig()
+        if (config.getBoolean("EnableFinancialSystem")) {
+            FileManager.setup()
+        }
+        if (config.getBoolean("EnableAbilitySystem")) {
+            AbilityManager().setupAbilityFiles()
+        }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
+        // Event Registering
         time = System.currentTimeMillis()
         logger.info("Events Registering...")
         server.pluginManager.registerEvents(JoinAndQuit(), this)
@@ -33,10 +41,17 @@ class LIMPI : JavaPlugin() {
             StockEvents.stockFlow()
         }
         if (config.getBoolean("EnableAbilitySystem")) {
-            AbilityManager.registerAbilities()
+            AbilityManager().registerAbilities()
+            server.pluginManager.registerEvents(AbilityManager(), this)
+            server.pluginManager.registerEvents(GachaEvents(), this)
+            server.pluginManager.registerEvents(AbilityShop(), this)
+            server.pluginManager.registerEvents(AbilityEnemySelect(), this)
+            server.pluginManager.registerEvents(AbilitySelectEvent(), this)
+            server.pluginManager.registerEvents(AbilityDictionary(), this)
         }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
+        // Command Setting
         time = System.currentTimeMillis()
         logger.info("Command setting...")
         if (config.getBoolean("EnableFinancialSystem")) {
@@ -58,7 +73,7 @@ class LIMPI : JavaPlugin() {
         println("$blue|   |___   |   |   |       |  |    ___|  |   |$white .       .     .-.. . --.")
         println("$blue|       |  |   |   | ||_|| |  |   |      |   |$white |-.. .  |  . .|-'.'| --|")
         println("$blue|_______|  |___|   |_|   |_|  |___|      |___|$white `-''-|  '-''-''  ''-'--'")
-        println("                                                  `-'      ver 0.0.5")
+        println("                                                  `-'      ver ${this.pluginMeta.version}")
     }
 
     override fun onDisable() {

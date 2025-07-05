@@ -2,6 +2,8 @@ package com.github.lupi13.limpi.events
 
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
+import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
+import com.github.lupi13.limpi.Functions.Companion.playerDisplay
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.commands.Financial
 import net.kyori.adventure.text.Component
@@ -36,9 +38,9 @@ class MarketEvents : Listener {
                 val meta = item.itemMeta
                 val lore = meta?.lore()?.toMutableList() ?: mutableListOf()
                 lore.add(Component.text("가격: ", NamedTextColor.WHITE)
-                    .append(Financial.moneyDisplay(price))
+                    .append(moneyDisplay(price))
                     .append(Component.text("원, 판매자: ", NamedTextColor.WHITE))
-                    .append(Financial.playerDisplay(sellerName).decoration(TextDecoration.ITALIC, false)))
+                    .append(playerDisplay(sellerName).decoration(TextDecoration.ITALIC, false)))
                 lore.add(Component.text("좌클릭하여 구매, 우클릭하여 흥정을 요청합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                 meta?.lore(lore)
                 item.itemMeta = meta
@@ -120,12 +122,12 @@ class MarketEvents : Listener {
 
                                 val onlineSeller = FileManager.findPlayerByName(sellerName)
                                 onlineSeller?.playSound(player, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
-                                onlineSeller?.sendMessage(Financial.playerDisplay(player)
+                                onlineSeller?.sendMessage(playerDisplay(player)
                                     .append(Component.text("님이 ", NamedTextColor.WHITE))
                                     .append(Component.text("${itemName}(${code})", NamedTextColor.AQUA))
                                     .append(Component.text("을(를) 구매했습니다.", NamedTextColor.WHITE)))
                                 onlineSeller?.sendMessage(Component.text("판매 수수료 5%(", NamedTextColor.WHITE)
-                                    .append(Financial.moneyDisplay((price * 0.05).toInt()))
+                                    .append(moneyDisplay((price * 0.05).toInt()))
                                     .append(Component.text("원)를 제외하고 계좌에 입금되었습니다.", NamedTextColor.WHITE)))
                                 event.isCancelled = true
                                 reopenMarketGUI()
@@ -145,9 +147,9 @@ class MarketEvents : Listener {
                     }
                     else {
                         player.sendMessage(Component.text("돈이 부족합니다! ", NamedTextColor.RED)
-                            .append(Financial.playerDisplay(player))
+                            .append(playerDisplay(player))
                             .append(Component.text("님은 현재 계좌에 ", NamedTextColor.RED))
-                            .append(Financial.moneyDisplay(money))
+                            .append(moneyDisplay(money))
                             .append(Component.text("원 있습니다.", NamedTextColor.RED)))
                         player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
                     }
@@ -155,11 +157,11 @@ class MarketEvents : Listener {
                 else if (event.click.isRightClick) {
                     val onlineSeller = FileManager.findPlayerByName(sellerName)
                     onlineSeller?.sendMessage(Component.text(getRandomPrefix(), NamedTextColor.WHITE)
-                        .append(Financial.playerDisplay(player))
+                        .append(playerDisplay(player))
                         .append(Component.text("님이 ", NamedTextColor.WHITE))
                         .append(Component.text("${itemName}(${code})", NamedTextColor.AQUA))
                         .append(Component.text("을(를) 깎아달라고 조릅니다.", NamedTextColor.WHITE)))
-                    player.sendMessage(Financial.playerDisplay(sellerName)
+                    player.sendMessage(playerDisplay(sellerName)
                         .append(Component.text("님에게 ", NamedTextColor.WHITE))
                         .append(Component.text("${itemName}(${code})", NamedTextColor.AQUA))
                         .append(Component.text("을(를) 깎아달라고 졸랐습니다.", NamedTextColor.WHITE)))

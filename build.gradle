@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.github.lupi13'
-version = '0.0.5'
+version = '0.0.6'
 
 repositories {
     mavenCentral()
@@ -24,6 +24,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
+    implementation "fr.skytasul:guardianbeam:2.4.3"
 }
 
 def targetJavaVersion = 21

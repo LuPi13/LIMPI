@@ -2,6 +2,8 @@ package com.github.lupi13.limpi.items
 
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
+import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
+import com.github.lupi13.limpi.Functions.Companion.playerDisplay
 import com.github.lupi13.limpi.commands.Financial
 import com.google.common.collect.Lists
 import net.kyori.adventure.text.Component
@@ -96,9 +98,9 @@ class Check: Listener {
             config["money"] = config.getLong("money") + value.toLong()
             FileManager.savePlayerData(player, config)
             item.amount -= 1
-            player.sendMessage(Financial.playerDisplay(player)
+            player.sendMessage(playerDisplay(player)
                 .append(Component.text("님의 계좌에 ", NamedTextColor.WHITE))
-                .append(Financial.moneyDisplay(value))
+                .append(moneyDisplay(value))
                 .append(Component.text("원을 추가했습니다.", NamedTextColor.WHITE)))
             player.playSound(player, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
         }

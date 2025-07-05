@@ -27,8 +27,8 @@ class FileManager {
          * 플러그인 실행 시 작동, 플러그인 데이터 폴더 생성
          */
         fun setup() {
-            if (!plugin.dataFolder.exists()) {
-                plugin.dataFolder.mkdirs()
+            if (!File(plugin.dataFolder.toString() + File.separator + "financial").exists()) {
+                File(plugin.dataFolder.toString() + File.separator + "financial").mkdirs()
             }
             setupMisc()
             setupSellPrice()
@@ -41,7 +41,7 @@ class FileManager {
          * misc.yml 생성, miscConfiguration 지정
          */
         private fun setupMisc() {
-            miscFile = File(Bukkit.getServer().pluginManager.getPlugin("LIMPI")!!.dataFolder, "misc.yml")
+            miscFile = File(plugin.dataFolder.toString() + File.separator + "financial", "misc.yml")
             if (!miscFile.exists()) {
                 try {
                     miscFile.createNewFile()
@@ -71,7 +71,7 @@ class FileManager {
          * sellPrice.yml 생성, sellPriceConfiguration 지정
          */
         private fun setupSellPrice() {
-            sellPriceFile = File(Bukkit.getServer().pluginManager.getPlugin("LIMPI")!!.dataFolder, "sellPrice.yml")
+            sellPriceFile = File(plugin.dataFolder.toString() + File.separator + "financial", "sellPrice.yml")
             if (!sellPriceFile.exists()) {
                 try {
                     sellPriceFile.createNewFile()
@@ -101,7 +101,7 @@ class FileManager {
          * shopRatio.yml 생성, shopRatioConfiguration 지정
          */
         private fun setupShopRatio() {
-            shopRatioFile = File(Bukkit.getServer().pluginManager.getPlugin("LIMPI")!!.dataFolder, "shopRatio.yml")
+            shopRatioFile = File(plugin.dataFolder.toString() + File.separator + "financial", "shopRatio.yml")
             if (!shopRatioFile.exists()) {
                 try {
                     shopRatioFile.createNewFile()
@@ -131,7 +131,7 @@ class FileManager {
          * stock.yml 생성, stockConfiguration 지정
          */
         private fun setupStock() {
-            stockFile = File(Bukkit.getServer().pluginManager.getPlugin("LIMPI")!!.dataFolder, "stock.yml")
+            stockFile = File(plugin.dataFolder.toString() + File.separator + "financial", "stock.yml")
             if (!stockFile.exists()) {
                 try {
                     stockFile.createNewFile()
@@ -162,7 +162,7 @@ class FileManager {
          * market.yml 생성, marketConfiguration 지정
          */
         private fun setupMarket() {
-            marketFile = File(Bukkit.getServer().pluginManager.getPlugin("LIMPI")!!.dataFolder, "market.yml")
+            marketFile = File(plugin.dataFolder.toString() + File.separator + "financial", "market.yml")
             if (!marketFile.exists()) {
                 try {
                     marketFile.createNewFile()
@@ -194,6 +194,15 @@ class FileManager {
             val config = YamlConfiguration.loadConfiguration(file)
             config["name"] = player.name
             config["money"] = plugin.config.getLong("InitialMoney")
+            config["LEGENDARY.Count"] = 0
+            config["LEGENDARY.Ceiling"] = 0
+            config["EPIC.Count"] = 0
+            config["EPIC.Ceiling"] = 0
+            config["AbilityEnemy.TAMED"] = 0
+            config["AbilityEnemy.NON_AGGRESSIVE"] = 2
+            config["AbilityEnemy.NEUTRAL"] = 1
+            config["AbilityEnemy.AGGRESSIVE"] = 2
+            config["AbilityEnemy.PLAYER"] = 1
             savePlayerData(player, config)
         }
 
@@ -214,7 +223,16 @@ class FileManager {
         }
 
 
-        fun savePlayerData(player: Player, config: FileConfiguration) {
+//        fun savePlayerData(player: Player, config: FileConfiguration) {
+//            try {
+//                val uuid = player.uniqueId
+//                val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
+//                config.save(file)
+//            } catch (e: Exception) {
+//                println("\u001B[31m" + e.message + "\u001B[0m")
+//            }
+//        }
+        fun savePlayerData(player: OfflinePlayer, config: FileConfiguration) {
             try {
                 val uuid = player.uniqueId
                 val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
@@ -233,7 +251,7 @@ class FileManager {
         }
 
         /**
-         * String 형태의 플레이어이름으로 해당 유저의 config 반환
+         * String 형태의 플레이어이름으로 해당 유저의 Player 객체 반환
          * @param[name] displayName in String
          * @return Player, 못찾으면 null
          */

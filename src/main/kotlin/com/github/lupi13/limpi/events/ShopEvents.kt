@@ -2,6 +2,8 @@ package com.github.lupi13.limpi.events
 
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
+import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
+import com.github.lupi13.limpi.Functions.Companion.playerDisplay
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.commands.Financial
 import net.kyori.adventure.text.Component
@@ -45,13 +47,12 @@ class ShopEvents : Listener {
                 val meta = item.itemMeta
                 val lore: MutableList<Component> = ArrayList()
                 lore.add(Component.text("가격: ", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
-                    .append(Financial.moneyDisplay(getShopPrice(item)).decoration(TextDecoration.ITALIC, false))
+                    .append(moneyDisplay(getShopPrice(item)).decoration(TextDecoration.ITALIC, false))
                     .append(Component.text("원, 현재 보유 금액: ", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
-                    .append(Financial.moneyDisplay(FileManager.getPlayerData(player)["money"] as Int).decoration(TextDecoration.ITALIC, false))
+                    .append(moneyDisplay(FileManager.getPlayerData(player)["money"] as Int).decoration(TextDecoration.ITALIC, false))
                     .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false))
-//                lore.add(Component.text(("${NamedTextColor.WHITE}가격: ${NamedTextColor.YELLOW}${getShopPrice(item)}${NamedTextColor.WHITE}원, 현재 보유 금액: ${NamedTextColor.GOLD}${FileManager.getPlayerData(player)["money"]}${NamedTextColor.WHITE}원")))
-//                lore.add(Component.text("${NamedTextColor.WHITE}좌클릭하여 구매합니다."))
-//                lore.add(Component.text("${NamedTextColor.WHITE}Shift를 누르고 클릭하면 1세트/최대한 많이 구매합니다."))
+                lore.add(Component.text("좌클릭하여 구매합니다.", NamedTextColor.WHITE))
+                lore.add(Component.text("Shift를 누르고 클릭하면 1세트/최대한 많이 구매합니다.", NamedTextColor.WHITE))
                 meta!!.lore(lore)
                 item.itemMeta = meta
                 shopGUI.setItem(i, item)
@@ -94,9 +95,9 @@ class ShopEvents : Listener {
                         }
                     } else {
                         player.sendMessage(Component.text("돈이 부족합니다! ", NamedTextColor.RED)
-                            .append(Financial.playerDisplay(player))
+                            .append(playerDisplay(player))
                             .append(Component.text("님은 현재 계좌에 ", NamedTextColor.RED))
-                            .append(Financial.moneyDisplay(money))
+                            .append(moneyDisplay(money))
                             .append(Component.text("원 있습니다.", NamedTextColor.RED)))
                         player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
                     }

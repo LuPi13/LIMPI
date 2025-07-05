@@ -2,6 +2,7 @@ package com.github.lupi13.limpi.events
 
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
+import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.commands.Financial
 import net.kyori.adventure.text.Component
@@ -71,9 +72,9 @@ class StockEvents : Listener {
             }
             return Component.text("${stockConfig.getString("$stock.name")} ($stock)", NamedTextColor.DARK_AQUA)
                 .append(Component.text(":\n", NamedTextColor.BLACK))
-                .append(Financial.moneyDisplay(stockBefore))
+                .append(moneyDisplay(stockBefore))
                 .append(Component.text("->", NamedTextColor.BLACK))
-                .append(Financial.moneyDisplay(stockPrice))
+                .append(moneyDisplay(stockPrice))
                 .append(Component.text("\n(", NamedTextColor.BLACK))
                 .append(disp)
                 .append(Component.text(")\n\n", NamedTextColor.BLACK))
@@ -231,9 +232,9 @@ class StockEvents : Listener {
                 }
                 stockMeta!!.customName(Component.text("${stockConfig.getString("$code.name")} (${code})", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                 stockLore.add(Component.text("현재 가격: ", NamedTextColor.WHITE)
-                    .append(Financial.moneyDisplay(stockConfig.getInt("$code.currentPrice")))
+                    .append(moneyDisplay(stockConfig.getInt("$code.currentPrice")))
                     .append(Component.text("원, 현재 보유 금액: ", NamedTextColor.WHITE))
-                    .append(Financial.moneyDisplay(playerConfig.getInt("money")))
+                    .append(moneyDisplay(playerConfig.getInt("money")))
                     .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false))
 
                 val stockCount = playerConfig.getInt("stock.${code}.count")
@@ -242,9 +243,9 @@ class StockEvents : Listener {
                     .append(Component.text("주, 최근 변동: ", NamedTextColor.WHITE))
                     .append(stockChange).decoration(TextDecoration.ITALIC, false))
                 stockLore.add(Component.text("총투자금액: ", NamedTextColor.WHITE)
-                    .append(Financial.moneyDisplay(playerConfig.getInt("stock.$code.averagePrice") * stockCount))
+                    .append(moneyDisplay(playerConfig.getInt("stock.$code.averagePrice") * stockCount))
                     .append(Component.text("원, 현재가치: ", NamedTextColor.WHITE))
-                    .append(Financial.moneyDisplay(stockCount * stockConfig.getInt("$code.currentPrice")))
+                    .append(moneyDisplay(stockCount * stockConfig.getInt("$code.currentPrice")))
                     .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false))
                 stockLore.add(Component.text("좌클릭하여 매수, 우클릭하여 매도합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                 stockLore.add(Component.text("Shift를 누르면 100주/전량 거래합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))

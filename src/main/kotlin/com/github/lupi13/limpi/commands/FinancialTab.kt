@@ -2,13 +2,17 @@ package com.github.lupi13.limpi.commands
 
 import com.github.lupi13.limpi.FileManager.Companion.getStockConfig
 import com.github.lupi13.limpi.Functions
+import com.github.lupi13.limpi.LIMPI
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
+import org.bukkit.plugin.Plugin
+import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.StringUtil
 
 class FinancialTab: TabCompleter {
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): MutableList<String>? {
+        val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
         val completions: MutableList<String> = mutableListOf()
         val list: MutableList<String> = mutableListOf()
         try {
@@ -33,8 +37,8 @@ class FinancialTab: TabCompleter {
             val needsMaterial: List<String> = listOf("sell", "shop")
 
             if (args.size == 2 && needsPlayer.contains(args[0])) {
-                Functions.getPlayers().forEach { p -> list.add(p.name) }
-                StringUtil.copyPartialMatches(args[1], list, completions)
+                val playerNames = plugin.server.onlinePlayers.map { it.name }
+                StringUtil.copyPartialMatches(args[1], playerNames, completions)
             }
 
             if (args.size == 2 && args[0] == "stock") {

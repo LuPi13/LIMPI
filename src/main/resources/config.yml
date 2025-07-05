@@ -11,6 +11,8 @@ StockInterval: 10  # 주식의 변동 주기 (분), 60의 약수 중 2 이상으
 
 #=== Ability System Configuration ===#
 EnableAbilitySystem: true  # 능력 시스템 활성화 여부
+PickUpChange: 30  # 픽업 능력 변경 주기 (분), 60의 약수 또는 90, 120같이 1시간과 관련있는 수 권장
+PickUpSpoiler: 3  # /ability pickup 명령어로 볼 수 있는 픽업 능력 개수
 InitialTicket: 10  # 첫 뽑기권 수
 InitialCOMMON: 1  # 첫 COMMON 선택권 수
 InitialRARE: 1  # 첫 RARE 선택권 수
@@ -35,4 +37,11 @@ ForceTroll: true  # TROLL 능력이 뽑기에서 등장 시 강제 적용 여부
 
 RAREProbability: 0.3  # LEGENDARY, EPIC, TROLL이 등장하지 않았을 때, RARE 등급 등장 확률
 
-
+TicketPrice: 20  # 뽑기권 가격(에메랄드)
+SelectPrice:  # 능력 선택권 가격(에메랄드)
+  TROLL: 10
+  COMMON: 15
+  RARE: 20
+  EPIC: 30
+  LEGENDARY: 40
+  MYTHIC: 50

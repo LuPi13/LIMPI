@@ -1,6 +1,7 @@
 package com.github.lupi13.limpi.events
 
 import com.github.lupi13.limpi.FileManager
+import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.commands.Financial
 import net.kyori.adventure.text.Component
@@ -95,7 +96,7 @@ class SellEvents : Listener {
                                 val config = FileManager.getPlayerData(player)
                                 config["money"] = config.getLong("money") + preprofit
                                 FileManager.savePlayerData(player, config)
-                                player.sendMessage(Financial.moneyDisplay(preprofit)
+                                player.sendMessage(moneyDisplay(preprofit)
                                     .append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE)))
                                 player.closeInventory()
                                 timer[player] = -2
@@ -148,7 +149,7 @@ fun sellTask(player: Player, inventory: Inventory) {
             val close = inventory.getItem(53)
             val meta = close!!.itemMeta
             val lore = meta!!.lore()
-            lore!![0] = Financial.moneyDisplay(price).decoration(TextDecoration.ITALIC, false)
+            lore!![0] = moneyDisplay(price).decoration(TextDecoration.ITALIC, false)
                 .append(Component.text("원", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
             if (SellEvents.timer.containsKey(player) && SellEvents.timer[player]!! >= 0) {
                 if (lore.size <= 1) {

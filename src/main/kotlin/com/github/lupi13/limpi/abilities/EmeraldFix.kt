@@ -33,7 +33,7 @@ object EmeraldFix : Ability(
     override fun setUpFile() {
         super.setUpFile()
         if (file != null && file!!.length() == 0L) {
-            config?.set("repair", 20)
+            config?.set("repair", config!!.getInt("repair"))
         }
         saveConfig()
     }

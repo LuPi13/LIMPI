@@ -110,11 +110,14 @@ class AbilitySelectEvent : Listener {
          * @param page 페이지 번호 (1부터 시작)
          * @param sort 정렬 옵션
          */
+        val sortOption = mutableMapOf<Player, SortOption>()
         fun openAbilitySelectGUI(player: Player, page: Int, sort: SortOption) {
             val selectGUI: Inventory = Bukkit.createInventory(player, 54, abilitySelectGUIName)
             val playerConfig = FileManager.getPlayerData(player)
             val unlockedCodeName = playerConfig.getStringList("unlockedAbilities")
             val unlockedAbilities = unlockedCodeName.map { AbilityManager().getAbilityByCodeName(it) }
+
+            sortOption[player] = sort
 
             val sortedAbilities = when (sort) {
                 SortOption.UNLOCKED -> unlockedAbilities.filterNotNull()
@@ -149,7 +152,6 @@ class AbilitySelectEvent : Listener {
 
 
     val page = mutableMapOf<Player, Int>()
-    val sortOption = mutableMapOf<Player, SortOption>()
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
         if (event.view.title() != abilitySelectGUIName) return

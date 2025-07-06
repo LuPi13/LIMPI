@@ -177,12 +177,12 @@ object EntityThrower : Ability(
 
                         // 닭을 붙잡고 있을 경우, 느린낙하 효과 적용
                         if (targetEntity is Chicken) {
-                            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW_FALLING, 2, 0, true, false, true))
+                            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW_FALLING, 2, 0, true, false, false))
                         }
 
                         // 팬텀을 붙잡고 있을 경우, 느린낙하와 무작위 이동 적용
                         if (targetEntity is Phantom) {
-                            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW_FALLING, 2, 0, true, false, true))
+                            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW_FALLING, 2, 0, true, false, false))
                             val randomVector = Vector(Random.nextDouble() - 0.5, Random.nextDouble() - 0.5, Random.nextDouble() - 0.5).multiply(config!!.getDouble("phantomRandomMovementIntensity"))
                             player.velocity = player.velocity.add(randomVector)
                         }

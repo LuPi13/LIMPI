@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.event.Listener
@@ -15,6 +16,8 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
+import java.util.Locale
+import java.util.Locale.getDefault
 
 abstract class Ability(
     val grade: Grade,
@@ -61,8 +64,9 @@ abstract class Ability(
     }
 
     fun getItem(): ItemStack {
-        val item = ItemStack(material, 1)
+        val item = ItemStack(Material.TURTLE_SCUTE, 1)
         val meta = item.itemMeta
+        meta.itemModel = NamespacedKey("minecraft", material.name.lowercase(getDefault()))
         meta.itemName(displayName
             .append(Component.text(" ")).append(element.displayElement)
             .append(Component.text(" ")).append(grade.displayGrade))

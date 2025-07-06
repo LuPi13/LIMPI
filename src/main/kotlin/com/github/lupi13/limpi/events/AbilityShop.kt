@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -40,21 +41,24 @@ class AbilityShop : Listener {
          * @return 생성된 아이템 스택
          */
         fun getSelectTicketItem(grade: Grade?, isShopDisplay: Boolean, player: Player?): ItemStack {
-            val material = when (grade) {
-                Grade.TROLL -> Material.BLACK_CONCRETE
-                Grade.COMMON -> Material.GREEN_CONCRETE
-                Grade.RARE -> Material.CYAN_CONCRETE
-                Grade.EPIC -> Material.PURPLE_CONCRETE
-                Grade.LEGENDARY -> Material.YELLOW_CONCRETE
-                Grade.MYTHIC -> Material.RED_CONCRETE
-                else -> Material.NETHER_STAR  // 뽑기권
+            val itemModel = when (grade) {
+                Grade.TROLL -> "black_concrete"
+                Grade.COMMON -> "green_concrete"
+                Grade.RARE -> "cyan_concrete"
+                Grade.EPIC -> "purple_concrete"
+                Grade.LEGENDARY -> "yellow_concrete"
+                Grade.MYTHIC -> "red_concrete"
+                else -> "nether_star"  // 뽑기권
             }
-            val item = if (material == Material.NETHER_STAR) {
+            val item = if (itemModel == "nether_star") {
                 GachaEvents.getGachaTicketItem()
             } else {
-                ItemStack(material, 1)
+                ItemStack(Material.TURTLE_SCUTE, 1)
             }
             val meta = item.itemMeta
+            if (itemModel != "nether_star") {
+                meta.itemModel = NamespacedKey("minecraft", itemModel)
+            }
             var lore: List<Component> = meta.lore() ?: mutableListOf()
 
             if (grade != null) {
@@ -229,31 +233,6 @@ class AbilityShop : Listener {
                     }
                 }
             }
-        }
-    }
-
-    /*
-    @EventHandler
-    fun onInteract(event: PlayerInteractEvent) {
-        for (item in restrict) {
-            if (event.item != null && event.item!!.isSimilar(item)) {
-                event.isCancelled = true
-                return
-            }
-        }
-    }
-
-     */
-
-
-    @EventHandler
-    fun onBlock(event: BlockPlaceEvent) {
-        val player = event.player
-        for (item in restrict) {
-        if (event.itemInHand.isSimilar(item)) {
-            event.isCancelled = true
-            return
-        }
         }
     }
 }

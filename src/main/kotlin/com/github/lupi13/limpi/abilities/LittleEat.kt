@@ -13,7 +13,7 @@ import org.bukkit.event.player.PlayerItemConsumeEvent
 object LittleEat : Ability(
     grade = Grade.COMMON,
     element = Element.NONE,
-    displayName = Component.text("소식가", NamedTextColor.YELLOW),
+    displayName = Component.text("소식가", NamedTextColor.GRAY),
     codeName = "little_eat",
     material = Material.DRIED_KELP,
     description = listOf(

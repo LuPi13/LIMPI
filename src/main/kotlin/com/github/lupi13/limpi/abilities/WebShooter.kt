@@ -71,7 +71,7 @@ object WebShooter : Ability(
 
 
     fun getWebShooterItem(): ItemStack {
-        val item = ItemStack(Material.GLISTERING_MELON_SLICE)
+        val item = ItemStack(Material.TURTLE_SCUTE)
         val meta = item.itemMeta
         meta.itemModel = NamespacedKey("minecraft", "crossbow")
         meta.itemName(Component.text("웹슈터", NamedTextColor.WHITE))

@@ -31,9 +31,12 @@ class AbilityDictionary : Listener {
          * @param page 페이지 번호 (1부터 시작)
          * @param sort 정렬 옵션
          */
+        val sortOption = mutableMapOf<Player, SortOption>()
         fun openAbilityDictionaryGUI(player: Player, page: Int, sort: SortOption) {
             val dictionaryGUI: Inventory = Bukkit.createInventory(player, 54, abilityDictionaryGUIName)
             val abilities = AbilityManager().abilities
+
+            sortOption[player] = sort
 
             val sortedAbilities = when (sort) {
                 SortOption.UNLOCKED -> abilities.filterNotNull()
@@ -68,7 +71,6 @@ class AbilityDictionary : Listener {
 
 
     val page = mutableMapOf<Player, Int>()
-    val sortOption = mutableMapOf<Player, SortOption>()
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
         if (event.view.title() != abilityDictionaryGUIName) return

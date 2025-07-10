@@ -74,7 +74,7 @@ object HotPickaxe : Ability(
                 else -> item.itemStack.type // 다른 광물은 그대로 유지
             }
             if (newType != item.itemStack.type) {
-                item.itemStack.type = newType
+                item.itemStack = item.itemStack.withType(newType)
             }
         }
     }

@@ -3,7 +3,6 @@ package com.github.lupi13.limpi.abilities
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerItemConsumeEvent
@@ -20,7 +19,7 @@ object CookieRun : Ability(
         Component.text("쿠키를 먹으면 신속 효과를 얻습니다.", NamedTextColor.WHITE)
     ),
     needFile = true
-){
+) {
 
     override val details: List<Component> by lazy {
         listOf(

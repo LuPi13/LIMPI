@@ -1,6 +1,5 @@
 package com.github.lupi13.limpi.abilities
 
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
@@ -8,7 +7,6 @@ import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.entity.Damageable
 import org.bukkit.entity.Entity
-import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerToggleSneakEvent
@@ -132,10 +130,7 @@ object ShieldStrike : Ability(
                 }.runTaskTimer(plugin, 0L, 1L)
             }
             else {
-                val text = Component.text("남은 쿨타임: ", NamedTextColor.WHITE)
-                    .append(Component.text(String.format("%.2f", (cooldown - (System.currentTimeMillis() - (lastStrikeTime[player] ?: 0L))) / 1000.0), NamedTextColor.RED))
-                    .append(Component.text("초", NamedTextColor.WHITE))
-                player.sendActionBar(text)
+                AbilityManager().showCooldown(player, cooldown, lastStrikeTime[player]!!)
             }
         }
         lastSneakTime[player] = System.currentTimeMillis()

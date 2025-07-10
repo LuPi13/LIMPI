@@ -139,7 +139,7 @@ class Ability: CommandExecutor {
                 page = Component.text("/ability select", NamedTextColor.GREEN)
                 page = page.append(Component.text(": 뽑은 능력을 선택합니다. 해당 능력의 등급에 맞는 선택권이 필요합니다.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/ability dictionary(또는 dict)", NamedTextColor.GREEN))
-                page = page.append(Component.text(": 모든 능력의 정보를 볼 수 있는 창을 엽니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text(": 모든 능력의 정보를 볼 수 있는 창을 엽니다. 우클릭하여 상세정보를 볼 수 있습니다.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/ability enemy", NamedTextColor.GREEN))
                 page = page.append(Component.text(": 능력이 피해를 주는 ", NamedTextColor.BLACK)
                     .append(Component.text("적", NamedTextColor.RED)).append(Component.text("의 범위를 설정하는 창을 엽니다.\n\n", NamedTextColor.BLACK)))
@@ -155,8 +155,8 @@ class Ability: CommandExecutor {
                     page = Component.text("이하 관리자 전용 명령어\n", NamedTextColor.RED)
                     page = page.append(Component.text("/ability set <플레이어> <능력 code>", NamedTextColor.GREEN).decoration(TextDecoration.BOLD, false))
                     page = page.append(Component.text(": 대상에게 해당 능력을 적용합니다.\n\n", NamedTextColor.BLACK))
-                    page = page.append(Component.text("/ability reload", NamedTextColor.GREEN))
-                    page = page.append(Component.text(": 능력의 .yml 변경 사항을 적용합니다.\n\n", NamedTextColor.BLACK))
+                    page = page.append(Component.text("/ability dictionary(또는 dict)", NamedTextColor.GREEN))
+                    page = page.append(Component.text(": 여기서 우클릭하여 해당 능력을 자신에게 적용할 수 있습니다.\n\n", NamedTextColor.BLACK))
                     meta.addPages(page)
                 }
 
@@ -280,7 +280,7 @@ class Ability: CommandExecutor {
             // /ability me
             else if (args[0].equals("me", true)) {
                 val abilityCodeName = AbilityManager().getPlayerAbilityCodeName(player)
-                if (abilityCodeName == null) {
+                if (abilityCodeName == null || abilityCodeName.isEmpty()) {
                     player.sendMessage(Component.text("현재 능력이 없습니다.", NamedTextColor.RED))
                     return true
                 } else {
@@ -407,9 +407,14 @@ class Ability: CommandExecutor {
                     val legendaryPickUp = AbilityPickUp.getLegendaryPickUp(time)
                     val epicPickUp = AbilityPickUp.getEpicPickUp(time)
 
-                    player.sendMessage(Component.text("\n", NamedTextColor.WHITE)
-                        .append(Component.text(AbilityPickUp.getTimeText(time), NamedTextColor.YELLOW))
-                        .append(Component.text(" 부터~", NamedTextColor.WHITE)))
+                    if (i == 1) {
+                        player.sendMessage(Component.text("\n현재 진행중!", NamedTextColor.GREEN))
+                    }
+                    else {
+                        player.sendMessage(Component.text("\n", NamedTextColor.WHITE)
+                            .append(Component.text(AbilityPickUp.getTimeText(time), NamedTextColor.YELLOW))
+                            .append(Component.text(" 부터~", NamedTextColor.WHITE)))
+                    }
                     player.sendMessage(Grade.LEGENDARY.displayGrade
                         .append(Component.text(": ", NamedTextColor.WHITE))
                         .append(legendaryPickUp.displayName)

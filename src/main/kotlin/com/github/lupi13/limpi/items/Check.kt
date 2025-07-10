@@ -4,7 +4,6 @@ import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.Functions.Companion.playerDisplay
-import com.github.lupi13.limpi.commands.Financial
 import com.google.common.collect.Lists
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor

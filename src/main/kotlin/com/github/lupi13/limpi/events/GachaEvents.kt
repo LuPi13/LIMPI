@@ -2,7 +2,6 @@ package com.github.lupi13.limpi.events
 
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.LIMPI
-import com.github.lupi13.limpi.abilities.Ability
 import com.github.lupi13.limpi.abilities.AbilityManager
 import com.github.lupi13.limpi.abilities.Grade
 import net.kyori.adventure.text.Component
@@ -66,14 +65,10 @@ class GachaEvents : Listener {
             val lBase = config.getDouble("LEGENDARYProbability.Base")
             val lIncrement = config.getDouble("LEGENDARYProbability.Increment")
             val lIncreaseCount = config.getInt("LEGENDARYProbability.IncreaseCount")
-            val lPickUp= config.getDouble("LEGENDARYProbability.PickUp")
-            val lSemiCeiling = config.getInt("LEGENDARYProbability.SemiCeiling")
 
             val eBase = config.getDouble("EPICProbability.Base")
             val eIncrement = config.getDouble("EPICProbability.Increment")
             val eIncreaseCount = config.getInt("EPICProbability.IncreaseCount")
-            val ePickUp = config.getDouble("EPICProbability.PickUp")
-            val eSemiCeiling = config.getInt("EPICProbability.SemiCeiling")
 
             val tBase = config.getDouble("TROLLProbability")
             val rBase = config.getDouble("RAREProbability")
@@ -98,15 +93,14 @@ class GachaEvents : Listener {
             }
             else {
                 // TROLL 확률 계산
-                if (Random.nextDouble() <= tBase) {
-                    grade = Grade.TROLL
+                grade = if (Random.nextDouble() <= tBase) {
+                    Grade.TROLL
                 }
                 // RARE 확률 계산
                 else if (Random.nextDouble() <= rBase) {
-                    grade = Grade.RARE
-                }
-                else {
-                    grade = Grade.COMMON
+                    Grade.RARE
+                } else {
+                    Grade.COMMON
                 }
             }
             return grade

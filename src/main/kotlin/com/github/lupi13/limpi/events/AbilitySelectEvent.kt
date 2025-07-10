@@ -4,9 +4,7 @@ import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.abilities.AbilityManager
-import com.github.lupi13.limpi.abilities.Grade
 import com.github.lupi13.limpi.abilities.ability
-import com.github.lupi13.limpi.events.AbilityShop.Companion.abilityShopGUIName
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -209,7 +207,7 @@ class AbilitySelectEvent : Listener {
             if (Functions.getInventoryItemCount(player, AbilityShop.getSelectTicketItem(grade, false, null)) >= 1) {
                 if (player.ability == clickedAbility) {
                     player.sendMessage(Component.text("이미 선택한 능력입니다.", NamedTextColor.RED))
-                    player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.5f, 1.0f)
+                    player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.3f, 1.0f)
                 }
                 else {
                     Functions.removeInventoryItem(player, AbilityShop.getSelectTicketItem(grade, false, null), 1)
@@ -218,7 +216,7 @@ class AbilitySelectEvent : Listener {
             }
             else {
                 player.sendMessage(Component.text("능력을 선택하려면 해당 등급의 선택권이 필요합니다.", NamedTextColor.RED))
-                player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.5f, 1.0f)
+                player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.3f, 1.0f)
             }
         }
     }

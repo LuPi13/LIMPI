@@ -1,6 +1,5 @@
 package com.github.lupi13.limpi.events
 
-import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.abilities.AbilityManager
 import com.github.lupi13.limpi.abilities.ability
@@ -39,10 +38,10 @@ class AbilityDictionary : Listener {
             sortOption[player] = sort
 
             val sortedAbilities = when (sort) {
-                SortOption.UNLOCKED -> abilities.filterNotNull()
-                SortOption.GANADA -> abilities.filterNotNull().sortedBy { PlainTextComponentSerializer.plainText().serialize(it.displayName) }
-                SortOption.GRADE -> abilities.filterNotNull().sortedByDescending { it.grade }
-                SortOption.ELEMENT -> abilities.filterNotNull().sortedBy { it.element }
+                SortOption.UNLOCKED -> abilities
+                SortOption.GANADA -> abilities.sortedBy { PlainTextComponentSerializer.plainText().serialize(it.displayName) }
+                SortOption.GRADE -> abilities.sortedByDescending { it.grade }
+                SortOption.ELEMENT -> abilities.sortedBy { it.element }
             }
 
             var isLastPage = false
@@ -120,17 +119,48 @@ class AbilityDictionary : Listener {
         }
 
         // 능력 아이템 클릭 처리: op 권한이 있으면 능력 적용
-        else if (player.isOp) {
-            val clickedAbility = AbilityManager().getAbilityByItem(item)!!
+        else {
+            if (player.isOp && event.isLeftClick) {
+                val clickedAbility = AbilityManager().getAbilityByItem(item)!!
 
-            val grade = clickedAbility.grade
 
-            if (player.ability == clickedAbility) {
-                player.sendMessage(Component.text("이미 선택한 능력입니다.", NamedTextColor.RED))
-                player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.5f, 1.0f)
+                if (player.ability == clickedAbility) {
+                    player.sendMessage(Component.text("이미 선택한 능력입니다.", NamedTextColor.RED))
+                    player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.5f, 1.0f)
+                } else {
+                    AbilityManager().applyAbility(player, clickedAbility)
+                }
             }
-            else {
-                AbilityManager().applyAbility(player, clickedAbility)
+
+            // 우클릭 시 상세 정보 출력
+            else if (event.isRightClick) {
+                val ability = AbilityManager().getAbilityByItem(item)!!
+                var page = Component.text("\n", NamedTextColor.WHITE)
+                    .append(ability.displayName)
+                    .append(Component.text(" ", NamedTextColor.WHITE))
+                    .append(ability.grade.displayGrade)
+                    .append(Component.text(" ", NamedTextColor.WHITE))
+                    .append(ability.element.displayElement)
+                    .append(Component.text("\n\n", NamedTextColor.WHITE))
+                for (line in ability.details) {
+                    page = page.append(line)
+                        .append(Component.text("\n", NamedTextColor.WHITE))
+                }
+                page = page.append(Component.text("\n획득 방법: ", NamedTextColor.WHITE))
+                    .append(ability.howToGet)
+
+                val relatedQuests = ability.relatedQuest
+                if (relatedQuests != null) {
+                    page = page.append(Component.text("\n\n관련 퀘스트: ", NamedTextColor.WHITE))
+                    for (quest in relatedQuests) {
+                        page = page.append(Component.text("", NamedTextColor.WHITE)
+                            .append(quest.displayName)
+                            .append(Component.text(" ", NamedTextColor.WHITE)))
+                    }
+                }
+
+                player.sendMessage(page)
+                player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
             }
         }
     }

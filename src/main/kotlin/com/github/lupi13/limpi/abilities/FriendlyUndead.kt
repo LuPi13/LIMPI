@@ -1,32 +1,11 @@
 package com.github.lupi13.limpi.abilities
 
-import io.papermc.paper.tag.EntitySetTag
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
-import org.bukkit.entity.Bogged
-import org.bukkit.entity.Drowned
-import org.bukkit.entity.Entity
-import org.bukkit.entity.EntityCategory
-import org.bukkit.entity.Husk
-import org.bukkit.entity.LivingEntity
-import org.bukkit.entity.Mob
-import org.bukkit.entity.Phantom
-import org.bukkit.entity.PigZombie
-import org.bukkit.entity.Player
-import org.bukkit.entity.Skeleton
-import org.bukkit.entity.SkeletonHorse
-import org.bukkit.entity.Stray
-import org.bukkit.entity.Wither
-import org.bukkit.entity.WitherSkeleton
-import org.bukkit.entity.Zoglin
-import org.bukkit.entity.Zombie
-import org.bukkit.entity.ZombieHorse
-import org.bukkit.entity.ZombieVillager
+import org.bukkit.entity.*
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent
-import org.bukkit.event.player.PlayerExpChangeEvent
 
 object FriendlyUndead : Ability(
     grade = Grade.COMMON,

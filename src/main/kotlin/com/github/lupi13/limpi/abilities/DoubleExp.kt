@@ -2,13 +2,12 @@ package com.github.lupi13.limpi.abilities
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerExpChangeEvent
 
 object DoubleExp : Ability(
-    grade = Grade.EPIC,
+    grade = Grade.RARE,
     element = Element.NONE,
     displayName = Component.text("경험치 보너스", NamedTextColor.YELLOW),
     codeName = "double_exp",

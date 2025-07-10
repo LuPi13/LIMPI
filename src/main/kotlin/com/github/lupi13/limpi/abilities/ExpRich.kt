@@ -3,7 +3,6 @@ package com.github.lupi13.limpi.abilities
 import com.github.lupi13.limpi.quests.ExpAbsorber
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.event.EventHandler

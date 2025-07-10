@@ -108,10 +108,7 @@ object Dodge : Ability(
                 lastDodgeTime[player] = System.currentTimeMillis()
             }
             else {
-                val text = Component.text("남은 쿨타임: ", NamedTextColor.WHITE)
-                    .append(Component.text(String.format("%.2f", (cooldown - (System.currentTimeMillis() - (lastDodgeTime[player] ?: 0L))) / 1000.0), NamedTextColor.RED))
-                    .append(Component.text("초", NamedTextColor.WHITE))
-                player.sendActionBar(text)
+                AbilityManager().showCooldown(player, cooldown, lastDodgeTime[player]!!)
             }
         }
         lastSneakTime[player] = System.currentTimeMillis()

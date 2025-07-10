@@ -1,27 +1,20 @@
 package com.github.lupi13.limpi.abilities
 
 import fr.skytasul.guardianbeam.Laser
-import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.KeybindComponent
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.FluidCollisionMode
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.Particle
 import org.bukkit.Sound
-import org.bukkit.entity.Cow
-import org.bukkit.entity.Creeper
 import org.bukkit.entity.Damageable
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
-import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.util.RayTraceResult
 import org.bukkit.util.Vector
 import kotlin.math.max
 import kotlin.math.min
@@ -88,11 +81,6 @@ object WebShooter : Ability(
         return item
     }
 
-    /**
-     * 속도에 비례하여 적에게 피해를 주고 넉백을 줍니다.
-     */
-    fun damageNearbyEnemy(player: Player) {
-    }
 
     override val activeItem: ItemStack by lazy {
         getWebShooterItem()
@@ -115,7 +103,7 @@ object WebShooter : Ability(
         val world = player.world
         val direction = player.location.direction
 
-        val rayTraceResult = world.rayTrace(player.eyeLocation, direction, config!!.getDouble("range"), FluidCollisionMode.NEVER, true, 0.0, {it != player})
+        val rayTraceResult = world.rayTrace(player.eyeLocation, direction, config!!.getDouble("range"), FluidCollisionMode.NEVER, true, 0.0) { it != player }
         world.playSound(player.location, Sound.BLOCK_DISPENSER_LAUNCH, 1f, 2f)
 
         if (rayTraceResult == null) {
@@ -152,7 +140,7 @@ object WebShooter : Ability(
 
 
                         // 가속 이동
-                        var movingVector = hitLocation.clone().subtract(player.location).toVector().normalize()
+                        val movingVector = hitLocation.clone().subtract(player.location).toVector().normalize()
                         if (movingVector.y > 0) movingVector.setY(movingVector.y * 2.0)
                         movingVector.multiply(config!!.getDouble("velocityAmplifier"))
 
@@ -283,7 +271,6 @@ object WebShooter : Ability(
                             if (AbilityManager().isEnemy(player, entity)) {
                                 // 피해량: 상대속도에 비례
                                 val damage = (config!!.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length()).pow(2.0)) / 2.0
-//                                player.sendActionBar(Component.text("피해량: ${damage}", NamedTextColor.RED))
                                 if (damage >= 1.0) {
                                     entity.damage(damage, player)
 

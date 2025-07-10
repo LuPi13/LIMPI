@@ -4,7 +4,6 @@ import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.LIMPI
-import com.github.lupi13.limpi.commands.Financial
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
@@ -270,7 +269,6 @@ class StockEvents : Listener {
             val playerConfig = FileManager.getPlayerData(player)
             val item = event.currentItem
             if (item != null && item.hasItemMeta()) {
-                val itemMeta = item.itemMeta!!
                 var stockCode = PlainTextComponentSerializer.plainText().serialize(item.displayName())
                 val stockName = stockCode.substring(1, stockCode.length - 8)
                 stockCode = stockCode.substring(stockCode.length - 6, stockCode.length - 2)

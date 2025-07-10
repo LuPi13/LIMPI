@@ -14,12 +14,9 @@ import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.inventory.InventoryAction
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryType
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
@@ -218,7 +215,8 @@ class AbilityShop : Listener {
 
             if (event.action == InventoryAction.HOTBAR_SWAP) {
                 val player = event.whoClicked as Player
-                val slot = event.hotbarButton
+                var slot = event.hotbarButton
+                if (slot == -1) slot = 40
                 if (player.inventory.getItem(slot) != null && player.inventory.getItem(slot)!!.isSimilar(item)) {
                     if (event.inventory.type !in allowedInventoryType) {
                         event.isCancelled = true

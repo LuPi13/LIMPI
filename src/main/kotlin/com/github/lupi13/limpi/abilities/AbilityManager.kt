@@ -6,6 +6,7 @@ import io.papermc.paper.entity.SchoolableFish
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.GameMode
+import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.Sound
 import org.bukkit.entity.*
@@ -35,7 +36,8 @@ class AbilityManager : Listener {
         SafetyFirst, LetsBoom, DoubleExp, TerraBurning, ExpRich, Dodge, Alchemy, LongThrow, HeavyEnchant,
         PickPocket, EmeraldFix, CookieRun, AdaptiveDefense, LittleEat, HotPickaxe, EntityThrower, WebShooter,
         FriendlyUndead, FriendlyCreeper, WaterMeleeBoost, HeavySnowball, SuspiciousSugar, KneePropel,
-        ShieldStrike, PullingBow, UpperCut, DefenseAllIn, KillingDice
+        ShieldStrike, PullingBow, UpperCut, DefenseAllIn, KillingDice, GatheringStorm, ImpactLanding,
+        BladeLeaper, ChainLightning, OverBalance, JudgementRay
         )
 
     /**
@@ -198,9 +200,17 @@ class AbilityManager : Listener {
      * @param player 능력을 적용할 플레이어
      * @param ability 적용할 능력의 Ability
      */
-    fun applyAbility(player: Player, ability: Ability) {
-        if (getPlayerAbilityCodeName(player) == ability.codeName) return // 이미 적용된 능력은 무시
+    fun applyAbility(player: Player, ability: Ability?) {
         val currentAbility = getAbilityByCodeName(getPlayerAbilityCodeName(player) ?: "")
+        if (ability == null) {
+            player.sendMessage(Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE))
+            if (currentAbility?.restrictedSlot != null) player.inventory.setItem(currentAbility.restrictedSlot!!, null)
+            setPlayerAbilityCodeName(player, "")
+            return
+        }
+
+
+        if (getPlayerAbilityCodeName(player) == ability.codeName) return // 이미 적용된 능력은 무시
 
         // 현재 적용된 능력이 있었다면 해당 능력을 비활성화합니다.
         if (currentAbility != null) {
@@ -322,6 +332,7 @@ class AbilityManager : Listener {
                 2 -> true // 플레이어는 항상 적으로 간주함
                 else -> true // 기본값은 적으로 간주함
             }
+            if (entity == player) result = false
         }
 
         // 비공격적
@@ -388,5 +399,37 @@ class AbilityManager : Listener {
         }
 
         return result
+    }
+
+
+    /**
+     * 남은 쿨타임을 actionbar로 표시합니다.
+     * @param player 쿨타임을 표시할 플레이어
+     * @param cooldown 쿨타임 in milliseconds
+     * @param lastUsed 마지막 사용 시간 in milliseconds
+     */
+    fun showCooldown(player: Player, cooldown: Int, lastUsed: Long) {
+        val text = Component.text("남은 쿨타임: ", NamedTextColor.WHITE)
+            .append(
+                Component.text(
+                    String.format("%.2f", (cooldown - (System.currentTimeMillis() - lastUsed)) / 1000.0),
+                    NamedTextColor.RED
+                )
+            )
+            .append(Component.text("초", NamedTextColor.WHITE))
+        player.sendActionBar(text)
+    }
+    fun showCooldown(player: Player, material: Material) {
+        val cooldown = player.getCooldown(material)
+
+        val text = Component.text("남은 쿨타임: ", NamedTextColor.WHITE)
+            .append(
+                Component.text(
+                    String.format("%.2f", cooldown / 20.0),
+                    NamedTextColor.RED
+                )
+            )
+            .append(Component.text("초", NamedTextColor.WHITE))
+        player.sendActionBar(text)
     }
 }

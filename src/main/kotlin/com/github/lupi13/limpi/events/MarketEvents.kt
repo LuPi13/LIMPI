@@ -5,7 +5,6 @@ import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.Functions.Companion.playerDisplay
 import com.github.lupi13.limpi.LIMPI
-import com.github.lupi13.limpi.commands.Financial
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration

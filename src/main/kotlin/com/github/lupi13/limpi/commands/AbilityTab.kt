@@ -1,6 +1,5 @@
 package com.github.lupi13.limpi.commands
 
-import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.abilities.AbilityManager
 import org.bukkit.command.Command

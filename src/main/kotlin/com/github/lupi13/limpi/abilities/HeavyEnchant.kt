@@ -3,7 +3,6 @@ package com.github.lupi13.limpi.abilities
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
-import org.bukkit.entity.Zombie
 import org.bukkit.event.EventHandler
 import org.bukkit.event.enchantment.EnchantItemEvent
 import org.bukkit.event.inventory.PrepareAnvilEvent

@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack
 import kotlin.random.Random
 
 object Alchemy : Ability(
-    grade = Grade.EPIC,
+    grade = Grade.RARE,
     element = Element.SMITH,
     displayName = Component.text("연금술", NamedTextColor.GOLD),
     codeName = "alchemy",

@@ -34,7 +34,7 @@ object QuestManager {
      */
     fun isClearedQuest(player: Player, quest: Quest): Boolean {
         val config = FileManager.getPlayerData(player)
-        val clearedQuests = config.getStringList("clearedQuests") ?: mutableListOf()
+        val clearedQuests = config.getStringList("clearedQuests")
         return clearedQuests.contains(quest.codeName)
     }
 
@@ -46,16 +46,14 @@ object QuestManager {
      */
     fun clearQuests(player: Player, quest: Quest) {
         val config = FileManager.getPlayerData(player)
-        val clearedQuests = config.getStringList("clearedQuests") ?: mutableListOf()
+        val clearedQuests = config.getStringList("clearedQuests")
         if (!clearedQuests.contains(quest.codeName)) {
             clearedQuests.add(quest.codeName)
             config.set("clearedQuests", clearedQuests)
             FileManager.savePlayerData(player, config)
-            AbilityManager().unlockAbility(player, quest.rewardAbility)
             player.sendMessage(Component.text("퀘스트 ", NamedTextColor.WHITE)
-                .append(quest.displayName)
-                .append(Component.text(" 달성!\n보상: ", NamedTextColor.WHITE))
-                .append(quest.rewardAbility.displayName))
+                .append(quest.displayName))
+            AbilityManager().unlockAbility(player, quest.rewardAbility)
             player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
         }
     }

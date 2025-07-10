@@ -25,8 +25,6 @@ import kotlin.math.absoluteValue
 
 class Financial: CommandExecutor {
 
-    companion object {
-    }
     override fun onCommand(
         sender: CommandSender,
         command: Command,

@@ -3,6 +3,8 @@ package com.github.lupi13.limpi.abilities
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
+import org.bukkit.damage.DamageSource
+import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
 import org.bukkit.entity.Projectile
 import org.bukkit.event.EventHandler
@@ -47,6 +49,7 @@ object DefenseAllIn : Ability(
         if (event.entity !is Player) return
         val player = event.entity as Player
         if (player.ability != this) return
+        player.noDamageTicks = config!!.getInt("noDamageMilliseconds") / 50 // Convert milliseconds to ticks (20 ticks = 1 second)
         if (lastDamageTime.containsKey(player) && (System.currentTimeMillis() - lastDamageTime[player]!! <= config!!.getInt("noDamageMilliseconds"))) {
             event.isCancelled = true
             return

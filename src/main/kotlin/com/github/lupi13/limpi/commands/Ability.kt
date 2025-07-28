@@ -3,6 +3,7 @@ package com.github.lupi13.limpi.commands
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions.Companion.playerDisplay
 import com.github.lupi13.limpi.LIMPI
+import com.github.lupi13.limpi.abilities.Ability
 import com.github.lupi13.limpi.abilities.AbilityManager
 import com.github.lupi13.limpi.abilities.Grade
 import com.github.lupi13.limpi.events.AbilityDictionary
@@ -285,33 +286,11 @@ class Ability: CommandExecutor {
                     return true
                 } else {
                     val ability = AbilityManager().getAbilityByCodeName(abilityCodeName)!!
-                    var page = Component.text("\n", NamedTextColor.WHITE)
-                    page = page.append(playerDisplay(sender))
-                        .append(Component.text("님의 능력\n", NamedTextColor.WHITE))
-                        .append(ability.displayName)
-                        .append(Component.text(" ", NamedTextColor.WHITE))
-                        .append(ability.grade.displayGrade)
-                        .append(Component.text(" ", NamedTextColor.WHITE))
-                        .append(ability.element.displayElement)
-                        .append(Component.text("\n\n", NamedTextColor.WHITE))
-                    for (line in ability.details) {
-                        page = page.append(line)
-                            .append(Component.text("\n", NamedTextColor.WHITE))
-                    }
-                    page = page.append(Component.text("\n획득 방법: ", NamedTextColor.WHITE))
-                        .append(ability.howToGet)
+                    player.sendMessage(Component.text("\n", NamedTextColor.WHITE)
+                        .append(playerDisplay(sender))
+                        .append(Component.text("님의 능력", NamedTextColor.WHITE)))
 
-                    val relatedQuests = ability.relatedQuest
-                    if (relatedQuests != null) {
-                        page = page.append(Component.text("\n\n관련 퀘스트: ", NamedTextColor.WHITE))
-                        for (quest in relatedQuests) {
-                            page = page.append(Component.text("", NamedTextColor.WHITE)
-                                .append(quest.displayName)
-                                .append(Component.text(" ", NamedTextColor.WHITE)))
-                        }
-                    }
-
-                    player.sendMessage(page)
+                    ability.sendAbilityInfo(player)
                 }
             }
             // /ability shop

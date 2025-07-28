@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
@@ -148,6 +149,27 @@ class Functions {
         fun moneyDisplay(value: String): Component {
             return Component.text(value, NamedTextColor.GOLD, TextDecoration.BOLD)
                 .append(Component.text("", NamedTextColor.WHITE)).decoration(TextDecoration.BOLD, false)
+        }
+
+        val defaultAttributes: MutableMap<Attribute, Double> = mutableMapOf(
+            Attribute.MAX_HEALTH to 20.0,
+            Attribute.ATTACK_DAMAGE to 1.0,
+            Attribute.MOVEMENT_SPEED to 0.1,
+            Attribute.ARMOR to 0.0,
+            Attribute.ARMOR_TOUGHNESS to 0.0,
+            Attribute.JUMP_STRENGTH to 0.42,
+            Attribute.GRAVITY to 0.08,
+            Attribute.SCALE to 1.0,
+        )
+        /**
+         * 플레이어의 attributes를 초기값으로 설정
+         * @param[player] 플레이어
+         */
+        fun resetPlayerAttributes(player: Player) {
+
+            for (attribute in defaultAttributes.keys) {
+                player.getAttribute(attribute)?.baseValue = defaultAttributes[attribute] ?: continue
+            }
         }
     }
 }

@@ -15,7 +15,7 @@ import org.bukkit.util.Vector
 object Dodge : Ability(
     grade = Grade.RARE,
     element = Element.NONE,
-    displayName = Component.text("회피", NamedTextColor.AQUA),
+    displayName = Component.text("회피", NamedTextColor.GRAY),
     codeName = "dodge",
     material = Material.RABBIT_FOOT,
     description = listOf(
@@ -29,7 +29,8 @@ object Dodge : Ability(
         listOf(
             Component.text("지상에서 빠르게 두 번 웅크려", NamedTextColor.WHITE),
             Component.text("이동 방향으로 회피합니다.", NamedTextColor.WHITE),
-            Component.text("쿨타임: ${config!!.getInt("cooldown") / 1000}초", NamedTextColor.WHITE),
+            Component.text("쿨타임: ", NamedTextColor.WHITE)
+                .append(Component.text("${config!!.getInt("cooldown") / 1000.0}초", NamedTextColor.WHITE))
         )
     }
 

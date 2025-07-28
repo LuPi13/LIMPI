@@ -13,7 +13,7 @@ object QuestManager {
      * 퀘스트들의 리스트입니다.
      */
     val quests = listOf(
-        ExpAbsorber,
+        ExpAbsorber, DoEndermansDreamOfFreeingEnd, UndeadCooperation, LineBetweenSwordAndArrow
     )
 
 
@@ -47,15 +47,15 @@ object QuestManager {
     fun clearQuests(player: Player, quest: Quest) {
         val config = FileManager.getPlayerData(player)
         val clearedQuests = config.getStringList("clearedQuests")
-        if (!clearedQuests.contains(quest.codeName)) {
-            clearedQuests.add(quest.codeName)
-            config.set("clearedQuests", clearedQuests)
-            FileManager.savePlayerData(player, config)
-            player.sendMessage(Component.text("퀘스트 ", NamedTextColor.WHITE)
-                .append(quest.displayName))
-            AbilityManager().unlockAbility(player, quest.rewardAbility)
-            player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
-        }
+        if (clearedQuests.contains(quest.codeName)) return
+
+        clearedQuests.add(quest.codeName)
+        config.set("clearedQuests", clearedQuests)
+        FileManager.savePlayerData(player, config)
+        player.sendMessage(Component.text("퀘스트 ", NamedTextColor.WHITE)
+            .append(quest.displayName))
+        AbilityManager().unlockAbility(player, quest.rewardAbility)
+        player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
     }
 
     /**

@@ -135,31 +135,7 @@ class AbilityDictionary : Listener {
             // 우클릭 시 상세 정보 출력
             else if (event.isRightClick) {
                 val ability = AbilityManager().getAbilityByItem(item)!!
-                var page = Component.text("\n", NamedTextColor.WHITE)
-                    .append(ability.displayName)
-                    .append(Component.text(" ", NamedTextColor.WHITE))
-                    .append(ability.grade.displayGrade)
-                    .append(Component.text(" ", NamedTextColor.WHITE))
-                    .append(ability.element.displayElement)
-                    .append(Component.text("\n\n", NamedTextColor.WHITE))
-                for (line in ability.details) {
-                    page = page.append(line)
-                        .append(Component.text("\n", NamedTextColor.WHITE))
-                }
-                page = page.append(Component.text("\n획득 방법: ", NamedTextColor.WHITE))
-                    .append(ability.howToGet)
-
-                val relatedQuests = ability.relatedQuest
-                if (relatedQuests != null) {
-                    page = page.append(Component.text("\n\n관련 퀘스트: ", NamedTextColor.WHITE))
-                    for (quest in relatedQuests) {
-                        page = page.append(Component.text("", NamedTextColor.WHITE)
-                            .append(quest.displayName)
-                            .append(Component.text(" ", NamedTextColor.WHITE)))
-                    }
-                }
-
-                player.sendMessage(page)
+                ability.sendAbilityInfo(player)
                 player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
             }
         }

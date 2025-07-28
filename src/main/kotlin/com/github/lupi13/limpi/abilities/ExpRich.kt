@@ -17,7 +17,7 @@ object ExpRich : Ability(
     material = Material.NETHER_STAR,
     description = listOf(
         Component.text("경험치 획득량이 3배로 증가하며,", NamedTextColor.WHITE),
-        Component.text("레벨업 시 2레벨을 추가로 상승시킵니다.", NamedTextColor.WHITE)
+        Component.text("레벨업 시 4레벨을 추가로 상승시킵니다.", NamedTextColor.WHITE)
     )
 ) {
     override val howToGet: Component by lazy {
@@ -31,8 +31,8 @@ object ExpRich : Ability(
         val player = event.player
         if (player.ability != this) return
 
-        // 경험치 획득량을 2배로 증가
-        event.amount *= 2
+        // 경험치 획득량을 3배로 증가
+        event.amount *= 3
     }
 
     @EventHandler
@@ -40,8 +40,8 @@ object ExpRich : Ability(
         val player = event.player
         if (player.ability != this) return
 
-        // 레벨업 시 2레벨을 추가로 상승
-        player.level = event.newLevel + 2
+        // 레벨업 시 4레벨을 추가로 상승
+        player.level = event.newLevel + 4
         player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1f)
     }
 }

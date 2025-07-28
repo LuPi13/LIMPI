@@ -41,13 +41,13 @@ class LIMPI : JavaPlugin() {
             StockEvents.stockFlow()
         }
         if (config.getBoolean("EnableAbilitySystem")) {
-            AbilityManager().registerAbilities()
             server.pluginManager.registerEvents(AbilityManager(), this)
             server.pluginManager.registerEvents(GachaEvents(), this)
             server.pluginManager.registerEvents(AbilityShop(), this)
             server.pluginManager.registerEvents(AbilityEnemySelect(), this)
             server.pluginManager.registerEvents(AbilitySelectEvent(), this)
             server.pluginManager.registerEvents(AbilityDictionary(), this)
+            AbilityManager().registerAbilities()
         }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 

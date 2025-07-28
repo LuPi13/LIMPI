@@ -203,20 +203,25 @@ class AbilitySelectEvent : Listener {
             val clickedAbility = AbilityManager().getAbilityByItem(item)!!
 
             val grade = clickedAbility.grade
-
-            if (Functions.getInventoryItemCount(player, AbilityShop.getSelectTicketItem(grade, false, null)) >= 1) {
-                if (player.ability == clickedAbility) {
-                    player.sendMessage(Component.text("이미 선택한 능력입니다.", NamedTextColor.RED))
-                    player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.3f, 1.0f)
+            if (event.isLeftClick) {
+                if (Functions.getInventoryItemCount(player, AbilityShop.getSelectTicketItem(grade, false, null)) >= 1) {
+                    if (player.ability == clickedAbility) {
+                        player.sendMessage(Component.text("이미 선택한 능력입니다.", NamedTextColor.RED))
+                        player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.3f, 1.0f)
+                    }
+                    else {
+                        Functions.removeInventoryItem(player, AbilityShop.getSelectTicketItem(grade, false, null), 1)
+                        AbilityManager().applyAbility(player, clickedAbility)
+                    }
                 }
                 else {
-                    Functions.removeInventoryItem(player, AbilityShop.getSelectTicketItem(grade, false, null), 1)
-                    AbilityManager().applyAbility(player, clickedAbility)
+                    player.sendMessage(Component.text("능력을 선택하려면 해당 등급의 선택권이 필요합니다.", NamedTextColor.RED))
+                    player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.3f, 1.0f)
                 }
             }
-            else {
-                player.sendMessage(Component.text("능력을 선택하려면 해당 등급의 선택권이 필요합니다.", NamedTextColor.RED))
-                player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.3f, 1.0f)
+            else if (event.isRightClick) {
+                clickedAbility.sendAbilityInfo(player)
+                player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
             }
         }
     }

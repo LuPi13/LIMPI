@@ -93,8 +93,14 @@ object PickPocket : Ability(
                         }
                     }
 
-                    for (item in inventory.shuffled()) {
+                    searchItem@for (item in inventory.shuffled()) {
                         if (item != null && item.type != Material.AIR) {
+                            // 능력 아이템은 무시
+                            for (active in AbilityManager().activeItems) {
+                                if (item.isSimilar(active)) {
+                                    continue@searchItem
+                                }
+                            }
                             val droppedItem: Item = player.world.dropItemNaturally(fishHook.location, item)
                             droppedItem.velocity = player.eyeLocation.toVector()
                                     .subtract(fishHook.location.toVector()).multiply(0.125)
@@ -115,7 +121,7 @@ object PickPocket : Ability(
                         if (item != null && item.type != Material.AIR) {
                             val droppedItem: Item = player.world.dropItemNaturally(fishHook.location, item)
                             droppedItem.velocity = player.eyeLocation.toVector()
-                                    .subtract(fishHook.location.toVector()).multiply(0.125)
+                                .subtract(fishHook.location.toVector()).multiply(0.125)
                             inventory.setItem(slot, ItemStack(Material.AIR))
                             break
                         }

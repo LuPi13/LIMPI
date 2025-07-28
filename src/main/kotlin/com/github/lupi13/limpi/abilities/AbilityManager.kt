@@ -1,6 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.FileManager
+import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.LIMPI
 import io.papermc.paper.entity.SchoolableFish
 import net.kyori.adventure.text.Component
@@ -37,7 +38,8 @@ class AbilityManager : Listener {
         PickPocket, EmeraldFix, CookieRun, AdaptiveDefense, LittleEat, HotPickaxe, EntityThrower, WebShooter,
         FriendlyUndead, FriendlyCreeper, WaterMeleeBoost, HeavySnowball, SuspiciousSugar, KneePropel,
         ShieldStrike, PullingBow, UpperCut, DefenseAllIn, KillingDice, GatheringStorm, ImpactLanding,
-        BladeLeaper, ChainLightning, OverBalance, JudgementRay
+        BladeLeaper, ChainLightning, OverBalance, JudgementRay, Muspell, BlunderBooster, ZombieKing,
+        HarmonySword, HarmonyArrow, Transcendence, CometStrike, Titan
         )
 
     /**
@@ -148,6 +150,10 @@ class AbilityManager : Listener {
         abilities.forEach { it.registerEvents() }
     }
 
+    /**
+     * 능력 파일을 설정합니다.
+     * 이 메소드는 플러그인 시작 시 한 번만 호출되어야 합니다.
+     */
     fun setupAbilityFiles() {
         if (!File(plugin.dataFolder.toString() + File.separator + "ability").exists()) {
             File(plugin.dataFolder.toString() + File.separator + "ability").mkdirs()
@@ -201,6 +207,7 @@ class AbilityManager : Listener {
      * @param ability 적용할 능력의 Ability
      */
     fun applyAbility(player: Player, ability: Ability?) {
+        Functions.resetPlayerAttributes(player)
         val currentAbility = getAbilityByCodeName(getPlayerAbilityCodeName(player) ?: "")
         if (ability == null) {
             player.sendMessage(Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE))
@@ -243,7 +250,7 @@ class AbilityManager : Listener {
      */
     fun unlockAbility(player: Player, ability: Ability) {
         val config = FileManager.getPlayerData(player)
-        val unlockedAbilities = config.getStringList("unlockedAbilities") ?: mutableListOf()
+        val unlockedAbilities = config.getStringList("unlockedAbilities")
         if (!unlockedAbilities.contains(ability.codeName)) {
             unlockedAbilities.add(ability.codeName)
             config.set("unlockedAbilities", unlockedAbilities)
@@ -285,7 +292,8 @@ class AbilityManager : Listener {
         Rabbit::class.java, Turtle::class.java, Fox::class.java, Strider::class.java,
         Axolotl::class.java, Frog::class.java, Tadpole::class.java, Allay::class.java,
         Parrot::class.java, Squid::class.java, GlowSquid::class.java, Snowman::class.java,
-        Bat::class.java, SchoolableFish::class.java, Camel::class.java, Sniffer::class.java, Armadillo::class.java
+        Bat::class.java, SchoolableFish::class.java, Camel::class.java, Sniffer::class.java, Armadillo::class.java,
+        HappyGhast::class.java
     )
     val neutral: List<Class<out Damageable>> = listOf(
         Spider::class.java, CaveSpider::class.java, Wolf::class.java, Enderman::class.java,

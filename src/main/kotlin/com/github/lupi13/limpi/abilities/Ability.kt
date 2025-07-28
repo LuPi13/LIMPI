@@ -9,6 +9,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.entity.Player
 import org.bukkit.event.Listener
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
@@ -29,24 +30,24 @@ abstract class Ability(
     open val activeItem: ItemStack? = null,
     open val howToGet: Component = Component.text("뽑기로 획득"),
     open val relatedQuest: List<Quest>? = null,
-    val needFile: Boolean = false,
+    open val needFile: Boolean = false,
     open var file: File? = null,
-    open var config: YamlConfiguration? = null
+    open var config: YamlConfiguration? = null,
 ) : Listener {
     protected open val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
 
     open fun setUpFile() {
-        if (needFile) {
-            file = File(plugin.dataFolder.toString() + File.separator + "ability", "${codeName}.yml")
-            if (!file!!.exists()) {
-                try {
-                    file!!.createNewFile()
-                } catch (e: Exception) {
-                    println(e.message)
-                }
+        if (!needFile) return
+
+        file = File(plugin.dataFolder.toString() + File.separator + "ability", "${codeName}.yml")
+        if (!file!!.exists()) {
+            try {
+                file!!.createNewFile()
+            } catch (e: Exception) {
+                println(e.message)
             }
-            config = YamlConfiguration.loadConfiguration(file!!)
         }
+        config = YamlConfiguration.loadConfiguration(file!!)
     }
 
     fun saveConfig() {
@@ -80,6 +81,35 @@ abstract class Ability(
         }
         item.itemMeta = meta
         return item
+    }
+
+    fun sendAbilityInfo(player: Player) {
+        var text: Component = Component.text("\n", NamedTextColor.WHITE)
+            .append(this.displayName)
+            .append(Component.text(" ", NamedTextColor.WHITE))
+            .append(this.grade.displayGrade)
+            .append(Component.text(" ", NamedTextColor.WHITE))
+            .append(this.element.displayElement)
+            .append(Component.text("\n\n", NamedTextColor.WHITE))
+
+        for (line in this.details) {
+            text = text.append(line)
+                .append(Component.text("\n", NamedTextColor.WHITE))
+        }
+        text = text.append(Component.text("\n획득 방법: ", NamedTextColor.WHITE))
+            .append(this.howToGet)
+
+        val relatedQuests = this.relatedQuest
+        if (relatedQuests != null) {
+            text = text.append(Component.text("\n\n관련 퀘스트: ", NamedTextColor.WHITE))
+            for (quest in relatedQuests) {
+                text = text.append(Component.text("", NamedTextColor.WHITE)
+                    .append(quest.displayName)
+                    .append(Component.text(" ", NamedTextColor.WHITE)))
+            }
+        }
+
+        player.sendMessage(text)
     }
 }
 

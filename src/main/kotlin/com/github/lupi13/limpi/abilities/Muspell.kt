@@ -5,6 +5,8 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.FluidCollisionMode
 import org.bukkit.Material
+import org.bukkit.Particle
+import org.bukkit.Sound
 import org.bukkit.entity.Arrow
 import org.bukkit.entity.Damageable
 import org.bukkit.entity.Marker
@@ -33,7 +35,7 @@ object Muspell : Ability(
     override val details: List<Component> by lazy {
         listOf(
             Component.text("최대로 당겨 쏜 일반 화살이 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("damage")}", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN))
                 .append(Component.text("의 범위 피해를 주는 불덩이로 변환됩니다.", NamedTextColor.WHITE)),
             Component.text("불덩이는 이동 경로의 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
@@ -52,10 +54,10 @@ object Muspell : Ability(
             config?.set("damage_range", 3.0)
             config?.set("lifetime_ticks", 100)
             config?.set("fire_ticks", 100)
-            config?.set("velocity", 1.0)
-            config?.set("track_search_distance", 20.0)
-            config?.set("track_search_angle", 30.0)
-            config?.set("tracking_coefficient", 0.5)
+            config?.set("velocity", 1.5)
+            config?.set("track_search_distance", 40.0)
+            config?.set("track_search_angle", 15.0)
+            config?.set("tracking_coefficient", 0.2)
         }
         saveConfig()
     }
@@ -70,8 +72,19 @@ object Muspell : Ability(
         if (!arrow.isCritical) return
 
         arrow.remove()
+        event.isCancelled = true
 
         val world = player.world
+
+        world.playSound(player.location, Sound.BLOCK_FIRE_EXTINGUISH, 1.0f, 0.5f)
+        world.playSound(player.location, Sound.ENTITY_BLAZE_SHOOT, 1.0f, 0.7f)
+        world.playSound(player.location, Sound.ENTITY_BLAZE_HURT, 0.7f, 0.5f)
+        world.spawnParticle(
+            Particle.FLAME,
+            player.eyeLocation,
+            50,
+            0.2, 0.2, 0.2, 0.1
+        )
 
         // 불덩이 소환
         val fireball = world.spawn(player.eyeLocation, Marker::class.java)
@@ -84,7 +97,7 @@ object Muspell : Ability(
 
         val damage = config!!.getDouble("damage")
         val damageRange = config!!.getDouble("damage_range")
-        val lifetime = config!!.getInt("lifetimeTicks")
+        val lifetime = config!!.getInt("lifetime_ticks")
         val velocity = config!!.getDouble("velocity")
         val fireTicks = config!!.getInt("fire_ticks")
         val trackSearchDistance = config!!.getDouble("track_search_distance")
@@ -94,7 +107,7 @@ object Muspell : Ability(
         object: BukkitRunnable() {
             var tick = 0
             var trackTarget: Damageable? = null
-            var movingVector = fireball.location.direction.multiply(velocity)
+            var movingVector = player.location.direction.multiply(velocity)
             override fun run() {
                 // 추적 목표 탐색
                 // 5틱마다 탐색
@@ -108,12 +121,13 @@ object Muspell : Ability(
                 * 6. 목적합수: 필터링된 엔티티들에 대해, 투사체벡터와 투사체-엔티티 벡터를 외적합니다.
                 *             목적함수의 값이 가장 작은 엔티티를 추적 대상으로 선택합니다.
                  */
-                if ((tick % 5 == 0) && trackTarget != null) {
+                if ((tick % 5 == 0) && trackTarget == null) {
                     val trackSearchLocation = fireball.location.clone().add(movingVector.clone().multiply(trackSearchDistance / 2))
                     val entities = trackSearchLocation.getNearbyEntities(trackSearchDistance, trackSearchDistance, trackSearchDistance)
 
                     entities.removeIf { it !is Damageable || !AbilityManager().isEnemy(player, it) }
                     entities.removeIf { it.location.distance(fireball.location) > trackSearchDistance }
+
 
                     var best: Damageable? = null
                     var bestValue = Double.MAX_VALUE
@@ -122,6 +136,16 @@ object Muspell : Ability(
                         val entityVector = entity.location.toVector().subtract(fireball.location.toVector())
                         val angle = acos(movingVector.clone().normalize().dot(entityVector.clone().normalize()))
                         if (angle > Math.toRadians(trackSearchAngle)) continue
+
+                        // rayTrace를 통해 벽 등에 가려지지 않는지 확인
+                        val rayTraceBlock = world.rayTraceBlocks(
+                            fireball.location,
+                            entityVector.clone().normalize(),
+                            entityVector.length(),
+                            FluidCollisionMode.NEVER,
+                            true
+                        )
+                        if (rayTraceBlock != null && rayTraceBlock.hitBlock != null) continue
 
                         val crossValue = (movingVector.clone().crossProduct(entityVector.clone())).length()
 
@@ -134,10 +158,23 @@ object Muspell : Ability(
                     trackTarget = best
                 }
 
+                // 추적 대상과 각도가 90도 이상(dotProduct)이면 추적 대상 초기화
+                if (trackTarget != null) {
+                    val targetVector = trackTarget!!.location.toVector().subtract(fireball.location.toVector())
+                    if (movingVector.clone().normalize().dot(targetVector.clone().normalize()) < 0) {
+                        trackTarget = null
+                    }
+                }
+
+                // 추적 대상 죽으면 추적 대상 초기화
+                if (trackTarget != null && (trackTarget!!.isDead || !trackTarget!!.isValid)) {
+                    trackTarget = null
+                }
+
 
                 // trackTarget이 null이 아니면 추적
                 if (trackTarget != null) {
-                    val normalizedTargetVector = trackTarget!!.location.toVector().subtract(fireball.location.toVector()).normalize()
+                    val normalizedTargetVector = trackTarget!!.boundingBox.center.subtract(fireball.location.toVector()).normalize()
 
                     movingVector.add(normalizedTargetVector.multiply(trackingCoefficient))
                     movingVector.normalize().multiply(velocity)
@@ -148,23 +185,62 @@ object Muspell : Ability(
                     fireball.location,
                     movingVector,
                     velocity,
-                    FluidCollisionMode.NEVER,
+                    FluidCollisionMode.ALWAYS,
                     true,
                     0.0,
-                    null
+                    { it !is Marker && it != player },
+                    { it.type == Material.WATER || !it.isPassable }
                 )
 
                 // 히트 판정
                 if (rayTrace != null) {
                     val hitLocation = rayTrace.hitPosition.toLocation(world)
 
+                    // 물에 닿으면 제거
+                    if (rayTrace.hitBlock != null && rayTrace.hitBlock!!.type == Material.WATER) {
+                        tick = lifetime // 종료
+                        fireball.remove()
+                        cancel()
+                        return
+                    }
+
                     val entities = world.getNearbyEntities(hitLocation, damageRange*2, damageRange*2, damageRange*2)
                     entities.removeIf { it !is Damageable || !AbilityManager().isEnemy(player, it) }
                     entities.removeIf { it.location.distance(hitLocation) > damageRange }
+
+                    for (entity in entities) {
+                        entity.fireTicks = fireTicks
+                        (entity as Damageable).damage(damage / (entity.boundingBox.center.subtract(hitLocation.toVector()).length()).coerceIn(1.0, damageRange), player)
+                    }
+                    world.spawnParticle(
+                        Particle.SMOKE,
+                        hitLocation,
+                        50,
+                        0.2, 0.2, 0.2, 0.1
+                    )
+                    world.spawnParticle(
+                        Particle.FLAME,
+                        hitLocation,
+                        100,
+                        0.2, 0.2, 0.2, 0.1
+                    )
+                    world.playSound(hitLocation, Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f)
+
+                    tick = lifetime // 종료
                 }
 
+                // 이동
+                fireball.teleport(fireball.location.add(movingVector))
+                world.spawnParticle(Particle.FLAME, fireball.location, 10, 0.2, 0.2, 0.2, 0.01, null, true)
+                world.spawnParticle(Particle.SMOKE, fireball.location, 20, 0.2, 0.2, 0.2, 0.01)
+                world.playSound(fireball.location, Sound.ENTITY_BREEZE_CHARGE, 0.5f, 0.5f)
 
+                tick++
+                if (tick >= lifetime) {
+                    fireball.remove()
+                    cancel()
+                }
             }
-        }
+        }.runTaskTimer(plugin, 0L, 1L)
     }
 }

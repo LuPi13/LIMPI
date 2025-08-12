@@ -319,7 +319,7 @@ object BladeLeaper : Ability(
                     if (player.gameMode != GameMode.CREATIVE) {
                         val meta = thrownSword.itemStack.itemMeta as org.bukkit.inventory.meta.Damageable
                         if (meta.damage < item.type.maxDurability) {
-                            player.inventory.addItem(item)
+                            player.world.dropItem(tpLocation!!, item)
                         }
                         else {
                             player.playSound(player.location, Sound.ENTITY_ITEM_BREAK, 1f, 1f)

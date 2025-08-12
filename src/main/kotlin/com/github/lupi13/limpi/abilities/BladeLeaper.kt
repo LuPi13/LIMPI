@@ -1,5 +1,6 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.Functions
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.*
@@ -319,7 +320,12 @@ object BladeLeaper : Ability(
                     if (player.gameMode != GameMode.CREATIVE) {
                         val meta = thrownSword.itemStack.itemMeta as org.bukkit.inventory.meta.Damageable
                         if (meta.damage < item.type.maxDurability) {
-                            player.world.dropItem(tpLocation!!, item)
+                            if (Functions.validInventoryIndex(player, item) != null) {
+                                player.inventory.addItem(item)
+                            }
+                            else {
+                                player.world.dropItem(tpLocation!!, item)
+                            }
                         }
                         else {
                             player.playSound(player.location, Sound.ENTITY_ITEM_BREAK, 1f, 1f)

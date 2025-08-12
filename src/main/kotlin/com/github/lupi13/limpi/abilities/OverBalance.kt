@@ -156,7 +156,7 @@ object OverBalance : Ability(
                     player.teleport(fixedLocation)
                     if (ticks % 5 == 0) world.playSound(fixedLocation, Sound.BLOCK_BUBBLE_COLUMN_WHIRLPOOL_INSIDE, 1f, ticks / (shootingDelay / 1.5f) + 0.5f)
 
-                    if (player.isDead || !player.isOnline || player.ability != this) {
+                    if (player.isDead || !player.isOnline || player.ability != this@OverBalance) {
                         rail.remove()
                         cancel()
                         return

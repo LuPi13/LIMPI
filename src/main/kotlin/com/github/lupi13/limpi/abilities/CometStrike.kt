@@ -224,7 +224,7 @@ object CometStrike : Ability(
                                     player.fallDistance = 0.0f
                                 }
                                 else {
-                                    player.damage(18.0)
+                                    player.damage(damage, player)
                                 }
 
                                 player.world.spawnParticle(

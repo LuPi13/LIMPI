@@ -160,6 +160,12 @@ object JudgementRay : Ability(
                 if (ticks <= shootingDelay) {
                     player.teleport(fixedLocation)
                     if (ticks % 5 == 0) world.playSound(fixedLocation, Sound.BLOCK_BUBBLE_COLUMN_WHIRLPOOL_INSIDE, 1f, ticks / (shootingDelay / 1.5f) + 0.5f)
+
+                    if (player.isDead || !player.isOnline || player.ability != this) {
+                        rail.remove()
+                        cancel()
+                        return
+                    }
                 }
                 perpendicular.rotateAroundAxis(vector, Math.PI / 12.0)
 

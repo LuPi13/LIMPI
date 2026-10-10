@@ -2,7 +2,6 @@ package com.github.lupi13.limpi.economy
 
 import com.github.lupi13.limpi.player.PlayerRepository
 import com.github.lupi13.limpi.storage.*
-import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import java.nio.ByteBuffer
 import java.security.MessageDigest
@@ -25,10 +24,10 @@ class BankService(private val store: StateStore, private val players: PlayerRepo
         if (sender == recipient) throw BankException(BankFailure.SAME_ACCOUNT)
         if (amount <= 0) throw BankException(BankFailure.INVALID_AMOUNT)
         return execute(id, BankOperation.TRANSFER, sender.toString(), recipient, amount) { transaction ->
-            val from = account(transaction, sender)
-            val to = account(transaction, recipient)
-            val senderBalance = balance(from)
-            val recipientBalance = balance(to)
+            val from = Accounts.read(transaction, sender)
+            val to = Accounts.read(transaction, recipient)
+            val senderBalance = Accounts.balance(from)
+            val recipientBalance = Accounts.balance(to)
             val value = Money(amount)
             val fee = value.fee(5)
             val total = checked { value + fee }
@@ -48,8 +47,8 @@ class BankService(private val store: StateStore, private val players: PlayerRepo
     fun set(id: UUID, actor: String, target: UUID, amount: Long): BankReceipt {
         if (amount < 0) throw BankException(BankFailure.INVALID_AMOUNT)
         return execute(id, BankOperation.SET, actor, target, amount) { transaction ->
-            val data = account(transaction, target)
-            val before = integralBalance(data)
+            val data = Accounts.read(transaction, target)
+            val before = Accounts.integralBalance(data)
             data.set("money", amount)
             transaction.put(SqliteProfilePersistence.key(target), data.saveToString())
             receipt(id, BankOperation.SET, actor, target, amount, 0, mapOf(target to before), mapOf(target to amount))
@@ -59,8 +58,8 @@ class BankService(private val store: StateStore, private val players: PlayerRepo
     fun adjust(id: UUID, actor: String, target: UUID, delta: Long): BankReceipt {
         if (delta == 0L) throw BankException(BankFailure.INVALID_AMOUNT)
         return execute(id, BankOperation.ADJUST, actor, target, delta) { transaction ->
-            val data = account(transaction, target)
-            val before = balance(data).units
+            val data = Accounts.read(transaction, target)
+            val before = Accounts.balance(data).units
             val after = try { Math.addExact(before, delta) } catch (failure: ArithmeticException) {
                 throw BankException(BankFailure.OVERFLOW)
             }
@@ -81,20 +80,6 @@ class BankService(private val store: StateStore, private val players: PlayerRepo
         return parseReceipt(committed)
     }
 
-    private fun account(transaction: StateTransaction, id: UUID): YamlConfiguration {
-        val payload = transaction.get(SqliteProfilePersistence.key(id)) ?: throw BankException(BankFailure.UNKNOWN_PLAYER)
-        return YamlFiles.parse(payload)
-    }
-
-    private fun integralBalance(data: FileConfiguration): Long = when (val value = data.get("money")) {
-        is Byte, is Short, is Int, is Long -> (value as Number).toLong()
-        else -> throw BankException(BankFailure.INVALID_ACCOUNT)
-    }
-    private fun balance(data: FileConfiguration): Money {
-        val value = integralBalance(data)
-        if (value < 0) throw BankException(BankFailure.INVALID_ACCOUNT)
-        return Money(value)
-    }
     private fun checked(body: () -> Money): Money = try { body() } catch (failure: ArithmeticException) {
         throw BankException(BankFailure.OVERFLOW)
     }

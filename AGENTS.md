@@ -9,3 +9,4 @@
 - 다음 작업 전에 [구현 기록](docs/IMPLEMENTATION_LOG.md)의 완료/미완료 항목과 다음 순서를 읽는다.
 - 플레이어/마켓 정본은 `limpi.sqlite3`다. 기존 YAML은 최초 이전 원본이며 이후 자동 동기화하지 않는다. [저장소·복구 절차](docs/STORAGE_AND_RECOVERY.md)를 따른다. DB를 삭제해 과거 YAML을 재가져오는 복구를 하지 않는다.
 - 송금·관리자 set/add는 `BankService`와 SQLite 멱등 원장을 사용한다. 같은 거래 UUID에 다른 요청을 허용하지 않는다. 캐시와 DB 변경을 함께 관리한다. 마켓/수표/판매/아이템 지급의 연결은 아직 남아 있으며 DB와 인벤토리가 원자적이라고 가정하지 않는다.
+- 지급/마켓 도메인의 다음 연결 조건은 [지급 복구 설계](docs/DELIVERY_RECOVERY.md)에 기록했다. `DeliveryInventory`는 live PDC 대신 저장된 playerdata checkpoint를 확인해야 한다. 실패 후 같은 live inventory를 정상 재시도 대상으로 사용하지 않는다. 새 도메인은 아직 기존 마켓 이벤트·명령에 연결하지 않았다.

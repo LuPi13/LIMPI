@@ -49,6 +49,8 @@
 
 ### 2026-10-10 / SQLite·송금 원장
 
+- `5870a95`: SQLite·이전·송금/관리자 원장 구현과 테스트. origin에 push 완료.
+
 - `storage/StateStore`와 `SqliteStateStore`를 도입했다. 플레이어 프로필과 마켓 상태를 `limpi.sqlite3`의 documents 테이블에 보존한다. 설정/종목 가격 YAML은 유지한다. 저장된 프로필 payload는 기존 YAML 필드 구조를 보존하며, 캐시/격리 편집/충돌 처리는 `CachedPlayerRepository`와 저장 어댑터로 분리했다.
 - SQLite JDBC 3.53.4.0을 배포 JAR에 포함했다. WAL, synchronous=FULL, busy timeout 5초, BEGIN IMMEDIATE를 사용한다. schema/application ID를 검사해 다른 DB와 미래 schema를 덮지 않는다. native 라이브러리를 재배치하지 않는다. Paper가 제공하는 SLF4J/Paper API와 JUnit은 배포 JAR에 넣지 않는다.
 - `LegacyStateMigration`은 모든 UUID YAML·market YAML을 먼저 읽고 검증한다. 원본 payload와 SHA-256, 플레이어 수/BigInteger 잔액 합계를 기록한다. `backups/sqlite-v1/`에 원본을 보존한 뒤 한 트랜잭션으로 가져오기와 완료 marker를 저장한다. 실패하면 일부 프로필이나 marker만 남지 않는다. 기존 YAML을 삭제하지 않는다. 이미 완료된 가져오기는 재시작 때 오래된 YAML로 현재 DB를 덮지 않는다.
@@ -59,6 +61,16 @@
 - 이름 인덱스에서 같은 과거 이름을 가진 UUID가 여러 개면 임의 계좌로 송금하지 않고 이름 조회를 거부한다. UUID를 직접 지정할 수 있다. 원장 변경 이후 프로필 캐시를 무효화하므로 오래된 능력 편집을 저장해도 최신 송금 잔액을 되돌리지 않는다.
 - 운영/복구 경로와 아직 남은 경계를 [저장소·복구 절차](STORAGE_AND_RECOVERY.md)에 기록했다. **마켓은 저장 위치만 옮겼으며 거래 서비스 연결은 아직 남아 있다. 아이템/DB 동시 원자성은 구현하지 않았다.**
 
+### 2026-10-10 / 미수령 지급·마켓 거래 도메인
+
+- `delivery/InventoryPlan`을 추가했다. 아이템별 전체 수량과 중첩 상한을 확인하고, 부분 스택을 먼저 채운 다음 빈 슬롯을 배정한다. 모든 아이템이 들어가지 않으면 원본을 바꾸지 않고 전체 계획을 거부한다. 단일 아이템의 payload에는 이름/lore/PDC를 포함한 원본 구성요소가 들어가야 하며 다른 payload는 같은 material이어도 합치지 않는다. Long 수량을 항목 수만큼 객체로 만들지 않고 슬롯 단위로 처리한다.
+- `DeliveryJournal.stage()`는 잔액/매물/보상 트랜잭션 안에서 미수령 기록을 생성한다. 완료 후 같은 ID로 stage를 반복해도 새 지급을 만들지 않는다. 지급 예정 전체 수량, owner UUID, 원본 슬롯/완료 슬롯, 상태를 보존한다. 완료는 별도 멱등 원장과 함께 pending→done 문서 이동으로 저장한다.
+- `DeliveryService`는 PENDING→APPLYING 기록 후 인벤토리를 변경한다. 저장된 플레이어 파일의 checkpoint와 after 이미지가 확인된 뒤에만 DONE을 기록한다. 공간 부족은 PENDING 그대로 남긴다. 물리 저장/최종 DB commit 실패 후 같은 live inventory로 재시도하지 않으며 fresh login에서 기록과 저장 상태로 복구한다. 불일치는 REVIEW로 남기고 임의 덮어쓰기/재지급을 하지 않는다. 이전 APPLYING 처리 전에 다른 지급이 checkpoint를 덮지 않게 한다.
+- `market/MarketCatalog`에는 표시 코드와 별개의 영구 매물 UUID, seller UUID, 원본 아이템, ACTIVE/OWNERSHIP_REVIEW/SOLD/RETURNED 상태를 도입했다. 이름만 있고 소유자 확인이 안 되는 기존 매물을 보호할 수 있다. 원본 legacy market payload는 별도로 보존한다.
+- `MarketService.buy()`는 구매자 차감/판매자 입금/정수 수수료/매물 SOLD/미수령 아이템/영수증을 같은 SQLite commit에 넣는다. 판매자의 변경 전 이름을 지급 계좌로 사용하지 않는다. 인벤토리 공간이 없어도 매물/아이템을 지우는 대신 미수령 권리를 보존하는 구조다. withdraw도 소유자에게 미수령 반환을 생성하고 거래 ID 재시도를 지원한다.
+- 은행·마켓의 원장 내부 계좌 조회/정수·schema 검증을 `economy/Accounts`로 공유했다. 마켓 정산은 캐시가 아닌 해당 DB 트랜잭션의 최신 값을 사용한다.
+- **이번 단계는 순수 정책/저장·거래 도메인 구현이다. FileManager 초기화·Paper 인벤토리 어댑터·기존 마켓 이벤트/명령은 아직 새 도메인에 연결하지 않았다.** 따라서 기존 마켓 화면의 결함을 해결 완료로 처리하지 않는다. [지급 복구 설계와 연결 조건](DELIVERY_RECOVERY.md)을 다음 작업 기준으로 삼는다.
+
 ## 검증
 
 - JUnit 5와 테스트 실행을 빌드에 추가했다. Paper API는 테스트 classpath에만 추가되고 배포 JAR에는 포함하지 않는다.
@@ -68,6 +80,7 @@
 - 주식/거래/페이지 추가 후 총 **45개** 테스트 통과(실패/에러/스킵 0). `clean test build --warning-mode all` 통과했고, 마지막 손상 보유 처리 추가 후 `test build`도 통과했다. 기존 컴파일 경고 3개는 능력 정비 단계에서 처리한다.
 - SQLite/마이그레이션/은행/이름 충돌/schema 보호 추가 후 총 **76개** 테스트 통과(실패/에러/스킵 0). `test build --console=plain` 성공(exit code 0). 실제 임시 SQLite 파일로 실패 rollback, 두 DB 연결의 동일 ID 경쟁, 재시작 후 재시도, 원본 백업/알 수 없는 필드·빈 섹션 보존, 손상 입력 거부, stale profile 편집, 잔액/수수료/Long 경계를 시험했다.
 - 배포 JAR에서 SQLite JDBC·Windows/Linux x86_64 native library·JDBC service descriptor 포함을 확인했다. Paper/Bukkit/SLF4J API와 JUnit 클래스는 미포함이다. JDK 25의 SQLite native load 안내 경고가 테스트 실행에 출력되며 테스트는 성공했다. 서버 JVM native access 설정은 최종 운영 점검에서 확인한다.
+- 지급/마켓 도메인 추가 후 총 **98개** 테스트 통과(실패/에러/스킵 0), `test build --console=plain` 성공(exit code 0). 아이템 수량 보존·10개 구매 공간·부분 중첩·커스텀 아이템 구분·Long 최대 수량·실패 전/후 재시작·불명확 상태 격리, 실제 SQLite 두 연결의 매물 경쟁·판매자 UUID/오프라인·수수료·부분 commit 방지·구매/회수 재시도를 시험했다. Inventory fake의 저장 증거는 프로토콜 시험이며 실제 Paper playerdata 저장의 보장을 입증하지는 않는다.
 
 ## 항목별 진행 상태
 
@@ -77,7 +90,8 @@
 | DATA-02 | 부분 해결 | strict YAML/원자 저장/SQLite/마이그레이션/이름 충돌 보호 구현. 전체 사용자 오류 처리, 명령형 export·검사 도구, 운영 복구 시험은 남음 |
 | DATA-03 | 완료(단위 검증) | 기존 서버 플레이어 ensure/현재 이름/기존 데이터 보존 구현. 실제 접속 확인은 이후 |
 | MONEY-01 | 진행 중 | Money 규칙·주식·송금/관리자 명령어 연결 완료. 상점/마켓/수표/판매 호출부 연결은 남음 |
-| MONEY-02 | 부분 해결 | SQLite 멱등 원장과 원자 송금 완료. 매물/수표/판매/아이템 지급 및 복구 연결은 남음 |
+| MONEY-02 | 부분 해결 | SQLite 멱등 원장/송금 연결, 마켓 정산·미수령 도메인 구현. 마켓 플랫폼 연결·등록 escrow, 수표/판매/보상 연결은 남음 |
+| ITEM-01 | 부분 해결 | 전체 수량 계획·영속 미수령/지급 복구 도메인 구현. Paper 저장 증거 어댑터와 기존 지급 호출부 연결은 남음 |
 | STOCK-01 | 구현 완료(단위 검증) | 가격/설정 정책과 실제 갱신 경로 연결. 실제 서버 실행 확인은 이후 |
 | STOCK-02 | 구현 완료(정책 단위 검증) | 시간 경계/재시작 상태/1초 검사 구현. Paper 반복 작업 동작은 서버 시험 이후 |
 | STOCK-03 | 구현 완료(단위 검증) | 취득 원가/매도/잔액 저장과 실패 시험. 과거 손상 원가의 자동 추정은 하지 않음 |
@@ -92,8 +106,8 @@
 ## 다음 작업 순서
 
 1. Money와 경제 서비스를 모든 금액 읽기/계산/갱신 호출부에 연결한다. 작은 호환 facade에서 단계적으로 규칙을 빼낸다.
-2. 도입한 SQLite/원장에 매물/수표/판매/지급을 연결한다. 송금/관리자 거래는 연결 완료다. 마켓 판매자는 이름 대신 UUID를 저장하고 기존 매물은 소유자 확인이 안 되면 보호한다.
-3. 아이템 지급/회수/미수령 보관을 서비스로 통일하고 전체 수량을 검증한다. DB와 Minecraft 인벤토리가 원자적이라고 주장하지 않는다.
+2. `DeliveryInventory`의 Paper 어댑터를 구현한다. Player.saveData()는 void이므로 반환만으로 저장 증거를 확정하지 않는다. 저장된 playerdata checkpoint 확인, 실패 시 추가 인벤토리 사용 차단/이탈, 접속 복구·미수령 수령·REVIEW 운영자 해결을 연결한다.
+3. 새 MarketCatalog로 기존 매물을 이전하고 FileManager/마켓 이벤트·명령을 MarketService에 연결한다. 신규 등록은 물품 escrow 기록→물리 회수 저장 확인→공개 순서를 구현한다. 기존 raw market payload는 보존한다. 수표/판매/상점/보상도 원장과 지급/회수 서비스에 연결한다.
 4. 주식 외의 상점·마켓·판매/능력 메뉴를 Holder/슬롯 액션/공유 페이지 흐름으로 이전한다. GUI-04의 능력 선택·도감 결함도 직접 수정한다.
 5. 능력 세션/전환/작업·속성 정리, 뽑기 확정/연출, 퀘스트 보상, 명령어 정의, 나머지 42개 능력 순으로 진행한다.
 

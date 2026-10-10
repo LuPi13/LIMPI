@@ -17,6 +17,9 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.financial.admin.transition:
+    description: Inspect and resolve interrupted ability inventory transitions
+    default: op
   limpi.ability.select:
     description: Select an unlocked ability with a matching ticket
     default: true

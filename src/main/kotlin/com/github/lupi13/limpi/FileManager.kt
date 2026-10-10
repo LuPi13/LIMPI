@@ -10,6 +10,7 @@ import com.github.lupi13.limpi.economy.ItemExchange
 import com.github.lupi13.limpi.gacha.GachaSettlement
 import com.github.lupi13.limpi.ability.AbilitySelection
 import com.github.lupi13.limpi.ability.AbilityItemUse
+import com.github.lupi13.limpi.ability.AbilityTransitions
 import com.github.lupi13.limpi.ability.InitialRewards
 import com.github.lupi13.limpi.ability.InitialTicketCounts
 import com.github.lupi13.limpi.quest.QuestRewards
@@ -49,6 +50,7 @@ class FileManager {
         private lateinit var itemExchange: ItemExchange
         private lateinit var gachaSettlement: GachaSettlement
         private lateinit var abilitySelection: AbilitySelection
+        private lateinit var abilityTransitions: AbilityTransitions
         private lateinit var initialRewards: InitialRewards
         private lateinit var initialItems: List<com.github.lupi13.limpi.delivery.ItemGrant>
         private lateinit var questRewards: QuestRewards
@@ -67,6 +69,7 @@ class FileManager {
         val exchanges: ItemExchange get() = itemExchange
         val gacha: GachaSettlement get() = gachaSettlement
         val selections: AbilitySelection get() = abilitySelection
+        val transitions: AbilityTransitions get() = abilityTransitions
         val quest: QuestRewards get() = questRewards
 
         fun initialize(owner: Plugin) {
@@ -97,8 +100,9 @@ class FileManager {
             itemExchange = ItemExchange(state, deliveryJournal)
             gachaSettlement = GachaSettlement(state)
             abilitySelection = AbilitySelection(state)
+            abilityTransitions = AbilityTransitions(state, repository)
             removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange, GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection, AbilityItemUse.KIND to AbilityItemUse(deliveryJournal)))
-            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal)
+            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal, abilityTransitions)
             financial.clear()
         }
 

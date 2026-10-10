@@ -109,7 +109,8 @@ object AbilityManager : Listener {
         if (ability.restrictedSlot == null || ability.activeItem == null) return
         val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
         try {
-            replaceInventory(player, planInventory(player, ability, before))
+            val terms = transitionTerms(player, ability)
+            if (terms.plan(before) != before) FileManager.delivery.transition(player, terms, before)
         } catch (_: com.github.lupi13.limpi.delivery.InventoryFull) {
             player.sendMessage(Component.text("능력 아이템을 장착하려면 인벤토리 공간을 확보하세요.", NamedTextColor.YELLOW))
         }
@@ -173,11 +174,6 @@ object AbilityManager : Listener {
      * @param player 능력을 저장할 플레이어
      * @param codeName 저장할 능력의 codeName(String)
      */
-    fun setPlayerAbilityCodeName(player: Player, codeName: String) {
-        val config = FileManager.getPlayerData(player)
-        config.set("ability", codeName)
-        FileManager.savePlayerData(player, config)
-    }
 
     /**
      * 플레이어에게 능력을 적용합니다.
@@ -186,39 +182,30 @@ object AbilityManager : Listener {
      * @param ability 적용할 능력의 Ability
      */
     fun planInventory(player: Player, ability: Ability?, before: List<com.github.lupi13.limpi.delivery.StoredStack?>): List<com.github.lupi13.limpi.delivery.StoredStack?> {
+        return transitionTerms(player, ability).plan(before)
+    }
+
+    private fun transitionTerms(player: Player, ability: Ability?): com.github.lupi13.limpi.ability.TransitionTerms {
         val previous = player.ability
         fun logical(slot: Int?): Int? = slot?.let {
             require(it in 0..35 || it == 40) { "Unsupported ability slot $it" }
             if (it == 40) 36 else it
         }
-        val item = ability?.activeItem
-        val nextItem = item?.let { com.github.lupi13.limpi.delivery.StoredStack(
-            com.github.lupi13.limpi.platform.PaperItemCodec.payload(it), it.amount, minOf(it.maxStackSize, player.inventory.maxStackSize)) }
-        return com.github.lupi13.limpi.ability.AbilityInventoryPlan.plan(before, logical(previous?.restrictedSlot),
-            previous?.activeItem?.let(com.github.lupi13.limpi.platform.PaperItemCodec::payload),
+        val nextItem = ability?.activeItem?.let {
+            com.github.lupi13.limpi.delivery.StoredStack(com.github.lupi13.limpi.platform.PaperItemCodec.payload(it),
+                it.amount, minOf(it.maxStackSize, player.inventory.maxStackSize))
+        }
+        return com.github.lupi13.limpi.ability.TransitionTerms(getPlayerAbilityCodeName(player).orEmpty(), ability?.codeName.orEmpty(),
+            logical(previous?.restrictedSlot), previous?.activeItem?.let(com.github.lupi13.limpi.platform.PaperItemCodec::payload),
             if (nextItem == null) null else logical(ability.restrictedSlot), nextItem)
-    }
-
-    private fun replaceInventory(player: Player, image: List<com.github.lupi13.limpi.delivery.StoredStack?>) {
-        require(image.size == 37)
-        val items = image.map { it?.let { stack -> com.github.lupi13.limpi.platform.PaperItemCodec.item(stack.payload, stack.count) } }
-        player.inventory.storageContents = items.take(36).toTypedArray()
-        player.inventory.setItemInOffHand(items.last())
     }
 
     fun applyAbility(player: Player, ability: Ability?, preserveEffect: java.util.UUID? = null) {
         if (FileManager.delivery.blocked(player.uniqueId)) error("Ability application is blocked during item recovery")
         if (getPlayerAbilityCodeName(player).orEmpty() == ability?.codeName.orEmpty()) return
         val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
-        val after = planInventory(player, ability, before)
-        // Decode and plan the whole relocation before touching an attribute or slot.
-        replaceInventory(player, after)
-        try {
-            setPlayerAbilityCodeName(player, ability?.codeName.orEmpty())
-        } catch (failure: Exception) {
-            replaceInventory(player, before)
-            throw failure
-        }
+        val terms = transitionTerms(player, ability)
+        if (!FileManager.delivery.transition(player, terms, before)) throw IllegalStateException("Ability transition requires recovery")
         com.github.lupi13.limpi.platform.AbilityRuntime.closeOwner(player.uniqueId, preserveEffect)
         releaseState(player.uniqueId)
         Functions.resetPlayerAttributes(player)

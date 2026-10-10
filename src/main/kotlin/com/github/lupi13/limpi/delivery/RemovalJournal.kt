@@ -30,7 +30,7 @@ class RemovalJournal(private val store: StateStore, private val players: PlayerR
         val fingerprint = BankService.fingerprint("REMOVAL_PREPARE", owner.toString(), kind, terms,
             YamlConfiguration().apply { set("before", InventoryImages.encode(before)); set("after", InventoryImages.encode(after)) }.saveToString())
         return decode(store.execute(id, fingerprint) { tx ->
-            check(tx.documents("removal_pending/$owner/").isEmpty() && tx.documents("market_escrow_pending/$owner/").isEmpty()) { "An unresolved removal exists" }
+            check(tx.documents("removal_pending/$owner/").isEmpty() && tx.documents("market_escrow_pending/$owner/").isEmpty() && tx.documents("ability_transition_pending/$owner/").isEmpty()) { "An unresolved inventory operation exists" }
             effect.validate(tx, candidate)
             tx.put(pendingKey(owner, id), encode(candidate)); encode(candidate)
         }.entry.receipt)

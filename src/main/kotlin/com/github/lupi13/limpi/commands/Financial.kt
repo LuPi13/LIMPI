@@ -20,7 +20,7 @@ import org.bukkit.inventory.meta.BookMeta
 import java.util.*
 import java.util.regex.Pattern
 
-class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean, private val marketCommands: MarketCommands, private val checkCommands: CheckCommands, private val catalogCommands: CatalogCommands, private val removalCommands: RemovalCommands): CommandExecutor {
+class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean, private val marketCommands: MarketCommands, private val checkCommands: CheckCommands, private val catalogCommands: CatalogCommands, private val removalCommands: RemovalCommands, private val transitionCommands: TransitionCommands): CommandExecutor {
 
     override fun onCommand(
         sender: CommandSender,
@@ -28,6 +28,7 @@ class Financial(private val accountCommands: AccountCommands, private val delive
         label: String,
         args: Array<out String>
     ): Boolean {
+        if (args.firstOrNull()?.equals("transition", true) == true) return transitionCommands.execute(sender, args)
         if (args.firstOrNull()?.equals("removal", true) == true) return removalCommands.execute(sender, args)
         if (deliveryCommands.handles(args)) return deliveryCommands.execute(sender, args)
         if (args.firstOrNull()?.equals("market", true) == true &&

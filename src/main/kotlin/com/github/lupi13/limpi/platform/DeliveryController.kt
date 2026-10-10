@@ -13,7 +13,8 @@ import java.nio.file.Path
 import java.util.UUID
 import java.util.logging.Level
 
-class DeliveryController(private val plugin: Plugin, private val service: DeliveryService, private val escrow: MarketEscrow, private val removals: RemovalJournal) {
+class DeliveryController(private val plugin: Plugin, private val service: DeliveryService, private val escrow: MarketEscrow, private val removals: RemovalJournal,
+                         private val transitions: com.github.lupi13.limpi.ability.AbilityTransitions) {
     private val checkpoint = NamespacedKey(plugin, "delivery_checkpoint")
     private val directory = plugin.config.getString("PlayerDataDirectory")?.takeIf(String::isNotBlank)?.let { configured ->
         val path = Path.of(configured)
@@ -33,7 +34,8 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
         try {
             val inventory = PaperDeliveryInventory(player, checkpoint, files)
             val pendingRemovals = removals.pending(player.uniqueId)
-            check(escrow.pending(player.uniqueId).size + pendingRemovals.size <= 1) { "Multiple interrupted removals" }
+            check(escrow.pending(player.uniqueId).size + pendingRemovals.size + transitions.pending(player.uniqueId).size <= 1) { "Multiple interrupted inventory operations" }
+            transitions.recover(player.uniqueId, removalInventory(player, 37), freshLogin)
             escrow.recover(player.uniqueId, inventory, freshLogin)
             val removalInventory = pendingRemovals.singleOrNull()?.let { removalInventory(player, it.evidence.before.size) } ?: inventory
             removals.recover(player.uniqueId, removalInventory, freshLogin)
@@ -96,6 +98,27 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
             blocked.add(player.uniqueId)
             plugin.logger.log(Level.SEVERE, "Item removal $id ($kind) failed for ${player.uniqueId}", failure)
             player.kick(Component.text("물품 회수 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
+            return false
+        }
+    }
+
+    fun transition(player: Player, terms: com.github.lupi13.limpi.ability.TransitionTerms, before: List<StoredStack?>): Boolean {
+        if (blocked(player.uniqueId)) return false
+        val id = UUID.randomUUID()
+        val inventory = removalInventory(player, before.size)
+        require(inventory.snapshot() == before) { "Inventory changed before ability transition" }
+        var prepared = false
+        try {
+            val record = transitions.prepare(id, player.uniqueId, terms, before)
+            prepared = true
+            transitions.apply(record, inventory)
+            return true
+        } catch (failure: Exception) {
+            if (!prepared && (failure is IllegalArgumentException || failure is InventoryFull)) throw failure
+            blocked.add(player.uniqueId)
+            AbilityRuntime.closeOwner(player.uniqueId)
+            plugin.logger.log(Level.SEVERE, "Ability transition $id failed for ${player.uniqueId}", failure)
+            player.kick(Component.text("능력 전환 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
             return false
         }
     }

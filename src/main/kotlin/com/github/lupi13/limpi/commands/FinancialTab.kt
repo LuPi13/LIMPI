@@ -17,6 +17,11 @@ class FinancialTab: TabCompleter {
         val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
         val completions: MutableList<String> = mutableListOf()
         val list: MutableList<String> = mutableListOf()
+        if (args.firstOrNull()?.equals("transition", true) == true && sender.hasPermission("limpi.financial.admin.transition")) {
+            if (args.size == 2) StringUtil.copyPartialMatches(args[1], listOf("resolve"), completions)
+            if (args.size == 5 && args[1].equals("resolve", true)) StringUtil.copyPartialMatches(args[4], listOf("applied", "retained"), completions)
+            return completions
+        }
         if (args.size == 2 && args[0].equals("removal", true) && sender.hasPermission("limpi.financial.admin.removal")) {
             StringUtil.copyPartialMatches(args[1], listOf("resolve"), completions)
             return completions
@@ -32,6 +37,7 @@ class FinancialTab: TabCompleter {
                 if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
                 if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
                 if (sender.hasPermission("limpi.financial.admin.removal")) list.add("removal")
+                if (sender.hasPermission("limpi.financial.admin.transition")) list.add("transition")
                 if (sender.hasPermission("limpi.financial.admin.market")) list.add("market")
                 if (sender.hasPermission("limpi.financial.check") || sender.hasPermission("limpi.financial.admin.check")) list.add("check")
                 StringUtil.copyPartialMatches(args[0], list, completions)
@@ -49,6 +55,7 @@ class FinancialTab: TabCompleter {
                 if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
                 if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
                 if (sender.hasPermission("limpi.financial.admin.removal")) list.add("removal")
+                if (sender.hasPermission("limpi.financial.admin.transition")) list.add("transition")
                 if (sender.hasPermission("limpi.financial.send")) list.add("send")
                 if (sender.hasPermission("limpi.financial.sell") || sender.hasPermission("limpi.financial.admin.catalog")) list.add("sell")
                 if (sender.hasPermission("limpi.financial.shop") || sender.hasPermission("limpi.financial.admin.catalog")) list.add("shop")

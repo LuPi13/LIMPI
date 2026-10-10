@@ -192,6 +192,14 @@
 - **228개** 테스트 통과(실패/에러/스킵 0), test build 성공. 실제 Paper 실행은 하지 않았다. 계약과 남은 범위는 [능력 runtime](ABILITY_RUNTIME.md).
 - 다음은 능력 전환 물리 checkpoint/profile 정산과 전투 규칙을 연결한다. 전체 목표는 계속 진행 중이다.
 
+### 2026-10-10 / 능력 전환 checkpoint
+
+- 능력 apply/remove/active item 복원에 AbilityTransitions의 frozen 슬롯/코드 계획을 연결했다. 물리 저장 checkpoint 확인 뒤 profile/DONE/대기 삭제/영수증을 원자 확정한다. live rollback으로 프로세스 중단을 해결한다고 가정하지 않는다.
+- 전환/마켓/공통 회수의 소유자 예약을 공유하고 접속 복구에서 전환을 먼저 처리한다. 잘못된 이미지/검토 상태는 접속과 인벤토리 사용을 막는다. 설정 변경 후에도 준비된 원본/새 아이템을 다시 만들지 않는다.
+- financial transition의 오프라인 applied|retained 감사 판단·조회·permission/tab을 연결했다. 기존 선택권/TROLL 대기의 apply/ack는 전환 성공 뒤에만 완료한다.
+- **237개** 테스트 통과(실패/에러/스킵 0), test build 성공. 새 9개 저장/실패/restart/슬롯 보존/예약 시험. 실제 Paper는 미검증. [능력 전환 계약](ABILITY_TRANSITIONS.md).
+- 다음은 전투 취소·귀속·연쇄 제한과 대상 메뉴/설정 정비다. 전체 목표는 계속 진행 중이다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |
@@ -215,7 +223,7 @@
 | GUI-04 | 구현 완료(페이지 단위 검증) | 주식·선택/도감의 실제 Holder/page/sort에 공유 Pagination 연결. 서버 화면 검증은 이후 |
 | QUEST-01 | 부분 해결 | 4개 완료/해금 원자 정산·legacy repair·조화 confirmed progress/threshold 연결. 특수 처치/전투 귀속·서버 검증은 남음 |
 | AB-08 | 부분 해결 | 레벨 감소/경험치 감소 보너스 제거·상한/재진입 보호, ZombieKing 야간 반복 수정 완료. 실제 서버 검증은 이후 |
-| AB-02 | 부분 해결 | same-code no-op·전체 슬롯 relocation/공간 부족 preflight·일반 물품 보존 구현. 전환의 전체 내구성/세션·서버 시험은 남음 |
+| AB-02 | 구현 완료(저장 단위 검증) | same-code no-op·전체 슬롯 relocation/preflight·전환 checkpoint/profile 원자 정산·restart/REVIEW/관리자 판단 구현. 실제 Paper save/이벤트·복구 시험은 이후 |
 | AB-01 | 부분 해결 | 능력 관리자 단일화·ID map·객체 init 반복 작업 제거·start/stop/release 및 공통 runtime 구현. 설정/등록 결합 정비는 계속 |
 | AB-04 | 부분 해결 | UUID 능력 상태·작업/일시 엔티티/laser/속성 소유 범위와 이탈/사망/전환/종료 정리 구현. potion 중첩 정책·대상 메뉴와 실제 서버 검증은 남음 |
 | OPS-01 | 부분 해결 | System.out 교체 제거, 테스트 기반/schema/백업/저장소 복구 문서 구현. CI/복구 도구·시험 및 기타 결합 제거는 남음 |

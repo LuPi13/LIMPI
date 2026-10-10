@@ -23,13 +23,13 @@
 
 `PlayerDataDirectory: ''`의 기본 경로는 첫 서버 월드의 `playerdata`다. startup 로그의 `Delivery checkpoint directory`를 확인한다. 별도 저장 위치가 있으면 server worldContainer 기준 상대 경로나 절대 경로를 지정한다. probe가 해당 파일에 나타나지 않으면 물품 변경을 진행하지 않는다. playerdata를 외부 DB에 저장하는 플러그인에는 이 파일 어댑터를 그대로 적용할 수 없으며 해당 저장소의 증거 어댑터가 필요하다.
 
-기존 checkpoint 필드가 없는 기록은 지급 UUID를 읽기 호환으로 사용한다. 새 시도는 별도 UUID를 기록하며 관리자 retry 후에도 새 UUID를 사용한다. 인벤토리의 maxStackSize와 아이템 구성요소의 maxStackSize 중 작은 값으로 계획한다.
+지급 시도마다 별도 UUID를 기록하며 관리자 retry 후에도 새 UUID를 사용한다. 인벤토리의 maxStackSize와 아이템 구성요소의 maxStackSize 중 작은 값으로 계획한다.
 
 실제 어댑터에서는 아이템의 모든 구성요소를 보존하는 직렬화를 사용한다. Paper의 NBT 기반 `serializeAsBytes()`/`deserializeBytes()`는 버전 변환 경로를 제공한다. [Paper 아이템 직렬화 API](https://jd.papermc.io/paper/26.3/org/bukkit/inventory/ItemStack.html#serializeAsBytes())
 
 ## 마켓 정산
 
-`MarketService.buy()`에서 구매자 차감·판매자 입금·수수료·SOLD·미수령 권리·영수증은 한 DB 트랜잭션이다. 101원 구매의 수수료는 floor(101×5%)=5원, 판매자 입금은 96원이다. 소유자 UUID 확인이 안 되는 매물은 OWNERSHIP_REVIEW로 남긴다. 추정 이름으로 다른 계좌에 입금하지 않는다. 회수는 RETURNED와 소유자의 미수령 반환을 같은 commit으로 저장한다.
+`MarketService.buy()`에서 구매자 차감·판매자 입금·수수료·SOLD·미수령 권리·영수증은 한 DB 트랜잭션이다. 101원 구매의 수수료는 floor(101×5%)=5원, 판매자 입금은 96원이다. 판매자 입금은 매물에 기록된 판매자 UUID로만 하며 표시 이름으로 계좌를 추정하지 않는다. 회수는 RETURNED와 소유자의 미수령 반환을 같은 commit으로 저장한다.
 
 공간이 없는 구매자의 권리는 미수령으로 보존한다. 실제 GUI/명령은 정산과 수령을 구분하고 claim을 안내한다. 등록 회수·원본 이전·운영자 해결도 연결했으며 [마켓 복구 절차](MARKET_RECOVERY.md)에 기록했다.
 

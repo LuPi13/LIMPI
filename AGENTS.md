@@ -13,4 +13,4 @@
 - 선택/도감은 MenuHolder의 ability ID/page/sort를 사용한다. GUI에서 아이템 이름·title·현재 목록 index를 권한으로 쓰지 않는다. 다음 틱 전환과 drag/shift/hotbar/offhand 취소를 유지한다.
 - 능력 전환의 슬롯/속성/작업·세션 전체 정비는 진행 중이다. 일반 제한 슬롯 물품은 전체 relocation plan으로 보존하고 공간 부족이면 티켓 소비 전 거부한다. 단위 시험을 실제 Paper save/이벤트/표시 정리/능력 효과 검증으로 과장하지 않는다.
 - 배포 산출물은 build/libs에만 생성한다. 자동 서버 복사/실행을 하지 않는다.
-- 최신 기준: **289개 테스트 통과**, test build 성공. 능력 계약은 [runtime](docs/ABILITY_RUNTIME.md), [전환](docs/ABILITY_TRANSITIONS.md), [전투](docs/COMBAT_AND_TARGETS.md), [설정](docs/ABILITY_SETTINGS.md), [물품 거래](docs/ABILITY_ITEM_TRANSACTIONS.md), [포션](docs/ABILITY_POTIONS.md). 미완료 범위·다음 작업·검증 경계는 구현 기록에서 확인하며 상태를 중복 복사해 오래된 지침을 남기지 않는다.
+- 최신 기준: **296개 테스트 통과**, test build 성공. 능력 계약은 [runtime](docs/ABILITY_RUNTIME.md), [전환](docs/ABILITY_TRANSITIONS.md), [전투](docs/COMBAT_AND_TARGETS.md), [설정](docs/ABILITY_SETTINGS.md), [물품 거래](docs/ABILITY_ITEM_TRANSACTIONS.md), [포션](docs/ABILITY_POTIONS.md), [설탕](docs/SUGAR_CONSUMPTION.md). 미완료 범위·다음 작업·검증 경계는 구현 기록에서 확인하며 상태를 중복 복사해 오래된 지침을 남기지 않는다.

@@ -23,7 +23,7 @@ object SuspiciousSugar : Ability(
     description = listOf(
         Component.text("설탕을 우클릭하면 무작위 상태 효과를 얻습니다.", NamedTextColor.WHITE),
         Component.text("확률적으로 해당 상태 효과를", NamedTextColor.WHITE),
-        Component.text("주변 엔티티에게도 적용시킵니다.", NamedTextColor.WHITE)
+        Component.text("주변 적에게도 적용시킵니다.", NamedTextColor.WHITE)
     ),
     needFile = true
 ) {
@@ -34,44 +34,68 @@ object SuspiciousSugar : Ability(
                 .append(Component.text("초의 무작위 상태 효과를 얻습니다.", NamedTextColor.WHITE)),
             Component.text("${config!!.getDouble("areaChance") * 100}%", NamedTextColor.GREEN)
                 .append(Component.text(" 확률로 해당 상태 효과를 주변 ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getDouble("range") / 2.0}", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getDouble("range")}", NamedTextColor.GREEN))
                 .append(Component.text("블록 내의", NamedTextColor.WHITE)),
-            Component.text("모든 엔티티에게도 적용시킵니다.", NamedTextColor.WHITE),
+            Component.text("적에게도 적용시킵니다.", NamedTextColor.WHITE),
             Component.text("분명히 사탕수수로 만든 정직한 설탕일텐데...", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH)
         )
     }
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST)
     fun onClick(event: PlayerInteractEvent) {
         val player = event.player
-        if (player.ability != this) return
-        if (!event.action.isRightClick) return
-        if (event.item == null || event.item!!.type != Material.SUGAR) return
+        if (player.ability != this || !event.action.isRightClick || event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return
+        if (event.hand != org.bukkit.inventory.EquipmentSlot.HAND && event.hand != org.bukkit.inventory.EquipmentSlot.OFF_HAND) return
+        if (config!!.getInt("duration") == 0 || com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
+        val observed = event.item?.takeIf { it.type == Material.SUGAR && it.amount > 0 } ?: return
+        val original = com.github.lupi13.limpi.platform.PaperItemCodec.payload(observed)
+        event.setUseItemInHand(org.bukkit.event.Event.Result.DENY)
+        if (!com.github.lupi13.limpi.FileManager.delivery.claim(player)) return
+        val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
+        val slot = if (event.hand == org.bukkit.inventory.EquipmentSlot.HAND) player.inventory.heldItemSlot else 36
+        val source = before[slot] ?: return
+        if (player.ability != this || source.payload != original) return
+        val randomEffect = Registry.POTION_EFFECT_TYPE.toList().randomOrNull() ?: return
+        val duration = if (randomEffect.isInstant) 1 else config!!.getInt("duration")
+        val range = config!!.getDouble("range")
+        val targets = if (Random.nextDouble() < config!!.getDouble("areaChance")) {
+            player.getNearbyEntities(range, range, range).filterIsInstance<LivingEntity>()
+                .filter { affected(player, it, range) }.take(256).map { it.uniqueId }
+        } else emptyList()
+        val terms = com.github.lupi13.limpi.ability.SugarTerms(slot, source.payload, randomEffect.key.toString(),
+            duration, player.world.uid, targets, range)
+        val after = before.toMutableList().apply { this[slot] = if (source.count == 1) null else source.copy(count = source.count - 1) }
+        if (com.github.lupi13.limpi.FileManager.delivery.remove(player, java.util.UUID.randomUUID(),
+                com.github.lupi13.limpi.ability.SugarSettlement.KIND, terms.encode(), before, after)) recover(player)
+    }
 
-        event.item!!.amount -= 1 // 설탕 아이템 사용
+    private fun affected(player: org.bukkit.entity.Player, entity: LivingEntity, range: Double): Boolean {
+        if (entity == player || !entity.isValid || entity.isDead || entity.world != player.world || !AbilityManager.isEnemy(player, entity)) return false
+        if (entity.location.distanceSquared(player.location) > range * range) return false
+        if (entity is org.bukkit.entity.Player && (com.github.lupi13.limpi.FileManager.delivery.blocked(entity.uniqueId) ||
+            entity.gameMode == org.bukkit.GameMode.CREATIVE || entity.gameMode == org.bukkit.GameMode.SPECTATOR ||
+            entity.world.getGameRuleValue(Registry.GAME_RULE.getOrThrow(io.papermc.paper.registry.keys.GameRuleKeys.PVP)) != true)) return false
+        return true
+    }
 
-        // 랜덤 효과 적용
-        val effects = Registry.POTION_EFFECT_TYPE.iterator()
-        val randomEffect = effects.asSequence().filterNotNull().shuffled().first()
-        val duration = when (randomEffect) {
-            PotionEffectType.INSTANT_DAMAGE -> 1
-            PotionEffectType.INSTANT_HEALTH -> 1
-            else -> config!!.getInt("duration")
-        }
-        player.addPotionEffect(PotionEffect(randomEffect, duration, 0))
-
-        // 확률적으로 주변 엔티티에게도 적용
-        if (Random.nextDouble() <= config!!.getDouble("areaChance")) {
-            val range = config!!.getDouble("range")
-            val area = player.getNearbyEntities(range, range, range)
-            for (entity in area) {
-                if (entity is LivingEntity && entity != player) {
-                    entity.addPotionEffect(PotionEffect(randomEffect, duration, 0))
+    fun recover(player: org.bukkit.entity.Player) {
+        if (!player.isOnline || player.isDead || com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
+        for ((id, frozen) in com.github.lupi13.limpi.FileManager.sugar.pending(player.uniqueId)) {
+            val type = Registry.POTION_EFFECT_TYPE.getOrThrow(requireNotNull(org.bukkit.NamespacedKey.fromString(frozen.effect)))
+            val terms = com.github.lupi13.limpi.FileManager.sugar.activate(player.uniqueId, id) ?: continue
+            try {
+                player.addPotionEffect(PotionEffect(type, terms.duration, 0))
+                if (player.world.uid == terms.world) for (target in terms.targets) {
+                    val entity = player.world.getEntity(target) as? LivingEntity ?: continue
+                    if (affected(player, entity, terms.range)) entity.addPotionEffect(PotionEffect(type, terms.duration, 0))
                 }
+                player.world.spawnParticle(Particle.SPIT, player.eyeLocation, 30, 0.0, 0.0, 0.0, 1.0)
+                player.world.playSound(player.location, Sound.ENTITY_WITHER_SHOOT, 0.4f, 2f)
+            } catch (failure: Exception) {
+                // Never replay instant damage/healing after a partly successful live application.
+                plugin.logger.log(java.util.logging.Level.WARNING, "Sugar activation $id for ${player.uniqueId} failed; not replayed", failure)
             }
         }
-        player.world.spawnParticle(Particle.SPIT, player.eyeLocation, 30, 0.0, 0.0, 0.0, 1.0)
-        player.world.playSound(player.location, Sound.ENTITY_WITHER_SHOOT, 0.4f, 2f)
     }
 }

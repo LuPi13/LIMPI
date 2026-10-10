@@ -47,6 +47,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
         }
         AbilityManager.restoreActiveItem(player)
         com.github.lupi13.limpi.quests.QuestManager.reconcile(player)
+        com.github.lupi13.limpi.abilities.SuspiciousSugar.recover(player)
     }
 
     companion object {

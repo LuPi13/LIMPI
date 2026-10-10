@@ -20,6 +20,10 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlin.coreLibrariesVersion}"
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin.coreLibrariesVersion}"
     implementation 'fr.skytasul:guardianbeam:2.4.8'
+    testImplementation 'io.papermc.paper:paper-api:26.3.build.169-beta'
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 def targetJavaVersion = 25
@@ -53,4 +57,7 @@ tasks.named('jar') {
 }
 tasks.named('build') {
     dependsOn tasks.named('shadowJar')
+}
+tasks.named('test') {
+    useJUnitPlatform()
 }

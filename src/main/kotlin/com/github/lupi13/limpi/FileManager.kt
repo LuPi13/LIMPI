@@ -1,299 +1,97 @@
 package com.github.lupi13.limpi
 
+import com.github.lupi13.limpi.player.PlayerRepository
+import com.github.lupi13.limpi.storage.YamlFiles
+import com.github.lupi13.limpi.storage.YamlPlayerRepository
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
-import org.bukkit.plugin.java.JavaPlugin.getPlugin
-import java.io.File
+import java.nio.file.Path
+import java.util.UUID
+import java.util.logging.Level
 
+/** Compatibility facade while feature services replace direct YAML access. */
 class FileManager {
     companion object {
-        private var plugin: Plugin = getPlugin(LIMPI::class.java)
-        private lateinit var miscFile: File
-        private lateinit var sellPriceFile: File
-        private lateinit var shopRatioFile: File
-        private lateinit var stockFile: File
-        private lateinit var marketFile: File
-        private lateinit var miscConfig: FileConfiguration
-        private lateinit var sellPriceConfig: FileConfiguration
-        private lateinit var shopRatioConfig: FileConfiguration
-        private lateinit var stockConfig: FileConfiguration
-        private lateinit var marketConfig: FileConfiguration
+        private lateinit var plugin: Plugin
+        private lateinit var repository: PlayerRepository
+        private val financial = mutableMapOf<String, YamlConfiguration>()
+        val players: PlayerRepository get() = repository
 
-        /**
-         * 플러그인 실행 시 작동, 플러그인 데이터 폴더 생성
-         */
+        fun initialize(owner: Plugin) {
+            plugin = owner
+            repository = YamlPlayerRepository(owner.dataFolder.toPath().resolve("playerData"))
+            financial.clear()
+        }
+
         fun setup() {
-            if (!File(plugin.dataFolder.toString() + File.separator + "financial").exists()) {
-                File(plugin.dataFolder.toString() + File.separator + "financial").mkdirs()
+            for (name in listOf("misc", "sellPrice", "shopRatio", "stock", "market")) {
+                financial[name] = YamlFiles.read(financialPath(name))
             }
-            setupMisc()
-            setupSellPrice()
-            setupShopRatio()
-            setupStock()
-            setupMarket()
         }
 
-        /**
-         * misc.yml 생성, miscConfiguration 지정
-         */
-        private fun setupMisc() {
-            miscFile = File(plugin.dataFolder.toString() + File.separator + "financial", "misc.yml")
-            if (!miscFile.exists()) {
-                try {
-                    miscFile.createNewFile()
-                } catch (e: Exception) {
-                    println(e.message)
-                }
-            }
-            miscConfig = YamlConfiguration.loadConfiguration(miscFile)
+        fun getMiscConfig(): FileConfiguration = financial.getValue("misc")
+        fun getSellPriceConfig(): FileConfiguration = financial.getValue("sellPrice")
+        fun getShopRatioConfig(): FileConfiguration = financial.getValue("shopRatio")
+        fun getStockConfig(): FileConfiguration = financial.getValue("stock")
+        fun getMarketConfig(): FileConfiguration = financial.getValue("market")
+
+        fun saveMisc() = saveFinancial("misc")
+        fun saveSellPrice() = saveFinancial("sellPrice")
+        fun saveShopRatio() = saveFinancial("shopRatio")
+        fun saveStock() = saveFinancial("stock")
+        fun saveMarket() = saveFinancial("market")
+
+        /** Idempotent initialization: existing money, abilities and unknown fields are preserved. */
+        fun makePlayerData(player: Player) = persist("initialize ${player.uniqueId}") {
+            repository.ensure(player.uniqueId, player.name, plugin.config.getLong("InitialMoney"))
+            repository.pin(player.uniqueId)
         }
 
-        fun getMiscConfig(): FileConfiguration {
-            return miscConfig
+        fun getPlayerData(player: OfflinePlayer): FileConfiguration = repository.snapshot(player.uniqueId)
+        fun getPlayerData(player: Player): FileConfiguration = repository.snapshot(player.uniqueId)
+        fun getPlayerData(uuid: String): FileConfiguration = repository.snapshot(UUID.fromString(uuid))
+
+        fun savePlayerData(player: OfflinePlayer, config: FileConfiguration) = persist("save ${player.uniqueId}") {
+            repository.save(player.uniqueId, config)
+        }
+        fun savePlayerData(uuid: String, config: FileConfiguration) = persist("save $uuid") {
+            repository.save(UUID.fromString(uuid), config)
         }
 
-        /**
-         * saveMisc
-         */
-        fun saveMisc() {
+        fun findPlayerByName(name: String): Player? = Bukkit.getOnlinePlayers().firstOrNull {
+            it.name.equals(name, ignoreCase = true)
+        }
+
+        fun getPlayerDataByName(name: String): FileConfiguration? = repository.findByName(name)?.let(repository::snapshot)
+        fun getUUIDByName(name: String): String? = repository.findByName(name)?.toString()
+
+        fun releasePlayer(player: Player) = repository.release(player.uniqueId)
+        fun close() {
+            if (::repository.isInitialized) repository.close()
+            financial.clear()
+        }
+
+        private fun financialPath(name: String): Path = plugin.dataFolder.toPath().resolve("financial/$name.yml")
+        private fun saveFinancial(name: String) = persist("save financial/$name.yml") {
             try {
-                miscConfig.save(miscFile)
-            } catch (e: Exception) {
-                println("\u001B[31m" + e.message + "\u001B[0m")
+                YamlFiles.write(financialPath(name), financial.getValue(name))
+            } catch (failure: Exception) {
+                financial[name] = YamlFiles.read(financialPath(name))
+                throw failure
             }
         }
 
-        /**
-         * sellPrice.yml 생성, sellPriceConfiguration 지정
-         */
-        private fun setupSellPrice() {
-            sellPriceFile = File(plugin.dataFolder.toString() + File.separator + "financial", "sellPrice.yml")
-            if (!sellPriceFile.exists()) {
-                try {
-                    sellPriceFile.createNewFile()
-                } catch (e: Exception) {
-                    println(e.message)
-                }
-            }
-            sellPriceConfig = YamlConfiguration.loadConfiguration(sellPriceFile)
-        }
-
-        fun getSellPriceConfig(): FileConfiguration {
-            return sellPriceConfig
-        }
-
-        /**
-         * saveMisc
-         */
-        fun saveSellPrice() {
+        private inline fun persist(description: String, action: () -> Unit) {
             try {
-                sellPriceConfig.save(sellPriceFile)
-            } catch (e: Exception) {
-                println("\u001B[31m" + e.message + "\u001B[0m")
+                action()
+            } catch (failure: Exception) {
+                plugin.logger.log(Level.SEVERE, "Unable to $description; operation was not completed", failure)
+                throw failure
             }
-        }
-
-        /**
-         * shopRatio.yml 생성, shopRatioConfiguration 지정
-         */
-        private fun setupShopRatio() {
-            shopRatioFile = File(plugin.dataFolder.toString() + File.separator + "financial", "shopRatio.yml")
-            if (!shopRatioFile.exists()) {
-                try {
-                    shopRatioFile.createNewFile()
-                } catch (e: Exception) {
-                    println(e.message)
-                }
-            }
-            shopRatioConfig = YamlConfiguration.loadConfiguration(shopRatioFile)
-        }
-
-        fun getShopRatioConfig(): FileConfiguration {
-            return shopRatioConfig
-        }
-
-        /**
-         * saveMisc
-         */
-        fun saveShopRatio() {
-            try {
-                shopRatioConfig.save(shopRatioFile)
-            } catch (e: Exception) {
-                println("\u001B[31m" + e.message + "\u001B[0m")
-            }
-        }
-
-        /**
-         * stock.yml 생성, stockConfiguration 지정
-         */
-        private fun setupStock() {
-            stockFile = File(plugin.dataFolder.toString() + File.separator + "financial", "stock.yml")
-            if (!stockFile.exists()) {
-                try {
-                    stockFile.createNewFile()
-                } catch (e: Exception) {
-                    println(e.message)
-                }
-            }
-            stockConfig = YamlConfiguration.loadConfiguration(stockFile)
-        }
-
-        fun getStockConfig(): FileConfiguration {
-            return stockConfig
-        }
-
-        /**
-         * saveMisc
-         */
-        fun saveStock() {
-            try {
-                stockConfig.save(stockFile)
-            } catch (e: Exception) {
-                println("\u001B[31m" + e.message + "\u001B[0m")
-            }
-        }
-
-
-        /**
-         * market.yml 생성, marketConfiguration 지정
-         */
-        private fun setupMarket() {
-            marketFile = File(plugin.dataFolder.toString() + File.separator + "financial", "market.yml")
-            if (!marketFile.exists()) {
-                try {
-                    marketFile.createNewFile()
-                } catch (e: Exception) {
-                    println(e.message)
-                }
-            }
-            marketConfig = YamlConfiguration.loadConfiguration(marketFile)
-        }
-
-        fun getMarketConfig(): FileConfiguration {
-            return marketConfig
-        }
-
-        /**
-         * saveMisc
-         */
-        fun saveMarket() {
-            try {
-                marketConfig.save(marketFile)
-            } catch (e: Exception) {
-                println("\u001B[31m" + e.message + "\u001B[0m")
-            }
-        }
-
-        fun makePlayerData(player: Player) {
-            val uuid = player.uniqueId
-            val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
-            val config = YamlConfiguration.loadConfiguration(file)
-            config["name"] = player.name
-            config["money"] = plugin.config.getLong("InitialMoney")
-            config["LEGENDARY.Count"] = 0
-            config["LEGENDARY.Ceiling"] = 0
-            config["EPIC.Count"] = 0
-            config["EPIC.Ceiling"] = 0
-            config["AbilityEnemy.TAMED"] = 0
-            config["AbilityEnemy.NON_AGGRESSIVE"] = 2
-            config["AbilityEnemy.NEUTRAL"] = 1
-            config["AbilityEnemy.AGGRESSIVE"] = 2
-            config["AbilityEnemy.PLAYER"] = 1
-            savePlayerData(player, config)
-        }
-
-
-        fun getPlayerData(player: OfflinePlayer): FileConfiguration {
-            val uuid = player.uniqueId
-            val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
-            return YamlConfiguration.loadConfiguration(file)
-        }
-        fun getPlayerData(player: Player): FileConfiguration {
-            val uuid = player.uniqueId
-            val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
-            return YamlConfiguration.loadConfiguration(file)
-        }
-        fun getPlayerData(uuid: String): FileConfiguration {
-            val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
-            return YamlConfiguration.loadConfiguration(file)
-        }
-
-
-//        fun savePlayerData(player: Player, config: FileConfiguration) {
-//            try {
-//                val uuid = player.uniqueId
-//                val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
-//                config.save(file)
-//            } catch (e: Exception) {
-//                println("\u001B[31m" + e.message + "\u001B[0m")
-//            }
-//        }
-        fun savePlayerData(player: OfflinePlayer, config: FileConfiguration) {
-            try {
-                val uuid = player.uniqueId
-                val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
-                config.save(file)
-            } catch (e: Exception) {
-                println("\u001B[31m" + e.message + "\u001B[0m")
-            }
-        }
-        fun savePlayerData(uuid: String, config: FileConfiguration) {
-            try {
-                val file = File(plugin.dataFolder.toString() + File.separator + "playerData", "$uuid.yml")
-                config.save(file)
-            } catch (e: Exception) {
-                println("\u001B[31m" + e.message + "\u001B[0m")
-            }
-        }
-
-        /**
-         * String 형태의 플레이어이름으로 해당 유저의 Player 객체 반환
-         * @param[name] displayName in String
-         * @return Player, 못찾으면 null
-         */
-        fun findPlayerByName(name: String): Player? {
-            for (player in Bukkit.getOfflinePlayers() + Bukkit.getOnlinePlayers()) {
-                if (player.name.equals(name, true)) {
-                    return player.player
-                }
-            }
-            return null
-        }
-
-
-        /**
-         * String 형태의 플레이어이름으로 해당 유저의 config 반환
-         * @param[name] displayName in String
-         * @return FileConfiguration, 못찾으면 null
-         */
-        fun getPlayerDataByName(name: String): FileConfiguration? {
-            for (file in File(plugin.dataFolder.toString() + File.separator + "playerData").listFiles()!!) {
-                val config = YamlConfiguration.loadConfiguration(file)
-                if (config.getString("name")!!.equals(name, true)) {
-                    return config
-                }
-            }
-            return null
-        }
-
-
-        /**
-         * String 형태의 플레이어 이름으로 해당 유저의 uuid 반환
-         * @param[name] displayName in String
-         * @return String, 못찾으면 null
-         */
-        fun getUUIDByName(name: String): String? {
-            for (file in File(plugin.dataFolder.toString() + File.separator + "playerData").listFiles()!!) {
-                val config = YamlConfiguration.loadConfiguration(file)
-                if (config.getString("name")!!.equals(name, true)) {
-                    return file.nameWithoutExtension
-                }
-            }
-            return null
         }
     }
 }

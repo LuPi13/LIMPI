@@ -27,7 +27,7 @@ import org.bukkit.plugin.java.JavaPlugin.getPlugin
 import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
 
-class AbilityManager : Listener {
+object AbilityManager : Listener {
     private var plugin: Plugin = getPlugin(LIMPI::class.java)
     /**
      * 능력들의 리스트입니다.
@@ -46,6 +46,11 @@ class AbilityManager : Listener {
      * 능력들의 activeItem을 모은 리스트입니다.
      */
     val activeItems by lazy { abilities.mapNotNull { it.activeItem } }
+    private val abilitiesByCode by lazy {
+        abilities.associateBy { it.codeName }.also {
+            check(it.size == abilities.size) { "Ability code names must be unique" }
+        }
+    }
     /**
      * activeItem의 상호작용을 제거합니다.
      */
@@ -167,7 +172,7 @@ class AbilityManager : Listener {
      * @return 해당 코드네임을 가진 Ability, 없으면 null
      */
     fun getAbilityByCodeName(codeName: String): Ability? {
-        return abilities.find { it.codeName == codeName }
+        return abilitiesByCode[codeName]
     }
 
     /**
@@ -185,8 +190,7 @@ class AbilityManager : Listener {
      * @return 해당 플레이어의 능력의 codeName(String), 없으면 null
      */
     fun getPlayerAbilityCodeName(player: Player): String? {
-        val config = FileManager.getPlayerData(player)
-        return config.getString("ability")
+        return FileManager.players.abilityCode(player.uniqueId)
     }
 
     /**

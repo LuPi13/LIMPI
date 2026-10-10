@@ -2,6 +2,8 @@ package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.quests.Quest
+import com.github.lupi13.limpi.storage.AtomicFiles
+import com.github.lupi13.limpi.storage.YamlFiles
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -16,7 +18,9 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
+import java.nio.file.Files
 import java.util.Locale.getDefault
+import java.util.logging.Level
 
 abstract class Ability(
     val grade: Grade,
@@ -40,21 +44,19 @@ abstract class Ability(
         if (!needFile) return
 
         file = File(plugin.dataFolder.toString() + File.separator + "ability", "${codeName}.yml")
-        if (!file!!.exists()) {
-            try {
-                file!!.createNewFile()
-            } catch (e: Exception) {
-                println(e.message)
-            }
-        }
-        config = YamlConfiguration.loadConfiguration(file!!)
+        if (!Files.exists(file!!.toPath())) AtomicFiles.write(file!!.toPath(), "")
+        config = YamlFiles.read(file!!.toPath())
     }
 
     fun saveConfig() {
+        val data = config ?: return
+        val path = requireNotNull(file) { "Ability $codeName has no configuration file" }.toPath()
         try {
-            config?.save(file!!)
+            YamlFiles.write(path, data)
         } catch (e: Exception) {
-            println("\u001B[31m" + e.message + "\u001B[0m")
+            config = YamlFiles.read(path)
+            plugin.logger.log(Level.SEVERE, "Unable to save ability $codeName; previous file preserved", e)
+            throw e
         }
     }
 

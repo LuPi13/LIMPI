@@ -174,7 +174,7 @@ object ZombieKing : Ability(
         target.health = (target.health - config!!.getDouble("damage_addition")).coerceAtLeast(0.0)
 
         // 주변 언데드의 공격 대상 변경
-        if (!AbilityManager().isEnemy(player, target)) return
+        if (!AbilityManager.isEnemy(player, target)) return
         val range = config!!.getDouble("bullying_range")
         for (entity in player.getNearbyEntities(range*2, range*2, range*2)) {
             if (entity == target) continue
@@ -191,7 +191,7 @@ object ZombieKing : Ability(
         if (player.ability != this) return
 
         val damager: Damageable = event.damager as? Damageable ?: return
-        if (!AbilityManager().isEnemy(player, damager)) return
+        if (!AbilityManager.isEnemy(player, damager)) return
         if (Random.nextDouble() < config!!.getDouble("reinforcement_probability")) {
             // 50회 생성 시도
             for (i in 1..50) {

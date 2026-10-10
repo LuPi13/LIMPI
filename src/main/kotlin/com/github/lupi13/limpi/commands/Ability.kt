@@ -280,12 +280,12 @@ class Ability: CommandExecutor {
 
             // /ability me
             else if (args[0].equals("me", true)) {
-                val abilityCodeName = AbilityManager().getPlayerAbilityCodeName(player)
+                val abilityCodeName = AbilityManager.getPlayerAbilityCodeName(player)
                 if (abilityCodeName == null || abilityCodeName.isEmpty()) {
                     player.sendMessage(Component.text("현재 능력이 없습니다.", NamedTextColor.RED))
                     return true
                 } else {
-                    val ability = AbilityManager().getAbilityByCodeName(abilityCodeName)!!
+                    val ability = AbilityManager.getAbilityByCodeName(abilityCodeName)!!
                     player.sendMessage(Component.text("\n", NamedTextColor.WHITE)
                         .append(playerDisplay(sender))
                         .append(Component.text("님의 능력", NamedTextColor.WHITE)))
@@ -302,9 +302,9 @@ class Ability: CommandExecutor {
             else if (args[0].equals("set", true) && sender.isOp && args.size == 3) {
                 try {
                     val player = FileManager.findPlayerByName(args[1])!!
-                    val ability = AbilityManager().getAbilityByCodeName(args[2])
+                    val ability = AbilityManager.getAbilityByCodeName(args[2])
                         ?: throw IllegalArgumentException("능력 코드가 잘못되었습니다.")
-                    AbilityManager().applyAbility(player, ability)
+                    AbilityManager.applyAbility(player, ability)
                 } catch (e: Exception) {
                     sender.sendMessage(Component.text("플레이어를 찾을 수 없거나 능력 코드가 잘못되었습니다.", NamedTextColor.RED))
                     return false

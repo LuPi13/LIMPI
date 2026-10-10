@@ -11,6 +11,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -20,10 +21,7 @@ class JoinAndQuit: Listener {
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
         val player: Player = event.player
-        if (!player.hasPlayedBefore()) {
-            FileManager.makePlayerData(player)
-
-        }
+        FileManager.makePlayerData(player)
         player.sendMessage(Component.text("환영합니다, ", NamedTextColor.WHITE)
             .append(Functions.playerDisplay(player))
             .append(Component.text("님!\n").color(NamedTextColor.WHITE))
@@ -37,5 +35,10 @@ class JoinAndQuit: Listener {
             .append(Component.text(" 명령어를 입력하여 도움말을 확인하세요.", NamedTextColor.WHITE)))
         player.sendMessage(Component.text("보라색 ", NamedTextColor.LIGHT_PURPLE)
             .append(Component.text("글씨를 눌러 바로 실행할 수도 있습니다!", NamedTextColor.WHITE)))
+    }
+
+    @EventHandler
+    fun onQuit(event: PlayerQuitEvent) {
+        FileManager.releasePlayer(event.player)
     }
 }

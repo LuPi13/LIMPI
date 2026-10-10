@@ -107,7 +107,7 @@ object JudgementRay : Ability(
         if (player.ability != this) return
 
         if (player.getCooldown(material) > 0) {
-            AbilityManager().showCooldown(player, material)
+            AbilityManager.showCooldown(player, material)
             return
         }
 
@@ -230,7 +230,7 @@ object JudgementRay : Ability(
                         if (!entity.boundingBox.overlaps(rail.boundingBox)) continue
 
 
-                        if (AbilityManager().isEnemy(player, entity)) {
+                        if (AbilityManager.isEnemy(player, entity)) {
                             entity.damage(damage, player)
                         }
                         else {

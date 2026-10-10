@@ -12,6 +12,7 @@
 
 - [전체 기능 분석·유지보수 및 확장 계획](docs/MAINTENANCE_PLAN.md)
 - [Paper 26.3 전환 내용·검증 상태](docs/PAPER_26_3_UPGRADE.md)
+- [전체 정비 구현·검증 결과·남은 작업](docs/IMPLEMENTATION_LOG.md)
 
 아래 내용은 기존 개발 기록입니다.
 

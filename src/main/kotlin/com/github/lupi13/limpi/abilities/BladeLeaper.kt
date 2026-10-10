@@ -94,7 +94,7 @@ object BladeLeaper : Ability(
 
         val cooldown = config!!.getInt("coolTimeTicks")
         if (player.getCooldown(item.type) > 0) {
-            AbilityManager().showCooldown(player, item.type)
+            AbilityManager.showCooldown(player, item.type)
             return
         }
 
@@ -304,7 +304,7 @@ object BladeLeaper : Ability(
                         yEqualLocation.y = player.location.y
                         if (yEqualLocation.distance(player.location) > radius) continue
                         if (entity == player || entity == thrownSword) continue
-                        if (!AbilityManager().isEnemy(player, entity)) continue
+                        if (!AbilityManager.isEnemy(player, entity)) continue
 
                         entity.damage(config!!.getDouble("damage"))
 

@@ -121,7 +121,7 @@ class GachaEvents : Listener {
 
             val grade = getGradeForGacha(player)
 
-            var ability = AbilityManager().getRandomAbilityByGrade(grade)
+            var ability = AbilityManager.getRandomAbilityByGrade(grade)
             // 픽업 능력 및 config 처리
             when (grade) {
                 Grade.LEGENDARY -> {
@@ -331,12 +331,12 @@ class GachaEvents : Listener {
                         // 5초 후 디스플레이 제거, 능력 획득
                         object: BukkitRunnable() {
                             override fun run() {
-                                AbilityManager().unlockAbility(player, ability)
+                                AbilityManager.unlockAbility(player, ability)
 
                                 // TROLL 능력 강제 적용
                                 if ((plugin.config.getBoolean("ForceTroll")) && ability.grade == Grade.TROLL) {
                                     player.sendMessage(Grade.TROLL.displayGrade.append(Component.text(" 능력이 강제 적용됩니다!", NamedTextColor.RED)))
-                                    AbilityManager().applyAbility(player, ability)
+                                    AbilityManager.applyAbility(player, ability)
                                 }
 
                                 gachaVisual.remove()

@@ -54,7 +54,7 @@ object QuestManager {
         FileManager.savePlayerData(player, config)
         player.sendMessage(Component.text("퀘스트 ", NamedTextColor.WHITE)
             .append(quest.displayName))
-        AbilityManager().unlockAbility(player, quest.rewardAbility)
+        AbilityManager.unlockAbility(player, quest.rewardAbility)
         player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
     }
 

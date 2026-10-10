@@ -125,7 +125,7 @@ object Muspell : Ability(
                     val trackSearchLocation = fireball.location.clone().add(movingVector.clone().multiply(trackSearchDistance / 2))
                     val entities = trackSearchLocation.getNearbyEntities(trackSearchDistance, trackSearchDistance, trackSearchDistance)
 
-                    entities.removeIf { it !is Damageable || !AbilityManager().isEnemy(player, it) }
+                    entities.removeIf { it !is Damageable || !AbilityManager.isEnemy(player, it) }
                     entities.removeIf { it.location.distance(fireball.location) > trackSearchDistance }
 
 
@@ -205,7 +205,7 @@ object Muspell : Ability(
                     }
 
                     val entities = world.getNearbyEntities(hitLocation, damageRange*2, damageRange*2, damageRange*2)
-                    entities.removeIf { it !is Damageable || !AbilityManager().isEnemy(player, it) }
+                    entities.removeIf { it !is Damageable || !AbilityManager.isEnemy(player, it) }
                     entities.removeIf { it.location.distance(hitLocation) > damageRange }
 
                     for (entity in entities) {

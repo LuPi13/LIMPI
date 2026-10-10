@@ -113,7 +113,7 @@ class AbilitySelectEvent : Listener {
             val selectGUI: Inventory = Bukkit.createInventory(player, 54, abilitySelectGUIName)
             val playerConfig = FileManager.getPlayerData(player)
             val unlockedCodeName = playerConfig.getStringList("unlockedAbilities")
-            val unlockedAbilities = unlockedCodeName.map { AbilityManager().getAbilityByCodeName(it) }
+            val unlockedAbilities = unlockedCodeName.map { AbilityManager.getAbilityByCodeName(it) }
 
             sortOption[player] = sort
 
@@ -200,7 +200,7 @@ class AbilitySelectEvent : Listener {
 
         // 능력 아이템 클릭 처리
         else {
-            val clickedAbility = AbilityManager().getAbilityByItem(item)!!
+            val clickedAbility = AbilityManager.getAbilityByItem(item)!!
 
             val grade = clickedAbility.grade
             if (event.isLeftClick) {
@@ -211,7 +211,7 @@ class AbilitySelectEvent : Listener {
                     }
                     else {
                         Functions.removeInventoryItem(player, AbilityShop.getSelectTicketItem(grade, false, null), 1)
-                        AbilityManager().applyAbility(player, clickedAbility)
+                        AbilityManager.applyAbility(player, clickedAbility)
                     }
                 }
                 else {

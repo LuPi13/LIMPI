@@ -112,7 +112,7 @@ object GatheringStorm : Ability(
         val currentTime = System.currentTimeMillis()
         val cooldown = config!!.getInt("storm_cooldown_milliseconds")
         if (stormCooldown.containsKey(player) && currentTime - stormCooldown[player]!! < cooldown) {
-            AbilityManager().showCooldown(player, cooldown, stormCooldown[player]!!)
+            AbilityManager.showCooldown(player, cooldown, stormCooldown[player]!!)
             return
         }
 
@@ -179,7 +179,7 @@ object GatheringStorm : Ability(
                     for (entity in entities) {
                         if (entity !is Damageable) continue
                         if (entity.location.distance(location) > radius) continue
-                        if (!AbilityManager().isEnemy(player, entity)) continue
+                        if (!AbilityManager.isEnemy(player, entity)) continue
 
                         // 확률적으로 피해를 줌
                         if (Random.nextDouble() <= probability) {

@@ -400,7 +400,7 @@ object Transcendence : Ability(
 
                     val entities = arrow.world.getNearbyEntities(arrow.location, range, range, range)
                         .filterIsInstance<Damageable>()
-                        .filter { it != player && it != arrow.shooter && it != arrow && AbilityManager().isEnemy(player, it) }
+                        .filter { it != player && it != arrow.shooter && it != arrow && AbilityManager.isEnemy(player, it) }
                     for (entity in entities) {
                         entity.damage(damage, player)
                     }

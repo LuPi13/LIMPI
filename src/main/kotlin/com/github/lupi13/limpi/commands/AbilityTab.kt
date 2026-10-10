@@ -48,7 +48,7 @@ class AbilityTab: TabCompleter {
                         StringUtil.copyPartialMatches(args[1], playerNames, completions)
                     }
                     if (args.size == 3) {
-                        val abilityCodeNames = AbilityManager().abilities.map { it.codeName }
+                        val abilityCodeNames = AbilityManager.abilities.map { it.codeName }
                         StringUtil.copyPartialMatches(args[2], abilityCodeNames, completions)
                     }
                 }

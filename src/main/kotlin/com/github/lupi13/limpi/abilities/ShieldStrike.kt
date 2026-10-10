@@ -106,7 +106,7 @@ object ShieldStrike : Ability(
                                 if (entity !is Damageable) continue
                                 if (!entity.boundingBox.overlaps(player.boundingBox)) continue
                                 if (entity == player) continue
-                                if (!AbilityManager().isEnemy(player, entity)) continue
+                                if (!AbilityManager.isEnemy(player, entity)) continue
 
                                 entity.damage(damage, player)
                                 entity.velocity = vector[player]!!.multiply(min(knockbackAmplifier / entity.boundingBox.volume, maxKnockback)).setY(0.3)
@@ -130,7 +130,7 @@ object ShieldStrike : Ability(
                 }.runTaskTimer(plugin, 0L, 1L)
             }
             else {
-                AbilityManager().showCooldown(player, cooldown, lastStrikeTime[player]!!)
+                AbilityManager.showCooldown(player, cooldown, lastStrikeTime[player]!!)
             }
         }
         lastSneakTime[player] = System.currentTimeMillis()

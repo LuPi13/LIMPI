@@ -96,7 +96,7 @@ object PickPocket : Ability(
                     searchItem@for (item in inventory.shuffled()) {
                         if (item != null && item.type != Material.AIR) {
                             // 능력 아이템은 무시
-                            for (active in AbilityManager().activeItems) {
+                            for (active in AbilityManager.activeItems) {
                                 if (item.isSimilar(active)) {
                                     continue@searchItem
                                 }

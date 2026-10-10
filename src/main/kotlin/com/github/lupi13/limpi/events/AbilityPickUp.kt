@@ -19,7 +19,7 @@ class AbilityPickUp {
          * @return LEGENDARY 등급 능력
          */
         fun getLegendaryPickUp(seed: Long): Ability {
-            val legendaryAbilities = AbilityManager().abilities
+            val legendaryAbilities = AbilityManager.abilities
                 .filter { it.grade == Grade.LEGENDARY }
                 .filter { it.howToGet == Component.text("뽑기로 획득") }
             val random = java.util.Random(seed)
@@ -33,7 +33,7 @@ class AbilityPickUp {
          * @return EPIC 등급 능력
          */
         fun getEpicPickUp(seed: Long): Ability {
-            val epicAbilities = AbilityManager().abilities
+            val epicAbilities = AbilityManager.abilities
                 .filter { it.grade == Grade.EPIC }
                 .filter { it.howToGet == Component.text("뽑기로 획득") }
             val random = java.util.Random(seed)

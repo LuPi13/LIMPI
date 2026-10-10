@@ -166,7 +166,7 @@ object WebShooter : Ability(
                         val nearbyEntities = player.getNearbyEntities(4.0, 4.0, 4.0)
                         for (entity in nearbyEntities) {
                             if (entity !is Damageable || entity == player || !entity.isValid || !entity.boundingBox.overlaps(player.boundingBox.expand(0.5))) continue
-                            if ((entity as LivingEntity).noDamageTicks > 10 || !AbilityManager().isEnemy(player, entity)) continue
+                            if ((entity as LivingEntity).noDamageTicks > 10 || !AbilityManager.isEnemy(player, entity)) continue
 
                             // 피해량: 상대속도에 비례
                             val damage = (config!!.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length().pow(2.0)))
@@ -268,7 +268,7 @@ object WebShooter : Ability(
                             if (entity !is Damageable || entity == player || !entity.isValid || !entity.boundingBox.overlaps(player.boundingBox.expand(0.5))) continue
                             if ((entity as LivingEntity).noDamageTicks > 10) continue
 
-                            if (AbilityManager().isEnemy(player, entity)) {
+                            if (AbilityManager.isEnemy(player, entity)) {
                                 // 피해량: 상대속도에 비례
                                 val damage = (config!!.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length()).pow(2.0)) / 2.0
                                 if (damage >= 1.0) {

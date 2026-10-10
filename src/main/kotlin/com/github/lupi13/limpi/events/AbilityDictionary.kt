@@ -33,7 +33,7 @@ class AbilityDictionary : Listener {
         val sortOption = mutableMapOf<Player, SortOption>()
         fun openAbilityDictionaryGUI(player: Player, page: Int, sort: SortOption) {
             val dictionaryGUI: Inventory = Bukkit.createInventory(player, 54, abilityDictionaryGUIName)
-            val abilities = AbilityManager().abilities
+            val abilities = AbilityManager.abilities
 
             sortOption[player] = sort
 
@@ -121,20 +121,20 @@ class AbilityDictionary : Listener {
         // 능력 아이템 클릭 처리: op 권한이 있으면 능력 적용
         else {
             if (player.isOp && event.isLeftClick) {
-                val clickedAbility = AbilityManager().getAbilityByItem(item)!!
+                val clickedAbility = AbilityManager.getAbilityByItem(item)!!
 
 
                 if (player.ability == clickedAbility) {
                     player.sendMessage(Component.text("이미 선택한 능력입니다.", NamedTextColor.RED))
                     player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.5f, 1.0f)
                 } else {
-                    AbilityManager().applyAbility(player, clickedAbility)
+                    AbilityManager.applyAbility(player, clickedAbility)
                 }
             }
 
             // 우클릭 시 상세 정보 출력
             else if (event.isRightClick) {
-                val ability = AbilityManager().getAbilityByItem(item)!!
+                val ability = AbilityManager.getAbilityByItem(item)!!
                 ability.sendAbilityInfo(player)
                 player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
             }

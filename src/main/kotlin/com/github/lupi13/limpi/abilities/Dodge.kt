@@ -109,7 +109,7 @@ object Dodge : Ability(
                 lastDodgeTime[player] = System.currentTimeMillis()
             }
             else {
-                AbilityManager().showCooldown(player, cooldown, lastDodgeTime[player]!!)
+                AbilityManager.showCooldown(player, cooldown, lastDodgeTime[player]!!)
             }
         }
         lastSneakTime[player] = System.currentTimeMillis()

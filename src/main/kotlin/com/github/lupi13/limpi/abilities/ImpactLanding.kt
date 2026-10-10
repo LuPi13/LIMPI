@@ -77,7 +77,7 @@ object ImpactLanding : Ability(
         for (entity in entities) {
             if (entity !is Damageable) continue
             if (entity == player) continue
-            if (!AbilityManager().isEnemy(player, entity)) continue
+            if (!AbilityManager.isEnemy(player, entity)) continue
 
             val distance = player.location.distance(entity.location)
             val shockDamage = calculateShockwaveDamage(damage, distance)

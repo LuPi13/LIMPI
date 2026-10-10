@@ -8,23 +8,23 @@ import com.github.lupi13.limpi.commands.FinancialTab
 import com.github.lupi13.limpi.events.*
 import com.github.lupi13.limpi.items.Check
 import org.bukkit.plugin.java.JavaPlugin
-import java.io.PrintStream
 
 class LIMPI : JavaPlugin() {
     override fun onEnable() {
         // Plugin startup logic
-        System.setOut(PrintStream(System.out, true, "UTF-8"))
 
         // File Setting
         var time = System.currentTimeMillis()
         logger.info("File setting...")
         config.options().copyDefaults()
         saveDefaultConfig()
+        FileManager.initialize(this)
+        server.onlinePlayers.forEach(FileManager::makePlayerData)
         if (config.getBoolean("EnableFinancialSystem")) {
             FileManager.setup()
         }
         if (config.getBoolean("EnableAbilitySystem")) {
-            AbilityManager().setupAbilityFiles()
+            AbilityManager.setupAbilityFiles()
         }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
@@ -41,13 +41,13 @@ class LIMPI : JavaPlugin() {
             StockEvents.stockFlow()
         }
         if (config.getBoolean("EnableAbilitySystem")) {
-            server.pluginManager.registerEvents(AbilityManager(), this)
+            server.pluginManager.registerEvents(AbilityManager, this)
             server.pluginManager.registerEvents(GachaEvents(), this)
             server.pluginManager.registerEvents(AbilityShop(), this)
             server.pluginManager.registerEvents(AbilityEnemySelect(), this)
             server.pluginManager.registerEvents(AbilitySelectEvent(), this)
             server.pluginManager.registerEvents(AbilityDictionary(), this)
-            AbilityManager().registerAbilities()
+            AbilityManager.registerAbilities()
         }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
@@ -78,6 +78,7 @@ class LIMPI : JavaPlugin() {
 
     override fun onDisable() {
         // Plugin shutdown logic
+        FileManager.close()
         logger.info("LIMPI disabled.")
     }
 }

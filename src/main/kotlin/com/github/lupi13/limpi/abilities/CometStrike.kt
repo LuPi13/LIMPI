@@ -208,7 +208,7 @@ object CometStrike : Ability(
                                 var nearbyEntities = player.getNearbyEntities(range*2, range*2, range*2)
                                     .filter { entity -> entity != player && entity is Damageable }
                                 if (player.ability == this@CometStrike) {
-                                    nearbyEntities = nearbyEntities.filter { entity -> AbilityManager().isEnemy(player, entity as Damageable) }
+                                    nearbyEntities = nearbyEntities.filter { entity -> AbilityManager.isEnemy(player, entity as Damageable) }
                                 }
                                 for (entity in nearbyEntities) {
                                     val directionVector = entity.location.clone().subtract(player.location).toVector()
@@ -262,7 +262,7 @@ object CometStrike : Ability(
                 lastStrikeTime[player] = System.currentTimeMillis()
             }
             else {
-                AbilityManager().showCooldown(player, cooldown, lastStrikeTime[player]!!)
+                AbilityManager.showCooldown(player, cooldown, lastStrikeTime[player]!!)
             }
         }
         lastSneakTime[player] = System.currentTimeMillis()

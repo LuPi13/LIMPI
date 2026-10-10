@@ -100,7 +100,7 @@ object OverBalance : Ability(
         if (player.ability != this) return
 
         if (player.getCooldown(material) > 0) {
-            AbilityManager().showCooldown(player, material)
+            AbilityManager.showCooldown(player, material)
             return
         }
 
@@ -113,7 +113,7 @@ object OverBalance : Ability(
 
         player.setCooldown(material, shootingDelay + lifeTimeTicks + 1)
         player.inventory.setItem(EquipmentSlot.OFF_HAND, null)
-        AbilityManager().applyAbility(player, null)
+        AbilityManager.applyAbility(player, null)
 
         event.isCancelled = true
 
@@ -222,7 +222,7 @@ object OverBalance : Ability(
                     for (entity in entities) {
                         if (entity !is Damageable) continue
                         if (entity == player || entity == rail) continue
-                        if (!AbilityManager().isEnemy(player, entity)) continue
+                        if (!AbilityManager.isEnemy(player, entity)) continue
                         if (!entity.boundingBox.overlaps(rail.boundingBox)) continue
 
                         entity.damage(damage, player)

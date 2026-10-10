@@ -231,7 +231,7 @@ object BlunderBooster : Ability(
 
 
         // 블런더 부스터 효과 제거
-        AbilityManager().applyAbility(player, null)
+        AbilityManager.applyAbility(player, null)
         energyMap.remove(player)
     }
 }

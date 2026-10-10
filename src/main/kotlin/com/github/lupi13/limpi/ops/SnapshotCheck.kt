@@ -34,8 +34,8 @@ object SnapshotCheck {
                     val version = data["schemaVersion"]?.let { OperationsYaml.integer(it, "schemaVersion") } ?: 0L
                     require(version in 0..1) { "Unsupported player schema $version" }
                     val money = data["money"]?.let { OperationsYaml.integer(it, "money") } ?: 0L
-                    if (data["money"] == null) warnings.add("$key: missing legacy balance")
-                    if (money < 0) warnings.add("$key: negative legacy balance requires administrator recovery")
+                    if (data["money"] == null) warnings.add("$key: missing balance requires administrator recovery")
+                    if (money < 0) warnings.add("$key: negative balance requires administrator recovery")
                     sum += BigInteger.valueOf(money); players++
                     data["name"]?.let {
                         require(it is String) { "Invalid player name" }
@@ -49,10 +49,6 @@ object SnapshotCheck {
                             val values = holding as? Map<*, *> ?: error("Invalid holding $code")
                             for (field in listOf("count", "costBasis", "averagePrice")) values[field]?.let {
                                 require(OperationsYaml.integer(it, "stock.$code.$field") >= 0) { "Negative holding $field" }
-                            }
-                            if (!values.containsKey("costBasis") && values.containsKey("averagePrice")) {
-                                Math.multiplyExact(OperationsYaml.integer(values["count"] ?: 0, "count"),
-                                    OperationsYaml.integer(values["averagePrice"], "averagePrice"))
                             }
                             values["realizedProfit"]?.let { OperationsYaml.integer(it, "realizedProfit") }
                         }

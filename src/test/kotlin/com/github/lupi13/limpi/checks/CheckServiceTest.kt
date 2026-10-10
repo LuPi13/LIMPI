@@ -123,31 +123,4 @@ class CheckServiceTest {
             assertEquals(CheckState.ISSUED, checks.find(issue)?.state)
         }
     }
-
-    @Test fun `legacy approval mints one audited claim without a second issuer debit and fingerprints block copies`() {
-        SqliteStateStore(directory.resolve("state.db")).use { store ->
-            setup(store); val checks = service(store); val fingerprint = "a".repeat(64)
-            checks.importLegacy(issue, "CONSOLE", fingerprint, recipient, issuer, 500, "confirmed old debit", ::item)
-            assertEquals(5_000_000_000, money(store, issuer)); assertEquals(10, money(store, recipient))
-            assertEquals(1, DeliveryJournal(store).pending(recipient).size)
-            val receipt = YamlFiles.parse(store.entry(issue)!!.receipt)
-            assertEquals("CONSOLE", receipt.getString("actor")); assertEquals("confirmed old debit", receipt.getString("note"))
-            assertTrue(checks.importLegacy(issue, "CONSOLE", fingerprint, recipient, issuer, 500, "confirmed old debit") { _, _ -> error("no extra mint") }.replayed)
-            assertEquals(CheckFailure.LEGACY_CONVERTED, assertThrows(CheckException::class.java) {
-                checks.importLegacy(UUID.randomUUID(), "CONSOLE", fingerprint, other, issuer, 500, "another copy", ::item)
-            }.reason)
-            checks.redeem(UUID.randomUUID(), issue, recipient); assertEquals(510, money(store, recipient))
-        }
-    }
-
-    @Test fun `failed legacy approval leaves neither fingerprint reservation nor check and can be retried`() {
-        var fault = false
-        SqliteStateStore(directory.resolve("state.db"), beforeCommit = { if (fault) error("commit fault") }).use { store ->
-            setup(store); val checks = service(store); val fingerprint = "b".repeat(64); fault = true
-            assertThrows(IllegalStateException::class.java) { checks.importLegacy(issue, "operator", fingerprint, recipient, issuer, 500, "evidence", ::item) }
-            assertNull(store.get("check_legacy/$fingerprint")); assertNull(checks.find(issue)); assertTrue(DeliveryJournal(store).pending(recipient).isEmpty())
-            fault = false; checks.importLegacy(issue, "operator", fingerprint, recipient, issuer, 500, "evidence", ::item)
-            assertEquals(issue.toString(), store.get("check_legacy/$fingerprint"))
-        }
-    }
 }

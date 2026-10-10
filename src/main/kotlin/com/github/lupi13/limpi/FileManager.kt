@@ -79,8 +79,6 @@ class FileManager {
         fun initialize(owner: Plugin) {
             plugin = owner
             state = SqliteStateStore(owner.dataFolder.toPath().resolve("limpi.sqlite3"))
-            val report = LegacyStateMigration.import(owner.dataFolder.toPath(), state)
-            owner.logger.info("Player storage ready: ${report.players} legacy profiles, balance sum ${report.balanceSum}, imported=${!report.reused}")
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)
             stockTrading = com.github.lupi13.limpi.stock.StockTradingService(state, repository) { code ->
@@ -99,10 +97,6 @@ class FileManager {
             checkService = CheckService(state, deliveryJournal, repository)
             shopService = ShopService(state, deliveryJournal, repository, PaperShopCatalog(owner)::offer)
             marketCatalog = MarketCatalog(state)
-            val importedListings = LegacyMarketMigration.import(state, marketCatalog, repository::findByName) {
-                PaperItemCodec.grant(it as ItemStack)
-            }
-            owner.logger.info("Market catalog ready: $importedListings legacy listings imported")
             marketService = MarketService(state, marketCatalog, deliveryJournal, repository)
             marketEscrow = MarketEscrow(state, marketCatalog)
             itemExchange = ItemExchange(state, deliveryJournal)

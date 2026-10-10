@@ -28,7 +28,7 @@ class CommandIndexTest {
         assertTrue(routes.any { it.id == "check redeem" }); assertFalse(routes.any { it.id == "check" })
         assertFalse(routes.any { it.id.startsWith("stock") || it.id == "send" })
         val completion = CommandDefinitions.financial.complete(listOf("market", ""), false, true, { true }) { error("no dynamic data needed") }
-        assertEquals(listOf("escrow", "owner", "resolve"), completion)
+        assertEquals(listOf("escrow", "resolve"), completion)
     }
     @Test fun `permissions hide both help and dynamic completions without evaluating providers`() {
         val routes = CommandDefinitions.ability.visible(true, true, allow("limpi.ability.me"))

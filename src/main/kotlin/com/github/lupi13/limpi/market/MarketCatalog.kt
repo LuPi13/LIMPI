@@ -6,22 +6,20 @@ import com.github.lupi13.limpi.storage.*
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
-enum class ListingState { ESCROW, ACTIVE, OWNERSHIP_REVIEW, SOLD, RETURNED }
+enum class ListingState { ESCROW, ACTIVE, SOLD, RETURNED }
 data class MarketListing(
-    val id: UUID, val code: String, val name: String, val seller: UUID?, val sellerName: String,
+    val id: UUID, val code: String, val name: String, val seller: UUID, val sellerName: String,
     val price: Money, val item: ItemGrant, val state: ListingState = ListingState.ACTIVE,
     val buyer: UUID? = null,
 ) {
     init {
         require(code.matches(Regex("[A-Z0-9]{4}"))); require(name.isNotBlank()); require(sellerName.isNotBlank())
-        require(state == ListingState.OWNERSHIP_REVIEW || seller != null) { "Active listings require a known seller UUID" }
         require(state != ListingState.SOLD || buyer != null)
     }
 }
 
 /** Each listing has a permanent UUID; a reused four-letter code cannot revive an old GUI quote. */
 class MarketCatalog(private val store: StateStore) {
-    fun imported() = store.get("migration/market_catalog_v1") != null
     fun available(): List<MarketListing> = store.documents("market_code/").map { (key, id) ->
         requireNotNull(find(UUID.fromString(id))).also { check(key == "market_code/${it.code}") }
     }
@@ -32,7 +30,7 @@ class MarketCatalog(private val store: StateStore) {
     fun read(tx: StateTransaction, id: UUID): MarketListing? = tx.get(key(id))?.let { decode(it).also { listing -> check(listing.id == id) } }
     fun write(tx: StateTransaction, listing: MarketListing) {
         val index = "market_code/${listing.code}"
-        if (listing.state in setOf(ListingState.ACTIVE, ListingState.OWNERSHIP_REVIEW, ListingState.ESCROW)) {
+        if (listing.state in setOf(ListingState.ACTIVE, ListingState.ESCROW)) {
             val reserved = tx.get(index)
             if (reserved != null && reserved != listing.id.toString()) throw MarketException(MarketFailure.CODE_EXISTS)
             tx.put(index, listing.id.toString())
@@ -41,19 +39,9 @@ class MarketCatalog(private val store: StateStore) {
     }
     fun findByCode(code: String): MarketListing? = store.get("market_code/$code")?.let { find(UUID.fromString(it)) }
 
-    /** Only the legacy migration or a future confirmed inventory escrow may publish a new listing. */
-    fun importLegacy(tx: StateTransaction, listings: List<MarketListing>) {
-        check(tx.get("migration/market_catalog_v1") == null) { "Market catalog already imported" }
-        require(listings.map { it.id }.distinct().size == listings.size)
-        require(listings.map { it.code }.distinct().size == listings.size)
-        check(tx.documents("market_listing/").isEmpty()) { "Cannot overwrite an existing market catalog" }
-        listings.forEach { write(tx, it) }
-        tx.put("migration/market_catalog_v1", "imported: ${listings.size}\n")
-    }
-
     internal fun encode(listing: MarketListing) = YamlConfiguration().apply {
         set("schemaVersion", 1); set("id", listing.id.toString()); set("code", listing.code); set("name", listing.name)
-        set("seller", listing.seller?.toString()); set("sellerName", listing.sellerName); set("price", listing.price.units)
+        set("seller", listing.seller.toString()); set("sellerName", listing.sellerName); set("price", listing.price.units)
         set("item.payload", listing.item.payload); set("item.count", listing.item.count); set("item.limit", listing.item.limit)
         set("state", listing.state.name); set("buyer", listing.buyer?.toString())
     }.saveToString()
@@ -66,7 +54,7 @@ class MarketCatalog(private val store: StateStore) {
             else -> throw IllegalArgumentException("Invalid market number: $path")
         }
         return MarketListing(UUID.fromString(data.getString("id")), requireNotNull(data.getString("code")),
-            requireNotNull(data.getString("name")), data.getString("seller")?.let(UUID::fromString),
+            requireNotNull(data.getString("name")), UUID.fromString(requireNotNull(data.getString("seller"))),
             requireNotNull(data.getString("sellerName")), Money(number("price")),
             ItemGrant(requireNotNull(data.getString("item.payload")), number("item.count"), Math.toIntExact(number("item.limit"))),
             ListingState.valueOf(requireNotNull(data.getString("state"))), data.getString("buyer")?.let(UUID::fromString))

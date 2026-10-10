@@ -53,13 +53,6 @@ object QuestManager {
         notify(player, LineBetweenSwordAndArrow, FileManager.quest.harmony(java.util.UUID.randomUUID(), player.uniqueId, branch))
     }
 
-    fun reconcile(player: Player) {
-        val data = FileManager.getPlayerData(player)
-        val cleared = data.getStringList("clearedQuests")
-        val unlocked = data.getStringList("unlockedAbilities")
-        quests.filter { it.codeName in cleared && it.rewardAbility.codeName !in unlocked }.forEach { clearQuests(player, it) }
-    }
-
     private fun notify(player: Player, quest: Quest, result: com.github.lupi13.limpi.quest.QuestRewardResult) {
         if (result.replayed) return
         if (result.newCompletion) {

@@ -58,7 +58,7 @@ class AbilitySettingsTest {
         val settings = AbilitySpecs.all.getValue("blade_leaper").load(file("coolTimeTicks: 0\ndamage: 0.0\n"))
         assertEquals(0, settings.getInt("coolTimeTicks")); assertEquals(0.0, settings.getDouble("damage"))
     }
-    @Test fun `fractional acceleration and armor survive integer legacy defaults`() {
+    @Test fun `fractional acceleration and armor survive integer defaults`() {
         val rail = AbilitySpecs.all.getValue("over_balance").load(file("accelerateTimeTicks: 2.5\nshootingDelayTicks: 0\n"))
         assertEquals(2.5, RailgunSettings.read(rail.asConfiguration(), false).acceleration)
         val armor = AbilitySpecs.all.getValue("zombie_king").load(file("armor_point: 2.5\n"))

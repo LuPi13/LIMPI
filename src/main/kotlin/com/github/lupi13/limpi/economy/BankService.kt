@@ -43,7 +43,7 @@ class BankService(private val store: StateStore, private val players: PlayerRepo
         }
     }
 
-    /** An explicit admin set is also the repair path for a preserved negative legacy balance. */
+    /** An explicit admin set is also the audited repair path for a damaged (negative or missing) balance. */
     fun set(id: UUID, actor: String, target: UUID, amount: Long): BankReceipt {
         if (amount < 0) throw BankException(BankFailure.INVALID_AMOUNT)
         return execute(id, BankOperation.SET, actor, target, amount) { transaction ->

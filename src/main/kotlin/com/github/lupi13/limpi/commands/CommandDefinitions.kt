@@ -37,7 +37,6 @@ object CommandDefinitions {
         route("check", "limpi.financial.check", true, 2, 3, "check <금액> [거래 UUID]", "수표를 발행하고 공간 부족분을 미수령에 보관합니다."),
         route("check redeem", "limpi.financial.check", true, 2, 2, "check redeem", "주 손 수표를 입금합니다.", true),
         route("check inspect", "limpi.financial.admin.check", false, 2, 3, "check inspect [수표 UUID]", "수표 기록/플레이어의 주 손 수표를 확인합니다.", true),
-        route("check import", "limpi.financial.admin.check", false, 5, Int.MAX_VALUE, "check import <소유자 UUID> <발행인 UUID> <근거>", "확인한 기존 수표를 전환합니다. 소유자의 접속이 필요합니다.", true),
         route("sell", "limpi.financial.sell", true, 1, 1, "sell", "원본 물품을 옮기지 않고 판매할 묶음을 선택합니다."),
         route("sell set", "limpi.financial.admin.catalog", false, 4, 4, "sell set <아이템> <금액>", "판매 가격을 설정합니다.", suggestions = mapOf(2 to "materials")),
         route("sell remove", "limpi.financial.admin.catalog", false, 3, 3, "sell remove <아이템>", "판매 품목을 삭제합니다.", suggestions = mapOf(2 to "materials")),
@@ -50,13 +49,11 @@ object CommandDefinitions {
         route("stock add", "limpi.financial.admin.stock", false, 6, 6, "stock add <이름> <코드> <아이템> <가격>", "사용하지 않은 코드로 종목을 추가합니다.", suggestions = mapOf(4 to "materials")),
         route("stock remove", "limpi.financial.admin.stock", false, 3, 3, "stock remove <코드|all>", "보유 기록을 유지하고 상장을 중지합니다.", suggestions = mapOf(2 to "stocks")),
         route("stock restore", "limpi.financial.admin.stock", false, 3, 3, "stock restore <코드|all>", "보존한 종목을 다시 상장합니다.", suggestions = mapOf(2 to "archivedStocks")),
-        route("stock repair", "limpi.financial.admin.stock.repair", false, 6, 7, "stock repair <이름|UUID> <코드> <수량> <취득 원가> [거래 UUID]", "손상된 기존 보유 기록을 확인한 값으로 복구하고 원장을 남깁니다.", suggestions = mapOf(2 to "players")),
         route("stock refix", "limpi.financial.admin.stock", false, 3, 3, "stock refix <코드|all>", "현재 가격을 기준 가격으로 저장합니다.", suggestions = mapOf(2 to "stocks")),
         route("market", "limpi.financial.market", true, 1, 1, "market", "플레이어 장터를 엽니다."),
         route("market add", "limpi.financial.market", true, 4, 4, "market add <코드> <가격>", "주 손 묶음을 저장 확인 후 등록합니다."),
         route("market remove", "limpi.financial.market", true, 3, 3, "market remove <코드>", "자신의 매물을 회수해 미수령으로 반환합니다.", suggestions = mapOf(2 to "listings")),
         route("market escrow", "limpi.financial.admin.market", false, 3, 3, "market escrow <owner UUID>", "중단된 매물 회수를 조회합니다.", true),
         route("market resolve", "limpi.financial.admin.market", false, 6, Int.MAX_VALUE, "market resolve <owner UUID> <매물 UUID> removed|retained <근거>", "오프라인 매물 회수 판단을 기록합니다.", true, mapOf(4 to "removalDecision")),
-        route("market owner", "limpi.financial.admin.market", false, 5, Int.MAX_VALUE, "market owner <매물 UUID> <소유자 UUID> <근거>", "확인한 기존 매물 소유자를 기록합니다.", true),
     ))
 }

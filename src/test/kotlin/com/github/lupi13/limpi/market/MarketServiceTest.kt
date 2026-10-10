@@ -25,7 +25,7 @@ class MarketServiceTest {
         }
     }
 
-    @Test fun `free legacy sale retains the item claim without charging either account`() {
+    @Test fun `free sale retains the item claim without charging either account`() {
         SqliteStateStore(directory.resolve("state.db")).use { store ->
             setup(store, price = 0)
             val result = service(store).buy(UUID.randomUUID(), buyer, listingId, 0)
@@ -45,8 +45,7 @@ class MarketServiceTest {
             tx.put(SqliteProfilePersistence.key(buyer), "name: buyer\nmoney: 1000\nunlockedAbilities: [CustomAbility]\n")
             tx.put(SqliteProfilePersistence.key(secondBuyer), "name: second\nmoney: 1000\n")
             tx.put(SqliteProfilePersistence.key(seller), "name: RenamedSeller\nmoney: $sellerMoney\ncustom: preserved\n")
-            MarketCatalog(store).importLegacy(tx, listOf(MarketListing(listingId, "AB12", "Custom item",
-                if (state == ListingState.OWNERSHIP_REVIEW) null else seller, "OldSellerName", Money(price), item, state)))
+            MarketCatalog(store).write(tx, MarketListing(listingId, "AB12", "Custom item", seller, "OldSellerName", Money(price), item, state))
         }
     }
     private fun service(store: StateStore): MarketService = MarketService(store, MarketCatalog(store),
@@ -121,16 +120,6 @@ class MarketServiceTest {
             assertEquals(100, money(store, buyer)); assertEquals(Long.MAX_VALUE, money(store, seller))
             assertEquals(ListingState.ACTIVE, MarketCatalog(store).find(listingId)?.state)
             assertTrue(DeliveryJournal(store).pending(buyer).isEmpty())
-        }
-    }
-
-    @Test fun `unresolved legacy seller remains protected instead of paying a guessed account`() {
-        SqliteStateStore(directory.resolve("state.db")).use { store ->
-            setup(store, state = ListingState.OWNERSHIP_REVIEW)
-            assertEquals(MarketFailure.UNKNOWN_OWNER, assertThrows(MarketException::class.java) {
-                service(store).buy(UUID.randomUUID(), buyer, listingId, 101)
-            }.reason)
-            assertEquals(item, MarketCatalog(store).find(listingId)?.item); assertEquals(1000, money(store, buyer))
         }
     }
 

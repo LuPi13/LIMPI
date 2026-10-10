@@ -11,7 +11,6 @@ import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
 enum class StockTrade { BUY, SELL }
-data class StockRepairResult(val holding: StockHolding, val transaction: UUID, val replayed: Boolean)
 data class StockTradeResult(val balance: Money, val holding: StockHolding, val total: Money,
     val transaction: UUID, val replayed: Boolean)
 
@@ -27,38 +26,7 @@ class StockTradingService(private val store: StateStore, private val players: Pl
             return (raw as Number).toLong().also { require(it >= 0) { "Negative $path" } }
         }
         val count = integer("stock.$code.count")
-        val basis = if (data.isSet("stock.$code.costBasis")) Money(integer("stock.$code.costBasis"))
-            else Money(integer("stock.$code.averagePrice")).times(count)
-        return StockHolding(count, basis)
-    }
-
-    /**
-     * Administrator repair for a preserved malformed legacy holding (for example a negative averagePrice).
-     * The previous raw values stay in the ledger receipt; realizedProfit and unknown fields are not touched.
-     */
-    fun repair(request: UUID, actor: String, owner: UUID, code: String, count: Long, costBasis: Long): StockRepairResult {
-        require(actor.isNotBlank() && code.matches(Regex("[0-9A-Z]{4}"))) { "종목 코드는 4자리 대문자/숫자입니다." }
-        val holding = StockHolding(count, Money(costBasis))
-        val committed = store.execute(request, BankService.fingerprint("STOCK_REPAIR", actor, owner.toString(), code,
-            count.toString(), costBasis.toString())) { tx ->
-            val data = Accounts.read(tx, owner)
-            require(data.get("stock") == null || data.get("stock") is ConfigurationSection) { "Invalid stock portfolio" }
-            require(data.get("stock.$code") == null || data.get("stock.$code") is ConfigurationSection) { "Invalid holding $code" }
-            fun raw(field: String) = data.get("stock.$code.$field")?.toString()
-            val before = listOf("count", "costBasis", "averagePrice").associateWith(::raw)
-            data.set("stock.$code.count", holding.count)
-            data.set("stock.$code.costBasis", holding.costBasis.units)
-            data.set("stock.$code.averagePrice", holding.averagePrice)
-            tx.put(SqliteProfilePersistence.key(owner), data.saveToString())
-            YamlConfiguration().apply {
-                set("schemaVersion", 1); set("operation", "STOCK_REPAIR"); set("actor", actor); set("owner", owner.toString()); set("code", code)
-                before.forEach { (field, value) -> set("before.$field", value) }
-                set("after.count", holding.count); set("after.costBasis", holding.costBasis.units)
-            }.saveToString()
-        }
-        players.invalidate(committed.entry.changedKeys.filter { it.startsWith("player/") }.map { UUID.fromString(it.removePrefix("player/")) })
-        val receipt = YamlFiles.parse(committed.entry.receipt)
-        return StockRepairResult(StockHolding(receipt.getLong("after.count"), Money(receipt.getLong("after.costBasis"))), request, committed.replayed)
+        return StockHolding(count, Money(integer("stock.$code.costBasis")))
     }
 
     fun trade(request: UUID, owner: UUID, code: String, price: Money, quantity: Long, direction: StockTrade): StockTradeResult {

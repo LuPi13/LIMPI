@@ -70,9 +70,8 @@ open class CachedPlayerRepository(
         require(initialBalance >= 0) { "InitialMoney must not be negative" }
         val snapshot = snapshot(id)
         PlayerSchema.validate(snapshot, id.toString())
-        if (!snapshot.contains("schemaVersion")) persistence.backupLegacy(id)
-        // Only a brand-new profile receives the initial balance. A migrated profile without money is an anomaly that
-        // stays visible ("계좌 복구 필요") for an audited /financial set instead of silently receiving InitialMoney.
+        // Only a brand-new profile receives the initial balance. An existing profile without money is damaged and stays
+        // visible ("계좌 복구 필요") for an audited /financial set instead of silently receiving InitialMoney.
         val created = snapshot.getKeys(false).isEmpty()
         if (created) snapshot.set("money", initialBalance)
         val defaults = mapOf(

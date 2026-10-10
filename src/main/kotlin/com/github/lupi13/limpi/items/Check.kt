@@ -5,7 +5,6 @@ import com.github.lupi13.limpi.checks.*
 import com.github.lupi13.limpi.economy.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -44,22 +43,13 @@ class Check(private val plugin: Plugin) : Listener {
         return data.get(identity, PersistentDataType.STRING)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
     }
 
-    fun legacy(item: ItemStack): LegacyCheck? {
-        if (item.type != Material.PAPER || id(item) != null) return null
-        val meta = item.itemMeta
-        val name = meta.itemName()
-        val plain = PlainTextComponentSerializer.plainText()
-        return LegacyCheck.parse(plain.serialize(name), (meta.lore() ?: emptyList()).map(plain::serialize))
-    }
-
     fun redeem(player: Player, hand: EquipmentSlot = EquipmentSlot.HAND): Boolean {
         if (!player.hasPermission("limpi.financial.check") || FileManager.delivery.blocked(player.uniqueId)) return false
         if (!FileManager.delivery.claim(player)) return false
         val source = if (hand == EquipmentSlot.OFF_HAND) player.inventory.itemInOffHand else player.inventory.itemInMainHand
         val checkId = id(source)
         if (checkId == null) {
-            player.sendMessage(Component.text(if (legacy(source) != null) "기존 수표는 관리자 확인 후 전환해야 합니다. 원본은 보존하세요."
-                else "손에 유효한 수표를 들고 있어야 합니다.", NamedTextColor.RED))
+            player.sendMessage(Component.text("손에 유효한 수표를 들고 있어야 합니다.", NamedTextColor.RED))
             return false
         }
         val request = UUID.randomUUID()
@@ -89,7 +79,7 @@ class Check(private val plugin: Plugin) : Listener {
     fun useCheck(event: PlayerInteractEvent) {
         if (event.action !in setOf(Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK)) return
         val item = event.item ?: return
-        if (id(item) == null && legacy(item) == null) return
+        if (id(item) == null) return
         if (event.useItemInHand() == Event.Result.DENY) return
         event.setUseItemInHand(Event.Result.DENY); event.setUseInteractedBlock(Event.Result.DENY)
         redeem(event.player, event.hand ?: EquipmentSlot.HAND)

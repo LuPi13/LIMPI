@@ -38,7 +38,7 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
                     require(id != null) { "해당 계좌를 찾을 수 없습니다." }
                     val data = FileManager.players.snapshot(id)
                     val name = data.getString("name") ?: id.toString()
-                    // Report malformed legacy values explicitly instead of throwing away the spy request.
+                    // Report malformed values explicitly instead of throwing away the spy request.
                     val balance = runCatching { Accounts.integralBalance(data) }.getOrNull()
                     sender.sendMessage(when {
                         balance == null -> "$name: 잔액 형식 오류 (계좌 복구 필요)"

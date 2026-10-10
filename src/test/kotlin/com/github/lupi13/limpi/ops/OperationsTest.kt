@@ -110,7 +110,7 @@ class OperationsTest {
         assertEquals(2, cli("restore-copy", export.toString(), root.resolve("denied.sqlite3").toString()))
         assertFalse(Files.exists(root.resolve("denied.sqlite3")))
     }
-    @Test fun `negative legacy balance is reported and preserved not silently repaired`() {
+    @Test fun `negative balance is reported and preserved not silently repaired`() {
         val data = DatabaseSnapshot(mapOf("player/$owner" to profile("-100")), emptyList())
         val report = SnapshotCheck.inspect(data)
         assertTrue(report.errors.isEmpty()); assertEquals("-100", report.balanceSum.toString())
@@ -125,15 +125,6 @@ class OperationsTest {
             "market_code/ABCD" to id.toString())
         assertEquals(3, SnapshotCheck.inspect(DatabaseSnapshot(documents, emptyList())).errors.size)
     }
-    @Test fun `legacy preflight checks all UUID sources without database import`() {
-        val players = Files.createDirectory(root.resolve("playerData"))
-        val file = players.resolve("$owner.yml"); Files.writeString(file, profile())
-        assertEquals(0, cli("legacy-check", root.toString()))
-        assertEquals(profile(), Files.readString(file))
-        assertFalse(Files.exists(root.resolve("limpi.sqlite3")))
-        Files.writeString(file, profile("9223372036854775808"))
-        assertEquals(2, cli("legacy-check", root.toString()))
-    }
     @Test fun `safe YAML rejects duplicate fields object tags and duplicate exported documents`() {
         assertThrows(Exception::class.java) { OperationsYaml.map("money: 10\nmoney: 20\n") }
         assertThrows(Exception::class.java) { OperationsYaml.parse("!!java.net.URL ['https://example.com']") }
@@ -142,8 +133,8 @@ class OperationsTest {
         val docs = (data["documents"] as List<*>).toMutableList(); docs.add(docs.first()); data["documents"] = docs
         assertThrows(Exception::class.java) { DatabaseSnapshot.import(OperationsYaml.dump(data)) }
     }
-    @Test fun `holding numeric coercion and legacy basis overflow fail preflight`() {
-        for (values in listOf("count: 1.5", "count: -1", "count: 9223372036854775807\n    averagePrice: 2", "count: 1\n    realizedProfit: bad")) {
+    @Test fun `holding numeric coercion and negative values fail preflight`() {
+        for (values in listOf("count: 1.5", "count: -1", "count: 1\n    costBasis: -5","count: 1\n    realizedProfit: bad")) {
             val data = "${profile()}stock:\n  ABCD:\n    $values\n"
             assertFalse(SnapshotCheck.inspect(DatabaseSnapshot(mapOf("player/$owner" to data), emptyList())).errors.isEmpty())
         }

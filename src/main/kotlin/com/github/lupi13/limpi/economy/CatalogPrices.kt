@@ -3,7 +3,7 @@ package com.github.lupi13.limpi.economy
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/** Retains the old positive-price truncation rule without Double/Int saturation. */
+/** Positive integral prices with truncating ratios and no Double/Int saturation; unlisted items sell for 1. */
 object CatalogPrices {
     fun sell(raw: Any?): Money {
         if (raw == null) return Money(1)

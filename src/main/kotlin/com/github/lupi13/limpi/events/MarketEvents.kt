@@ -26,22 +26,20 @@ class MarketEvents : Listener {
         val marketGUIName = Component.text("LIMPI: 장터", NamedTextColor.DARK_PURPLE)
 
         fun openMarketGUI(player: Player, requestedPage: Int = 0, expected: Inventory? = null) {
-            val listings = FileManager.market.available().filter { it.state == ListingState.ACTIVE || it.state == ListingState.OWNERSHIP_REVIEW }
+            val listings = FileManager.market.available().filter { it.state == ListingState.ACTIVE }
                 .sortedBy { it.code }
             val page = Pagination(listings.size, requestedPage)
             val holder = MenuHolder(MenuKind.MARKET, page.page, marketGUIName)
             for ((slot, listing) in listings.subList(page.start, page.end).withIndex()) {
-                val item = if (listing.state == ListingState.OWNERSHIP_REVIEW) ItemStack(Material.BARRIER) else
-                    PaperItemCodec.item(listing.item.payload, minOf(listing.item.count, listing.item.limit.toLong()).toInt())
+                val item = PaperItemCodec.item(listing.item.payload, minOf(listing.item.count, listing.item.limit.toLong()).toInt())
                 val meta = item.itemMeta
                 val lore = (meta.lore() ?: emptyList()).toMutableList()
                 lore.add(Component.text("코드: ${listing.code}, 가격: ${listing.price.units}원", NamedTextColor.WHITE))
                 lore.add(Component.text("판매자: ${listing.sellerName}", NamedTextColor.GRAY))
-                lore.add(Component.text(if (listing.state == ListingState.OWNERSHIP_REVIEW) "소유자 확인 중 · 관리자에게 문의하세요."
-                    else "좌클릭 구매 · 우클릭 흥정 요청 · 공간 부족 시 미수령 보관", NamedTextColor.YELLOW))
+                lore.add(Component.text("좌클릭 구매 · 우클릭 흥정 요청 · 공간 부족 시 미수령 보관", NamedTextColor.YELLOW))
                 meta.lore(lore); item.itemMeta = meta
                 holder.inventory.setItem(slot, item)
-                if (listing.state == ListingState.ACTIVE) holder.actions[slot] = MenuAction.MarketQuote(listing.id, listing.price.units)
+                holder.actions[slot] = MenuAction.MarketQuote(listing.id, listing.price.units)
             }
             fun button(slot: Int, target: Int, label: String) {
                 val item = ItemStack(Material.ARROW)
@@ -87,7 +85,7 @@ class MarketEvents : Listener {
             } else {
                 val listing = FileManager.market.find(quote.id)
                 if (listing == null || listing.state != ListingState.ACTIVE || listing.price.units != quote.price) throw MarketException(MarketFailure.STALE_QUOTE)
-                val seller = listing.seller?.let(plugin.server::getPlayer)
+                val seller = plugin.server.getPlayer(listing.seller)
                 if (seller == null) player.sendMessage(Component.text("판매자가 오프라인입니다.", NamedTextColor.YELLOW))
                 else {
                     seller.sendMessage(Component.text("${player.name} 님이 ${listing.code} 매물의 흥정을 요청했습니다.", NamedTextColor.YELLOW))

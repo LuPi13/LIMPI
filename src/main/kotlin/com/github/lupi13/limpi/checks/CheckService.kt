@@ -12,7 +12,6 @@ data class CheckRecord(val id: UUID, val issuer: UUID, val amount: Money, val st
     val redeemer: UUID? = null, val redemption: UUID? = null)
 enum class CheckFailure(val message: String) {
     UNKNOWN("서버 발행 기록이 없는 수표입니다."), REDEEMED("이미 사용한 수표입니다. 다시 입금하지 않습니다."),
-    LEGACY_CONVERTED("이미 전환한 기존 수표입니다."),
 }
 class CheckException(val reason: CheckFailure) : IllegalStateException(reason.message)
 data class CheckReceipt(val transaction: UUID, val check: UUID, val amount: Long, val replayed: Boolean)
@@ -47,27 +46,6 @@ class CheckService(private val store: StateStore, private val deliveries: Delive
             Accounts.write(tx, recipient, account, after)
             tx.put(key(id), encode(check.copy(state = CheckState.REDEEMED, redeemer = recipient, redemption = request)))
             receipt(request, check, recipient.toString(), before.units, after.units)
-        }
-        return result(committed)
-    }
-
-    /** No legacy public hash proves issuance. Only an audited operator decision can import a claim. */
-    fun importLegacy(request: UUID, actor: String, fingerprint: String, owner: UUID, issuer: UUID, amount: Long,
-                     note: String, item: (UUID, Money) -> ItemGrant): CheckReceipt {
-        require(amount > 0 && actor.isNotBlank() && note.isNotBlank())
-        require(fingerprint.matches(Regex("[0-9a-f]{64}")))
-        val committed = store.execute(request, BankService.fingerprint("CHECK_IMPORT", actor, fingerprint, owner.toString(), issuer.toString(), amount.toString(), note)) { tx ->
-            Accounts.read(tx, owner); Accounts.read(tx, issuer)
-            if (tx.get("check_legacy/$fingerprint") != null) throw CheckException(CheckFailure.LEGACY_CONVERTED)
-            check(tx.get(key(request)) == null)
-            val check = CheckRecord(request, issuer, Money(amount), CheckState.ISSUED)
-            val grant = item(request, check.amount); require(grant.count == 1L && grant.limit == 1)
-            tx.put(key(request), encode(check)); tx.put("check_legacy/$fingerprint", request.toString())
-            deliveries.stage(tx, request, owner, "approved legacy check $fingerprint", listOf(grant))
-            YamlConfiguration().apply {
-                set("check", request.toString()); set("amount", amount); set("actor", actor); set("owner", owner.toString())
-                set("issuer", issuer.toString()); set("legacyFingerprint", fingerprint); set("note", note)
-            }.saveToString()
         }
         return result(committed)
     }

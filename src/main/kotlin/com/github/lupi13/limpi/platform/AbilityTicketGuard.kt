@@ -6,7 +6,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.*
 
-/** One movement policy covers PDC and legacy tickets, including automatic inventory transfers. */
+/** One movement policy covers PDC tickets, including automatic inventory transfers. */
 class AbilityTicketGuard : Listener {
     private fun storage(type: InventoryType) = type in setOf(
         InventoryType.BARREL, InventoryType.CREATIVE, InventoryType.CHEST, InventoryType.DECORATED_POT,

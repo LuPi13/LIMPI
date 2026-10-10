@@ -1,12 +1,12 @@
-# 마켓 운영·이전·회수 복구
+# 마켓 운영·회수 복구
 
 2026-10-10. 마켓의 저장/거래/회수·접속 복구·GUI/명령을 연결했다. 테스트 121개와 빌드가 통과했으며 **실제 Paper 서버 동작은 전체 정비 이후에 확인한다.** [지급 복구](DELIVERY_RECOVERY.md)와 [전체 저장소 복구](STORAGE_AND_RECOVERY.md)를 함께 읽는다.
 
-## 정본과 이전
+## 정본
 
 매물은 `market_listing/<UUID>`가 정본이다. 활성/보호/예약 코드는 `market_code/<CODE>`가 예약한다. 매물 UUID는 코드를 재사용해도 달라지며, GUI에는 해당 UUID·표시 가격 quote를 보관한다. SOLD/RETURNED 이력은 지우지 않는다.
 
-`LegacyMarketMigration`이 기존 `financial/market` payload를 모두 검사한 뒤 catalog와 완료 marker를 한 트랜잭션으로 저장한다. seller의 이름이 유일한 기존 UUID에 연결되면 그 UUID를 저장한다. 조회가 모호하거나 계좌가 없으면 OWNERSHIP_REVIEW로 보존한다. 원본 payload/아이템은 지우지 않는다. 원본의 0원 매물도 무료 거래로 보존한다. 손상 item/음수·비정수 가격/잘못된 코드는 전체 이전을 거부해 일부 매물만 반영하지 않는다.
+매물은 등록 escrow로만 생긴다. 모든 매물은 판매자 UUID를 가진다. 이전 버전의 `market.yml` 매물은 가져오지 않는다.
 
 ## 사용자 명령과 화면
 
@@ -41,17 +41,13 @@
 /financial market escrow <소유자 UUID>
 /financial market resolve <소유자 UUID> <매물 UUID> removed <회수 확인 근거>
 /financial market resolve <소유자 UUID> <매물 UUID> retained <원본 보유 확인 근거>
-/financial market owner <매물 UUID> <소유자 UUID> <소유자 확인 근거>
 ```
 
 resolve는 owner가 오프라인일 때 저장된 playerdata·원본/후 슬롯·checkpoint를 확인한 뒤 실행한다. removed는 실제 회수가 확인됐으므로 매물을 공개한다. retained는 원본이 실제로 남아 있는 것이 확인됐으므로 숨긴 등록을 취소·코드를 해제하고 추가 반환을 만들지 않는다. **판단 없이 retained 뒤 물품 반환까지 하면 중복이 된다.** actor/결정/근거/이전 evidence는 원장에 보존한다.
 
-owner는 OWNERSHIP_REVIEW의 기존 매물에 명시적인 소유자 UUID를 지정하는 경로다. 기존 계좌가 존재해야 하고 원래 이름·아이템·이전 evidence를 감사 기록에 남긴다. 임의 이름 추정으로 자동 지정하지 않는다.
-
 ## 최종 서버 시험
 
-- 기존 매물 복사본의 수/원본 아이템/PDC·Long·0원 가격·owner UUID를 대조한다. 모호한 owner의 보호/해결을 확인한다.
 - 등록 저장 전·후/ACTIVE commit 전·후 강제 종료, 재접속, 저장 실패, REVIEW 해결에서 물품 수량과 매물 공개 상태를 확인한다.
 - 두 구매자 경쟁/오프라인·이름 변경 seller/코드 재사용·오래된 화면/페이지 경계·drag·shift·숫자키·offhand·doubleclick를 확인한다.
 - 만석 인벤토리에서 구매·소유자 회수·관리자 회수 후 권리가 보존되고 claim/재시작에서 중복 지급되지 않는지 확인한다.
-- 서버 playerdata 저장 위치와 별도 인벤토리 플러그인의 호환성, 보호 중인 플레이어에게 기존 능력 이벤트가 물품을 바꾸지 않는지도 확인한다.
+- 서버 playerdata 저장 위치와 별도 인벤토리 플러그인의 호환성, 보호 중인 플레이어에게 능력 이벤트가 물품을 바꾸지 않는지도 확인한다.

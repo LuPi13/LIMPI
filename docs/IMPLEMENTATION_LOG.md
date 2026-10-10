@@ -120,7 +120,7 @@
 - `checks/CheckService`는 서버 UUID/ISSUED/REDEEMED/금액·발행인·사용인·입금 거래를 보존한다. 발행인 차감·발행 기록·미수령·영수증을 한 commit에 저장한다. 양수 Long을 사용하고 잔액 전액 발행을 허용한다. 같은 거래 UUID를 다시 발행해도 차감/종이가 늘지 않는다.
 - 입금은 표시 금액 대신 저장된 금액으로 사용 상태·입금 잔액·영수증을 함께 저장한다. 알 수 없는 UUID/사용한 수표/오버플로를 거부한다. 독립 DB 연결에서 복사본을 경쟁 입금해도 하나만 성공한다. commit 후 물리 종이 정리에 실패해도 남은 같은 UUID 종이는 가치가 없으며 중복 입금되지 않는다.
 - `items/Check`를 PDC UUID·format/중첩 상한 1로 재작성하고 실제 이벤트 손을 읽도록 연결했다. 금융 명령의 기존 공개 해시 발행 코드를 제거하고 `CheckCommands`로 분리했다. 발행 거래 UUID 재시도, 주 손 redeem, 관리자 inspect/import, 권한·help/tab을 연결했다. 금융 비활성화 중 기존 수표 입금과 관리자 조회/전환도 가능하다.
-- `LegacyCheck`는 기존 형식만 검사한다. 공개 해시는 발행 증거가 아니므로 자동 입금하지 않는다. 관리자 전환은 owner/issuer UUID·actor·근거·semantic fingerprint를 기록해 새 claim/미수령을 만들며 과거 발행인 차감을 다시 하지 않는다. 원본을 보존하고 같은 fingerprint의 복사본/스택은 중복 승인하지 않는다. [수표·기존 전환 절차](CHECKS_AND_LEGACY_MIGRATION.md)에 운영 판단과 남은 서버 검증을 기록했다.
+- `LegacyCheck`는 기존 형식만 검사한다. 공개 해시는 발행 증거가 아니므로 자동 입금하지 않는다. 관리자 전환은 owner/issuer UUID·actor·근거·semantic fingerprint를 기록해 새 claim/미수령을 만들며 과거 발행인 차감을 다시 하지 않는다. 원본을 보존하고 같은 fingerprint의 복사본/스택은 중복 승인하지 않는다. [수표·기존 전환 절차](CHECKS.md)에 운영 판단과 남은 서버 검증을 기록했다.
 - 수표 추가 후 총 **134개** 테스트 통과(실패/에러/스킵 0), `test build --console=plain` 성공(exit code 0). 전액/큰 금액·실패 rollback·재시작 replay·중복/경쟁 입금·오버플로·legacy 중복 승인/감사를 시험했다. 실제 Paper 손/PDC/이벤트/종이 정리·보호 플러그인 연동은 최종 서버 시험으로 남긴다.
 
 ### 2026-10-10 / 상점·판매 원장·공통 회수·메뉴 연결
@@ -325,16 +325,25 @@
 - **347개** 시험 통과, test build 성공. 새 1개는 인챈트 최고 레벨 병합이다. 나머지는 Paper 이벤트 경로라 서버 시험 계획에 추가했다.
 - 이로써 42개 능력 전체와 경제/저장/복구/명령/GUI 경로가 최소 한 번 독립 리뷰를 거쳤다. 리뷰는 정적 분석이며 실제 서버 검증을 대신하지 않는다.
 
+### 2026-10-10 / 이전 데이터 가져오기·호환 제거 (새 서버 전제)
+
+- **사용자 결정:** 기존 플레이 이력은 버리고 완전히 새로운 서버에서 처음부터 적용한다. 이전 데이터 이전·호환 코드를 모두 지웠다. 아래 과거 기록에 나오는 최초 이전·legacy 수표/매물/티켓·평균가 호환·`legacy-check`·`stock repair`·`market owner` 설명은 이 시점에 무효다.
+- 제거: `LegacyStateMigration`(playerData YAML→SQLite, `backups/sqlite-v1`, `IMPORTED`), `LegacyMarketMigration`·`OWNERSHIP_REVIEW`·`/financial market owner`(모든 매물은 판매자 UUID 필수), `LegacyCheck`·`check_legacy`·`/financial check import`, 옛 티켓 metadata template 인식(PDC만 인정), 주식 `averagePrice`×수량 원가 추정과 `/financial stock repair`(costBasis만 정본), YAML 프로필 저장소(`YamlProfilePersistence`/`YamlPlayerRepository`/pre-schema 백업), 퀘스트 legacy 보정(`QuestManager.reconcile`), operations `legacy-check`.
+- 유지: SQLite 정본, 원장/복구, 손상 profile 차단과 `/financial set` 복구, 신규 profile 초기 보상 1회(이미 있는 profile EXEMPT는 중복 방지로 유지), 미래 schema 거부, 운영 check/backup/export/restore-copy.
+- YAML 저장소 기반 캐시 시험을 SQLite persistence의 `CachedPlayerRepositoryTest`로 옮겼다(merge/충돌/실패 쓰기/캐시/손상 payload/미래 schema/정수 값 비교).
+- 문서: `STORAGE_AND_RECOVERY.md` 재작성, `CHECKS_AND_LEGACY_MIGRATION.md`→`CHECKS.md`, 마켓/지급/선택권/주식/명령/Paper 기록·`SERVER_TEST_PLAN.md`(0~2단계를 새 서버 기준으로)·`AGENTS.md`·정비 계획 7절을 갱신했다.
+- **324개** 시험 통과(실패/에러/스킵 0), test build 성공. legacy 전용 시험은 삭제했다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |
 | --- | --- | --- |
 | DATA-01 | 완료(단위 검증) | 캐시·단일 저장소·능력 hot path 구현. 실제 서버 성능 측정은 최종 서버 시험 때 수행 |
-| DATA-02 | 구현 완료(단위 검증) | strict YAML/원자 저장/SQLite/마이그레이션/이름 충돌 보호, 운영 export·검사·백업 도구, 접속 프로필 실패 차단/kick, 손상 잔액 표시 구현. 운영 데이터 복구 시험은 서버 시험 단계 |
+| DATA-02 | 구현 완료(단위 검증) | strict YAML/원자 저장/SQLite/이름 충돌 보호, 운영 export·검사·백업 도구, 접속 프로필 실패 차단/kick, 손상 잔액 표시 구현. 운영 데이터 복구 시험은 서버 시험 단계 |
 | DATA-03 | 완료(단위 검증) | 기존 서버 플레이어 ensure/현재 이름/기존 데이터 보존 구현. 실제 접속 확인은 이후 |
 | MONEY-01 | 구현 완료(단위 검증) | Money 규칙·주식·송금/관리자·마켓·수표·판매·상점/능력 상점 교환·초기 지급 연결. 잔액 변경은 Accounts/BankService/InitialRewards에서만 하고 표시도 strict 읽기. 실제 서버 검증은 이후 |
 | MONEY-02 | 구현 완료(저장 단위 검증) | 송금·마켓·수표·판매·상점·능력 상점·뽑기·선택권·초기/퀘스트 보상·주식 원장과 필요한 물품 회수/미수령 연결. 실제 Paper 검증은 이후 |
-| MONEY-03 | 구현 완료(단위 검증) | 수표 발행/입금 멱등 원장·PDC·legacy 관리자 전환 연결. 실제 손·Paper 이벤트/저장 확인은 이후 |
+| MONEY-03 | 구현 완료(단위 검증) | 수표 발행/입금 멱등 원장·PDC 연결(이전 버전 수표 미지원). 실제 손·Paper 이벤트/저장 확인은 이후 |
 | SELL-01 | 구현 완료(단위 검증) | 판매 세션 1개·frozen 입력/가격·공통 회수 checkpoint 후 멱등 정산·REVIEW/관리자 판단. 실제 서버 검증은 이후 |
 | ITEM-01 | 구현 완료(단위 검증) | 상점/능력 상점/초기 보상/연금술/소매치기/검 반환의 전체 수량 미수령·공통 회수/복구·관리자 연결. 부분 수용 helper 제거. NPC 소매치기 드롭만 world 경계(문서화). 실제 서버 검증은 남음 |
 | STOCK-01 | 구현 완료(단위 검증) | 가격/설정 정책과 실제 갱신 경로 연결. 실제 서버 실행 확인은 이후 |
@@ -345,9 +354,9 @@
 | CFG-01 | 구현 완료(단위 검증) | 초기 보상·능력 상점과 31개 전체 능력 설정의 strict 타입·범위·기본값·schema/원본 보존 구현. 실제 Paper 설정 생성/enable은 이후 |
 | GACHA-01 | 구현 완료(저장 단위 검증) | 양손 티켓 회수·해금/천장/결과 원자 정산·ForceTroll 대기/ack·결과 조회·연출 정리 연결. Paper 실제 검증은 이후 |
 | GACHA-02 | 구현 완료(정책 단위 검증) | 공통 확률/천장·실제 추첨/help/pity 연결. EPIC 조건부/픽업 의미 보존. 실제 서버 확인은 이후 |
-| AB-07 | 구현 완료(단위 검증) | typed 획득 분류·후보/픽업 snapshot/소비 전 validation, 뽑기 확정 원장/회수, 선택권 사용/PDC·legacy/guard 연결. 서버 검증은 남음 |
+| AB-07 | 구현 완료(단위 검증) | typed 획득 분류·후보/픽업 snapshot/소비 전 validation, 뽑기 확정 원장/회수, 선택권 사용/PDC/guard 연결. 서버 검증은 남음 |
 | GUI-04 | 구현 완료(페이지 단위 검증) | 주식·선택/도감의 실제 Holder/page/sort에 공유 Pagination 연결. 서버 화면 검증은 이후 |
-| QUEST-01 | 구현 완료(단위 검증) | 4개 완료/해금 원자 정산·legacy repair·조화 confirmed progress/threshold·취소된 사망 제외/엔더맨 무피해 확정 피해 조건 연결. 실제 처치 귀속은 서버 시험에서 확인 |
+| QUEST-01 | 구현 완료(단위 검증) | 4개 완료/해금 원자 정산·조화 confirmed progress/threshold·취소된 사망 제외/엔더맨 무피해 확정 피해 조건 연결. 실제 처치 귀속은 서버 시험에서 확인 |
 | AB-08 | 구현 완료(단위 검증) | 레벨 감소/경험치 감소 보너스 제거·상한/재진입 보호, ZombieKing 야간 반복 수정 완료. 실제 서버 검증은 이후 |
 | AB-02 | 구현 완료(저장 단위 검증) | same-code no-op·전체 슬롯 relocation/preflight·전환 checkpoint/profile 원자 정산·restart/REVIEW/관리자 판단 구현. 실제 Paper save/이벤트·복구 시험은 이후 |
 | AB-01 | 구현 완료(단위 검증) | 단일 ID 레지스트리·명시적 bind/configure/start/stop/release·공통 runtime 구현. 서버 없는 실제 레지스트리/메타데이터 시험 통과. 실제 enable은 이후 |
@@ -356,7 +365,7 @@
 | AB-05 | 구현 완료(정책 단위 검증) | 소모 이후 expected code의 owned railgun scope와 cleanup 구현. 실제 단발 애니메이션은 서버 시험에서 확인 |
 | AB-06 | 구현 완료(정책 단위 검증) | owned Web/붙잡기/레일건·world/quit/death/변경 cleanup·물리 경계 구현. 실제 Paper는 이후 |
 | COMBAT-01/02/03 | 구현 완료(정책 단위 검증) | confirmed damage·취소/귀속·상태 보존·typed target·visited/budget chain·오프라인 pet/UI 정책 구현. 보호 플러그인/토템/이벤트는 서버 시험에서 확인 |
-| OPS-01 | 구현 완료(단위 검증) | System.out 교체 제거, 테스트 기반/schema/백업/저장소 복구 문서, 운영 check/backup/export/restore-copy/legacy-check 도구, CI, kotlin-reflect 제거 구현. 실제 운영 데이터 복사본 시험·기타 결합 제거는 남음 |
+| OPS-01 | 구현 완료(단위 검증) | System.out 교체 제거, 테스트 기반/schema/백업/저장소 복구 문서, 운영 check/backup/export/restore-copy 도구, CI, kotlin-reflect 제거 구현. 실제 운영 데이터 복사본 시험·기타 결합 제거는 남음 |
 | CMD-01 | 구현 완료(단위 검증) | 공통 route/permission/console/인자/help/tab·기능 handler 분리·미구현 reload/console TODO 제거. 실제 Paper 책/콘솔은 이후 |
 | 그 외 모든 항목 | 미해결 | [정비 계획](MAINTENANCE_PLAN.md)의 범위를 그대로 유지 |
 
@@ -371,9 +380,9 @@
 
 ## 현재 설계의 경계
 
-- 플레이어/마켓의 정본은 SQLite다. playerData YAML과 market.yml은 최초 이전 원본이며 이후 자동 동기화하지 않는다. 운영 설정·종목 가격은 YAML로 유지한다.
+- 플레이어/마켓의 정본은 SQLite다. 새 서버에서 빈 DB로 시작하며 이전 버전 YAML 데이터는 가져오지 않는다. 운영 설정·종목 가격은 YAML로 유지한다.
 - 송금/관리자 변경·마켓·수표·판매·상점·능력 상점·뽑기·선택권/초기·퀘스트 보상·능력 전환·주식은 원장/미수령·필요한 회수 복구에 연결했다. 대상 설정(AbilityEnemy) 등 비경제 필드만 호환 snapshot 저장 API를 쓴다. DB와 인벤토리가 원자적으로 함께 저장되는 것은 아니다.
 - 반환하는 FileConfiguration은 호환 편집 API다. 순수 규칙·서비스로 이동하면서 직접 YAML 접근을 줄여야 한다.
-- negative legacy balance는 임의로 0으로 덮지 않는다. 은행 거래는 거부하고 `/financial set <UUID> <정상 금액>`으로 관리자가 명시적으로 복구하면 원장에 이전 음수 잔액이 남는다. 모든 경제 호출부가 같은 strict 잔액 읽기를 쓴다.
+- 손상(음수/누락/비정수) 잔액은 임의로 0으로 덮지 않는다. 은행 거래는 거부하고 `/financial set <UUID> <정상 금액>`으로 관리자가 명시적으로 복구하면 원장에 이전 값이 남는다. 모든 경제 호출부가 같은 strict 잔액 읽기를 쓴다.
 - 서버 실행 중 파일을 외부에서 수정해도 캐시는 자동 갱신하지 않는다. 안전한 reload/운영 절차를 별도로 정한다.
-- 손상된 UUID YAML은 최초 이전에서 거부하며 손상 DB payload는 파싱 실패를 전달한다. 자동 초기화로 자산을 지우지 않는다. DB가 정본이 된 이후 오래된 YAML을 고쳐도 DB 값이 바뀌지 않는다.
+- 손상 DB payload는 파싱 실패를 전달하고 해당 플레이어 접속을 차단한다. 자동 초기화로 자산을 지우지 않는다.

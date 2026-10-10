@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 
 class CatalogPricesTest {
-    @Test fun `defaults integral prices and decimal floor retain legacy semantics without Int clipping`() {
+    @Test fun `defaults integral prices and decimal floor retain catalog semantics without Int clipping`() {
         assertEquals(1, CatalogPrices.sell(null).units)
         assertEquals(3_000_000_000, CatalogPrices.sell(3_000_000_000L).units)
         assertEquals(151, CatalogPrices.shop(Money(101), CatalogPrices.ratio(1.5)).units)

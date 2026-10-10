@@ -20,7 +20,7 @@ class GachaConfigurationTest {
         data.set("LEGENDARYProbability.IncreaseCount", 5); data.set("EPICProbability.PickUp", Double.NaN)
         assertThrows(IllegalArgumentException::class.java) { GachaConfiguration.settings(data) }
     }
-    @Test fun `legacy absent counters become zero while Long counters and unknown fields survive write`() {
+    @Test fun `absent counters become zero while Long counters and unknown fields survive write`() {
         val data = YamlConfiguration(); assertEquals(GachaState(), GachaConfiguration.state(data))
         data.set("custom", "kept"); val state = GachaState(3_000_000_000, 10, 1, 2)
         GachaConfiguration.write(data, state); assertEquals(state, GachaConfiguration.state(data)); assertEquals("kept", data.getString("custom"))

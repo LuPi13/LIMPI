@@ -115,7 +115,7 @@ class StockEvents : Listener {
             }
         }
 
-        /** A malformed or negative legacy balance is shown as needing recovery, never as 0. */
+        /** A malformed or negative balance is shown as needing recovery, never as 0. */
         private fun balanceDisplay(profile: FileConfiguration): Component =
             runCatching { Accounts.integralBalance(profile) }.getOrNull()?.takeIf { it >= 0 }?.let(::moneyDisplay)
                 ?: Component.text("계좌 복구 필요", NamedTextColor.RED)

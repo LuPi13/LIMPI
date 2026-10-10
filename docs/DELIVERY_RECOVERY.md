@@ -7,7 +7,6 @@
 - `delivery_pending/<owner UUID>/<거래 UUID>`: 원본 아이템 payload/수량/중첩 상한, 인벤토리 slotLimit, 목적, 지급 상태, 시도별 checkpoint UUID, 전/후 슬롯 이미지, 검토 이유.
 - `delivery_done/<owner UUID>/<거래 UUID>`: 지급 완료 기록. pending 삭제와 done 기록/완료 원장은 한 commit으로 저장한다. 같은 지급을 다시 stage해도 pending을 재생성하지 않는다.
 - `market_listing/<매물 UUID>`: 코드/표시 이름/판매자 UUID·표시 이름/아이템/Long 가격/상태/구매자. 코드를 재사용하더라도 매물 UUID는 달라야 한다. 판매자 이름 변경이나 오래된 GUI에서 다른 매물로 오인하지 않는다.
-- `migration/market_catalog_v1`: 실제 초기화에서 수행하는 catalog 최초 이전 marker. 기존 `financial/market` payload는 이전 원본으로 보존한다.
 
 ## 지급 프로토콜
 
@@ -34,7 +33,7 @@
 
 공간이 없는 구매자의 권리는 미수령으로 보존한다. 실제 GUI/명령은 정산과 수령을 구분하고 claim을 안내한다. 등록 회수·원본 이전·운영자 해결도 연결했으며 [마켓 복구 절차](MARKET_RECOVERY.md)에 기록했다.
 
-상점 구매·수표 발행도 차감과 미수령을 같은 commit으로 연결했다. 판매/교환의 공통 `RemovalJournal`은 마켓과 owner의 회수 checkpoint 예약을 공유하며, 접속/claim에서 마켓·공통 회수를 지급보다 먼저 복구한다. [상점·판매 복구](SHOP_AND_SALE_RECOVERY.md), [수표](CHECKS_AND_LEGACY_MIGRATION.md)를 함께 따른다. 능력 상점/뽑기/선택권/초기·퀘스트 보상은 이후 단계에서 연결했다.
+상점 구매·수표 발행도 차감과 미수령을 같은 commit으로 연결했다. 판매/교환의 공통 `RemovalJournal`은 마켓과 owner의 회수 checkpoint 예약을 공유하며, 접속/claim에서 마켓·공통 회수를 지급보다 먼저 복구한다. [상점·판매 복구](SHOP_AND_SALE_RECOVERY.md), [수표](CHECKS.md)를 함께 따른다. 능력 상점/뽑기/선택권/초기·퀘스트 보상은 이후 단계에서 연결했다.
 
 ## 수령과 관리자 검토
 
@@ -55,7 +54,7 @@ claim은 `limpi.financial.claim`(기본 true), 조회/해결은 `limpi.financial
 1. 구현한 Paper 어댑터/파일 checkpoint/force/접속 복구/실패 보호를 최종 실제 서버에서 확인한다. 정상 동작과 저장 실패/재시작을 구분한다.
 2. 취소를 무시하는 기존 능력 이벤트와 다른 플러그인의 아이템 변경을 검토한다. 지급 실패로 보호 중인 플레이어를 임의 변경하지 않도록 나머지 수명/취소 처리를 정비한다.
 3. 구현한 claim/관리자 조회/해결의 실제 명령 동작과 권한, 오프라인 확인, 감사 기록을 최종 서버에서 시험한다.
-4. 구현한 legacy 이전·owner 보호/해결·Holder/UUID quote·Long 입력·구매/회수·페이지를 최종 서버에서 확인한다.
+4. 구현한 Holder/UUID quote·Long 입력·구매/회수·페이지를 최종 서버에서 확인한다.
 5. 구현한 신규 등록 escrow의 회수 전/후 저장·공개·실패/재시작 복구·관리자 removed/retained 결정을 최종 서버에서 확인한다.
 6. 실제 서버에서 playerdata 저장 실패·DB 완료 실패·강제 종료·다른 플러그인의 인벤토리 변경·재접속·백업 복원을 확인한다. JVM/파일 시스템 전원 장애와 SQLite/인벤토리의 동시 원자성은 단위 시험만으로 보장하지 않는다.
 

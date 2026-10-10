@@ -11,7 +11,7 @@ class QuestRewardsTest {
     @TempDir lateinit var directory: Path
     private val owner = UUID.randomUUID()
     private fun service(store: StateStore) = QuestRewards(store, CachedPlayerRepository(SqliteProfilePersistence(store)))
-    @Test fun `completion unlock and receipt commit once while preserving unknown legacy data`() {
+    @Test fun `completion unlock and receipt commit once while preserving unknown data`() {
         SqliteStateStore(directory.resolve("state.db")).use { store ->
             store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 123\nunlockedAbilities: [unknown]\nclearedQuests: [old]\nquest:\n  custom: 77\n") }
             assertEquals(QuestRewardResult(true, true, false), service(store).complete(owner, "quest", "ability"))
@@ -24,7 +24,7 @@ class QuestRewardsTest {
             assertThrows(TransactionIdentityConflict::class.java) { service(store).complete(owner, "quest", "changed_reward") }
         }
     }
-    @Test fun `legacy completed quest missing its separately saved unlock is repaired atomically`() {
+    @Test fun `already completed quest without its unlock still grants the unlock once`() {
         SqliteStateStore(directory.resolve("state.db")).use { store ->
             store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nclearedQuests: [quest]\n") }
             assertEquals(QuestRewardResult(false, true, false), service(store).complete(owner, "quest", "ability"))
@@ -81,7 +81,7 @@ class QuestRewardsTest {
             fault = false; assertTrue(service(store).harmony(request, owner, "harmony_arrow").newUnlock)
         }
     }
-    @Test fun `legacy large progress is preserved and malformed numbers are refused`() {
+    @Test fun `large progress is preserved and malformed numbers are refused`() {
         SqliteStateStore(directory.resolve("state.db")).use { store ->
             store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  harmony_sword: 9223372036854775807\n  harmony_arrow: 0\n") }
             service(store).harmony(UUID.randomUUID(), owner, "harmony_sword")

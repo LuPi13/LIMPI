@@ -32,26 +32,9 @@ class CheckCommands(private val plugin: Plugin, private val checks: Check) {
                         require(sender is Player && args.size == 2) { if (sender is Player) "/financial check inspect [수표 UUID]" else "콘솔은 /financial check inspect <수표 UUID>로 조회하세요." }
                         val held = sender.inventory.itemInMainHand
                         val id = checks.id(held)
-                        val legacy = checks.legacy(held)
-                        sender.sendMessage(Component.text(if (id != null) "수표 UUID: $id" else if (legacy != null)
-                            "기존 수표: ${legacy.amount}원 / 발행인 ${legacy.issuerName} / ${legacy.fingerprint}. 공개 해시는 발행 증거가 아닙니다."
-                            else "확인할 수표 형식이 아닙니다.", NamedTextColor.YELLOW))
+                        sender.sendMessage(Component.text(if (id != null) "수표 UUID: $id" else "확인할 수표 형식이 아닙니다.", NamedTextColor.YELLOW))
                     }
                     return true
-                }
-                "import" -> {
-                    require(sender.hasPermission("limpi.financial.admin.check")) { "권한이 부족합니다." }
-                    require(args.size >= 5) { "/financial check import <현재 소유자 UUID> <확인한 발행인 UUID> <확인 근거>" }
-                    val owner = requireNotNull(plugin.server.getPlayer(UUID.fromString(args[2]))) { "현재 소유자가 접속하여 원본 수표를 주 손에 들고 있어야 합니다." }
-                    require(!FileManager.delivery.blocked(owner.uniqueId)) { "소유자의 지급 기록을 먼저 복구하세요." }
-                    val legacy = requireNotNull(checks.legacy(owner.inventory.itemInMainHand)) { "원본 수표 형식을 확인할 수 없습니다." }
-                    val actor = (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE"
-                    val result = FileManager.checks.importLegacy(request, actor, legacy.fingerprint, owner.uniqueId,
-                        UUID.fromString(args[3]), legacy.amount, args.drop(4).joinToString(" ")) { id, money ->
-                        PaperItemCodec.grant(checks.item(id, money, legacy.issuerName))
-                    }
-                    sender.sendMessage(Component.text("기존 수표를 전환했습니다. 원본은 보존하며 다시 입금되지 않습니다. 거래: ${result.transaction}", NamedTextColor.GREEN))
-                    FileManager.delivery.claim(owner); return true
                 }
             }
             require(sender is Player && sender.hasPermission("limpi.financial.check")) { "플레이어 권한이 필요합니다." }

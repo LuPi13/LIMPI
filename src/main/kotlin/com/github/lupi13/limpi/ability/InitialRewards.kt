@@ -23,7 +23,7 @@ data class InitialTicketCounts(val gacha: Long, val common: Long, val rare: Long
     }
 }
 
-/** New plugin profiles receive a frozen once-only bundle; migrated profiles are explicitly exempt. */
+/** New plugin profiles receive a frozen once-only bundle; a profile that already existed is never granted it. */
 class InitialRewards(private val store: StateStore, private val deliveries: DeliveryJournal, private val players: PlayerRepository) {
     fun register(owner: UUID, name: String, balance: Money, items: List<ItemGrant>) {
         val id = identity("initial-register", owner)

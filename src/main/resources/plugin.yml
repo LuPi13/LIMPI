@@ -44,9 +44,6 @@ permissions:
   limpi.financial.admin.stock:
     description: Add delist restore or reset stock reference prices
     default: op
-  limpi.financial.admin.stock.repair:
-    description: Repair a malformed legacy stock holding with an audit ledger entry
-    default: op
   limpi.ability.enemy:
     description: Configure ability target categories
     default: true
@@ -81,7 +78,7 @@ permissions:
     description: Issue and redeem server-recorded checks
     default: true
   limpi.financial.admin.check:
-    description: Inspect checks and approve legacy conversion
+    description: Inspect issued check records
     default: op
   limpi.financial.market:
     description: Use the player market

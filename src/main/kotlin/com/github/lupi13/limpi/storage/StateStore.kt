@@ -20,7 +20,7 @@ data class CommittedTransaction(val entry: LedgerEntry, val replayed: Boolean)
 class TransactionIdentityConflict(id: UUID) :
     IllegalArgumentException("Transaction $id was already used for another request")
 
-/** Serialized payloads preserve legacy fields; related documents and their receipt commit together. */
+/** Serialized payloads preserve unknown fields; related documents and their receipt commit together. */
 interface StateStore : AutoCloseable {
     fun get(key: String): String?
     fun documents(prefix: String): Map<String, String>

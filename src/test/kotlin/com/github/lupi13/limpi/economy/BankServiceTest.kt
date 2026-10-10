@@ -130,7 +130,7 @@ class BankServiceTest {
         }
     }
 
-    @Test fun `explicit administrator set can repair negative legacy balance with an audit record`() {
+    @Test fun `explicit administrator set can repair a negative balance with an audit record`() {
         SqliteStateStore(file()).use { store ->
             val (profiles, bank) = fixture(store)
             store.atomic { it.put(SqliteProfilePersistence.key(sender), "name: Sender\nmoney: -100\n") }
@@ -143,7 +143,7 @@ class BankServiceTest {
         }
     }
 
-    @Test fun `malformed legacy balance is exposed as unknown instead of zero`() {
+    @Test fun `malformed balance is exposed as unknown instead of zero`() {
         SqliteStateStore(file()).use { store ->
             val (profiles, bank) = fixture(store)
             store.atomic { it.put(SqliteProfilePersistence.key(sender), "name: Sender\nmoney: 3.5\n") }

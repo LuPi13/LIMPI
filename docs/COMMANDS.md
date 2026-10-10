@@ -15,6 +15,6 @@
 
 `/financial stock remove <코드|all>`은 **상장 중지**다. 과거의 플레이어 stock 전체 삭제 경로를 제거했다. 종목 정의/가격/알 수 없는 필드·플레이어 수량/원가/손익을 보존하고 listed=false를 한 번에 저장한다. 중지된 종목은 새 거래에서 거부한다.
 
-`stock restore <코드|all>`은 보존한 정의/현재가와 기준가를 모두 검증해 재상장한다(손상된 기준가 하나가 전체 가격 갱신을 멈추지 않게 한다). `stock holdings`는 상장 중지 종목까지 자기 보유/원가/손익을 표시한다. 사용한 코드/이름을 새 종목에 재사용할 수 없다. `stock refix`는 선택된 가격 전부를 검증한 뒤 현재 가격을 기준가로 저장한다. 종목 변경 시각도 같은 stock.yml snapshot에 저장하며 실패하면 runtime 설정을 바꾸지 않는다. profile을 직접 삭제하는 관리 기능은 제공하지 않는다. 손상된 legacy 보유는 [주식 원장](STOCK_TRANSACTIONS.md#손상된-기존-보유의-관리자-복구)의 `stock repair`로 원장과 함께 복구한다. stock add 입력 오류는 이름/코드/material/가격별 메시지를 보인다.
+`stock restore <코드|all>`은 보존한 정의/현재가와 기준가를 모두 검증해 재상장한다(손상된 기준가 하나가 전체 가격 갱신을 멈추지 않게 한다). `stock holdings`는 상장 중지 종목까지 자기 보유/원가/손익을 표시한다. 사용한 코드/이름을 새 종목에 재사용할 수 없다. `stock refix`는 선택된 가격 전부를 검증한 뒤 현재 가격을 기준가로 저장한다. 종목 변경 시각도 같은 stock.yml snapshot에 저장하며 실패하면 runtime 설정을 바꾸지 않는다. profile을 직접 삭제하는 관리 기능은 제공하지 않는다. stock add 입력 오류는 이름/코드/material/가격별 메시지를 보인다.
 
 전체 325개 시험과 test build가 통과했다. 새 15개 시험은 alias/최장 경로·권한/콘솔/비활성 help/tab·dynamic provider 접근 제한·잘못된 인자·packaged permission 선언·실제 console adapter·상장 중지/복구/재사용 금지·snapshot/typed 검증을 확인한다. 실제 Paper 도움말 책·클릭/권한 변경·콘솔 관리자 저장은 최종 서버 시험에서 확인한다.

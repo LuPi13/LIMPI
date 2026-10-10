@@ -19,7 +19,7 @@ class MarketCommands(private val plugin: Plugin) {
         val request = UUID.randomUUID()
         try {
             val subcommand = args.getOrNull(1)?.lowercase(Locale.ROOT)
-            if (subcommand in setOf("escrow", "resolve", "owner")) {
+            if (subcommand in setOf("escrow", "resolve")) {
                 require(sender.hasPermission("limpi.financial.admin.market")) { "권한이 부족합니다." }
                 val actor = (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE"
                 when (subcommand) {
@@ -34,10 +34,6 @@ class MarketCommands(private val plugin: Plugin) {
                         val owner = UUID.fromString(args[2]); require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 저장 상태를 확인하세요." }
                         val decision = args[4].lowercase(Locale.ROOT); require(decision in setOf("removed", "retained"))
                         FileManager.escrow.resolve(request, actor, owner, UUID.fromString(args[3]), decision == "removed", args.drop(5).joinToString(" "))
-                    }
-                    "owner" -> {
-                        require(args.size >= 5) { "/financial market owner <매물 UUID> <소유자 UUID> <확인 근거>" }
-                        FileManager.marketTrades.assignOwner(request, actor, UUID.fromString(args[2]), UUID.fromString(args[3]), args.drop(4).joinToString(" "))
                     }
                 }
                 sender.sendMessage(Component.text("처리했습니다. 감사 거래 UUID: $request", NamedTextColor.GREEN))
@@ -62,13 +58,13 @@ class MarketCommands(private val plugin: Plugin) {
                 "remove" -> {
                     require(args.size == 3) { "/financial market remove <코드>" }
                     val listing = requireNotNull(FileManager.market.findByCode(args[2])) { "존재하지 않는 매물입니다." }
-                    val owner = requireNotNull(listing.seller) { "관리자가 소유자 UUID를 먼저 확인해야 합니다." }
+                    val owner = listing.seller
                     require(owner == sender.uniqueId || sender.hasPermission("limpi.financial.admin.market")) { "다른 플레이어의 매물입니다." }
                     FileManager.marketTrades.withdraw(request, owner, listing.id, sender.uniqueId.toString())
                     sender.sendMessage(Component.text("회수를 확정했습니다. 물품은 소유자의 미수령으로 반환합니다. 거래 UUID: $request", NamedTextColor.GREEN))
                     if (owner == sender.uniqueId) FileManager.delivery.claim(sender)
                 }
-                else -> throw IllegalArgumentException("/financial market [add|remove|escrow|resolve|owner]")
+                else -> throw IllegalArgumentException("/financial market [add|remove|escrow|resolve]")
             }
             MarketEvents.reopenMarketGUI()
         } catch (failure: IllegalArgumentException) {

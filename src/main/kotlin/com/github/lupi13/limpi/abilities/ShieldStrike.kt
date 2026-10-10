@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
@@ -75,7 +77,7 @@ object ShieldStrike : Ability(
                             session.potion(player, PotionEffect(PotionEffectType.SLOWNESS, 2, 7, true, false, false))
                         }
                         if (timer == 15) {
-                            vector[player.uniqueId] = player.location.direction.setY(0).normalize().multiply(velocity)
+                            vector[player.uniqueId] = player.location.direction.setY(0).normalizeSafely().multiply(velocity)
                         }
                         if (timer in 16..20) {
                             try {
@@ -95,7 +97,7 @@ object ShieldStrike : Ability(
                                 if (!AbilityManager.isEnemy(player, entity)) continue
 
                                 if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
-                                entity.velocity = vector[player.uniqueId]!!.clone().multiply(min(knockbackAmplifier / entity.boundingBox.volume, maxKnockback)).setY(0.3)
+                                entity.velocity = vector[player.uniqueId]!!.clone().multiply(min(knockbackAmplifier / entity.boundingBox.volume.coerceAtLeast(1e-9), maxKnockback)).setY(0.3)
                                 player.velocity = vector[player.uniqueId]!!.clone().multiply(-0.1).setY(0.2)
                                 val centerPosition = player.boundingBox.center.getMidpoint(entity.boundingBox.center).toLocation(player.world)
                                 player.world.playSound(centerPosition, Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1.5f)

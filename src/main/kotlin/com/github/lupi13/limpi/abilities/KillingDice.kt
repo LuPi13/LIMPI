@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Color
@@ -70,7 +72,7 @@ object KillingDice : Ability(
                 Random.nextDouble(-1.0, 1.0),
                 Random.nextDouble(-1.0, 1.0),
                 Random.nextDouble(-1.0, 1.0)
-            ).normalize()
+            ).normalizeSafely()
             val effectLength = (
                     target.boundingBox.widthX.pow(2)
                     + target.boundingBox.widthZ.pow(2)

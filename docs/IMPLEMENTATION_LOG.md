@@ -247,6 +247,13 @@
 - **301개** 시험 통과(실패/에러/스킵 0), test build 성공. 주식 기존 8개를 실제 SQLite로 이전하고 5개 추가. [주식 계약](STOCK_TRANSACTIONS.md). 실제 Paper는 미검증.
 - 다음은 남은 물리 효과 경계·명령 정의·운영 backup/export/check 도구/CI·전체 범위 감사다. 전체 목표는 계속 진행 중이다.
 
+### 2026-10-10 / 능력 물리·표시 경계
+
+- 11개 능력의 모든 normalize를 유한한 정규화 helper에 연결했다. 0/동일 위치/비유한/큰 수/작은 수 방향을 보호하고 Web/돌진의 0 부피 나눗셈도 수정했다.
+- Muspell의 다른 월드 대상·동일 위치 rayTrace·방향 상쇄와 BladeLeaper의 정지 rayTrace를 보호했다. ImpactLanding의 검색/파티클 ring/무작위 반복/sound 표시 비용을 제한하며 정상 피해 곡선을 보존한다.
+- **310개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 9개 정책 시험. 실제 Paper는 미검증. [물리 계약](ABILITY_PHYSICS.md).
+- 다음은 명령 정의·운영 backup/export/check 도구/CI·전체 범위 감사다. 전체 목표는 계속 진행 중이다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |
@@ -273,6 +280,10 @@
 | AB-02 | 구현 완료(저장 단위 검증) | same-code no-op·전체 슬롯 relocation/preflight·전환 checkpoint/profile 원자 정산·restart/REVIEW/관리자 판단 구현. 실제 Paper save/이벤트·복구 시험은 이후 |
 | AB-01 | 구현 완료(단위 검증) | 단일 ID 레지스트리·명시적 bind/configure/start/stop/release·공통 runtime 구현. 서버 없는 실제 레지스트리/메타데이터 시험 통과. 실제 enable은 이후 |
 | AB-04 | 부분 해결 | UUID 능력 상태·작업/일시 엔티티/laser/속성 소유 범위와 이탈/사망/전환/종료 정리 구현. potion 중첩 정책·대상 메뉴와 실제 서버 검증은 남음 |
+| AB-03 | 구현 완료(정책 단위 검증) | transient namespace modifier로 자기 속성만 정리한다. 외부 baseValue를 덮지 않는다. 실제 중첩은 서버 시험에서 확인 |
+| AB-05 | 구현 완료(정책 단위 검증) | 소모 이후 expected code의 owned railgun scope와 cleanup 구현. 실제 단발 애니메이션은 서버 시험에서 확인 |
+| AB-06 | 구현 완료(정책 단위 검증) | owned Web/붙잡기/레일건·world/quit/death/변경 cleanup·물리 경계 구현. 실제 Paper는 이후 |
+| COMBAT-01/02/03 | 구현 완료(정책 단위 검증) | confirmed damage·취소/귀속·상태 보존·typed target·visited/budget chain·오프라인 pet/UI 정책 구현. 보호 플러그인/토템/이벤트는 서버 시험에서 확인 |
 | OPS-01 | 부분 해결 | System.out 교체 제거, 테스트 기반/schema/백업/저장소 복구 문서 구현. CI/복구 도구·시험 및 기타 결합 제거는 남음 |
 | 그 외 모든 항목 | 미해결 | [정비 계획](MAINTENANCE_PLAN.md)의 범위를 그대로 유지 |
 

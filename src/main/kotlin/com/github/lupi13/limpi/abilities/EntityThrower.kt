@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Color
@@ -331,7 +333,7 @@ object EntityThrower : Ability(
                     }
 
                     // 부딪히고 넉백
-                    val vector = targetEntity.velocity.normalize()
+                    val vector = targetEntity.velocity.normalizeSafely()
                     entity.velocity = vector.clone().multiply(0.2)
                     targetEntity.velocity = vector.clone().multiply(-0.2)
                     player.world.playSound(entity.location, Sound.ENTITY_PLAYER_HURT, 1f, 1f)

@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
@@ -30,7 +32,7 @@ object LongThrow : Ability(
 
         val itemAmp = config!!.getDouble("item")
 
-        event.itemDrop.velocity = player.location.direction.normalize().multiply(itemAmp)
+        event.itemDrop.velocity = player.location.direction.normalizeSafely().multiply(itemAmp)
     }
 
 
@@ -50,6 +52,6 @@ object LongThrow : Ability(
             config!!.getDouble("lingering_potion")
         }
 
-        entity.velocity = player.location.direction.normalize().multiply(potionAmp)
+        entity.velocity = player.location.direction.normalizeSafely().multiply(potionAmp)
     }
 }

@@ -9,8 +9,8 @@ import org.bukkit.entity.Damageable
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageEvent
+import com.github.lupi13.limpi.ability.ShockwavePolicy
 import kotlin.math.cos
-import kotlin.math.exp
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -41,18 +41,6 @@ object ImpactLanding : Ability(
     }
 
 
-    /**
-     * 가우스분포를 응용한 충격파 피해 계산 함수
-     * @param damage 원래 낙하 피해
-     * @param distance 충격파가 미치는 거리
-     * @return shock damage * e^(-dampingRatio * distance^2 / damage)
-     */
-    private fun calculateShockwaveDamage(damage: Double, distance: Double): Double {
-        val dampingRatio = config!!.getDouble("dampingRatio")
-        return damage * exp(-dampingRatio * distance * distance / damage)
-    }
-
-
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDamage(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
@@ -63,9 +51,10 @@ object ImpactLanding : Ability(
         val damage = event.damage
         if (!damage.isFinite() || damage <= 0) return
 
-        player.world.playSound(player.location, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, (damage / 8.0).toFloat(), (8.0 / damage).toFloat())
+        val policy = ShockwavePolicy(damage, config!!.getDouble("dampingRatio"))
+        player.world.playSound(player.location, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, (damage / 8.0).coerceIn(0.0, 4.0).toFloat(), (8.0 / damage).coerceIn(0.5, 2.0).toFloat())
 
-        val entities = player.getNearbyEntities(damage*2, damage*2, damage*2)
+        val entities = player.getNearbyEntities(policy.radius, policy.radius, policy.radius)
 
         for (entity in entities) {
             if (entity !is Damageable) continue
@@ -73,45 +62,45 @@ object ImpactLanding : Ability(
             if (!AbilityManager.isEnemy(player, entity)) continue
 
             val distance = player.location.distance(entity.location)
-            val shockDamage = calculateShockwaveDamage(damage, distance)
+            val shockDamage = policy.damage(distance)
             if (shockDamage < config!!.getDouble("minimumDamage")) continue // 최소 피해량 설정
 
             com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, shockDamage)
         }
 
         // 파티클 효과
-        for (r in 1..(damage / 2).toInt()) {
+        for (r in 1..policy.rings) {
             for (theta in 0 until 360 step 10) {
                 val angle = Math.toRadians(theta.toDouble() + Random.nextDouble(-5.0, 5.0))
                 val x = (r + Random.nextDouble(-0.5, 0.5)) * cos(angle)
                 val z = (r + Random.nextDouble(-0.5, 0.5)) * sin(angle)
                 val loc = player.location.clone().add(x, 0.0, z)
 
-                val shock = calculateShockwaveDamage(damage, loc.distance(player.location))
+                val shock = policy.damage(loc.distance(player.location))
                 player.world.spawnParticle(
                     Particle.SPIT,
                     player.location,
                     0,
                     x, 0.1, z,
-                    shock / 10.0
+                    (shock / 10.0).coerceAtMost(4.0)
                 )
-                while (Random.nextDouble() <= (shock / (damage * 1.1))) {
+                repeat(policy.repeats((shock / damage / 1.1).coerceIn(0.0, 1.0), Random::nextDouble)) {
                     player.world.spawnParticle(
                         Particle.SMOKE,
                         loc.clone(),
                         0,
                         Random.nextDouble(-0.1, 0.1), 1.0, Random.nextDouble(-0.1, 0.1),
-                        shock / (damage * 2.0)
+                        shock / damage / 2.0
                     )
                 }
 
-                while (Random.nextDouble() <= (shock / (damage * 3.0))) {
+                repeat(policy.repeats((shock / damage / 3.0).coerceIn(0.0, 1.0), Random::nextDouble)) {
                     player.world.spawnParticle(
                         Particle.FLAME,
                         loc.clone(),
                         0,
                         Random.nextDouble(-0.1, 0.1), 1.0, Random.nextDouble(-0.1, 0.1),
-                        shock / (damage * 2.0)
+                        shock / damage / 2.0
                     )
                 }
 

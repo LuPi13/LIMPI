@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
@@ -57,7 +59,7 @@ object Dodge : Ability(
         require(amplifier.isFinite() && amplifier >= 0)
         val velocity = velocityMap[player.uniqueId]?.clone() ?: Vector()
         val moveVector = if (velocity.lengthSquared() > 0.000001) {
-            if (velocity.length() >= 2) velocity.multiply(amplifier) else velocity.normalize().multiply(amplifier)
+            if (velocity.length() >= 2) velocity.multiply(amplifier) else velocity.normalizeSafely().multiply(amplifier)
         } else {
             val yaw = Math.toRadians(player.yaw.toDouble())
             Vector(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw)).multiply(amplifier)

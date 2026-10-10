@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -94,7 +96,7 @@ object BlunderBooster : Ability(
             -sin(Math.toRadians(yaw.toDouble())),
             0.0,
             cos(Math.toRadians(yaw.toDouble()))
-        ).normalize().multiply(-amplifier)
+        ).normalizeSafely().multiply(-amplifier)
 
         player.velocity = moveVector
         player.world.playSound(player.location, Sound.ENTITY_BREEZE_SLIDE, 1f, 1.5f)

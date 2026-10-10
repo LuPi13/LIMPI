@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
@@ -78,7 +80,7 @@ object ChainLightning : Ability(
                 val delta = to.toVector().subtract(from.toVector())
                 val distance = delta.length()
                 if (distance > 1.0e-8) {
-                    val direction = delta.normalize()
+                    val direction = delta.normalizeSafely()
                     for (i in 0..(distance.coerceAtMost(radius * 2) * 10).toInt()) {
                         to.world.spawnParticle(org.bukkit.Particle.ELECTRIC_SPARK, from.clone().add(direction.clone().multiply(i / 10.0)), 1, 0.0, 0.0, 0.0, 0.01)
                     }

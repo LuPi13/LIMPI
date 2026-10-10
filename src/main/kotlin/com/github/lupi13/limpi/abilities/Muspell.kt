@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
@@ -115,13 +117,14 @@ object Muspell : Ability(
 
                     for (entity in entities) {
                         val entityVector = entity.location.toVector().subtract(fireball.location.toVector())
-                        val angle = acos(movingVector.clone().normalize().dot(entityVector.clone().normalize()).coerceIn(-1.0, 1.0))
+                        if (entityVector.lengthSquared() == 0.0) { best = entity as Damageable; break }
+                        val angle = acos(movingVector.clone().normalizeSafely().dot(entityVector.clone().normalizeSafely()).coerceIn(-1.0, 1.0))
                         if (angle > Math.toRadians(trackSearchAngle)) continue
 
                         // rayTrace를 통해 벽 등에 가려지지 않는지 확인
                         val rayTraceBlock = world.rayTraceBlocks(
                             fireball.location,
-                            entityVector.clone().normalize(),
+                            entityVector.clone().normalizeSafely(),
                             entityVector.length(),
                             FluidCollisionMode.NEVER,
                             true
@@ -140,9 +143,10 @@ object Muspell : Ability(
                 }
 
                 // 추적 대상과 각도가 90도 이상(dotProduct)이면 추적 대상 초기화
+                if (trackTarget != null && trackTarget!!.world != world) trackTarget = null
                 if (trackTarget != null) {
                     val targetVector = trackTarget!!.location.toVector().subtract(fireball.location.toVector())
-                    if (movingVector.clone().normalize().dot(targetVector.clone().normalize()) < 0) {
+                    if (movingVector.clone().normalizeSafely().dot(targetVector.clone().normalizeSafely()) < 0) {
                         trackTarget = null
                     }
                 }
@@ -155,10 +159,11 @@ object Muspell : Ability(
 
                 // trackTarget이 null이 아니면 추적
                 if (trackTarget != null) {
-                    val normalizedTargetVector = trackTarget!!.boundingBox.center.subtract(fireball.location.toVector()).normalize()
-
+                    val normalizedTargetVector = trackTarget!!.boundingBox.center.subtract(fireball.location.toVector()).normalizeSafely()
+                    val previousDirection = movingVector.clone()
                     movingVector.add(normalizedTargetVector.multiply(trackingCoefficient))
-                    movingVector.normalize().multiply(velocity)
+                    movingVector.normalizeSafely().multiply(velocity)
+                    if (movingVector.lengthSquared() == 0.0) movingVector.copy(previousDirection)
                 }
 
                 // 피격 계산

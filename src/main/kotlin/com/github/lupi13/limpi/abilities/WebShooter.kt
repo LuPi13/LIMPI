@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import fr.skytasul.guardianbeam.Laser
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -132,7 +134,7 @@ object WebShooter : Ability(
                         // 가속 이동
                         val delta = hitLocation.clone().subtract(player.location).toVector()
                         if (delta.lengthSquared() < 1.0e-8) { cancel(); return }
-                        val movingVector = delta.normalize()
+                        val movingVector = delta.normalizeSafely()
                         if (movingVector.y > 0) movingVector.setY(movingVector.y * 2.0)
                         movingVector.multiply(config!!.getDouble("velocityAmplifier"))
 
@@ -143,7 +145,7 @@ object WebShooter : Ability(
                         // 속도 제한
                         if (player.velocity.length() > config!!.getDouble("maxVelocity")
                             * (if (player.isInWater || player.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0)) {
-                            player.velocity = player.velocity.clone().normalize().multiply(config!!.getDouble("maxVelocity")
+                            player.velocity = player.velocity.clone().normalizeSafely().multiply(config!!.getDouble("maxVelocity")
                             * (if (player.isInWater || player.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0))
                         }
 
@@ -166,9 +168,9 @@ object WebShooter : Ability(
                             if (damage >= 1.0) {
                                 if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
-                                val knockbackVector = entity.boundingBox.center.subtract(player.boundingBox.center).normalize()
+                                val knockbackVector = entity.boundingBox.center.subtract(player.boundingBox.center).normalizeSafely()
                                     .multiply(config!!.getDouble("knockbackAmplifier")).multiply(player.velocity.length())
-                                val playerRatio = entity.boundingBox.volume / (entity.boundingBox.volume + player.boundingBox.volume)
+                                val playerRatio = entity.boundingBox.volume / (entity.boundingBox.volume + player.boundingBox.volume).coerceAtLeast(1e-9)
                                 val entityRatio = 1.0 - playerRatio
 
                                 player.velocity = player.velocity.clone().subtract(knockbackVector.clone().multiply(playerRatio))
@@ -220,9 +222,9 @@ object WebShooter : Ability(
                         // 가속 이동
                         val delta = hitLocation.clone().subtract(player.location.toVector()).toVector()
                         if (delta.lengthSquared() < 1.0e-8) { cancel(); return }
-                        var movingVector = delta.normalize()
+                        var movingVector = delta.normalizeSafely()
                         var entityVector = movingVector.clone().multiply(-1.0)
-                        val playerVelRatio = 2 * hitEnemy.boundingBox.volume / (hitEnemy.boundingBox.volume + player.boundingBox.volume)
+                        val playerVelRatio = 2 * hitEnemy.boundingBox.volume / (hitEnemy.boundingBox.volume + player.boundingBox.volume).coerceAtLeast(1e-9)
                         val entityVelRatio = 2.0 - playerVelRatio
 
                         if (movingVector.y > 0) movingVector.setY(movingVector.y * 2.0)
@@ -239,7 +241,7 @@ object WebShooter : Ability(
                         // 속도 제한
                         if (player.velocity.length() > config!!.getDouble("maxVelocity")
                             * (if (player.isInWater || player.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0)) {
-                            player.velocity = player.velocity.clone().normalize().multiply(config!!.getDouble("maxVelocity")
+                            player.velocity = player.velocity.clone().normalizeSafely().multiply(config!!.getDouble("maxVelocity")
                                     * (if (player.isInWater || player.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0))
                         }
 
@@ -250,7 +252,7 @@ object WebShooter : Ability(
                         // 속도 제한
                         if (hitEnemy.velocity.length() > config!!.getDouble("maxVelocity")
                             * (if (hitEnemy.isInWater || hitEnemy.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0)) {
-                            hitEnemy.velocity = hitEnemy.velocity.clone().normalize().multiply(config!!.getDouble("maxVelocity")
+                            hitEnemy.velocity = hitEnemy.velocity.clone().normalizeSafely().multiply(config!!.getDouble("maxVelocity")
                             * (if (hitEnemy.isInWater || hitEnemy.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0))
                         }
 
@@ -273,9 +275,9 @@ object WebShooter : Ability(
                                 if (damage >= 1.0) {
                                     if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
-                                    val knockbackVector = entity.boundingBox.center.subtract(player.boundingBox.center).normalize()
+                                    val knockbackVector = entity.boundingBox.center.subtract(player.boundingBox.center).normalizeSafely()
                                         .multiply(config!!.getDouble("knockbackAmplifier")).multiply(player.velocity.length())
-                                    val playerRatio = entity.boundingBox.volume / (entity.boundingBox.volume + player.boundingBox.volume)
+                                    val playerRatio = entity.boundingBox.volume / (entity.boundingBox.volume + player.boundingBox.volume).coerceAtLeast(1e-9)
                                     val entityRatio = 1.0 - playerRatio
 
                                     player.velocity = player.velocity.clone().subtract(knockbackVector.clone().multiply(playerRatio))

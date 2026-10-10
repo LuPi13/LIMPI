@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Color
@@ -157,7 +159,7 @@ object CometStrike : Ability(
                                 -sin(Math.toRadians(player.yaw.toDouble())),
                                 0.0,
                                 cos(Math.toRadians(player.yaw.toDouble()))
-                            ).normalize().multiply((20 - ticks) * config!!.getDouble("jump_forward_amplifier"))
+                            ).normalizeSafely().multiply((20 - ticks) * config!!.getDouble("jump_forward_amplifier"))
 
                             player.velocity = lookingVector.setY((20 - ticks) * config!!.getDouble("jump_amplifier"))
                             player.world.playSound(
@@ -180,7 +182,7 @@ object CometStrike : Ability(
                             // 피격 계산: rayTrace or 블록 충돌
                             val rayTraceResult = player.world.rayTrace(
                                 player.location,
-                                strikingDirection!!,
+                                strikingDirection,
                                 2.0,
                                 FluidCollisionMode.NEVER,
                                 true,
@@ -200,7 +202,7 @@ object CometStrike : Ability(
                                     if (directionVector.length() <= range) {
                                         if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity as Damageable, player.ability!!.codeName, damage,
                                                 respectTargets = player.ability == this@CometStrike)) continue
-                                        entity.velocity = directionVector.normalize().setY((if (directionVector.y > 0) { directionVector.y } else { 0.0 }) + 0.2)
+                                        entity.velocity = directionVector.normalizeSafely().setY((if (directionVector.y > 0) { directionVector.y } else { 0.0 }) + 0.2)
                                     }
                                 }
                                 player.isGliding = false

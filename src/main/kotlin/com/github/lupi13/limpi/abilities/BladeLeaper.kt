@@ -1,5 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
+import com.github.lupi13.limpi.platform.normalizeSafely
+
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.ability.AbilityItemTerms
 import com.github.lupi13.limpi.ability.AbilityItemUse
@@ -215,7 +217,7 @@ object BladeLeaper : Ability(
                     thrownSword.interpolationDuration = 1
 
                     // RayTrace로 검 충돌 여부 확인
-                    val rayTraceResult = world.rayTrace(thrownSword.location,
+                    val rayTraceResult = if (vector[thrownSword]!!.lengthSquared() == 0.0) null else world.rayTrace(thrownSword.location,
                         vector[thrownSword]!!,
                         velocity + 0.5,
                         FluidCollisionMode.NEVER,
@@ -247,7 +249,7 @@ object BladeLeaper : Ability(
 
                 // 검 위치로 점멸
                 if (ticks == 15 + lifeTime) {
-                    val rayTraceResult = world.rayTrace(thrownSword.location, vector[thrownSword]!!, velocity, FluidCollisionMode.NEVER, true, 0.0, null)
+                    val rayTraceResult = if (vector[thrownSword]!!.lengthSquared() == 0.0) null else world.rayTrace(thrownSword.location, vector[thrownSword]!!, velocity, FluidCollisionMode.NEVER, true, 0.0, null)
                     tpLocation = rayTraceResult?.hitPosition?.toLocation(world)?.subtract(vector[thrownSword]!!.multiply(velocity)) ?: thrownSword.location.subtract(vector[thrownSword]!!.multiply(velocity))
                     player.teleport(tpLocation!!.setRotation(player.location.yaw, player.location.pitch))
                     player.playSound(player.location, Sound.ITEM_BOTTLE_FILL_DRAGONBREATH, 0.5f, 0.5f)
@@ -325,7 +327,7 @@ object BladeLeaper : Ability(
                         if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
                         //넉백
-                        val knockback = entity.location.clone().subtract(tpLocation!!).toVector().normalize().multiply(0.5)
+                        val knockback = entity.location.clone().subtract(tpLocation!!).toVector().normalizeSafely().multiply(0.5)
                         knockback.setY(0.3)
                         entity.velocity = entity.velocity.add(knockback)
                     }

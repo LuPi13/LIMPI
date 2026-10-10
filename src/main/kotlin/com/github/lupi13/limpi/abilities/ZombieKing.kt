@@ -93,7 +93,7 @@ object ZombieKing : Ability(
                     if (!player.world.isDayTime) break
 
                     val helmet = player.inventory.helmet
-                    if (helmet == null || (helmet.itemMeta !is org.bukkit.inventory.meta.Damageable)) {
+                    if (helmet.isEmpty || (helmet.itemMeta !is org.bukkit.inventory.meta.Damageable)) {
                         if (!player.isInWater && player.location.block.lightFromSky == 15.toByte()) {
                             player.fireTicks = 100
                         }
@@ -107,7 +107,7 @@ object ZombieKing : Ability(
                                 meta.damage += 1
                             }
                             if (meta.damage >= helmet.type.maxDurability) {
-                                player.inventory.helmet = null
+                                player.inventory.setHelmet(null)
                                 player.world.playSound(player.location, Sound.ENTITY_ITEM_BREAK, 1f, 1f)
                             } else {
                                 helmet.itemMeta = meta

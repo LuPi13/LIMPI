@@ -1,7 +1,7 @@
 name: LIMPI
 version: '${version}'
 main: com.github.lupi13.limpi.LIMPI
-api-version: '1.20'
+api-version: '26.3'
 authors: [LuPi13]
 description: "LIMPI: LuPi13's Integrated Minecraft Plug-In"
 website: https://github.com/LuPi13/LIMPI

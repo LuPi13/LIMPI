@@ -1,4 +1,20 @@
 # LIMPI: LuPi13's Integrated Minecraft Plug-In
+
+## 개발 환경 / 정비 기록
+
+현재 대상은 **Paper 26.3 build 169 (beta), Java 25**입니다. Gradle 9.3.0 wrapper와 Kotlin 2.3.21을 사용합니다.
+
+```powershell
+.\gradlew.bat clean build --console=plain
+```
+
+배포용 플러그인은 `build/libs/LIMPI-1.0.0.jar`에 생성됩니다. `*-plain.jar`는 배포용이 아닙니다. 필요한 Java 25 toolchain은 Foojay로 자동 설치할 수 있으며, 서버 실행에도 Java 25가 필요합니다.
+
+- [전체 기능 분석·유지보수 및 확장 계획](docs/MAINTENANCE_PLAN.md)
+- [Paper 26.3 전환 내용·검증 상태](docs/PAPER_26_3_UPGRADE.md)
+
+아래 내용은 기존 개발 기록입니다.
+
 ### 주인장이 객체지향, Kotlin, Git을 연습하기 위해 막무가내로 시작한 프로젝트
 
 #### 라고 써뒀지만 나중가면 스파게티지향, Java식 코드, GitHub에 직접 드래그앤드롭으로 떡칠될 예정

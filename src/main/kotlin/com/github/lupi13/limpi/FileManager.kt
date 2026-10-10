@@ -101,7 +101,13 @@ class FileManager {
             gachaSettlement = GachaSettlement(state)
             abilitySelection = AbilitySelection(state)
             abilityTransitions = AbilityTransitions(state, repository)
-            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange, GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection, AbilityItemUse.KIND to AbilityItemUse(deliveryJournal)))
+            removalJournal = RemovalJournal(state, repository, mapOf(
+                SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange,
+                GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection,
+                AbilityItemUse.KIND to AbilityItemUse(deliveryJournal),
+                com.github.lupi13.limpi.ability.AlchemySettlement.KIND to com.github.lupi13.limpi.ability.AlchemySettlement(deliveryJournal),
+                com.github.lupi13.limpi.ability.PickPocketSettlement.KIND to com.github.lupi13.limpi.ability.PickPocketSettlement(deliveryJournal),
+            ))
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal, abilityTransitions)
             financial.clear()
         }

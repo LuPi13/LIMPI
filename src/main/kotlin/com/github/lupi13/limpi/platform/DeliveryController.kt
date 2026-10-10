@@ -125,7 +125,7 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
 
     private fun removalInventory(player: Player, size: Int): PaperDeliveryInventory {
         val storageSize = player.inventory.storageContents.size
-        require(size == storageSize || size == storageSize + 1) { "Unsupported removal inventory size $size" }
-        return PaperDeliveryInventory(player, checkpoint, files, size == storageSize + 1)
+        require(size == storageSize || size == storageSize + 1 || size == storageSize + 5) { "Unsupported removal inventory size $size" }
+        return PaperDeliveryInventory(player, checkpoint, files, size != storageSize, size == storageSize + 5)
     }
 }

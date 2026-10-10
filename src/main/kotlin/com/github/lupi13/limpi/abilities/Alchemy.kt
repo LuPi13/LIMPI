@@ -44,67 +44,32 @@ object Alchemy : Ability(
     @EventHandler
     fun onInteract(event: PlayerInteractEvent) {
         val player = event.player
-        if (player.ability != this) return
-        if (event.item == null || event.item!!.type != Material.COPPER_INGOT || event.item!!.amount < 10) return
-        if (event.action == Action.LEFT_CLICK_AIR || event.action == Action.LEFT_CLICK_BLOCK || event.action == Action.PHYSICAL) return
-
-        event.item!!.amount -= 10
-        val coalDrop = config!!.getDouble("coal")
-        val ironNuggetDrop = coalDrop + config!!.getDouble("iron_nugget")
-        val ironIngotDrop = ironNuggetDrop + config!!.getDouble("iron_ingot")
-        val goldNuggetDrop = ironIngotDrop + config!!.getDouble("gold_nugget")
-        val goldIngotDrop = goldNuggetDrop + config!!.getDouble("gold_ingot")
-        val redstoneDrop = goldIngotDrop + config!!.getDouble("redstone")
-        val lapisLazuliDrop = redstoneDrop + config!!.getDouble("lapis_lazuli")
-        val emeraldDrop = lapisLazuliDrop + config!!.getDouble("emerald")
-        val diamondDrop = emeraldDrop + config!!.getDouble("diamond")
-        val netheriteIngotDrop = diamondDrop + config!!.getDouble("netherite_ingot")
-
-        val random = Random.nextDouble()
-        if (random < coalDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.COAL, 1))
-            player.playSound(player.location, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.5f, 1.7f)
+        if (player.ability != this || !event.action.isRightClick || event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return
+        if (event.hand != org.bukkit.inventory.EquipmentSlot.HAND && event.hand != org.bukkit.inventory.EquipmentSlot.OFF_HAND) return
+        if (com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
+        val observed = event.item?.takeIf { it.type == Material.COPPER_INGOT && it.amount >= 10 } ?: return
+        val original = com.github.lupi13.limpi.platform.PaperItemCodec.payload(observed)
+        event.setUseItemInHand(org.bukkit.event.Event.Result.DENY)
+        if (!com.github.lupi13.limpi.FileManager.delivery.claim(player)) return
+        val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
+        val slot = if (event.hand == org.bukkit.inventory.EquipmentSlot.HAND) player.inventory.heldItemSlot else 36
+        val source = before[slot] ?: return
+        if (player.ability != this || source.payload != original || source.count < 10) return
+        val policy = com.github.lupi13.limpi.ability.AlchemyPolicy(
+            com.github.lupi13.limpi.ability.AlchemyPolicy.OUTPUTS.associateWith { config!!.getDouble(it) })
+        val outcome = policy.choose(Random.nextDouble())
+        val result = ItemStack(Material.valueOf(outcome.uppercase(java.util.Locale.ROOT)))
+        val terms = com.github.lupi13.limpi.ability.AlchemyTerms(slot, source.payload, outcome,
+            com.github.lupi13.limpi.platform.PaperItemCodec.grant(result))
+        val after = before.toMutableList().apply { this[slot] = if (source.count == 10) null else source.copy(count = source.count - 10) }
+        if (!com.github.lupi13.limpi.FileManager.delivery.remove(player, java.util.UUID.randomUUID(),
+                com.github.lupi13.limpi.ability.AlchemySettlement.KIND, terms.encode(), before, after)) return
+        val sound = when (outcome) {
+            "coal" -> Sound.ENTITY_ZOMBIE_VILLAGER_CURE
+            "netherite_ingot" -> Sound.ITEM_ARMOR_EQUIP_NETHERITE
+            else -> Sound.ENTITY_VILLAGER_WORK_TOOLSMITH
         }
-        else if (random < ironNuggetDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.IRON_NUGGET, 1))
-            player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
-        }
-        else if (random < ironIngotDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.IRON_INGOT, 1))
-            player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
-        }
-        else if (random < goldNuggetDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.GOLD_NUGGET, 1))
-            player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
-        }
-        else if (random < goldIngotDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.GOLD_INGOT, 1))
-            player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
-        }
-        else if (random < redstoneDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.REDSTONE, 1))
-            player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
-        }
-        else if (random < lapisLazuliDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.LAPIS_LAZULI, 1))
-            player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
-        }
-        else if (random < emeraldDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.EMERALD, 1))
-            player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
-        }
-        else if (random < diamondDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.DIAMOND, 1))
-            player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
-        }
-        else if (random < netheriteIngotDrop) {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.NETHERITE_INGOT, 1))
-            player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_NETHERITE, 0.5f, 2.0f)
-        }
-        else {
-            player.world.dropItemNaturally(player.location, ItemStack(Material.COAL, 1))
-            player.playSound(player.location, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.5f, 1.7f)
-        }
-        event.isCancelled = true
+        player.playSound(player.location, sound, 0.5f, 1.7f)
+        com.github.lupi13.limpi.FileManager.delivery.claim(player)
     }
 }

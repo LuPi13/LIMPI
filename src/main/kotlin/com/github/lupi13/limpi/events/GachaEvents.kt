@@ -26,6 +26,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
     fun close() = animation.closeAll()
 
     fun recoverApplications(player: Player) {
+        check(FileManager.gacha.pendingApplications(player.uniqueId).size + FileManager.selections.pending(player.uniqueId).size <= 1)
         for (result in FileManager.gacha.pendingApplications(player.uniqueId)) {
             val ability = requireNotNull(AbilityManager.getAbilityByCodeName(result.terms.outcome.ability))
             require(ability.grade == Grade.TROLL && ability.restrictedSlot == null)
@@ -34,6 +35,18 @@ class GachaEvents(private val owner: Plugin) : Listener {
                 java.util.UUID.nameUUIDFromBytes("gacha-apply:${result.owner}:${result.id}".toByteArray(Charsets.UTF_8)),
                 result.owner, result.id, ability.codeName)
         }
+        for (result in FileManager.selections.pending(player.uniqueId)) {
+            val ability = requireNotNull(AbilityManager.getAbilityByCodeName(result.terms.ability))
+            require(ability.grade.name == result.terms.grade)
+            val current = AbilityManager.getPlayerAbilityCodeName(player).orEmpty()
+            require(current == result.terms.previous || current == result.terms.ability) { "Ability changed during pending selection" }
+            AbilityManager.applyAbility(player, ability)
+            FileManager.selections.acknowledge(
+                java.util.UUID.nameUUIDFromBytes("ability-select:${result.owner}:${result.id}".toByteArray(Charsets.UTF_8)),
+                result.owner, result.id, ability.codeName)
+        }
+        AbilityManager.restoreActiveItem(player)
+        com.github.lupi13.limpi.quests.QuestManager.reconcile(player)
     }
 
     companion object {
@@ -55,7 +68,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
             )
             meta.itemFlags.add(ItemFlag.HIDE_ENCHANTS)
             item.itemMeta = meta
-            return item
+            return com.github.lupi13.limpi.platform.AbilityTickets.mark(item, "GACHA")
         }
         /**
          * 플레이어가 뽑기권을 사용하여 능력을 뽑을 때, 등급을 결정합니다. (픽업 계산 안함)
@@ -76,7 +89,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
         val player = event.player
         val hand = event.hand ?: return
         val item = player.inventory.getItem(hand)
-        if (!item.isSimilar(getGachaTicketItem())) return
+        if (com.github.lupi13.limpi.platform.AbilityTickets.identify(item) != "GACHA") return
         event.isCancelled = true
         if (!player.isOnline || player.isDead || animation.active(player.uniqueId)) return
         if (!FileManager.delivery.claim(player)) return
@@ -94,7 +107,8 @@ class GachaEvents(private val owner: Plugin) : Listener {
             val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, includeOffHand = true)
             val slot = if (hand == org.bukkit.inventory.EquipmentSlot.OFF_HAND) before.lastIndex else player.inventory.heldItemSlot
             val ticket = requireNotNull(before[slot])
-            require(ticket.payload == com.github.lupi13.limpi.platform.PaperItemCodec.payload(getGachaTicketItem()))
+            require(com.github.lupi13.limpi.platform.AbilityTickets.identify(
+                com.github.lupi13.limpi.platform.PaperItemCodec.item(ticket.payload, ticket.count)) == "GACHA")
             val after = before.toMutableList().apply { this[slot] = if (ticket.count == 1) null else ticket.copy(count = ticket.count - 1) }.toList()
             val terms = GachaTerms(ticket.payload, slot, state, outcome, pickupTime, owner.config.getBoolean("ForceTroll") && outcome.grade == DrawGrade.TROLL)
             val id = java.util.UUID.randomUUID()

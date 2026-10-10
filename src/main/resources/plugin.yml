@@ -17,6 +17,12 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.ability.select:
+    description: Select an unlocked ability with a matching ticket
+    default: true
+  limpi.ability.admin.set:
+    description: Apply an ability without consuming a selection ticket
+    default: op
   limpi.ability.shop:
     description: Exchange emeralds for ability tickets
     default: true

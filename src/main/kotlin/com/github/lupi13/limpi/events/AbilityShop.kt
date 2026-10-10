@@ -77,7 +77,7 @@ class AbilityShop : Listener {
             }
             meta!!.lore(lore)
             item.itemMeta = meta
-            return item
+            return com.github.lupi13.limpi.platform.AbilityTickets.mark(item, grade?.name ?: "GACHA")
         }
 
         private fun price(code: String): Long {
@@ -149,54 +149,4 @@ class AbilityShop : Listener {
         }
     }
 
-    // 소모성 인벤토리(조합대 등)에 넣기 금지
-    val allowedInventoryType = setOf(
-        InventoryType.BARREL,
-        InventoryType.CREATIVE,
-        InventoryType.CHEST,
-        InventoryType.DECORATED_POT,
-        InventoryType.DISPENSER,
-        InventoryType.DROPPER,
-        InventoryType.ENDER_CHEST,
-        InventoryType.HOPPER,
-        InventoryType.PLAYER,
-        InventoryType.SHULKER_BOX
-    )
-    val restrict =
-        Grade.entries.map { getSelectTicketItem(it, false, null) } + getSelectTicketItem(null, false, null)
-    @EventHandler
-    fun onInventoryClick(event: InventoryClickEvent) {
-        for (item in restrict) {
-            if (event.currentItem != null && event.currentItem!!.isSimilar(item)) {
-                if (event.clickedInventory != null && event.clickedInventory!!.type !in allowedInventoryType) {
-                    event.isCancelled = true
-                }
-            }
-
-            if (event.cursor.isSimilar(item)) {
-                if (event.clickedInventory != null && event.clickedInventory!!.type !in allowedInventoryType) {
-                    event.isCancelled = true
-                }
-            }
-
-            if (event.action == InventoryAction.HOTBAR_SWAP) {
-                val player = event.whoClicked as Player
-                var slot = event.hotbarButton
-                if (slot == -1) slot = 40
-                if (player.inventory.getItem(slot) != null && player.inventory.getItem(slot)!!.isSimilar(item)) {
-                    if (event.inventory.type !in allowedInventoryType) {
-                        event.isCancelled = true
-                    }
-                }
-            }
-
-            if (event.action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
-                if (event.currentItem != null && event.currentItem!!.isSimilar(item)) {
-                    if (event.inventory.type !in allowedInventoryType) {
-                        event.isCancelled = true
-                    }
-                }
-            }
-        }
-    }
 }

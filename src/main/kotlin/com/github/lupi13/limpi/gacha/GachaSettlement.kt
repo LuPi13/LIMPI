@@ -64,6 +64,7 @@ class GachaSettlement(private val store: StateStore) : RemovalEffect {
         unlocks(profile) // Fail before any physical consumption if the existing list is malformed.
         require(tx.get(resultKey(evidence.owner, evidence.id)) == null)
         require(tx.documents("gacha_apply_pending/${evidence.owner}/").isEmpty()) { "A forced ability application is unresolved" }
+        require(tx.documents("ability_selection_pending/${evidence.owner}/").isEmpty()) { "An ability selection is unresolved" }
     }
 
     override fun settle(tx: StateTransaction, record: RemovalRecord): String {

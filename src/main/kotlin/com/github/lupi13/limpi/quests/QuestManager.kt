@@ -45,17 +45,29 @@ object QuestManager {
      * @param quest 완료한 퀘스트
      */
     fun clearQuests(player: Player, quest: Quest) {
-        val config = FileManager.getPlayerData(player)
-        val clearedQuests = config.getStringList("clearedQuests")
-        if (clearedQuests.contains(quest.codeName)) return
+        val result = FileManager.quest.complete(player.uniqueId, quest.codeName, quest.rewardAbility.codeName)
+        notify(player, quest, result)
+    }
 
-        clearedQuests.add(quest.codeName)
-        config.set("clearedQuests", clearedQuests)
-        FileManager.savePlayerData(player, config)
-        player.sendMessage(Component.text("퀘스트 ", NamedTextColor.WHITE)
-            .append(quest.displayName))
-        AbilityManager.unlockAbility(player, quest.rewardAbility)
-        player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
+    fun harmonyHit(player: Player, branch: String) {
+        notify(player, LineBetweenSwordAndArrow, FileManager.quest.harmony(java.util.UUID.randomUUID(), player.uniqueId, branch))
+    }
+
+    fun reconcile(player: Player) {
+        val data = FileManager.getPlayerData(player)
+        val cleared = data.getStringList("clearedQuests")
+        val unlocked = data.getStringList("unlockedAbilities")
+        quests.filter { it.codeName in cleared && it.rewardAbility.codeName !in unlocked }.forEach { clearQuests(player, it) }
+    }
+
+    private fun notify(player: Player, quest: Quest, result: com.github.lupi13.limpi.quest.QuestRewardResult) {
+        if (result.replayed) return
+        if (result.newCompletion) {
+            player.sendMessage(Component.text("퀘스트 ", NamedTextColor.WHITE).append(quest.displayName))
+            player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
+        }
+        if (result.newUnlock) player.sendMessage(Component.text("능력 ", NamedTextColor.WHITE)
+            .append(quest.rewardAbility.displayName).append(Component.text("이(가) 해금되었습니다!", NamedTextColor.WHITE)))
     }
 
     /**

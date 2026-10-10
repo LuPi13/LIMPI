@@ -1,15 +1,16 @@
 # LIMPI 작업 지침
 
-- 작업 전 [정비 계획](docs/MAINTENANCE_PLAN.md)과 [Paper 26.3 전환 기록](docs/PAPER_26_3_UPGRADE.md)을 읽는다. 기존 분석을 반복하거나 미해결 문제를 누락하지 않도록 해당 문서의 항목 ID를 사용한다.
-- 사용자가 승인한 작업 범위만 구현한다. 정비 계획에 적혀 있다는 이유만으로 전체 리팩터링이나 데이터 이전을 시작하지 않는다.
-- 수정한 항목은 문서에서 상태, 변경 내용, 검증 결과를 함께 갱신한다. 컴파일 성공과 서버에서의 동작 확인을 구분한다.
-- 플레이어 UUID, 능력 코드명, 기존 YAML 데이터와 획득/퀘스트 진행 상태의 호환성을 보존한다. 저장 형식 변경에는 명시적 마이그레이션과 복구 경로가 필요하다.
-- 빌드 산출물은 `build/libs`에 생성한다. 빌드 작업에 서버 플러그인 폴더로의 자동 복사를 넣지 않는다.
-- 현재 사용자 요청: `refactor/maintenance-paper26.3` 브랜치에서 전체 정비를 진행하고 문서·커밋·가능한 push를 유지한다. **main에 병합하지 않는다. 실제 서버 실행/플레이 검증은 전체 수정 이후로 미룬다.** 서버 시험을 지금 진행하거나 이를 이유로 구현을 중단하지 않는다.
-- 다음 작업 전에 [구현 기록](docs/IMPLEMENTATION_LOG.md)의 완료/미완료 항목과 다음 순서를 읽는다.
-- 플레이어/마켓 정본은 `limpi.sqlite3`다. 기존 YAML은 최초 이전 원본이며 이후 자동 동기화하지 않는다. [저장소·복구 절차](docs/STORAGE_AND_RECOVERY.md)를 따른다. DB를 삭제해 과거 YAML을 재가져오는 복구를 하지 않는다.
-- 송금·관리자 set/add·마켓·수표·판매·상점·능력 상점은 SQLite 멱등 원장을 사용한다. 같은 거래 UUID에 다른 요청을 허용하지 않는다. 캐시와 DB 변경을 함께 관리한다. 선택권 사용/초기·퀘스트 보상의 연결은 아직 남아 있으며 DB와 인벤토리가 원자적이라고 가정하지 않는다. [수표·전환 절차](docs/CHECKS_AND_LEGACY_MIGRATION.md)를 따른다. 기존 수표 공개 해시는 발행 증거가 아니며 자동 입금하지 않는다.
-- 지급/마켓의 조건은 [지급 복구](docs/DELIVERY_RECOVERY.md)와 [마켓 복구](docs/MARKET_RECOVERY.md)에 기록했다. Paper 지급·접속 복구·claim·관리자 검토와 마켓 등록 escrow/이전·GUI/명령을 연결했다. 실패 후 같은 live inventory를 정상 재시도 대상으로 사용하지 않는다. escrow를 지급보다 먼저 복구하고, 물리 시도마다 checkpoint를 구분하며 slotLimit을 반영한다. 실제 서버 검증은 남아 있다.
-- [상점·판매/공통 회수](docs/SHOP_AND_SALE_RECOVERY.md)를 읽는다. 마켓/판매 회수는 owner의 checkpoint 예약을 공유하고 지급보다 먼저 복구한다. 판매 선택 화면에는 원본 물품을 옮기지 않는다. `RemovalEffect`는 트랜잭션 내부 DB 정산만 수행하며 Bukkit/메시지/다른 DB transaction을 호출하지 않는다.
-- 능력 상점 구매는 ItemExchange로 에메랄드 회수→전체 수량 미수령을 연결했다. 뽑기 소비·확정은 공통 회수/GachaSettlement에 연결했다. 선택권 사용/초기 지급은 아직 직접 경로가 남아 있다. 기존 티켓 metadata를 유지했고 PDC 식별/이전과 공통 이동 제한은 다음 단계다. EmeraldFix는 누락 repair=50, 명시적 0 비활성 보존 정책이다.
-- [뽑기 규칙](docs/GACHA_RULES_AND_RECOVERY.md)을 읽는다. GachaPolicy와 실제 추첨/help/pity, typed 획득 분류/후보 snapshot을 연결했다. 기본 천장은 LEGENDARY 100/EPIC 조건부 10이며 EPIC보다 LEGENDARY가 우선한다. GACHA-01은 공통 회수→해금/천장/결과 원자 commit→표현으로 연결했다. 복구 중 재추첨하지 않는다. ForceTroll은 gacha_apply_pending으로 별도 적용/ack하며 능력 전환 전체 정비는 남아 있다.
+- 작업 전에 [정비 계획](docs/MAINTENANCE_PLAN.md), [Paper 26.3 기록](docs/PAPER_26_3_UPGRADE.md), [구현 기록](docs/IMPLEMENTATION_LOG.md)을 읽고 항목 ID로 진행 상태를 관리한다.
+- 사용자 승인 범위: refactor/maintenance-paper26.3에서 전체 문제 수정·구조 개선·문서·커밋·가능한 push. **main 변경/병합 금지. 실제 서버 시험은 전체 구현 이후.** 사용자가 전체 작업이 끝날 때까지 계속 진행하라고 명시했다. 중간 커밋을 전체 목표 완료로 취급하거나 서버 미검증 때문에 구현을 중단하지 않는다.
+- 기존 UUID/능력 ID/잔액/해금/퀘스트/알 수 없는 사용자 필드를 보존한다. schema/migration/복구 없는 초기화·덮어쓰기를 하지 않는다.
+- 정본은 limpi.sqlite3이며 이전 YAML은 최초 가져오기 원본이다. stale YAML 자동 동기화/DB 삭제 후 재가져오기를 하지 않는다. [저장소·복구](docs/STORAGE_AND_RECOVERY.md)를 따른다.
+- Money는 비음수 Long/checked arithmetic. 음수 legacy balance는 임의 초기화하지 않고 원장을 남기는 관리자 복구만 허용한다.
+- DB와 live inventory는 하나의 원자 transaction이 아니다. [지급 복구](docs/DELIVERY_RECOVERY.md), [마켓 복구](docs/MARKET_RECOVERY.md), [상점·공통 회수](docs/SHOP_AND_SALE_RECOVERY.md)의 pending/checkpoint/REVIEW·오프라인 관리자 판단을 유지한다.
+- owner의 market escrow/common removal checkpoint 예약을 공유한다. 회수는 지급보다 먼저 복구한다. 실패한 live inventory를 정상 재시도 대상으로 사용하지 않는다. RemovalEffect는 주어진 DB transaction에서만 정산하며 Bukkit/메시지/nested DB transaction을 호출하지 않는다.
+- [수표·legacy 전환](docs/CHECKS_AND_LEGACY_MIGRATION.md): 공개 해시는 발행 증거가 아니며 legacy 수표를 자동 입금하지 않는다.
+- [뽑기 규칙·복구](docs/GACHA_RULES_AND_RECOVERY.md): typed 획득 분류/후보/픽업 snapshot, LEGENDARY 우선·100번째, EPIC 조건부 10번째. frozen 결과→회수 확인→해금/천장/결과 commit→표현이며 복구 중 재추첨하지 않는다.
+- [선택권·보상](docs/ABILITY_SELECTION_AND_REWARDS.md): 선택권 회수→적용 대기/영수증→platform 적용/ack. 초기 보상은 새 plugin profile만 frozen once-only 지급, migrated profile은 EXEMPT. 퀘스트 진행/완료/해금은 원자 정산한다. 새 PDC 티켓과 exact legacy template을 함께 인식한다.
+- 선택/도감은 MenuHolder의 ability ID/page/sort를 사용한다. GUI에서 아이템 이름·title·현재 목록 index를 권한으로 쓰지 않는다. 다음 틱 전환과 drag/shift/hotbar/offhand 취소를 유지한다.
+- 능력 전환의 슬롯/속성/작업·세션 전체 정비는 진행 중이다. 일반 제한 슬롯 물품은 전체 relocation plan으로 보존하고 공간 부족이면 티켓 소비 전 거부한다. 단위 시험을 실제 Paper save/이벤트/표시 정리/능력 효과 검증으로 과장하지 않는다.
+- 배포 산출물은 build/libs에만 생성한다. 자동 서버 복사/실행을 하지 않는다.
+- 최신 기준: **213개 테스트 통과**, test build 성공. 미완료 범위·다음 작업·검증 경계는 구현 기록에서 확인하며 상태를 중복 복사해 오래된 지침을 남기지 않는다.

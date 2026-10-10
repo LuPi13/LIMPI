@@ -21,6 +21,7 @@ object ExpRich : Ability(
         Component.text("레벨업 시 4레벨을 추가로 상승시킵니다.", NamedTextColor.WHITE)
     )
 ) {
+    private val changing = mutableSetOf<java.util.UUID>()
     override val howToGet: Component by lazy {
         Component.text("퀘스트 ", NamedTextColor.WHITE)
             .append(ExpAbsorber.displayName)
@@ -33,16 +34,18 @@ object ExpRich : Ability(
         if (player.ability != this) return
 
         // 경험치 획득량을 3배로 증가
-        event.amount *= 3
+        event.amount = com.github.lupi13.limpi.ability.LevelBonus.experience(event.amount, 3)
     }
 
     @EventHandler
     fun onLevelChange(event: PlayerLevelChangeEvent) {
         val player = event.player
         if (player.ability != this) return
+        if (event.newLevel <= event.oldLevel || !changing.add(player.uniqueId)) return
 
         // 레벨업 시 4레벨을 추가로 상승
-        player.level = event.newLevel + 4
+        try { player.level = com.github.lupi13.limpi.ability.LevelBonus.level(event.oldLevel, event.newLevel, 4) }
+        finally { changing.remove(player.uniqueId) }
         player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1f)
     }
 }

@@ -46,7 +46,9 @@ class Ability: CommandExecutor {
             if (args.size != 2 || id == null) { sender.sendMessage("사용법: /ability result <거래 UUID>"); return true }
             try {
                 val result = FileManager.gacha.find(sender.uniqueId, id)
-                if (result == null) sender.sendMessage("확정된 뽑기 결과가 없습니다. 회수 대기 기록은 관리자에게 확인하세요.")
+                val selection = if (result == null) FileManager.selections.find(sender.uniqueId, id) else null
+                if (selection != null) sender.sendMessage("능력 선택: ${selection.terms.grade} / ${selection.terms.ability}, 거래=$id")
+                else if (result == null) sender.sendMessage("확정된 뽑기/선택 결과가 없습니다. 회수 대기 기록은 관리자에게 확인하세요.")
                 else sender.sendMessage("뽑기 결과: ${result.terms.outcome.grade} / ${result.terms.outcome.ability}, 픽업=${result.terms.outcome.pickup}, 거래=$id")
             } catch (failure: Exception) {
                 plugin.logger.log(java.util.logging.Level.WARNING, "Unable to read gacha result $id for ${sender.uniqueId}", failure)

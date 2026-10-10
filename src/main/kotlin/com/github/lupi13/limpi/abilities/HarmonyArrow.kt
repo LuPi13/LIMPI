@@ -52,7 +52,7 @@ object HarmonyArrow : Ability(
     var amplified: MutableMap<Player, Double> = mutableMapOf()
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {
         if (event.damager !is Player && event.damager !is AbstractArrow) return
 
@@ -112,17 +112,16 @@ object HarmonyArrow : Ability(
             amplified[player] = 0.0 // 강화된 화살 사용 후 제거
 
 
-            // 퀘스트
-            val playerConfig = FileManager.getPlayerData(player)
-            val arrowCount = playerConfig.getInt("quest.harmony_arrow", 0) + 1
-            playerConfig.set("quest.harmony_arrow", arrowCount)
-            FileManager.savePlayerData(player, playerConfig)
-
-            val swordCount = playerConfig.getInt("quest.harmony_sword", 0)
-
-            if ((swordCount >= 10) && (arrowCount >= 10)) {
-                QuestManager.clearQuests(player, LineBetweenSwordAndArrow)
-            }
+            confirmedHits[event] = player.uniqueId
         }
     }
+    private val confirmedHits = java.util.WeakHashMap<org.bukkit.event.entity.EntityDamageByEntityEvent, java.util.UUID>()
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
+    fun recordConfirmedHit(event: org.bukkit.event.entity.EntityDamageByEntityEvent) {
+        val owner = confirmedHits.remove(event) ?: return
+        if (event.isCancelled || event.finalDamage <= 0) return
+        val player = plugin.server.getPlayer(owner) ?: return
+        QuestManager.harmonyHit(player, "harmony_arrow")
+    }
+
 }

@@ -21,15 +21,18 @@ object TerraBurning : Ability(
     ),
     relatedQuest = listOf(ExpAbsorber)
 ){
+    private val changing = mutableSetOf<java.util.UUID>()
 
 
     @EventHandler
     fun onLevelChange(event: PlayerLevelChangeEvent) {
         val player = event.player
         if (player.ability != this) return
+        if (event.newLevel <= event.oldLevel || !changing.add(player.uniqueId)) return
 
         // 레벨업 시 2레벨을 추가로 상승
-        player.level = event.newLevel + 2
+        try { player.level = com.github.lupi13.limpi.ability.LevelBonus.level(event.oldLevel, event.newLevel, 2) }
+        finally { changing.remove(player.uniqueId) }
         player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1f)
 
         // 퀘스트 ExpMaster 완료

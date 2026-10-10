@@ -63,88 +63,55 @@ object AbilityManager : Listener {
             }
         }
     }
-    @EventHandler
+    private fun active(item: ItemStack?): Boolean = item != null && activeItems.any { it.isSimilar(item) }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onClickInventory(event: InventoryClickEvent) {
-        // tq 이거 왜 GUI에서 F키 눌러서 swap하는거 안막히냐
-        if (event.cursor in activeItems || event.currentItem in activeItems) {
-            event.isCancelled = true
-            return
-        }
-
         val player = event.whoClicked as? Player ?: return
-        val ability = player.ability ?: return
-        val activeItem = ability.activeItem ?: return
-        val restrictedSlot = ability.restrictedSlot ?: return
-
-        if (event.action == InventoryAction.HOTBAR_SWAP && event.hotbarButton == -1) {
-            player.sendMessage(Component.text("인벤토리 내에서 ", NamedTextColor.RED)
-                .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.RED))
-                .append(Component.text("키를 이용한 아이템 이동을 자제해 주세요! 고스트 아이템 현상 등의 문제가 발생할 수 있습니다.", NamedTextColor.RED)))
-            player.sendMessage(Component.text("문제가 발생했다면, 인벤토리 내에서 아무렇게 클릭 몇 번 하면 복구될 수 있습니다.", NamedTextColor.RED))
-        }
-
-        // restrictedSlot이 존재하는 능력 소유자의 경우, 인벤토리 클릭때마다 인벤토리를 업데이트
-        // 이거 말고 방법이 없음. 이거도 고스트 아이템 생기는데 해결은 됨
-        if (player.inventory.getItem(restrictedSlot) != null && player.inventory.getItem(restrictedSlot)!!.isSimilar(activeItem)) {
-            for (i in 0..40) {
-                if (i == restrictedSlot) continue
-                // activeItem이 restrictedSlot이 아닌 곳에 있는 경우 제거
-                if (player.inventory.getItem(i) in activeItems) {
-                    player.inventory.setItem(i, null)
-                }
-            }
-        }
-        // restrictedSlot에 activeItem이 아닌 다른 아이템이 있는 경우, 해당 아이템을 플레이어 인벤토리에 추가
-        if (player.inventory.getItem(restrictedSlot) != null && !player.inventory.getItem(restrictedSlot)!!.isSimilar(activeItem)) {
-            player.inventory.getItem(restrictedSlot)?.let { player.inventory.addItem(it) }
-        }
-        // restrictedSlot에 activeItem을 설정
-        player.inventory.setItem(restrictedSlot, activeItem)
-
-        // 1틱 후 인벤토리 업데이트
-        if (player.gameMode != GameMode.CREATIVE) {
-            object: BukkitRunnable() {
-                override fun run() {
-                    player.updateInventory()
-                }
-            }.runTaskLater(plugin, 1L)
-        }
+        val swapped = if (event.click == org.bukkit.event.inventory.ClickType.SWAP_OFFHAND) player.inventory.itemInOffHand
+            else if (event.hotbarButton in 0..8) player.inventory.getItem(event.hotbarButton) else null
+        val restricted = player.ability?.restrictedSlot
+        val clickedRestricted = event.clickedInventory === player.inventory && event.slot == restricted
+        if (active(event.cursor) || active(event.currentItem) || active(swapped) || clickedRestricted) event.isCancelled = true
     }
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onSwapHand(event: PlayerSwapHandItemsEvent) {
-        if (event.player.inventory.itemInOffHand in activeItems) {
+        if (active(event.mainHandItem) || active(event.offHandItem) || event.player.ability?.restrictedSlot == 40) event.isCancelled = true
+    }
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onDrag(event: InventoryDragEvent) {
+        val player = event.whoClicked as? Player ?: return
+        val restricted = player.ability?.restrictedSlot
+        if (active(event.oldCursor) || event.rawSlots.any { event.view.getInventory(it) === player.inventory && event.view.convertSlot(it) == restricted }) {
             event.isCancelled = true
         }
     }
-    @EventHandler
-    fun onDrag(event: InventoryDragEvent) {
-        if (event.cursor == null || event.cursor !in activeItems) return
-        if (event.oldCursor !in activeItems) return
-        event.isCancelled = true
-    }
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onPlayerDrop(event: PlayerDropItemEvent) {
-        if (event.itemDrop.itemStack !in activeItems) return
-        event.isCancelled = true
+        if (active(event.itemDrop.itemStack)) event.isCancelled = true
     }
-
-    /**
-     * 플레이어가 죽으면 드랍 아이템에서 restrictItem을 제거하고, 부활 시 다시 장착시킵니다.
-     */
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDropItem(event: ItemSpawnEvent) {
-        if (event.entity.itemStack !in activeItems) return
+        if (!active(event.entity.itemStack)) return
         event.entity.remove()
         event.isCancelled = true
     }
     @EventHandler
     fun onRespawn(event: PlayerRespawnEvent) {
         val player = event.player
-        val ability = player.ability
-        if (ability == null) return
-        if (ability.activeItem == null) return
-        // 플레이어가 능력을 가지고 있다면, 해당 능력의 activeItem을 장착합니다.
-        player.inventory.setItem(ability.restrictedSlot!!, ability.activeItem)
+        plugin.server.scheduler.runTask(plugin, Runnable { if (player.isOnline && !player.isDead) restoreActiveItem(player) })
+    }
+
+    fun restoreActiveItem(player: Player) {
+        if (FileManager.delivery.blocked(player.uniqueId)) return
+        val ability = player.ability ?: return
+        if (ability.restrictedSlot == null || ability.activeItem == null) return
+        val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
+        try {
+            replaceInventory(player, planInventory(player, ability, before))
+        } catch (_: com.github.lupi13.limpi.delivery.InventoryFull) {
+            player.sendMessage(Component.text("능력 아이템을 장착하려면 인벤토리 공간을 확보하세요.", NamedTextColor.YELLOW))
+        }
     }
 
     /**
@@ -210,41 +177,45 @@ object AbilityManager : Listener {
      * @param player 능력을 적용할 플레이어
      * @param ability 적용할 능력의 Ability
      */
+    fun planInventory(player: Player, ability: Ability?, before: List<com.github.lupi13.limpi.delivery.StoredStack?>): List<com.github.lupi13.limpi.delivery.StoredStack?> {
+        val previous = player.ability
+        fun logical(slot: Int?): Int? = slot?.let {
+            require(it in 0..35 || it == 40) { "Unsupported ability slot $it" }
+            if (it == 40) 36 else it
+        }
+        val item = ability?.activeItem
+        val nextItem = item?.let { com.github.lupi13.limpi.delivery.StoredStack(
+            com.github.lupi13.limpi.platform.PaperItemCodec.payload(it), it.amount, minOf(it.maxStackSize, player.inventory.maxStackSize)) }
+        return com.github.lupi13.limpi.ability.AbilityInventoryPlan.plan(before, logical(previous?.restrictedSlot),
+            previous?.activeItem?.let(com.github.lupi13.limpi.platform.PaperItemCodec::payload),
+            if (nextItem == null) null else logical(ability.restrictedSlot), nextItem)
+    }
+
+    private fun replaceInventory(player: Player, image: List<com.github.lupi13.limpi.delivery.StoredStack?>) {
+        require(image.size == 37)
+        val items = image.map { it?.let { stack -> com.github.lupi13.limpi.platform.PaperItemCodec.item(stack.payload, stack.count) } }
+        player.inventory.storageContents = items.take(36).toTypedArray()
+        player.inventory.setItemInOffHand(items.last())
+    }
+
     fun applyAbility(player: Player, ability: Ability?) {
+        if (FileManager.delivery.blocked(player.uniqueId)) error("Ability application is blocked during item recovery")
         if (getPlayerAbilityCodeName(player).orEmpty() == ability?.codeName.orEmpty()) return
+        val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
+        val after = planInventory(player, ability, before)
+        // Decode and plan the whole relocation before touching an attribute or slot.
+        replaceInventory(player, after)
+        try {
+            setPlayerAbilityCodeName(player, ability?.codeName.orEmpty())
+        } catch (failure: Exception) {
+            replaceInventory(player, before)
+            throw failure
+        }
         Functions.resetPlayerAttributes(player)
-        val currentAbility = getAbilityByCodeName(getPlayerAbilityCodeName(player) ?: "")
-        if (ability == null) {
-            player.sendMessage(Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE))
-            if (currentAbility?.restrictedSlot != null && currentAbility.activeItem?.isSimilar(player.inventory.getItem(currentAbility.restrictedSlot!!)) == true) {
-                player.inventory.setItem(currentAbility.restrictedSlot!!, null)
-            }
-            setPlayerAbilityCodeName(player, "")
-            return
-        }
-
-
-        // 현재 적용된 능력이 있었다면 해당 능력을 비활성화합니다.
-        if (currentAbility != null) {
-            // 현재 적용된 능력이 restrictedSlot을 가지고 있다면 해당 슬롯을 비웁니다.
-            if (currentAbility.restrictedSlot != null && currentAbility.activeItem?.isSimilar(player.inventory.getItem(currentAbility.restrictedSlot!!)) == true) {
-                player.inventory.setItem(currentAbility.restrictedSlot!!, null)
-            }
-        }
-
-        // 새로운 능력을 적용합니다.
-        // 새로운 능력이 restrictedSlot을 가지고 있다면 해당 슬롯에 능력을 적용합니다.
-        if (ability.restrictedSlot != null) {
-            player.inventory.setItem(ability.restrictedSlot!!, ability.activeItem)
-        }
-
-        setPlayerAbilityCodeName(player, ability.codeName)
-        player.sendMessage(
-            Component.text("능력 ", NamedTextColor.WHITE)
-                .append(ability.displayName)
-                .append(Component.text("이(가) 적용되었습니다!", NamedTextColor.WHITE))
-        )
-        player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2F)
+        player.sendMessage(if (ability == null) Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE)
+            else Component.text("능력 ", NamedTextColor.WHITE).append(ability.displayName)
+                .append(Component.text("이(가) 적용되었습니다!", NamedTextColor.WHITE)))
+        player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
     }
 
     /**

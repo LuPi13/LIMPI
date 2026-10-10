@@ -8,6 +8,10 @@ import com.github.lupi13.limpi.delivery.RemovalJournal
 import com.github.lupi13.limpi.economy.SaleSettlement
 import com.github.lupi13.limpi.economy.ItemExchange
 import com.github.lupi13.limpi.gacha.GachaSettlement
+import com.github.lupi13.limpi.ability.AbilitySelection
+import com.github.lupi13.limpi.ability.InitialRewards
+import com.github.lupi13.limpi.ability.InitialTicketCounts
+import com.github.lupi13.limpi.quest.QuestRewards
 import com.github.lupi13.limpi.platform.DeliveryController
 import com.github.lupi13.limpi.platform.PaperItemCodec
 import com.github.lupi13.limpi.market.*
@@ -43,6 +47,10 @@ class FileManager {
         private lateinit var removalJournal: RemovalJournal
         private lateinit var itemExchange: ItemExchange
         private lateinit var gachaSettlement: GachaSettlement
+        private lateinit var abilitySelection: AbilitySelection
+        private lateinit var initialRewards: InitialRewards
+        private lateinit var initialItems: List<com.github.lupi13.limpi.delivery.ItemGrant>
+        private lateinit var questRewards: QuestRewards
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
@@ -57,6 +65,8 @@ class FileManager {
         val removals: RemovalJournal get() = removalJournal
         val exchanges: ItemExchange get() = itemExchange
         val gacha: GachaSettlement get() = gachaSettlement
+        val selections: AbilitySelection get() = abilitySelection
+        val quest: QuestRewards get() = questRewards
 
         fun initialize(owner: Plugin) {
             plugin = owner
@@ -66,6 +76,14 @@ class FileManager {
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)
             deliveryJournal = DeliveryJournal(state)
+            initialRewards = InitialRewards(state, deliveryJournal, repository)
+            questRewards = QuestRewards(state, repository)
+            val counts = InitialTicketCounts.read(owner.config)
+            initialItems = listOf(null to counts.gacha, com.github.lupi13.limpi.abilities.Grade.COMMON to counts.common,
+                com.github.lupi13.limpi.abilities.Grade.RARE to counts.rare, com.github.lupi13.limpi.abilities.Grade.EPIC to counts.epic)
+                .filter { it.second > 0 }.map { (grade, count) ->
+                    PaperItemCodec.grant(com.github.lupi13.limpi.events.AbilityShop.getSelectTicketItem(grade, false, null)).copy(count = count)
+                }
             checkService = CheckService(state, deliveryJournal, repository)
             shopService = ShopService(state, deliveryJournal, repository, PaperShopCatalog(owner)::offer)
             marketCatalog = MarketCatalog(state)
@@ -77,7 +95,8 @@ class FileManager {
             marketEscrow = MarketEscrow(state, marketCatalog)
             itemExchange = ItemExchange(state, deliveryJournal)
             gachaSettlement = GachaSettlement(state)
-            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange, GachaSettlement.KIND to gachaSettlement))
+            abilitySelection = AbilitySelection(state)
+            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange, GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection))
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal)
             financial.clear()
         }
@@ -100,8 +119,13 @@ class FileManager {
 
         /** Idempotent initialization: existing money, abilities and unknown fields are preserved. */
         fun makePlayerData(player: Player) = persist("initialize ${player.uniqueId}") {
-            repository.ensure(player.uniqueId, player.name, plugin.config.getLong("InitialMoney"))
+            val raw = plugin.config.get("InitialMoney")
+            require(raw is Int || raw is Long) { "InitialMoney must be an integer" }
+            val balance = com.github.lupi13.limpi.economy.Money((raw as Number).toLong())
+            initialRewards.register(player.uniqueId, player.name, balance, initialItems)
+            repository.ensure(player.uniqueId, player.name, balance.units)
             repository.pin(player.uniqueId)
+            if (plugin.config.getBoolean("EnableAbilitySystem")) initialRewards.claim(player.uniqueId)
         }
 
         fun getPlayerData(player: OfflinePlayer): FileConfiguration = repository.snapshot(player.uniqueId)

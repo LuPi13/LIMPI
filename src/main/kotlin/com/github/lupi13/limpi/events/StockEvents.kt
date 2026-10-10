@@ -44,10 +44,10 @@ class StockEvents : Listener {
         val StockGUIName = Component.text("LIMPI: 주식창", NamedTextColor.AQUA, TextDecoration.BOLD)
 
         fun codes(data: FileConfiguration = FileManager.getStockConfig()): List<String> =
-            data.getKeys(false).filter { it.matches(Regex("[0-9A-Z]{4}")) && data.isConfigurationSection(it) }
+            StockCatalog.codes(data)
 
         private fun price(data: FileConfiguration, code: String, field: String = "currentPrice"): Money =
-            Money(data.getLong("$code.$field")).also { require(it.units > 0) { "Invalid price for $code" } }
+            StockCatalog.price(data, code, field)
 
         private fun policy() = StockPricePolicy(
             plugin.config.getDouble("StockMinimumRatio"),
@@ -166,7 +166,7 @@ class StockEvents : Listener {
             val holder = MenuHolder(MenuKind.STOCK, pagination.page, StockGUIName)
             val inventory = holder.inventory
             val profile = FileManager.getPlayerData(player)
-            val trading = StockTradingService(FileManager.players)
+            val trading = FileManager.stocks
             for ((slot, code) in stocks.subList(pagination.start, pagination.end).withIndex()) {
                 val current = price(data, code)
                 val holding = try {
@@ -240,7 +240,7 @@ class StockEvents : Listener {
             require(quote.code in codes(data)) { "이미 삭제된 종목입니다." }
             val current = price(data, quote.code)
             require(current.units == quote.price) { "가격이 변경되었습니다. 새 가격을 확인해 주세요." }
-            val trading = StockTradingService(FileManager.players)
+            val trading = FileManager.stocks
             val profile = FileManager.getPlayerData(player)
             require(profile.getLong("money") >= 0) { "계좌 데이터에 오류가 있습니다. 관리자에게 확인을 요청하세요." }
             val count = if (event.isLeftClick) {
@@ -249,11 +249,11 @@ class StockEvents : Listener {
                 minOf(if (event.isShiftClick) 100L else 1L, trading.holding(profile, quote.code).count)
             }
             require(count > 0) { if (event.isLeftClick) "돈이 부족합니다." else "보유 주식이 없습니다." }
-            trading.trade(player.uniqueId, quote.code, current, count,
+            val result = trading.trade(java.util.UUID.randomUUID(), player.uniqueId, quote.code, current, count,
                 if (event.isLeftClick) StockTrade.BUY else StockTrade.SELL)
             player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1f, 1f)
             player.sendMessage(Component.text("${data.getString("${quote.code}.name")} (${quote.code}) $count" +
-                if (event.isLeftClick) "주 매수 완료." else "주 매도 완료.", NamedTextColor.WHITE))
+                (if (event.isLeftClick) "주 매수 완료." else "주 매도 완료.") + " 거래: ${result.transaction}", NamedTextColor.WHITE))
         } catch (failure: IllegalArgumentException) {
             player.sendMessage(Component.text(failure.message ?: "거래 조건이 유효하지 않습니다.", NamedTextColor.RED))
         } catch (failure: ArithmeticException) {

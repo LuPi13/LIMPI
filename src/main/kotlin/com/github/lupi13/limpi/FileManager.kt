@@ -39,6 +39,7 @@ class FileManager {
         private lateinit var repository: PlayerRepository
         private lateinit var state: StateStore
         private lateinit var bankService: BankService
+        private lateinit var stockTrading: com.github.lupi13.limpi.stock.StockTradingService
         private lateinit var deliveryJournal: DeliveryJournal
         private lateinit var deliveryController: DeliveryController
         private lateinit var marketCatalog: MarketCatalog
@@ -58,6 +59,7 @@ class FileManager {
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
+        val stocks: com.github.lupi13.limpi.stock.StockTradingService get() = stockTrading
         val transactions: StateStore get() = state
         val deliveries: DeliveryJournal get() = deliveryJournal
         val delivery: DeliveryController get() = deliveryController
@@ -81,6 +83,10 @@ class FileManager {
             owner.logger.info("Player storage ready: ${report.players} legacy profiles, balance sum ${report.balanceSum}, imported=${!report.reused}")
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)
+            stockTrading = com.github.lupi13.limpi.stock.StockTradingService(state, repository) { code ->
+                val data = financial.getValue("stock")
+                if (code in com.github.lupi13.limpi.stock.StockCatalog.codes(data)) com.github.lupi13.limpi.stock.StockCatalog.price(data, code) else null
+            }
             deliveryJournal = DeliveryJournal(state)
             initialRewards = InitialRewards(state, deliveryJournal, repository)
             questRewards = QuestRewards(state, repository)

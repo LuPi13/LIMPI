@@ -17,6 +17,12 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.financial.check:
+    description: Issue and redeem server-recorded checks
+    default: true
+  limpi.financial.admin.check:
+    description: Inspect checks and approve legacy conversion
+    default: op
   limpi.financial.market:
     description: Use the player market
     default: true

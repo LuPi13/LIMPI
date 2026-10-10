@@ -17,11 +17,18 @@ class FinancialTab: TabCompleter {
         val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
         val completions: MutableList<String> = mutableListOf()
         val list: MutableList<String> = mutableListOf()
+        if (args.size == 2 && args[0].equals("check", true)) {
+            if (sender.hasPermission("limpi.financial.check")) list.add("redeem")
+            if (sender.hasPermission("limpi.financial.admin.check")) { list.add("inspect"); list.add("import") }
+            StringUtil.copyPartialMatches(args[1], list, completions)
+            return completions
+        }
         if (!plugin.config.getBoolean("EnableFinancialSystem")) {
             if (args.size == 1) {
                 if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
                 if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
                 if (sender.hasPermission("limpi.financial.admin.market")) list.add("market")
+                if (sender.hasPermission("limpi.financial.check") || sender.hasPermission("limpi.financial.admin.check")) list.add("check")
                 StringUtil.copyPartialMatches(args[0], list, completions)
             }
             if (args.size == 2 && args[0] == "market" && sender.hasPermission("limpi.financial.admin.market")) {
@@ -33,7 +40,7 @@ class FinancialTab: TabCompleter {
             if (args.size == 1) {
                 list.add("help")
                 list.add("me")
-                list.add("check")
+                if (sender.hasPermission("limpi.financial.check") || sender.hasPermission("limpi.financial.admin.check")) list.add("check")
                 if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
                 if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
                 if (sender.hasPermission("limpi.financial.send")) list.add("send")

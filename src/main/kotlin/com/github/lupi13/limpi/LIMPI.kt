@@ -6,6 +6,7 @@ import com.github.lupi13.limpi.commands.AbilityTab
 import com.github.lupi13.limpi.commands.AccountCommands
 import com.github.lupi13.limpi.commands.DeliveryCommands
 import com.github.lupi13.limpi.commands.MarketCommands
+import com.github.lupi13.limpi.commands.CheckCommands
 import com.github.lupi13.limpi.commands.Financial
 import com.github.lupi13.limpi.commands.FinancialTab
 import com.github.lupi13.limpi.events.*
@@ -34,13 +35,14 @@ class LIMPI : JavaPlugin() {
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         // Event Registering
+        val checks = Check(this)
         time = System.currentTimeMillis()
         logger.info("Events Registering...")
         server.pluginManager.registerEvents(JoinAndQuit(), this)
         server.pluginManager.registerEvents(DeliveryGuard(FileManager.delivery, FileManager.deliveries, FileManager.escrow, logger), this)
         server.pluginManager.registerEvents(ReadOnlyMenuListener(), this)
         if (config.getBoolean("EnableFinancialSystem")) {
-            server.pluginManager.registerEvents(Check(), this)
+            server.pluginManager.registerEvents(checks, this)
             server.pluginManager.registerEvents(SellEvents(), this)
             server.pluginManager.registerEvents(ShopEvents(), this)
             server.pluginManager.registerEvents(StockEvents(), this)
@@ -62,7 +64,7 @@ class LIMPI : JavaPlugin() {
         time = System.currentTimeMillis()
         logger.info("Command setting...")
         getCommand("financial")!!.setExecutor(Financial(AccountCommands(FileManager.bank, FileManager.players, this),
-            DeliveryCommands(FileManager.deliveries, FileManager.delivery, this), config.getBoolean("EnableFinancialSystem"), MarketCommands(this)))
+            DeliveryCommands(FileManager.deliveries, FileManager.delivery, this), config.getBoolean("EnableFinancialSystem"), MarketCommands(this), CheckCommands(this, checks)))
         getCommand("financial")!!.tabCompleter = FinancialTab()
         if (config.getBoolean("EnableAbilitySystem")) {
             getCommand("ability")!!.setExecutor(Ability())

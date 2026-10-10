@@ -5,7 +5,6 @@ import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.Functions.Companion.playerDisplay
 import com.github.lupi13.limpi.events.*
-import com.github.lupi13.limpi.items.Check
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -21,7 +20,7 @@ import org.bukkit.inventory.meta.BookMeta
 import java.util.*
 import java.util.regex.Pattern
 
-class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean, private val marketCommands: MarketCommands): CommandExecutor {
+class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean, private val marketCommands: MarketCommands, private val checkCommands: CheckCommands): CommandExecutor {
 
     override fun onCommand(
         sender: CommandSender,
@@ -32,11 +31,13 @@ class Financial(private val accountCommands: AccountCommands, private val delive
         if (deliveryCommands.handles(args)) return deliveryCommands.execute(sender, args)
         if (args.firstOrNull()?.equals("market", true) == true &&
             args.getOrNull(1)?.lowercase(Locale.ROOT) in setOf("escrow", "resolve", "owner")) return marketCommands.execute(sender, args)
+        if (args.firstOrNull()?.equals("check", true) == true && args.getOrNull(1)?.lowercase(Locale.ROOT) in setOf("redeem", "inspect", "import")) return checkCommands.execute(sender, args)
         if (!enabled) {
-            sender.sendMessage(Component.text("금융 시스템이 비활성화되어 있습니다. 미수령 수령·지급 기록 명령은 사용할 수 있습니다.", NamedTextColor.RED))
+            sender.sendMessage(Component.text("금융 시스템이 비활성화되어 있습니다. 미수령 수령·수표 입금·관리자 복구 명령은 사용할 수 있습니다.", NamedTextColor.RED))
             return true
         }
         if (args.firstOrNull()?.equals("market", true) == true) return marketCommands.execute(sender, args)
+        if (args.firstOrNull()?.equals("check", true) == true) return checkCommands.execute(sender, args)
         if (accountCommands.handles(args)) return accountCommands.execute(sender, args)
         if (sender is Player) {
             val config = FileManager.getPlayerData(sender)
@@ -57,8 +58,12 @@ class Financial(private val accountCommands: AccountCommands, private val delive
                 page = page.append(Component.text(": 이 도움말을 보여줍니다.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/financial me", NamedTextColor.GREEN))
                 page = page.append(Component.text(": 현재 본인 계좌의 돈을 보여줍니다.\n\n", NamedTextColor.BLACK))
-                page = page.append(Component.text("/financial check <금액>", NamedTextColor.GREEN))
-                page = page.append(Component.text(": 입력한 금액의 수표를 작성합니다. 우클릭하여 사용 가능합니다. ", NamedTextColor.BLACK))
+                page = page.append(Component.text("/financial check <금액> [거래 UUID]", NamedTextColor.GREEN))
+                page = page.append(Component.text(": 수표를 발행합니다. 공간 부족 시 /financial claim으로 받습니다.\n\n", NamedTextColor.BLACK))
+                meta.addPages(page)
+
+                page = Component.text("/financial check redeem", NamedTextColor.GREEN)
+                page = page.append(Component.text(": 주 손 수표를 입금합니다. 우클릭도 가능합니다. 같은 수표는 한 번만 입금됩니다. 기존 수표는 관리자 전환이 필요합니다.", NamedTextColor.BLACK))
                 meta.addPages(page)
 
                 page = Component.text("/financial send <이름 또는 UUID> <금액> [거래 ID]", NamedTextColor.GREEN)
@@ -160,58 +165,6 @@ class Financial(private val accountCommands: AccountCommands, private val delive
                     return true
                 }
             }
-
-
-            //  /fc check <Long>
-            if (args[0].equals("check", true)) {
-                if (args.size == 2) {
-                    val value: Long
-                    try {
-                        value = args[1].toLong()
-                    } catch (e: Exception) {
-                        sender.sendMessage(Component.text(args[1], NamedTextColor.YELLOW)
-                            .append(Component.text("는 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
-                        return true
-                    }
-                    if (value <= 0) {
-                        if (sender.isOp) {
-                            sender.sendMessage(Component.text("어디에... 쓰시려구요...?", NamedTextColor.YELLOW))
-                        }
-                        else {
-                            sender.sendMessage(Component.text("대출 안돼요", NamedTextColor.YELLOW))
-                            return true
-                        }
-                    }
-
-                    if (value >= money) {
-                        sender.sendMessage(Component.text("돈이 부족합니다! ", NamedTextColor.RED)
-                            .append(playerDisplay(sender))
-                            .append(Component.text("님은 현재 계좌에 ", NamedTextColor.RED))
-                            .append(moneyDisplay(money))
-                            .append(Component.text("원이 있습니다.", NamedTextColor.RED)))
-                        return true
-                    }
-
-                    if (Functions.validInventoryIndex(sender, Check.getCheck(value, sender)) == null) {
-                        sender.sendMessage(Component.text("인벤토리가 가득 찼습니다!", NamedTextColor.RED))
-                        return true
-                    }
-
-
-                    config["money"] = money - value
-                    FileManager.savePlayerData(sender, config)
-                    sender.inventory.addItem(Check.getCheck(value, sender))
-                    sender.sendMessage(Component.text("수표가 발행되었습니다."))
-                    sender.playSound(sender, Sound.ENTITY_VILLAGER_WORK_CARTOGRAPHER, 1F, 1.3F)
-                    return true
-                }
-                else {
-                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial check <금액>", NamedTextColor.RED))
-                    return true
-                }
-            }
-
-
 
 
             //  /fc sell

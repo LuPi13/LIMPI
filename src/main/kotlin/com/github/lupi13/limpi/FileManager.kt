@@ -7,6 +7,7 @@ import com.github.lupi13.limpi.delivery.DeliveryService
 import com.github.lupi13.limpi.platform.DeliveryController
 import com.github.lupi13.limpi.platform.PaperItemCodec
 import com.github.lupi13.limpi.market.*
+import com.github.lupi13.limpi.checks.CheckService
 import org.bukkit.inventory.ItemStack
 import com.github.lupi13.limpi.storage.*
 import org.bukkit.Bukkit
@@ -31,6 +32,7 @@ class FileManager {
         private lateinit var marketCatalog: MarketCatalog
         private lateinit var marketService: MarketService
         private lateinit var marketEscrow: MarketEscrow
+        private lateinit var checkService: CheckService
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
@@ -40,6 +42,7 @@ class FileManager {
         val market: MarketCatalog get() = marketCatalog
         val marketTrades: MarketService get() = marketService
         val escrow: MarketEscrow get() = marketEscrow
+        val checks: CheckService get() = checkService
 
         fun initialize(owner: Plugin) {
             plugin = owner
@@ -49,6 +52,7 @@ class FileManager {
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)
             deliveryJournal = DeliveryJournal(state)
+            checkService = CheckService(state, deliveryJournal, repository)
             marketCatalog = MarketCatalog(state)
             val importedListings = LegacyMarketMigration.import(state, marketCatalog, repository::findByName) {
                 PaperItemCodec.grant(it as ItemStack)

@@ -254,6 +254,14 @@
 - **310개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 9개 정책 시험. 실제 Paper는 미검증. [물리 계약](ABILITY_PHYSICS.md).
 - 다음은 명령 정의·운영 backup/export/check 도구/CI·전체 범위 감사다. 전체 목표는 계속 진행 중이다.
 
+### 2026-10-10 / 명령 정의·콘솔·종목 관리
+
+- 루트 명령의 긴 help/파싱/직접 설정 처리를 분리하고 CommandDefinitions/Index에서 route·권한·console·인자 범위·help/tab을 공유한다. static plugin 조회·미구현 reload·콘솔 TODO를 제거했다. 비활성 시스템은 복구/help만 노출한다.
+- ability admin.set permission/console/UUID/none, unknown 능력 ID 보존, offline spy 및 주식 관리 permission을 연결했다. 정보·GUI 노드를 plugin.yml에 명시하고 stock 클릭에서도 permission을 확인한다.
+- Financial의 종목 삭제가 전체 플레이어 보유를 지우던 경로를 제거했다. 상장 중지/재상장·중지 종목 holdings·코드 재사용 금지·검증 후 단일 YAML snapshot 저장을 구현했다.
+- **325개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 15개 정의/permission·console adapter·종목 snapshot 시험. [명령 계약](COMMANDS.md). 실제 Paper는 미검증.
+- 다음은 운영 backup/export/check/dry-run 복구 도구·CI·패키징·전체 범위 감사다. 전체 목표는 계속 진행 중이다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |
@@ -285,6 +293,7 @@
 | AB-06 | 구현 완료(정책 단위 검증) | owned Web/붙잡기/레일건·world/quit/death/변경 cleanup·물리 경계 구현. 실제 Paper는 이후 |
 | COMBAT-01/02/03 | 구현 완료(정책 단위 검증) | confirmed damage·취소/귀속·상태 보존·typed target·visited/budget chain·오프라인 pet/UI 정책 구현. 보호 플러그인/토템/이벤트는 서버 시험에서 확인 |
 | OPS-01 | 부분 해결 | System.out 교체 제거, 테스트 기반/schema/백업/저장소 복구 문서 구현. CI/복구 도구·시험 및 기타 결합 제거는 남음 |
+| CMD-01 | 구현 완료(단위 검증) | 공통 route/permission/console/인자/help/tab·기능 handler 분리·미구현 reload/console TODO 제거. 실제 Paper 책/콘솔은 이후 |
 | 그 외 모든 항목 | 미해결 | [정비 계획](MAINTENANCE_PLAN.md)의 범위를 그대로 유지 |
 
 ## 다음 작업 순서

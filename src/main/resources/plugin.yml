@@ -17,6 +17,33 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.ability.me:
+    description: Inspect your active ability
+    default: true
+  limpi.ability.dictionary:
+    description: Open the ability dictionary
+    default: true
+  limpi.ability.pity:
+    description: Inspect gacha probability and pity
+    default: true
+  limpi.ability.pickup:
+    description: Inspect current and scheduled pickup abilities
+    default: true
+  limpi.ability.result:
+    description: Inspect your saved gacha and selection results
+    default: true
+  limpi.financial.me:
+    description: Inspect your account balance
+    default: true
+  limpi.financial.stock:
+    description: Trade stocks and inspect holdings
+    default: true
+  limpi.financial.admin.spy:
+    description: Inspect existing online or offline accounts
+    default: op
+  limpi.financial.admin.stock:
+    description: Add delist restore or reset stock reference prices
+    default: op
   limpi.ability.enemy:
     description: Configure ability target categories
     default: true

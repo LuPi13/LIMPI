@@ -137,6 +137,11 @@ class FileManager {
         fun saveSellPrice() = saveFinancial("sellPrice")
         fun saveShopRatio() = saveFinancial("shopRatio")
         fun saveStock() = saveFinancial("stock")
+        fun replaceStock(value: YamlConfiguration) {
+            val copy = YamlFiles.parse(value.saveToString())
+            YamlFiles.write(financialPath("stock"), copy)
+            financial["stock"] = copy
+        }
 
         /** Idempotent initialization: existing money, abilities and unknown fields are preserved. */
         fun makePlayerData(player: Player) = persist("initialize ${player.uniqueId}") {

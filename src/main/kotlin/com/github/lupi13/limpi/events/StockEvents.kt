@@ -148,7 +148,7 @@ class StockEvents : Listener {
             meta.title = "주식 가격 변동"
             meta.author = "LIMPI"
             meta.addPages(Component.text("주식 가격 변동\n\nLOSPI: $index\n(기준 100)\n\n기준 시점: " +
-                (FileManager.getMiscConfig().getString("lastStockStand") ?: data.getString("lastStockStand")
+                (data.getString("lastStockStand") ?: FileManager.getMiscConfig().getString("lastStockStand")
                     ?: "기록 없음"), NamedTextColor.BLACK))
             for (group in stocks.chunked(3)) {
                 var page = Component.empty()
@@ -228,6 +228,7 @@ class StockEvents : Listener {
         if (event.rawSlot !in 0 until top.size) return
         if (event.click !in setOf(ClickType.LEFT, ClickType.SHIFT_LEFT, ClickType.RIGHT, ClickType.SHIFT_RIGHT)) return
         val player = event.whoClicked as? Player ?: return
+        if (!player.hasPermission("limpi.financial.stock") || FileManager.delivery.blocked(player.uniqueId)) return
         val action = holder.actions[event.rawSlot] ?: return
         if (action is MenuAction.Page) {
             openStockGUI(player, action.index, top)

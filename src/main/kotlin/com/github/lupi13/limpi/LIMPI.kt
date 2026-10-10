@@ -80,13 +80,11 @@ class LIMPI : JavaPlugin() {
         // Command Setting
         time = System.currentTimeMillis()
         logger.info("Command setting...")
-        getCommand("financial")!!.setExecutor(Financial(AccountCommands(FileManager.bank, FileManager.players, this),
+        getCommand("financial")!!.setExecutor(Financial(this, AccountCommands(FileManager.bank, FileManager.players, this),
             DeliveryCommands(FileManager.deliveries, FileManager.delivery, this), config.getBoolean("EnableFinancialSystem"), MarketCommands(this), CheckCommands(this, checks), CatalogCommands(this), RemovalCommands(this), TransitionCommands(this)))
-        getCommand("financial")!!.tabCompleter = FinancialTab()
-        if (config.getBoolean("EnableAbilitySystem")) {
-            getCommand("ability")!!.setExecutor(Ability())
-            getCommand("ability")!!.tabCompleter = AbilityTab()
-        }
+        getCommand("financial")!!.tabCompleter = FinancialTab(this)
+        getCommand("ability")!!.setExecutor(Ability(this, config.getBoolean("EnableAbilitySystem")))
+        getCommand("ability")!!.tabCompleter = AbilityTab(this)
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         val blue = "\u001B[36m"

@@ -108,4 +108,37 @@ class LegacyStateMigrationTest {
             assertTrue(store.documents("player/").isEmpty())
         }
     }
+
+    @Test fun `lost or swapped database refuses to reimport stale YAML`() {
+        source("name: Player\nmoney: 100\n")
+        SqliteStateStore(root.resolve("limpi.sqlite3")).use { store -> LegacyStateMigration.import(root, store) }
+        assertTrue(Files.exists(root.resolve(LegacyStateMigration.COMPLETED_FILE)))
+        Files.move(root.resolve("limpi.sqlite3"), root.resolve("moved.sqlite3"))
+        SqliteStateStore(root.resolve("limpi.sqlite3")).use { store ->
+            assertThrows(IllegalStateException::class.java) { LegacyStateMigration.import(root, store) }
+            assertNull(store.get(SqliteProfilePersistence.key(id)))
+        }
+    }
+
+    @Test fun `existing imported database backfills the external completion record`() {
+        source("name: Player\nmoney: 100\n")
+        SqliteStateStore(root.resolve("limpi.sqlite3")).use { store ->
+            LegacyStateMigration.import(root, store)
+            Files.delete(root.resolve(LegacyStateMigration.COMPLETED_FILE))
+            assertTrue(LegacyStateMigration.import(root, store).reused)
+            assertTrue(Files.exists(root.resolve(LegacyStateMigration.COMPLETED_FILE)))
+        }
+    }
+
+    @Test fun `migrated profile without money is not given the initial balance`() {
+        source("name: Player\nability: web_shooter\nunlockedAbilities: [web_shooter]\n")
+        SqliteStateStore(root.resolve("limpi.sqlite3")).use { store ->
+            LegacyStateMigration.import(root, store)
+            val repository = CachedPlayerRepository(SqliteProfilePersistence(store))
+            repository.ensure(id, "Player", 10000)
+            assertFalse(repository.snapshot(id).contains("money")); assertNull(repository.profile(id).balance)
+            val fresh = UUID.randomUUID(); repository.ensure(fresh, "New", 10000)
+            assertEquals(10000L, repository.profile(fresh).balance)
+        }
+    }
 }

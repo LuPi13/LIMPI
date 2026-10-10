@@ -33,6 +33,12 @@ class SellEvents : Listener {
             for ((slot, stack) in before.withIndex()) {
                 if (stack == null) continue
                 val icon = PaperItemCodec.item(stack.payload, stack.count)
+                if (com.github.lupi13.limpi.abilities.AbilityManager.active(icon)) {
+                    val meta = icon.itemMeta
+                    meta.lore((meta.lore() ?: emptyList()) + Component.text("능력 아이템 · 판매 불가", NamedTextColor.RED)); icon.itemMeta = meta
+                    holder.inventory.setItem(slot, icon)
+                    continue
+                }
                 try {
                     val price = CatalogPrices.sell(FileManager.getSellPriceConfig().get(icon.type.name.lowercase(Locale.ROOT)))
                     val chosen = selected[slot] == stack
@@ -87,6 +93,7 @@ class SellEvents : Listener {
                     require(action.prices.isNotEmpty()) { "판매할 스택을 선택하세요." }
                     for ((slot, price) in action.prices) {
                         val item = PaperItemCodec.item(requireNotNull(action.before[slot]).payload, 1)
+                        require(!com.github.lupi13.limpi.abilities.AbilityManager.active(item)) { "능력 아이템은 판매할 수 없습니다." }
                         require(CatalogPrices.sell(FileManager.getSellPriceConfig().get(item.type.name.lowercase(Locale.ROOT))).units == price) {
                             "가격이 변경되었습니다. 새로고침 후 다시 확인하세요."
                         }

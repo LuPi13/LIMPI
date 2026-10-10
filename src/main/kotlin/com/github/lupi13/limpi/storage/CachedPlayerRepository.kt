@@ -71,8 +71,12 @@ open class CachedPlayerRepository(
         val snapshot = snapshot(id)
         PlayerSchema.validate(snapshot, id.toString())
         if (!snapshot.contains("schemaVersion")) persistence.backupLegacy(id)
+        // Only a brand-new profile receives the initial balance. A migrated profile without money is an anomaly that
+        // stays visible ("계좌 복구 필요") for an audited /financial set instead of silently receiving InitialMoney.
+        val created = snapshot.getKeys(false).isEmpty()
+        if (created) snapshot.set("money", initialBalance)
         val defaults = mapOf(
-            "schemaVersion" to 1, "money" to initialBalance,
+            "schemaVersion" to 1,
             "LEGENDARY.Count" to 0, "LEGENDARY.Ceiling" to 0,
             "EPIC.Count" to 0, "EPIC.Ceiling" to 0,
             "AbilityEnemy.TAMED" to 0, "AbilityEnemy.NON_AGGRESSIVE" to 2,
@@ -151,6 +155,9 @@ open class CachedPlayerRepository(
             left.indices.all { sameValue(left[it], right[it]) }
         left is Map<*, *> && right is Map<*, *> -> left.keys == right.keys &&
             left.keys.all { sameValue(left[it], right[it]) }
+        // Saved values may be Long in cache but Int after a DB re-read; compare integral numbers by value.
+        left is Number && right is Number && left !is Double && left !is Float && right !is Double && right !is Float ->
+            left.toLong() == right.toLong()
         else -> left == right
     }
 }

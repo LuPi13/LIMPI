@@ -23,9 +23,10 @@
 2. 복사본을 사용하는 격리 서버에서 최초 enable을 검증한다. importer는 모든 `playerData/<UUID>.yml`과 `financial/market.yml`을 읽고 YAML/금액/schema를 검증한 뒤 저장을 시작한다. enable 전에 아래 운영 도구의 `legacy-check`로 복사본의 UUID 파일명·금액·schema·주식 보유를 구조 검사할 수 있다(가져오기는 하지 않음).
 3. 각 원본을 `backups/sqlite-v1/playerData/`와 `backups/sqlite-v1/financial/market.yml`에 보존한다. 이미 있는 백업이 현재 원본과 다르면 덮지 않고 거부한다.
 4. 모든 payload와 완료 marker를 한 SQLite 트랜잭션으로 저장한다. 로그에 가져온 플레이어 수와 잔액 합계가 나온다. 합계는 Long 합산 오버플로를 피하도록 BigInteger로 계산한다. marker의 각 원본 hash를 비교하고 UUID/능력/해금/퀘스트/매물도 복사본과 대조한다.
-5. commit 전에 실패하면 프로필/매물/marker가 부분 저장되지 않는다. YAML과 만들어진 백업은 보존한다. 오류 원인을 수정하고 재시도한다. 이미 성공한 DB는 재시작 때 과거 YAML을 다시 가져오지 않는다.
+5. commit 성공 뒤 DB 밖 `backups/sqlite-v1/IMPORTED`에 완료 기록을 쓴다(이전 배포는 marker가 있는 DB로 처음 시작할 때 채운다). DB 파일이 없어지거나 다른 DB로 바뀌어 marker가 없는데 이 파일이 있으면 **enable을 거부**한다. 이때 올바른 DB 백업을 복원한다. SQLite 이후 변경이 전혀 없음을 확인한 경우에만 운영자가 이 파일을 지우고 재가져오기를 허용한다.
+6. commit 전에 실패하면 프로필/매물/marker가 부분 저장되지 않는다. YAML과 만들어진 백업은 보존한다. 오류 원인을 수정하고 재시도한다. 이미 성공한 DB는 재시작 때 과거 YAML을 다시 가져오지 않는다.
 
-소수/문자열/Long 초과 잔액, 잘못된 schemaVersion, 미래 버전, 깨진 YAML은 자동 0 초기화 대신 이전을 거부한다. 이전 후 DB 프로필을 읽지 못하는 플레이어는 접속 시 입력이 차단되고 UUID 안내와 함께 연결이 끊긴다. 표시에서는 손상 잔액을 0이 아닌 "계좌 복구 필요"로 보인다. 음수 legacy 잔액은 원본 그대로 남기고 은행 거래를 거부한다. 관리자가 기록을 확인한 후 `/financial set <UUID> <정상 금액>`으로 복구하면 원장에 이전 음수 잔액이 남는다.
+소수/문자열/Long 초과 잔액, 잘못된 schemaVersion, 미래 버전, 깨진 YAML은 자동 0 초기화 대신 이전을 거부한다. 이전 후 DB 프로필을 읽지 못하는 플레이어는 접속 시 입력이 차단되고 UUID 안내와 함께 연결이 끊긴다. 표시에서는 손상 잔액을 0이 아닌 "계좌 복구 필요"로 보인다. 음수 legacy 잔액은 원본 그대로 남기고 은행 거래를 거부한다. money 필드가 없는 이전 프로필에도 InitialMoney를 채우지 않는다(신규 plugin profile만 초기 잔액을 받는다). 관리자가 `/financial set`으로 원장과 함께 정한다. 관리자가 기록을 확인한 후 `/financial set <UUID> <정상 금액>`으로 복구하면 원장에 이전 음수 잔액이 남는다.
 
 ## 거래 재시도
 

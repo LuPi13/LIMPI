@@ -11,9 +11,22 @@ data class LegacyImportReport(val players: Int, val balanceSum: String, val reus
 /** Validate every source and back it up before a single atomic import. Source files are never deleted. */
 object LegacyStateMigration {
     private const val MARKER = "migration/legacy_yaml_v1"
+    /** Written only after a committed import. It survives a lost or swapped DB, unlike the in-DB marker. */
+    const val COMPLETED_FILE = "backups/sqlite-v1/IMPORTED"
 
     fun import(root: Path, store: StateStore): LegacyImportReport {
-        store.get(MARKER)?.let { return report(it, true) }
+        val completed = root.resolve(COMPLETED_FILE)
+        store.get(MARKER)?.let { marker ->
+            // Backfill for deployments imported before the external record existed.
+            if (!Files.exists(completed)) AtomicFiles.write(completed, marker)
+            return report(marker, true)
+        }
+        // An imported server whose DB is now missing or replaced must restore the DB backup. Re-importing the old
+        // YAML would silently overwrite every later balance, unlock and trade.
+        check(!Files.exists(completed)) {
+            "LIMPI already imported legacy YAML ($COMPLETED_FILE) but limpi.sqlite3 has no import marker. " +
+                "Restore the correct DB backup; delete that file only after confirming no SQLite-era changes exist."
+        }
         val documents = linkedMapOf<String, String>()
         val sources = linkedMapOf<Path, String>()
         var sum = BigInteger.ZERO
@@ -70,6 +83,7 @@ object LegacyStateMigration {
             }
             transaction.put(MARKER, metadata.saveToString())
         }
+        AtomicFiles.write(completed, metadata.saveToString())
         return report(metadata.saveToString(), false)
     }
 

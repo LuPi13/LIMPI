@@ -50,6 +50,10 @@ Shift 구매는 아이템 중첩 상한과 현재 구매 가능한 수량 중 �
 
 소유자가 오프라인일 때 백업/playerdata/원장/전체 before·after/checkpoint를 확인한 뒤 결정한다. removed는 실제 제거를 운영자가 확인하여 frozen 정산과 완료를 함께 저장한다. retained는 원본이 남아 있음을 확인하여 정산 없이 종료하며 물품을 다시 지급하지 않는다. actor/결정/note/기존 evidence/정산 결과를 해결 원장에 남긴다. 같은 해결 요청 UUID는 중복 정산하지 않는다. 명령 실패의 UUID로 원장을 확인하고 다른 결정을 추측하여 반복하지 않는다.
 
+## 판매 제외 (2026-10-10 리뷰 반영)
+
+능력 active item과 EntityThrower의 임시 손 아이템은 소유물이 아니므로 판매 화면에서 선택할 수 없고 확정 시에도 다시 거부한다. 예전에는 붙잡기 중 임시 아이템을 미등록 기본가(1원, 기존 설계)로 반복 판매해 돈을 만들 수 있었다.
+
 ## 검증과 남은 확인
 
 - 단위 시험: 큰 가격/전액/무료 Shift·catalog 변경·손상 계좌, 구매 commit rollback/restart replay/전체 수량; 다중/부분 슬롯 제거, 저장 전·후 오류, 정산 commit 오류, 재접속과 재회수 방지, REVIEW·관리자 removed/retained 감사 및 rollback, 가격 슬롯 일치/overflow, 회수 계획 변조와 마켓 예약 충돌.

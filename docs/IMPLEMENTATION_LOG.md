@@ -304,6 +304,15 @@
 - **취소된 사망의 효과 정리:** runtime/능력 상태/뽑기 연출 정리를 MONITOR·ignoreCancelled로 옮겼다. LetsBoom은 등록 순서상 정리 뒤에 시작한다.
 - **343개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 1개는 회수 저장 후 overflow→REVIEW→잔액 복구 후 관리자 정산이다. 사망/리스폰/엔티티 상호작용/선택 보류는 Paper 경로라 서버 시험 계획에 추가했다.
 
+### 2026-10-10 / 3차 독립 리뷰 반영: 저장소·경제 GUI
+
+- 저장소/legacy 이전과 경제 GUI(판매/상점/마켓/능력 상점/주식)를 별도 리뷰했다. snapshot merge·flatten·cache 무효화·이전 원자성·GUI quote 재검증·마켓 이중 구매·판매 snapshot 일치는 결함이 없었다. 다음을 수정했다.
+- **DB 분실/교체 시 stale YAML 재가져오기:** DB 안 marker만으로 완료를 판단해 DB가 없어지면 과거 YAML을 다시 가져와 이후 변경을 덮을 수 있었다. DB 밖 `backups/sqlite-v1/IMPORTED` 완료 기록(기존 배포는 backfill)이 있고 DB marker가 없으면 enable을 거부한다. [저장소·복구](STORAGE_AND_RECOVERY.md#최초-이전)
+- **money 없는 이전 프로필의 초기 자금:** `ensure`가 기존 프로필에도 InitialMoney를 원장 없이 채웠다. 신규 프로필만 초기 잔액을 받고 이전 프로필은 "계좌 복구 필요"로 남는다.
+- **판매로 돈 생성:** EntityThrower 임시 손 아이템/능력 아이템을 판매 대상에서 제외했다.
+- cache(Long)와 DB 재판독(Int)의 정수 비교 차이로 생기던 가짜 snapshot 충돌을 값 비교로 고쳤다.
+- **346개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 3개는 DB 분실 재가져오기 거부·완료 기록 backfill·이전 프로필 money 비보완이다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |

@@ -51,6 +51,22 @@ class SugarSettlement(private val store: StateStore) : RemovalEffect {
     }
     fun pending(owner: UUID): Map<UUID, SugarTerms> = store.documents("sugar_pending/$owner/").mapKeys { UUID.fromString(it.key.removePrefix("sugar_pending/$owner/")) }
         .mapValues { SugarTerms.decode(it.value) }.also { check(it.size <= 1) }
+    /** Raw pending keys for administrators, readable even when a frozen payload no longer decodes. */
+    fun pendingIds(owner: UUID): List<UUID> = store.documents("sugar_pending/$owner/").keys.map { UUID.fromString(it.removePrefix("sugar_pending/$owner/")) }
+    /** Administrator decision not to apply a frozen result; the consumed sugar is not refunded and the result stays auditable. */
+    fun void(request: UUID, actor: String, owner: UUID, id: UUID, reason: String): Boolean {
+        require(actor.isNotBlank() && reason.isNotBlank())
+        val result = store.execute(request, BankService.fingerprint("SUGAR_VOID", actor, owner.toString(), id.toString(), reason)) { tx ->
+            val payload = requireNotNull(tx.get(pendingKey(owner, id))) { "적용 대기 중인 설탕 결과가 없습니다." }
+            check(tx.get(resultKey(owner, id)) == payload)
+            tx.put(pendingKey(owner, id), null)
+            YamlConfiguration().apply {
+                set("schemaVersion", 1); set("operation", "SUGAR_VOID"); set("actor", actor); set("owner", owner.toString())
+                set("id", id.toString()); set("reason", reason)
+            }.saveToString()
+        }
+        return !result.replayed
+    }
     fun activate(owner: UUID, id: UUID): SugarTerms? {
         val result = store.execute(UUID.nameUUIDFromBytes("sugar-activate:$owner:$id".toByteArray(Charsets.UTF_8)),
             BankService.fingerprint("SUGAR_ACTIVATE", owner.toString(), id.toString())) { tx ->

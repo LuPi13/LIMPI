@@ -28,6 +28,7 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
                 "removal" -> removalCommands.execute(sender, args)
                 "transition" -> transitionCommands.execute(sender, args)
                 "stock" -> stocks.execute(sender, args)
+                "sugar" -> sugar(sender, args)
                 "me" -> {
                     val balance = Accounts.balance(FileManager.players.snapshot((sender as Player).uniqueId))
                     sender.sendMessage("현재 잔액: ${balance.units}원")
@@ -58,5 +59,19 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
             sender.sendMessage("처리 결과를 확인하지 못했습니다. 관리자 로그를 확인하세요.")
         }
         return true
+    }
+
+    private fun sugar(sender: CommandSender, args: Array<out String>) {
+        val owner = UUID.fromString(if (args[1].equals("void", true)) args[2] else args[1])
+        if (!args[1].equals("void", true)) {
+            val ids = FileManager.sugar.pendingIds(owner)
+            sender.sendMessage(if (ids.isEmpty()) "적용 대기 중인 설탕 결과가 없습니다." else "적용 대기: ${ids.joinToString()}")
+            return
+        }
+        require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 결과를 종료하세요." }
+        val request = UUID.randomUUID()
+        val actor = (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE"
+        FileManager.sugar.void(request, actor, owner, UUID.fromString(args[3]), args.drop(4).joinToString(" "))
+        sender.sendMessage("설탕 결과 ${args[3]}을(를) 종료했습니다. 감사 거래: $request")
     }
 }

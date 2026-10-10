@@ -25,6 +25,19 @@ class StockCommands {
                     sender.sendMessage("${catalog.getString("$code.name") ?: code} ($code): ${holding.count}주, 취득 원가 ${holding.costBasis.units}원, 평균 ${holding.averagePrice}원, 실현 손익 ${data.get("stock.$code.realizedProfit") ?: 0}원${if (listed) "" else " (상장 중지)"}")
                 }
             }
+            "repair" -> {
+                val owner = runCatching { java.util.UUID.fromString(args[2]) }.getOrNull() ?: FileManager.players.findByName(args[2])
+                require(owner != null) { "해당 계좌를 찾을 수 없습니다." }
+                val count = requireNotNull(args[4].toLongOrNull()) { "수량은 Long 범위 0 이상 정수로 입력하세요." }
+                val basis = requireNotNull(args[5].toLongOrNull()) { "취득 원가는 Long 범위 0 이상 정수로 입력하세요." }
+                require(count >= 0 && basis >= 0 && (count > 0 || basis == 0L)) { "수량/취득 원가는 0 이상이고, 수량이 0이면 원가도 0이어야 합니다." }
+                val request = if (args.size == 7) requireNotNull(runCatching { java.util.UUID.fromString(args[6]) }.getOrNull()) { "거래 UUID가 유효하지 않습니다." }
+                    else java.util.UUID.randomUUID()
+                val actor = (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE"
+                val result = FileManager.stocks.repair(request, actor, owner, args[3].uppercase(java.util.Locale.ROOT), count, basis)
+                sender.sendMessage("$owner ${args[3].uppercase(java.util.Locale.ROOT)}: ${result.holding.count}주, 취득 원가 ${result.holding.costBasis.units}원으로 복구" +
+                    "${if (result.replayed) "(기존 영수증)" else ""}. 거래: ${result.transaction}")
+            }
             "add" -> {
                 val material = Functions.toMaterial(args[4]); require(material.isItem && !material.isAir) { "올바른 아이템 material을 지정하세요." }
                 val price = Money(requireNotNull(args[5].toLongOrNull()) { "가격은 Long 범위 양수 정수로 입력하세요." })

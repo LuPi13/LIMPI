@@ -228,13 +228,13 @@ object Transcendence : Ability(
 
                 if (ticks == 20) {
                     transcending[player.uniqueId] = true
-                    if (config!!.getInt("resistance_level") > 0) effect.potion(player, PotionEffect(
+                    if (config!!.getInt("resistance_level") > 0 && config!!.getInt("duration_ticks") > 0) effect.potion(player, PotionEffect(
                         PotionEffectType.RESISTANCE,
                         config!!.getInt("duration_ticks"),
                         config!!.getInt("resistance_level") - 1,
                         true, true, true)
                     )
-                    if (config!!.getInt("speed_level") > 0) effect.potion(player, PotionEffect(
+                    if (config!!.getInt("speed_level") > 0 && config!!.getInt("duration_ticks") > 0) effect.potion(player, PotionEffect(
                         PotionEffectType.SPEED,
                         config!!.getInt("duration_ticks"),
                         config!!.getInt("speed_level") - 1,

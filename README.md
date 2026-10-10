@@ -8,11 +8,12 @@
 .\gradlew.bat clean build --console=plain
 ```
 
-배포용 플러그인은 `build/libs/LIMPI-1.0.0.jar`에 생성됩니다. `*-plain.jar`는 배포용이 아닙니다. 필요한 Java 25 toolchain은 Foojay로 자동 설치할 수 있으며, 서버 실행에도 Java 25가 필요합니다.
+배포용 플러그인은 `build/libs/LIMPI-1.0.0.jar`에 생성됩니다. `*-plain.jar`는 배포용이 아닙니다. `LIMPI-operations-1.0.0.jar`는 서버 없이 DB를 검사·백업·export하는 운영 도구이며 `plugins/`에 넣지 않습니다([저장소·복구](docs/STORAGE_AND_RECOVERY.md#운영-도구-서버-없이-실행)). 필요한 Java 25 toolchain은 Foojay로 자동 설치할 수 있으며, 서버 실행에도 Java 25가 필요합니다.
 
 - [전체 기능 분석·유지보수 및 확장 계획](docs/MAINTENANCE_PLAN.md)
 - [Paper 26.3 전환 내용·검증 상태](docs/PAPER_26_3_UPGRADE.md)
 - [전체 정비 구현·검증 결과·남은 작업](docs/IMPLEMENTATION_LOG.md)
+- [최종 서버 시험 계획](docs/SERVER_TEST_PLAN.md)
 
 아래 내용은 기존 개발 기록입니다.
 

@@ -284,6 +284,16 @@
 - 감사 확인: 모든 GUI가 MenuHolder(click 전체/상단 drag 취소), 모든 능력 반복 작업이 AbilityRunnable 소유, 직접 health 대입 없음, 잔액 변경 경로는 Accounts/BankService/InitialRewards뿐이다.
 - **340개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 1개는 손상 잔액 null 노출·거래 거부·원본 보존이다. 사망 취소 순서·접속 kick은 실제 Paper 이벤트로 검증하지 않았다.
 
+### 2026-10-10 / 독립 리뷰 반영: 주식·설탕 관리자 복구와 명령 경계
+
+- 최근 Codex 커밋 6개(명령·주식 상장 중지, 주식 원장, 물리, 설탕, 포션)를 별도 리뷰했다. 주식 원장·물리에서는 결함이 없었다. 다음을 수정했다.
+- 과거 매도 공식이 남긴 음수 averagePrice 보유는 거래 거부만 되고 복구 경로가 없었다. `/financial stock repair`로 이전 raw 값·actor를 원장에 남기고 수량/원가를 복구한다. [주식](STOCK_TRANSACTIONS.md#손상된-기존-보유의-관리자-복구)
+- 설탕 대기 결과의 효과 key가 registry에서 사라지거나 대기 payload가 손상되면 claim 예외로 매 접속 kick되던 잠금을 제거했다. 오류 기록 후 건너뛰고, `/financial sugar`·`sugar void`로 환불 없이 감사 종료한다. [설탕](SUGAR_CONSUMPTION.md#적용할-수-없는-결과)
+- `stock restore`가 기준가를 검증하지 않아 손상 기준가 하나가 모든 주기 가격 갱신을 멈출 수 있던 문제를 수정했다(refix는 기준가를 새로 쓰므로 제외). stock add 입력 오류에 항목별 메시지를 추가했다.
+- Transcendence `duration_ticks: 0`(설정 허용값)이 lease의 양수 기간 요구로 매 발동 예외가 되던 문제를 수정했다(0이면 포션 없음).
+- ability set 대상이 차단 상태면 무응답이던 것을 안내 메시지로, 콘솔 `check inspect`의 UUID 필요 안내를 추가했다.
+- **342개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 2개는 주식 보유 복구(원장/replay/충돌/이후 거래)와 설탕 대기 관리자 종료다. 기존 catalog 시험에 restore 기준가 검증을 추가했다. 실제 Paper 명령/claim은 미검증.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |

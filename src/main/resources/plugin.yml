@@ -44,9 +44,15 @@ permissions:
   limpi.financial.admin.stock:
     description: Add delist restore or reset stock reference prices
     default: op
+  limpi.financial.admin.stock.repair:
+    description: Repair a malformed legacy stock holding with an audit ledger entry
+    default: op
   limpi.ability.enemy:
     description: Configure ability target categories
     default: true
+  limpi.financial.admin.sugar:
+    description: Inspect and void unresolvable pending sugar results
+    default: op
   limpi.financial.admin.transition:
     description: Inspect and resolve interrupted ability inventory transitions
     default: op

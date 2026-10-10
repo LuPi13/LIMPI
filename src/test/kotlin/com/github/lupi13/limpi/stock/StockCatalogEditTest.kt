@@ -2,6 +2,7 @@ package com.github.lupi13.limpi.stock
 
 import com.github.lupi13.limpi.economy.Money
 import org.bukkit.configuration.file.YamlConfiguration
+import com.github.lupi13.limpi.storage.YamlFiles
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -26,7 +27,9 @@ class StockCatalogEditTest {
     @Test fun `all changes only definitions and preserves metadata while refix validates before changing anything`() {
         val removed = StockCatalogEdit.edit(source(), "remove", "all", "now")
         assertTrue(StockCatalog.codes(removed).isEmpty()); assertEquals("keep", removed.getString("metadata"))
-        val restored = StockCatalogEdit.edit(removed, "restore", "all", "later")
+        assertThrows(IllegalArgumentException::class.java) { StockCatalogEdit.edit(removed, "restore", "EFGH", "later") }
+        val repaired = YamlFiles.parse(removed.saveToString()).apply { set("EFGH.initialPrice", 200) }
+        val restored = StockCatalogEdit.edit(repaired, "restore", "all", "later")
         val result = StockCatalogEdit.edit(restored, "refix", "all", "refix")
         assertEquals(150L, result.getLong("ABCD.initialPrice")); assertEquals(200L, result.getLong("EFGH.initialPrice"))
         val malformed = source(); malformed.set("EFGH.currentPrice", "bad"); val before = malformed.saveToString()

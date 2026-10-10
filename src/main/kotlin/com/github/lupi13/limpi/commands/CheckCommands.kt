@@ -29,7 +29,7 @@ class CheckCommands(private val plugin: Plugin, private val checks: Check) {
                         val record = requireNotNull(FileManager.checks.find(UUID.fromString(args[2]))) { "발행 기록이 없습니다." }
                         sender.sendMessage(Component.text("${record.id}: ${record.amount.units}원 / ${record.state} / 발행인 ${record.issuer} / 사용인 ${record.redeemer}", NamedTextColor.WHITE))
                     } else {
-                        require(sender is Player && args.size == 2) { "/financial check inspect [수표 UUID]" }
+                        require(sender is Player && args.size == 2) { if (sender is Player) "/financial check inspect [수표 UUID]" else "콘솔은 /financial check inspect <수표 UUID>로 조회하세요." }
                         val held = sender.inventory.itemInMainHand
                         val id = checks.id(held)
                         val legacy = checks.legacy(held)

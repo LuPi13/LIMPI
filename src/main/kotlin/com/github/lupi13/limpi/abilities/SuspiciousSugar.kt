@@ -81,8 +81,17 @@ object SuspiciousSugar : Ability(
 
     fun recover(player: org.bukkit.entity.Player) {
         if (!player.isOnline || player.isDead || com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
-        for ((id, frozen) in com.github.lupi13.limpi.FileManager.sugar.pending(player.uniqueId)) {
-            val type = Registry.POTION_EFFECT_TYPE.getOrThrow(requireNotNull(org.bukkit.NamespacedKey.fromString(frozen.effect)))
+        val pending = try { com.github.lupi13.limpi.FileManager.sugar.pending(player.uniqueId) } catch (failure: Exception) {
+            // Leave the record for /financial sugar; an unreadable result must not kick the player on every login.
+            plugin.logger.log(java.util.logging.Level.SEVERE, "Unreadable sugar pending results for ${player.uniqueId}; use /financial sugar", failure)
+            return
+        }
+        for ((id, frozen) in pending) {
+            val type = org.bukkit.NamespacedKey.fromString(frozen.effect)?.let(Registry.POTION_EFFECT_TYPE::get)
+            if (type == null) {
+                plugin.logger.severe("Sugar result $id for ${player.uniqueId} names unknown effect ${frozen.effect}; kept for /financial sugar void")
+                continue
+            }
             val terms = com.github.lupi13.limpi.FileManager.sugar.activate(player.uniqueId, id) ?: continue
             try {
                 player.addPotionEffect(PotionEffect(type, terms.duration, 0))

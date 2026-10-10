@@ -92,4 +92,17 @@ class SugarSettlementTest {
             assertEquals(terms, SugarSettlement(store).activate(owner, second)); assertNull(SugarSettlement(store).activate(owner, second))
         }
     }
+    @Test fun `administrator void ends an unappliable result once without refund or activation`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store); journal(store).apply(prepare(store), Inventory(before))
+            val settlement = SugarSettlement(store); val request = UUID.randomUUID()
+            assertEquals(listOf(id), settlement.pendingIds(owner))
+            assertTrue(settlement.void(request, "CONSOLE", owner, id, "unknown effect after datapack change"))
+            assertFalse(settlement.void(request, "CONSOLE", owner, id, "unknown effect after datapack change"))
+            assertTrue(settlement.pendingIds(owner).isEmpty()); assertTrue(settlement.pending(owner).isEmpty())
+            assertThrows(Exception::class.java) { settlement.void(UUID.randomUUID(), "CONSOLE", owner, id, "again") }
+            assertThrows(Exception::class.java) { settlement.activate(owner, id) }
+            assertTrue(store.get("sugar_result/$owner/$id") != null)
+        }
+    }
 }

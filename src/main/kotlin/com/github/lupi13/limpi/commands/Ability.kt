@@ -33,7 +33,9 @@ class Ability(private val plugin: Plugin, private val enabled: Boolean) : Comman
                     require(target != null) { "접속한 플레이어를 찾을 수 없습니다." }
                     val ability = if (args[2].equals("none", true)) null else
                         requireNotNull(AbilityManager.getAbilityByCodeName(args[2])) { "능력 ID가 잘못되었습니다." }
-                    if (!FileManager.delivery.claim(target)) return true
+                    if (!FileManager.delivery.claim(target)) {
+                        sender.sendMessage("${target.name}의 지급/회수/전환 기록을 먼저 복구해야 합니다."); return true
+                    }
                     AbilityManager.applyAbility(target, ability)
                     sender.sendMessage("${target.name}: ${ability?.codeName ?: "능력 제거"}")
                 }

@@ -154,4 +154,24 @@ class StockTradingServiceTest {
         }
         assertEquals(balance, players.profile(owner).balance); assertEquals(1L, players.snapshot(owner).getLong("stock.ABCD.count"))
     }
+
+    @Test fun `administrator repair of negative legacy average keeps audit values and replays`() = withTrading { store, players, trading ->
+        val data = players.snapshot(owner); data.set("stock.ABCD.count", 3); data.set("stock.ABCD.averagePrice", -40)
+        data.set("stock.ABCD.realizedProfit", 7); data.set("unrelated.userField", "keep"); players.save(owner, data)
+        assertThrows(IllegalArgumentException::class.java) { trading.holding(players.snapshot(owner), "ABCD") }
+        val request = UUID.randomUUID()
+        val result = trading.repair(request, "CONSOLE", owner, "ABCD", 3, 300)
+        assertFalse(result.replayed)
+        val after = players.snapshot(owner)
+        assertEquals(StockHolding(3, Money(300)), trading.holding(after, "ABCD"))
+        assertEquals(7L, after.getLong("stock.ABCD.realizedProfit")); assertEquals("keep", after.getString("unrelated.userField"))
+        assertEquals(3_000_000_000L, players.profile(owner).balance)
+        val receipt = YamlFiles.parse(requireNotNull(store.entry(request)).receipt)
+        assertEquals("-40", receipt.getString("before.averagePrice")); assertEquals("CONSOLE", receipt.getString("actor"))
+        assertTrue(trading.repair(request, "CONSOLE", owner, "ABCD", 3, 300).replayed)
+        assertThrows(Exception::class.java) { trading.repair(request, "CONSOLE", owner, "ABCD", 3, 301) }
+        assertThrows(IllegalArgumentException::class.java) { trading.repair(UUID.randomUUID(), "CONSOLE", owner, "ABCD", 0, 1) }
+        trading.trade(UUID.randomUUID(), owner, "ABCD", Money(100), 3, StockTrade.SELL)
+        assertEquals(0L, trading.holding(players.snapshot(owner), "ABCD").count)
+    }
 }

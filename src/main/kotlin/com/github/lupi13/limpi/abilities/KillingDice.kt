@@ -63,7 +63,6 @@ object KillingDice : Ability(
         val instantKillProbability = ((1 - target.health / target.getAttribute(Attribute.MAX_HEALTH)!!.value).coerceIn(0.0, 1.0).pow(config!!.getDouble("instantKillDegree")))
         val killDelay = config!!.getInt("KillDelay")
         if (Random.nextDouble() <= instantKillProbability) {
-            target.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, max(killDelay, 20), 0, true, false, false))
             player.world.playSound(target.location, Sound.ENTITY_VEX_DEATH, 1.0F, 2.0F)
 
             // 이펙트를 위한 랜덤 벡터
@@ -79,6 +78,7 @@ object KillingDice : Ability(
                     ).pow(0.5)
 
             object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+                init { setup { effect.potion(target, PotionEffect(PotionEffectType.BLINDNESS, max(killDelay, 20), 0, true, false, false)) } }
                 override fun tick() {
                     if (target.isDead || !target.isValid || target.world.uid != player.world.uid) return
 

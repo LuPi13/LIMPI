@@ -72,7 +72,7 @@ object ShieldStrike : Ability(
                             player.world.playSound(player.location, Sound.BLOCK_BUBBLE_COLUMN_WHIRLPOOL_INSIDE, 1f, 0.5f)
                         }
                         if (timer in 1..14) {
-                            player.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 2, 7, true, false, false))
+                            session.potion(player, PotionEffect(PotionEffectType.SLOWNESS, 2, 7, true, false, false))
                         }
                         if (timer == 15) {
                             vector[player.uniqueId] = player.location.direction.setY(0).normalize().multiply(velocity)

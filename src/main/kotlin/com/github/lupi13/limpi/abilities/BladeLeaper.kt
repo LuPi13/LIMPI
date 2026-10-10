@@ -242,7 +242,7 @@ object BladeLeaper : Ability(
                     val direction = vector[thrownSword]!!.clone()
                     player.velocity = direction.multiply((ticks - lifeTime - 10) / 2.0)
                     player.playSound(player.location, Sound.ENTITY_BREEZE_CHARGE, 0.5f, 1f)
-                    player.addPotionEffect(PotionEffect(PotionEffectType.SLOW_FALLING, 10, 0, true, false, false))
+                    effect.potion(player, PotionEffect(PotionEffectType.SLOW_FALLING, 10, 0, true, false, false))
                 }
 
                 // 검 위치로 점멸

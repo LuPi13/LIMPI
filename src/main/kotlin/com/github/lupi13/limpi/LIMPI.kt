@@ -53,6 +53,7 @@ class LIMPI : JavaPlugin() {
         server.pluginManager.registerEvents(ReadOnlyMenuListener(), this)
         server.pluginManager.registerEvents(AbilityTicketGuard(), this)
         server.pluginManager.registerEvents(AbilityRuntime, this)
+        server.pluginManager.registerEvents(com.github.lupi13.limpi.platform.AbilityPotions, this)
         if (config.getBoolean("EnableFinancialSystem")) {
             server.pluginManager.registerEvents(checks, this)
             server.pluginManager.registerEvents(SellEvents(), this)

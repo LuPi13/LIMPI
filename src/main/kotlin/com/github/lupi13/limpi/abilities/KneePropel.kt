@@ -61,7 +61,7 @@ object KneePropel : Ability(
                     val strength = (baseLevel.toLong() + increment.toLong() * (current / increaseTick)).coerceAtMost(maxStrength.toLong()).toInt()
 
                     if (strength > 0) {
-                        player.addPotionEffect(PotionEffect(PotionEffectType.JUMP_BOOST, 2, strength - 1, true, false, false))
+                        effect.potion(player, PotionEffect(PotionEffectType.JUMP_BOOST, 2, strength - 1, true, false, false))
                     }
 
                     val color = when (strength * 10 / maxStrength) {

@@ -38,6 +38,7 @@ object AbilityRuntime : Listener {
     fun closeAll() {
         globalTasks.forEach { it.cancel() }; globalTasks.clear()
         if (::registry.isInitialized) registry.closeAll()
+        AbilityPotions.clear()
     }
     fun global(period: Long, action: () -> Unit) {
         require(period > 0)
@@ -73,6 +74,7 @@ class AbilityEffect internal constructor(val scope: EffectScope, val owner: UUID
             !FileManager.delivery.blocked(owner) && FileManager.players.abilityCode(owner).orEmpty() == expected
     }
     fun own(action: () -> Unit) = scope.own(action)
+    fun potion(target: org.bukkit.entity.LivingEntity, potion: org.bukkit.potion.PotionEffect) = AbilityPotions.apply(this, target, potion)
     fun ownEntity(entity: Entity) {
         entity.isPersistent = false
         own(entity::remove)

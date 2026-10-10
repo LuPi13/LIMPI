@@ -548,13 +548,8 @@ class Financial: CommandExecutor {
                         return true
                     }
                     if (args.size == 6) {
-                        if (stockConfig.getKeys(false).size >= 54) {
-                            sender.sendMessage(Component.text("주식은 최대 54개까지 생성 가능합니다.", NamedTextColor.RED))
-                            return true
-                        }
-
                         val name = args[2]
-                        if (stockConfig.getKeys(false).contains(name)) {
+                        if (StockEvents.codes(stockConfig).any { stockConfig.getString("$it.name") == name }) {
                             sender.sendMessage(Component.text("이미 존재하는 주식입니다.", NamedTextColor.RED))
                             return true
                         }
@@ -579,9 +574,9 @@ class Financial: CommandExecutor {
                             return true
                         }
 
-                        val price: Int
+                        val price: Long
                         try {
-                            price = args[5].toInt()
+                            price = args[5].toLong()
                             if (price <= 0) {
                                 throw Exception()
                             }
@@ -620,7 +615,7 @@ class Financial: CommandExecutor {
                         val name = args[2]
                         if (name == "all") {
                             stockConfig = FileManager.getStockConfig()
-                            for (stock in stockConfig.getKeys(false)) {
+                            for (stock in StockEvents.codes(stockConfig)) {
                                 stockConfig.set(stock, null)
                             }
                             FileManager.saveStock()
@@ -637,7 +632,7 @@ class Financial: CommandExecutor {
                             sender.sendMessage(Component.text("모든 주식을 삭제했습니다.", NamedTextColor.WHITE))
                             return true
                         }
-                        if (stockConfig.getKeys(false).contains(name)) {
+                        if (name in StockEvents.codes(stockConfig)) {
                             stockConfig.set(name, null)
                             FileManager.saveStock()
                             for (player in Functions.getAllPlayers()) {
@@ -676,18 +671,20 @@ class Financial: CommandExecutor {
                         val name = args[2]
                         if (name == "all") {
                             stockConfig = FileManager.getStockConfig()
-                            for (stock in stockConfig.getKeys(false)) {
-                                stockConfig["${stock}.initialPrice"] = stockConfig.getInt("${stock}.currentPrice")
+                            for (stock in StockEvents.codes(stockConfig)) {
+                                stockConfig["${stock}.initialPrice"] = stockConfig.getLong("${stock}.currentPrice")
                             }
                             FileManager.saveStock()
 
-                            stockConfig["lastStockStand"] = Functions.getDateTime()
+                            val miscConfig = FileManager.getMiscConfig()
+                            miscConfig["lastStockStand"] = Functions.getDateTime()
+                            FileManager.saveMisc()
 
                             sender.sendMessage(Component.text("모든 주식의 현재 가격을 초기 가격으로 설정했습니다.", NamedTextColor.WHITE))
                             return true
                         }
-                        if (stockConfig.getKeys(false).contains(name)) {
-                            stockConfig["${name}.initialPrice"] = stockConfig.getInt("${name}.currentPrice")
+                        if (name in StockEvents.codes(stockConfig)) {
+                            stockConfig["${name}.initialPrice"] = stockConfig.getLong("${name}.currentPrice")
                             FileManager.saveStock()
 
                             val miscConfig = FileManager.getMiscConfig()

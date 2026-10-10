@@ -7,6 +7,7 @@ import com.github.lupi13.limpi.commands.Financial
 import com.github.lupi13.limpi.commands.FinancialTab
 import com.github.lupi13.limpi.events.*
 import com.github.lupi13.limpi.items.Check
+import com.github.lupi13.limpi.menu.ReadOnlyMenuListener
 import org.bukkit.plugin.java.JavaPlugin
 
 class LIMPI : JavaPlugin() {
@@ -32,6 +33,7 @@ class LIMPI : JavaPlugin() {
         time = System.currentTimeMillis()
         logger.info("Events Registering...")
         server.pluginManager.registerEvents(JoinAndQuit(), this)
+        server.pluginManager.registerEvents(ReadOnlyMenuListener(), this)
         if (config.getBoolean("EnableFinancialSystem")) {
             server.pluginManager.registerEvents(Check(), this)
             server.pluginManager.registerEvents(SellEvents(), this)
@@ -78,6 +80,7 @@ class LIMPI : JavaPlugin() {
 
     override fun onDisable() {
         // Plugin shutdown logic
+        StockEvents.stop()
         FileManager.close()
         logger.info("LIMPI disabled.")
     }

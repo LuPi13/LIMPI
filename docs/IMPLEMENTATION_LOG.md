@@ -262,12 +262,23 @@
 - **325개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 15개 정의/permission·console adapter·종목 snapshot 시험. [명령 계약](COMMANDS.md). 실제 Paper는 미검증.
 - 다음은 운영 backup/export/check/dry-run 복구 도구·CI·패키징·전체 범위 감사다. 전체 목표는 계속 진행 중이다.
 
+### 2026-10-10 / 운영 검사·백업·export·복사본 복구 도구와 CI
+
+- 서버 없이 실행하는 `LIMPI-operations-<version>.jar`(Main `ops/OperationsCli`)를 build/libs에 추가했다. check/backup/export/export-check/restore-dry-run/restore-copy/legacy-check. Paper/Bukkit 클래스를 싣지 않는 별도 shadow 구성이다. 서버 자동 복사는 없다.
+- 원본 DB는 read-only·없는 파일 생성 금지·application_id/user_version/테이블/integrity 검사. 출력은 새 파일만 같은 디렉터리 임시 파일→force→검증→무덮어쓰기 이동. backup은 SQLite backup API로 열린 writer의 commit된 WAL을 포함하고 사본 SHA-256을 비교한다.
+- export는 payload 원문·원장 id/fingerprint/영수증/변경 키/시각과 길이 접두 SHA-256을 보존한다. import는 SafeConstructor·중복 키 거부·checksum. restore-copy는 새 DB에 문서/원장을 복원하며 거래 UUID replay가 재정산하지 않는다. 서버 DB 교체는 하지 않는다.
+- 구조 검사: 플레이어 수·BigInteger 잔액 합·pending/REVIEW·음수 legacy·중복 이름 경고, 깨진 YAML/비정수 금액/미래 문서 schema/owner·id key 불일치/색인 없는 market_code/주식 보유 음수·overflow 오류. 오류는 restore를 막고 backup/export는 법의학 보존으로 게시한다. payload를 로그에 출력하지 않는다.
+- 소스에서 쓰지 않는 kotlin-reflect 의존성을 제거했다. `.github/workflows/build.yml`(Java 25 temurin, `./gradlew test build`, test report 업로드)과 gradlew 실행 비트를 추가했다. CI는 서버를 실행/배포하지 않는다.
+- read-only WAL 접근이 빈 `-wal`/`-shm` sidecar를 만들 수 있다는 SQLite 동작을 시험·문서에 반영했다(원본 DB 바이트 불변 확인).
+- **339개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 14개 운영 도구 시험. Java 25로 운영 JAR help/없는 DB 거부/legacy-check를 직접 실행했다. 실제 운영 데이터 복사본·서버 DB 교체 절차는 미검증. [저장소·복구](STORAGE_AND_RECOVERY.md#운영-도구-서버-없이-실행).
+- 다음은 전체 범위 감사(남은 MONEY-01/ITEM-01/DATA-02/AB-04/AB-07/QUEST-01/OPS-01 잔여)다. 전체 목표는 계속 진행 중이다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |
 | --- | --- | --- |
 | DATA-01 | 완료(단위 검증) | 캐시·단일 저장소·능력 hot path 구현. 실제 서버 성능 측정은 최종 서버 시험 때 수행 |
-| DATA-02 | 부분 해결 | strict YAML/원자 저장/SQLite/마이그레이션/이름 충돌 보호 구현. 전체 사용자 오류 처리, 명령형 export·검사 도구, 운영 복구 시험은 남음 |
+| DATA-02 | 부분 해결 | strict YAML/원자 저장/SQLite/마이그레이션/이름 충돌 보호, 운영 export·검사·백업 도구 구현. 전체 사용자 오류 처리 감사, 운영 복구 시험은 남음 |
 | DATA-03 | 완료(단위 검증) | 기존 서버 플레이어 ensure/현재 이름/기존 데이터 보존 구현. 실제 접속 확인은 이후 |
 | MONEY-01 | 진행 중 | Money 규칙·주식·송금/관리자·마켓·수표·판매·상점/능력 상점 교환 연결 완료. 보상 등 잔여 경제 경로는 남음 |
 | MONEY-02 | 구현 완료(저장 단위 검증) | 송금·마켓·수표·판매·상점·능력 상점·뽑기·선택권·초기/퀘스트 보상·주식 원장과 필요한 물품 회수/미수령 연결. 실제 Paper 검증은 이후 |
@@ -292,7 +303,7 @@
 | AB-05 | 구현 완료(정책 단위 검증) | 소모 이후 expected code의 owned railgun scope와 cleanup 구현. 실제 단발 애니메이션은 서버 시험에서 확인 |
 | AB-06 | 구현 완료(정책 단위 검증) | owned Web/붙잡기/레일건·world/quit/death/변경 cleanup·물리 경계 구현. 실제 Paper는 이후 |
 | COMBAT-01/02/03 | 구현 완료(정책 단위 검증) | confirmed damage·취소/귀속·상태 보존·typed target·visited/budget chain·오프라인 pet/UI 정책 구현. 보호 플러그인/토템/이벤트는 서버 시험에서 확인 |
-| OPS-01 | 부분 해결 | System.out 교체 제거, 테스트 기반/schema/백업/저장소 복구 문서 구현. CI/복구 도구·시험 및 기타 결합 제거는 남음 |
+| OPS-01 | 부분 해결 | System.out 교체 제거, 테스트 기반/schema/백업/저장소 복구 문서, 운영 check/backup/export/restore-copy/legacy-check 도구, CI, kotlin-reflect 제거 구현. 실제 운영 데이터 복사본 시험·기타 결합 제거는 남음 |
 | CMD-01 | 구현 완료(단위 검증) | 공통 route/permission/console/인자/help/tab·기능 handler 분리·미구현 reload/console TODO 제거. 실제 Paper 책/콘솔은 이후 |
 | 그 외 모든 항목 | 미해결 | [정비 계획](MAINTENANCE_PLAN.md)의 범위를 그대로 유지 |
 

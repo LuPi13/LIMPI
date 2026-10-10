@@ -1,0 +1,28 @@
+name: build
+
+on:
+  push:
+    branches: [ main, 'refactor/**' ]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      # Unit/storage tests and packaging only. No Paper server is started or deployed.
+      - run: ./gradlew test build --console=plain
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: build/reports/tests/test
+          retention-days: 7

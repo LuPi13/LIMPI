@@ -82,7 +82,7 @@
 | GACHA-02 | P1 / 구현 완료(정책 단위 검증) | 공통 GachaPolicy로 실제 추첨/help/pity를 연결했다. 기본 LEGENDARY 100번째·EPIC 조건부 10번째, 기존 순차 조건부와 픽업 의미를 보존한다. 설정/카운터/후보 snapshot을 검증한다. | [규칙·후속 복구](GACHA_RULES_AND_RECOVERY.md). GACHA-01의 원장/회수/표현 분리를 연결했다. 실제 서버 시험은 이후 수행. |
 | QUEST-01 | P1 / 구현 완료(단위 검증) | 능력별 이벤트가 플레이어 저장 구조와 퀘스트 완료/보상에 직접 접근하여 진행과 해금의 중복·부분 저장을 관리하기 어렵다. | 처치/경험치 등 도메인 이벤트로 진행 집계. 완료와 보상 기록을 멱등 처리하고 동일 보상 중복 전달 방지. |
 | CMD-01 | P2 / 구현 완료(단위 검증) | `Financial.kt` 약 834줄, `commands/Ability.kt` 약 413줄에 파싱·도움말·GUI·저장·정책이 혼재한다. 탭 완성에 미구현 reload, 권한과 다른 항목이 있고 permission node/콘솔 정책도 불명확하다. | 서브명령 정의에서 권한·인자·실행·도움말·탭 완성 생성. 실제 동작은 서비스 호출. 플레이어 전용/콘솔 허용을 명시. |
-| OPS-01 | P2 / 부분 해결 | `LIMPI.onEnable()`이 서버 전역 `System.out`을 바꾼다. 저장 schema/migration, 자동 테스트, CI, 복구 절차가 없다. Kotlin reflect는 소스상 사용이 없어 필요성 확인 여지가 있다. | plugin logger 사용, schemaVersion/마이그레이션/백업·복구 문서, 순수 규칙 테스트와 빌드 CI. 의존성은 실제 참조/패키징을 확인하고 정리. |
+| OPS-01 | P2 / 부분 해결(도구·CI 구현) | `LIMPI.onEnable()`이 서버 전역 `System.out`을 바꾼다. 저장 schema/migration, 자동 테스트, CI, 복구 절차가 없다. Kotlin reflect는 소스상 사용이 없어 필요성 확인 여지가 있다. | plugin logger 사용, schemaVersion/마이그레이션/백업·복구 문서, 순수 규칙 테스트와 빌드 CI. 의존성은 실제 참조/패키징을 확인하고 정리. |
 
 ## 4. 목표 구조
 

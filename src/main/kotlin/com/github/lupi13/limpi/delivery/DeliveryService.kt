@@ -4,6 +4,7 @@ import java.util.UUID
 
 /** Implementations must use authoritative persisted player data, never just a live PDC value. */
 interface DeliveryInventory {
+    fun stackLimit(): Int = Int.MAX_VALUE
     fun snapshot(): List<StoredStack?>
     fun persistedCheckpoint(): UUID?
     /** Check before, apply after, save player data and verify the checkpoint reached the player data file. */
@@ -18,6 +19,7 @@ data class DeliveryResult(val delivered: Int, val waitingForSpace: Int)
 class DeliveryService(private val journal: DeliveryJournal) {
     // A failed physical operation cannot be retried against the same live inventory as though it were a fresh login.
     private val quarantined = mutableMapOf<UUID, UUID>()
+    @Synchronized fun release(owner: UUID) { quarantined.remove(owner) }
 
     @Synchronized fun drain(owner: UUID, inventory: DeliveryInventory, freshLogin: Boolean = false): DeliveryResult {
         val records = journal.pending(owner)
@@ -35,8 +37,9 @@ class DeliveryService(private val journal: DeliveryJournal) {
             if (record.state == DeliveryState.APPLYING && !freshLogin) throw DeliveryRecoveryRequired(owner, record.id)
             val planned = if (record.state == DeliveryState.APPLYING) record else {
                 val before = inventory.snapshot()
-                val after = try { InventoryPlan.grant(before, record.items) } catch (_: InventoryFull) { waiting++; continue }
-                journal.begin(record, before, after) // Durable intention before touching a physical slot.
+                val limit = inventory.stackLimit()
+                val after = try { InventoryPlan.grant(before, record.items, limit) } catch (_: InventoryFull) { waiting++; continue }
+                journal.begin(record, before, after, limit) // Durable intention before touching a physical slot.
             }
             try {
                 val before = requireNotNull(planned.before)
@@ -44,14 +47,14 @@ class DeliveryService(private val journal: DeliveryJournal) {
                 val current = inventory.snapshot()
                 val checkpoint = inventory.persistedCheckpoint()
                 when {
-                    checkpoint == planned.id && current == after -> Unit // Saved already; do not grant again.
-                    checkpoint != planned.id && current == before -> inventory.applyAndCheckpoint(before, after, planned.id)
+                    checkpoint == planned.checkpointId && current == after -> Unit // Saved already; do not grant again.
+                    checkpoint != planned.checkpointId && current == before -> inventory.applyAndCheckpoint(before, after, planned.checkpointId)
                     else -> {
                         journal.review(planned, "Saved checkpoint or inventory does not match the recorded before/after images")
                         throw DeliveryRecoveryRequired(owner, planned.id)
                     }
                 }
-                check(inventory.persistedCheckpoint() == planned.id) { "Delivery checkpoint was not persisted" }
+                check(inventory.persistedCheckpoint() == planned.checkpointId) { "Delivery checkpoint was not persisted" }
                 check(inventory.snapshot() == after) { "Inventory changed while checkpointing" }
                 journal.complete(planned)
                 delivered++

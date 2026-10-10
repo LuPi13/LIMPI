@@ -63,6 +63,8 @@
 
 ### 2026-10-10 / 미수령 지급·마켓 거래 도메인
 
+- `94c4bed`: 지급/마켓 도메인 구현과 테스트. origin에 push 완료.
+
 - `delivery/InventoryPlan`을 추가했다. 아이템별 전체 수량과 중첩 상한을 확인하고, 부분 스택을 먼저 채운 다음 빈 슬롯을 배정한다. 모든 아이템이 들어가지 않으면 원본을 바꾸지 않고 전체 계획을 거부한다. 단일 아이템의 payload에는 이름/lore/PDC를 포함한 원본 구성요소가 들어가야 하며 다른 payload는 같은 material이어도 합치지 않는다. Long 수량을 항목 수만큼 객체로 만들지 않고 슬롯 단위로 처리한다.
 - `DeliveryJournal.stage()`는 잔액/매물/보상 트랜잭션 안에서 미수령 기록을 생성한다. 완료 후 같은 ID로 stage를 반복해도 새 지급을 만들지 않는다. 지급 예정 전체 수량, owner UUID, 원본 슬롯/완료 슬롯, 상태를 보존한다. 완료는 별도 멱등 원장과 함께 pending→done 문서 이동으로 저장한다.
 - `DeliveryService`는 PENDING→APPLYING 기록 후 인벤토리를 변경한다. 저장된 플레이어 파일의 checkpoint와 after 이미지가 확인된 뒤에만 DONE을 기록한다. 공간 부족은 PENDING 그대로 남긴다. 물리 저장/최종 DB commit 실패 후 같은 live inventory로 재시도하지 않으며 fresh login에서 기록과 저장 상태로 복구한다. 불일치는 REVIEW로 남기고 임의 덮어쓰기/재지급을 하지 않는다. 이전 APPLYING 처리 전에 다른 지급이 checkpoint를 덮지 않게 한다.
@@ -70,6 +72,17 @@
 - `MarketService.buy()`는 구매자 차감/판매자 입금/정수 수수료/매물 SOLD/미수령 아이템/영수증을 같은 SQLite commit에 넣는다. 판매자의 변경 전 이름을 지급 계좌로 사용하지 않는다. 인벤토리 공간이 없어도 매물/아이템을 지우는 대신 미수령 권리를 보존하는 구조다. withdraw도 소유자에게 미수령 반환을 생성하고 거래 ID 재시도를 지원한다.
 - 은행·마켓의 원장 내부 계좌 조회/정수·schema 검증을 `economy/Accounts`로 공유했다. 마켓 정산은 캐시가 아닌 해당 DB 트랜잭션의 최신 값을 사용한다.
 - **이번 단계는 순수 정책/저장·거래 도메인 구현이다. FileManager 초기화·Paper 인벤토리 어댑터·기존 마켓 이벤트/명령은 아직 새 도메인에 연결하지 않았다.** 따라서 기존 마켓 화면의 결함을 해결 완료로 처리하지 않는다. [지급 복구 설계와 연결 조건](DELIVERY_RECOVERY.md)을 다음 작업 기준으로 삼는다.
+
+### 2026-10-10 / Paper 지급 어댑터·접속 복구·관리자 검토
+
+- `platform/PaperDeliveryInventory`는 storage 슬롯 전체를 계획대로 갱신하고, 아이템 NBT/Base64를 사용해 원본 구성요소를 보존한다. Bukkit 접근은 메인 스레드로 제한한다. decode와 before 확인을 모두 마친 뒤 물리 슬롯을 변경한다. 계획에는 아이템의 상한 외에 해당 인벤토리 중첩 상한도 반영한다.
+- `PlayerCheckpointFile`은 실제 `<UUID>.dat`의 gzip NBT `BukkitValues`에서 지급 checkpoint를 읽는다. 메모리 PDC를 저장 증거로 사용하지 않는다. 먼저 probe checkpoint를 saveData/파일 force/판독으로 확인하여 잘못된 저장 경로나 저장 불가 상태가 물품 변경 뒤에 처음 발견되지 않게 한다. 그 뒤 슬롯과 지급 checkpoint를 저장하고 파일에서 확인한다. 파일 판독·계획 확인에 실패하면 완료 원장을 기록하지 않는다.
+- `PlayerDataDirectory` 설정을 추가했다. 비어 있으면 첫 서버 월드의 playerdata를 사용하고, 상대 경로는 worldContainer 기준이다. 실제 사용 경로를 startup 로그에 남긴다. 특수 playerdata 저장 플러그인/별도 저장 환경은 실제 경로와 복구 호환성을 최종 서버 시험에서 확인해야 한다.
+- `FileManager`에 지급 서비스/controller를 초기화하고, 새 접속에서 복구를 수행하도록 연결했다. plugin enable 시 이미 접속한 플레이어는 fresh login으로 취급하지 않는다. 공간이 부족하면 미수령을 남겨 `/financial claim`으로 받도록 안내한다. 실패 시 추가 인벤토리 조작/명령을 막고 이탈시키며, REVIEW가 있으면 다음 로그인 전에도 접속을 거부한다. 이탈 시 메모리 UUID 보호 상태를 해제한다.
+- `/financial claim`과 관리자 `/financial delivery <owner UUID> [delivery UUID]`, `delivery resolve <owner UUID> <delivery UUID> delivered|retry <확인 근거>`를 연결했다. 해결은 owner 오프라인일 때만 수행하고 권한 노드로 제한한다. actor/결정/근거/원본 evidence를 멱등 원장에 보존한다. 일반 PENDING을 임의 DONE으로 처리하지 않는다.
+- 물리 checkpoint를 거래 UUID와 구분했다. 관리자 retry 후 새 물리 시도는 새 checkpoint를 사용하므로 과거 저장 흔적이 새 시도를 완료 처리하지 않는다. 예전 checkpoint 필드가 없는 지급 기록은 기존 지급 UUID를 사용해 읽는다. slotLimit이 없는 이전 기록도 읽을 수 있다.
+- adventure-nbt 5.2.0을 포함하고 NBT 패키지를 LIMPI 내부 namespace로 재배치했다. Paper의 Adventure text/API 클래스는 배포 JAR에 포함하지 않는다.
+- **지급 플랫폼·복구 경로는 연결했지만 기존 마켓 GUI/명령·매물 등록 escrow는 아직 연결하지 않았다.** 실제 서버 실행 없이 컴파일·파일/원장 시험만 수행했다.
 
 ## 검증
 
@@ -81,6 +94,7 @@
 - SQLite/마이그레이션/은행/이름 충돌/schema 보호 추가 후 총 **76개** 테스트 통과(실패/에러/스킵 0). `test build --console=plain` 성공(exit code 0). 실제 임시 SQLite 파일로 실패 rollback, 두 DB 연결의 동일 ID 경쟁, 재시작 후 재시도, 원본 백업/알 수 없는 필드·빈 섹션 보존, 손상 입력 거부, stale profile 편집, 잔액/수수료/Long 경계를 시험했다.
 - 배포 JAR에서 SQLite JDBC·Windows/Linux x86_64 native library·JDBC service descriptor 포함을 확인했다. Paper/Bukkit/SLF4J API와 JUnit 클래스는 미포함이다. JDK 25의 SQLite native load 안내 경고가 테스트 실행에 출력되며 테스트는 성공했다. 서버 JVM native access 설정은 최종 운영 점검에서 확인한다.
 - 지급/마켓 도메인 추가 후 총 **98개** 테스트 통과(실패/에러/스킵 0), `test build --console=plain` 성공(exit code 0). 아이템 수량 보존·10개 구매 공간·부분 중첩·커스텀 아이템 구분·Long 최대 수량·실패 전/후 재시작·불명확 상태 격리, 실제 SQLite 두 연결의 매물 경쟁·판매자 UUID/오프라인·수수료·부분 commit 방지·구매/회수 재시도를 시험했다. Inventory fake의 저장 증거는 프로토콜 시험이며 실제 Paper playerdata 저장의 보장을 입증하지는 않는다.
+- Paper 어댑터/해결 추가 후 총 **107개** 테스트 통과(실패/에러/스킵 0). `test build --console=plain` 성공(exit code 0). 실제 gzip NBT 파일의 checkpoint·force 확인/누락/손상/다른 namespace, 인벤토리 상한, 관리자 해결 감사 기록·rollback·재시도·새 checkpoint와 잘못된 계획 보호를 추가 시험했다. JAR 내부 NBT 패키지 포함, 원본 NBT/Adventure text/Paper/JUnit 클래스 미포함을 확인했다. Paper 이벤트/실제 saveData/보호 플러그인과의 연동은 최종 서버 시험으로 남는다.
 
 ## 항목별 진행 상태
 
@@ -91,7 +105,7 @@
 | DATA-03 | 완료(단위 검증) | 기존 서버 플레이어 ensure/현재 이름/기존 데이터 보존 구현. 실제 접속 확인은 이후 |
 | MONEY-01 | 진행 중 | Money 규칙·주식·송금/관리자 명령어 연결 완료. 상점/마켓/수표/판매 호출부 연결은 남음 |
 | MONEY-02 | 부분 해결 | SQLite 멱등 원장/송금 연결, 마켓 정산·미수령 도메인 구현. 마켓 플랫폼 연결·등록 escrow, 수표/판매/보상 연결은 남음 |
-| ITEM-01 | 부분 해결 | 전체 수량 계획·영속 미수령/지급 복구 도메인 구현. Paper 저장 증거 어댑터와 기존 지급 호출부 연결은 남음 |
+| ITEM-01 | 부분 해결 | 전체 수량 계획·미수령/복구·Paper 어댑터·접속/관리자 해결 연결. 기존 경제/보상 지급 호출부 연결과 서버 검증은 남음 |
 | STOCK-01 | 구현 완료(단위 검증) | 가격/설정 정책과 실제 갱신 경로 연결. 실제 서버 실행 확인은 이후 |
 | STOCK-02 | 구현 완료(정책 단위 검증) | 시간 경계/재시작 상태/1초 검사 구현. Paper 반복 작업 동작은 서버 시험 이후 |
 | STOCK-03 | 구현 완료(단위 검증) | 취득 원가/매도/잔액 저장과 실패 시험. 과거 손상 원가의 자동 추정은 하지 않음 |
@@ -106,7 +120,7 @@
 ## 다음 작업 순서
 
 1. Money와 경제 서비스를 모든 금액 읽기/계산/갱신 호출부에 연결한다. 작은 호환 facade에서 단계적으로 규칙을 빼낸다.
-2. `DeliveryInventory`의 Paper 어댑터를 구현한다. Player.saveData()는 void이므로 반환만으로 저장 증거를 확정하지 않는다. 저장된 playerdata checkpoint 확인, 실패 시 추가 인벤토리 사용 차단/이탈, 접속 복구·미수령 수령·REVIEW 운영자 해결을 연결한다.
+2. 지급 어댑터/접속 복구/미수령/관리자 해결 연결 완료. 신규 매물 등록을 위한 회수 escrow와 동일한 저장 증거·원장·복구 흐름을 구현한다. 물리 회수 저장 전에 매물을 공개하지 않는다.
 3. 새 MarketCatalog로 기존 매물을 이전하고 FileManager/마켓 이벤트·명령을 MarketService에 연결한다. 신규 등록은 물품 escrow 기록→물리 회수 저장 확인→공개 순서를 구현한다. 기존 raw market payload는 보존한다. 수표/판매/상점/보상도 원장과 지급/회수 서비스에 연결한다.
 4. 주식 외의 상점·마켓·판매/능력 메뉴를 Holder/슬롯 액션/공유 페이지 흐름으로 이전한다. GUI-04의 능력 선택·도감 결함도 직접 수정한다.
 5. 능력 세션/전환/작업·속성 정리, 뽑기 확정/연출, 퀘스트 보상, 명령어 정의, 나머지 42개 능력 순으로 진행한다.

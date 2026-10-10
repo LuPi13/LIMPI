@@ -2,6 +2,9 @@ package com.github.lupi13.limpi
 
 import com.github.lupi13.limpi.player.PlayerRepository
 import com.github.lupi13.limpi.economy.BankService
+import com.github.lupi13.limpi.delivery.DeliveryJournal
+import com.github.lupi13.limpi.delivery.DeliveryService
+import com.github.lupi13.limpi.platform.DeliveryController
 import com.github.lupi13.limpi.storage.*
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
@@ -20,10 +23,14 @@ class FileManager {
         private lateinit var repository: PlayerRepository
         private lateinit var state: StateStore
         private lateinit var bankService: BankService
+        private lateinit var deliveryJournal: DeliveryJournal
+        private lateinit var deliveryController: DeliveryController
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
         val transactions: StateStore get() = state
+        val deliveries: DeliveryJournal get() = deliveryJournal
+        val delivery: DeliveryController get() = deliveryController
 
         fun initialize(owner: Plugin) {
             plugin = owner
@@ -32,6 +39,8 @@ class FileManager {
             owner.logger.info("Player storage ready: ${report.players} legacy profiles, balance sum ${report.balanceSum}, imported=${!report.reused}")
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)
+            deliveryJournal = DeliveryJournal(state)
+            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal))
             financial.clear()
         }
 

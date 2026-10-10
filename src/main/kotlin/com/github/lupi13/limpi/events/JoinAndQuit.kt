@@ -9,6 +9,7 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -18,10 +19,11 @@ import org.bukkit.plugin.java.JavaPlugin
 class JoinAndQuit: Listener {
     val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     fun onJoin(event: PlayerJoinEvent) {
         val player: Player = event.player
         FileManager.makePlayerData(player)
+        if (!FileManager.delivery.claim(player, freshLogin = true)) return
         player.sendMessage(Component.text("환영합니다, ", NamedTextColor.WHITE)
             .append(Functions.playerDisplay(player))
             .append(Component.text("님!\n").color(NamedTextColor.WHITE))
@@ -40,5 +42,6 @@ class JoinAndQuit: Listener {
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
         FileManager.releasePlayer(event.player)
+        FileManager.delivery.release(event.player.uniqueId)
     }
 }

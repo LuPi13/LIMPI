@@ -22,7 +22,7 @@ import org.bukkit.inventory.meta.BookMeta
 import java.util.*
 import java.util.regex.Pattern
 
-class Financial(private val accountCommands: AccountCommands): CommandExecutor {
+class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean): CommandExecutor {
 
     override fun onCommand(
         sender: CommandSender,
@@ -30,6 +30,11 @@ class Financial(private val accountCommands: AccountCommands): CommandExecutor {
         label: String,
         args: Array<out String>
     ): Boolean {
+        if (deliveryCommands.handles(args)) return deliveryCommands.execute(sender, args)
+        if (!enabled) {
+            sender.sendMessage(Component.text("금융 시스템이 비활성화되어 있습니다. 미수령 수령·지급 기록 명령은 사용할 수 있습니다.", NamedTextColor.RED))
+            return true
+        }
         if (accountCommands.handles(args)) return accountCommands.execute(sender, args)
         if (sender is Player) {
             val config = FileManager.getPlayerData(sender)
@@ -60,6 +65,10 @@ class Financial(private val accountCommands: AccountCommands): CommandExecutor {
                 page = page.append(Component.text(": 아이템을 판매하는 창을 엽니다. 판매할 아이템을 넣고 오른쪽 아래 금을 클릭하면 판매됩니다.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/financial shop", NamedTextColor.GREEN))
                 page = page.append(Component.text(": 아이템을 구매하는 창을 엽니다.\n\n", NamedTextColor.BLACK))
+                meta.addPages(page)
+
+                page = Component.text("/financial claim", NamedTextColor.GREEN)
+                page = page.append(Component.text(": 미수령 물품을 받습니다. 전체 수량이 들어갈 공간을 확보하세요.\n\n", NamedTextColor.BLACK))
                 meta.addPages(page)
 
                 page = Component.text("/financial stock", NamedTextColor.GREEN)

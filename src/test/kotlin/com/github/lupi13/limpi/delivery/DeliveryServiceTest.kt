@@ -99,7 +99,7 @@ class DeliveryServiceTest {
             val journal = DeliveryJournal(store); enqueue(store, journal)
             inventory.afterSave = { error("process stopped after player save") }
             assertThrows(DeliveryRecoveryRequired::class.java) { DeliveryService(journal).drain(owner, inventory) }
-            assertEquals(id, inventory.savedId)
+            assertEquals(journal.find(owner, id)?.checkpointId, inventory.savedId)
         }
         inventory.reload()
         SqliteStateStore(directory.resolve("state.db")).use { store ->

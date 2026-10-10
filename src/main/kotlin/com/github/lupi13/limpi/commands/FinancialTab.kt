@@ -17,11 +17,21 @@ class FinancialTab: TabCompleter {
         val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
         val completions: MutableList<String> = mutableListOf()
         val list: MutableList<String> = mutableListOf()
+        if (!plugin.config.getBoolean("EnableFinancialSystem")) {
+            if (args.size == 1) {
+                if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
+                if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
+                StringUtil.copyPartialMatches(args[0], list, completions)
+            }
+            return completions
+        }
         try {
             if (args.size == 1) {
                 list.add("help")
                 list.add("me")
                 list.add("check")
+                if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
+                if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
                 if (sender.hasPermission("limpi.financial.send")) list.add("send")
                 list.add("sell")
                 list.add("shop")

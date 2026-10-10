@@ -1,17 +1,20 @@
 package com.github.lupi13.limpi.delivery
 
 import com.github.lupi13.limpi.storage.*
+import com.github.lupi13.limpi.economy.BankService
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
 enum class DeliveryState { PENDING, APPLYING, DONE, REVIEW }
+enum class DeliveryResolution { DELIVERED, RETRY }
 
 data class DeliveryRecord(
     val id: UUID, val owner: UUID, val reason: String, val items: List<ItemGrant>,
     val state: DeliveryState = DeliveryState.PENDING,
     val before: List<StoredStack?>? = null, val after: List<StoredStack?>? = null,
     val reviewReason: String? = null,
-)
+    val checkpoint: UUID? = null, val slotLimit: Int = Int.MAX_VALUE,
+) { val checkpointId: UUID get() = checkpoint ?: id }
 
 /** Stage in the SAME transaction as the debit/listing/reward; never enqueue after that commit. */
 class DeliveryJournal(private val store: StateStore) {
@@ -35,9 +38,11 @@ class DeliveryJournal(private val store: StateStore) {
     fun find(owner: UUID, id: UUID): DeliveryRecord? =
         (store.get(pendingKey(owner, id)) ?: store.get(doneKey(owner, id)))?.let(::decode)
 
-    fun begin(record: DeliveryRecord, before: List<StoredStack?>, after: List<StoredStack?>): DeliveryRecord {
+    fun begin(record: DeliveryRecord, before: List<StoredStack?>, after: List<StoredStack?>, slotLimit: Int = Int.MAX_VALUE): DeliveryRecord {
         check(record.state == DeliveryState.PENDING)
-        val planned = record.copy(state = DeliveryState.APPLYING, before = before.toList(), after = after.toList())
+        require(InventoryPlan.grant(before, record.items, slotLimit) == after) { "Invalid delivery plan" }
+        val planned = record.copy(state = DeliveryState.APPLYING, before = before.toList(), after = after.toList(),
+            checkpoint = UUID.randomUUID(), slotLimit = slotLimit)
         store.atomic { tx ->
             check(decode(requireNotNull(tx.get(pendingKey(record.owner, record.id)))) == record) { "Delivery changed while planning" }
             tx.put(pendingKey(record.owner, record.id), encode(planned))
@@ -66,9 +71,35 @@ class DeliveryJournal(private val store: StateStore) {
         }
     }
 
+    /** Explicit operator decision after inspecting OFFLINE player data; previous evidence is kept in the ledger. */
+    fun resolve(request: UUID, owner: UUID, id: UUID, actor: String, decision: DeliveryResolution, note: String) {
+        require(actor.isNotBlank() && note.isNotBlank())
+        store.execute(request, BankService.fingerprint("DELIVERY_RESOLVE", owner.toString(), id.toString(), actor, decision.name, note)) { tx ->
+            val previous = decode(requireNotNull(tx.get(pendingKey(owner, id))) { "No unresolved delivery" })
+            check(previous.owner == owner && previous.id == id)
+            check(previous.state == DeliveryState.REVIEW || previous.state == DeliveryState.APPLYING) { "Delivery is not awaiting review" }
+            val reason = "${decision.name} by $actor: $note"
+            when (decision) {
+                DeliveryResolution.DELIVERED -> {
+                    check(previous.before != null && previous.after != null) { "Missing delivery evidence" }
+                    require(InventoryPlan.grant(previous.before, previous.items, previous.slotLimit) == previous.after)
+                    tx.put(doneKey(owner, id), encode(previous.copy(state = DeliveryState.DONE, reviewReason = reason)))
+                    tx.put(pendingKey(owner, id), null)
+                }
+                DeliveryResolution.RETRY -> tx.put(pendingKey(owner, id), encode(previous.copy(
+                    state = DeliveryState.PENDING, before = null, after = null, checkpoint = null, reviewReason = reason)))
+            }
+            YamlConfiguration().apply {
+                set("owner", owner.toString()); set("delivery", id.toString()); set("actor", actor)
+                set("decision", decision.name); set("note", note); set("previousEvidence", encode(previous))
+            }.saveToString()
+        }
+    }
+
     private fun encode(record: DeliveryRecord): String = YamlConfiguration().apply {
         set("schemaVersion", 1); set("id", record.id.toString()); set("owner", record.owner.toString())
         set("reason", record.reason); set("state", record.state.name); set("reviewReason", record.reviewReason)
+        set("checkpoint", record.checkpoint?.toString()); set("slotLimit", record.slotLimit)
         set("items", record.items.map { mapOf("payload" to it.payload, "count" to it.count, "limit" to it.limit) })
         fun image(value: List<StoredStack?>?) = value?.map { stack ->
             stack?.let { mapOf("payload" to it.payload, "count" to it.count, "limit" to it.limit) }
@@ -93,13 +124,20 @@ class DeliveryJournal(private val store: StateStore) {
             val map = value as Map<*, *>
             ItemGrant(map["payload"] as String, number(map, "count"), Math.toIntExact(number(map, "limit")))
         }
+        val rawLimit = data.get("slotLimit")
+        val slotLimit = if (rawLimit == null) Int.MAX_VALUE else when (rawLimit) {
+            is Byte, is Short, is Int, is Long -> Math.toIntExact((rawLimit as Number).toLong())
+            else -> throw IllegalArgumentException("Invalid delivery slot limit")
+        }
+        require(slotLimit > 0)
         val record = DeliveryRecord(UUID.fromString(data.getString("id")), UUID.fromString(data.getString("owner")),
             requireNotNull(data.getString("reason")), items, DeliveryState.valueOf(requireNotNull(data.getString("state"))),
-            image("before"), image("after"), data.getString("reviewReason"))
+            image("before"), image("after"), data.getString("reviewReason"), data.getString("checkpoint")?.let(UUID::fromString),
+            slotLimit)
         require(record.items.isNotEmpty() && record.reason.isNotBlank())
         if (record.state == DeliveryState.APPLYING || record.state == DeliveryState.DONE) {
             require(record.before != null && record.after != null && record.before.size == record.after.size)
-            require(InventoryPlan.grant(record.before, record.items) == record.after) { "Invalid delivery plan" }
+            require(InventoryPlan.grant(record.before, record.items, record.slotLimit) == record.after) { "Invalid delivery plan" }
         }
         return record
     }

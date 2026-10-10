@@ -13,10 +13,12 @@ class InventoryFull : IllegalStateException("The complete delivery does not fit"
 
 object InventoryPlan {
     /** Build a complete replacement without touching the caller's inventory, or fail without a partial result. */
-    fun grant(before: List<StoredStack?>, items: List<ItemGrant>): List<StoredStack?> {
+    fun grant(before: List<StoredStack?>, items: List<ItemGrant>, slotLimit: Int = Int.MAX_VALUE): List<StoredStack?> {
         require(before.isNotEmpty()); require(items.isNotEmpty())
+        require(slotLimit > 0)
         val after = before.toMutableList()
-        for (item in items) {
+        for (requested in items) {
+            val item = requested.copy(limit = minOf(requested.limit, slotLimit))
             var remaining = item.count
             for (slot in after.indices) {
                 val stack = after[slot] ?: continue

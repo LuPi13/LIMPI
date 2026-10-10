@@ -1,10 +1,10 @@
 # 미수령 지급·마켓 거래의 연결 조건
 
-2026-10-10. 정책/저장 도메인을 구현·시험했다. **실제 Paper 어댑터와 기존 GUI/명령 연결은 아직 남아 있다.** 서버 실행은 전체 정비 이후에 한다. 실제 정본/백업 절차는 [저장소·복구 절차](STORAGE_AND_RECOVERY.md)를 따른다.
+2026-10-10. 정책/저장 도메인과 Paper 지급 어댑터·접속 복구·수령/검토 명령을 구현했다. **기존 마켓 GUI/명령과 물품 회수 escrow 연결은 아직 남아 있다.** 서버 실행은 전체 정비 이후에 한다. 실제 정본/백업 절차는 [저장소·복구 절차](STORAGE_AND_RECOVERY.md)를 따른다.
 
 ## 저장 구조
 
-- `delivery_pending/<owner UUID>/<거래 UUID>`: 원본 아이템 payload/수량/중첩 상한, 목적, 지급 상태, 전/후 슬롯 이미지, 검토 이유.
+- `delivery_pending/<owner UUID>/<거래 UUID>`: 원본 아이템 payload/수량/중첩 상한, 인벤토리 slotLimit, 목적, 지급 상태, 시도별 checkpoint UUID, 전/후 슬롯 이미지, 검토 이유.
 - `delivery_done/<owner UUID>/<거래 UUID>`: 지급 완료 기록. pending 삭제와 done 기록/완료 원장은 한 commit으로 저장한다. 같은 지급을 다시 stage해도 pending을 재생성하지 않는다.
 - `market_listing/<매물 UUID>`: 코드/표시 이름/판매자 UUID·표시 이름/아이템/Long 가격/상태/구매자. 코드를 재사용하더라도 매물 UUID는 달라야 한다. 판매자 이름 변경이나 오래된 GUI에서 다른 매물로 오인하지 않는다.
 - `migration/market_catalog_v1`: 새 catalog의 최초 이전 marker. 아직 실제 초기화 경로에서 이 이전을 실행하지 않는다. 기존 `financial/market` payload는 계속 보존한다.
@@ -20,7 +20,11 @@
 
 작업 도중 실패하면 같은 live inventory로 복구를 계속하지 않는다. 새 접속에서 먼저 중단된 지급을 확인한다. saved checkpoint가 해당 지급이고 슬롯이 after이면 아이템을 다시 넣지 않고 완료 처리한다. 다른 checkpoint이며 슬롯이 before이면 저장 전 실패로 판단해 after를 적용할 수 있다. 그 외 상태는 REVIEW로 보호한다. 한 플레이어에게 중단된 APPLYING이 둘 이상이면 정상 흐름으로 처리하지 않는다.
 
-저장된 checkpoint는 UUID이지만 live PDC의 값은 증거가 아니다. 슬롯을 바꾼 뒤 메모리 PDC만 바뀌고 playerdata 저장이 실패할 수 있다. `DeliveryInventory.applyAndCheckpoint()` 구현은 **실제 저장된 파일/권위 있는 저장 상태**를 확인해야 한다. `Player.saveData()`가 void라는 사실 때문에 반환만으로 commit 성공이라고 간주하지 않는다. [Paper Player.saveData API](https://jd.papermc.io/paper/26.3/org/bukkit/entity/Player.html#saveData())
+저장된 checkpoint는 UUID이지만 live PDC의 값은 증거가 아니다. 슬롯을 바꾼 뒤 메모리 PDC만 바뀌고 playerdata 저장이 실패할 수 있다. `PaperDeliveryInventory`는 먼저 probe를 실제 파일에 저장·확인한 후 슬롯을 바꾸고 해당 시도의 checkpoint를 저장·확인한다. `PlayerCheckpointFile`은 `.dat`를 force하고 gzip NBT의 `BukkitValues`를 읽는다. `Player.saveData()` 반환만으로 commit 성공이라고 간주하지 않는다. [Paper Player.saveData API](https://jd.papermc.io/paper/26.3/org/bukkit/entity/Player.html#saveData())
+
+`PlayerDataDirectory: ''`의 기본 경로는 첫 서버 월드의 `playerdata`다. startup 로그의 `Delivery checkpoint directory`를 확인한다. 별도 저장 위치가 있으면 server worldContainer 기준 상대 경로나 절대 경로를 지정한다. probe가 해당 파일에 나타나지 않으면 물품 변경을 진행하지 않는다. playerdata를 외부 DB에 저장하는 플러그인에는 이 파일 어댑터를 그대로 적용할 수 없으며 해당 저장소의 증거 어댑터가 필요하다.
+
+기존 checkpoint 필드가 없는 기록은 지급 UUID를 읽기 호환으로 사용한다. 새 시도는 별도 UUID를 기록하며 관리자 retry 후에도 새 UUID를 사용한다. 인벤토리의 maxStackSize와 아이템 구성요소의 maxStackSize 중 작은 값으로 계획한다.
 
 실제 어댑터에서는 아이템의 모든 구성요소를 보존하는 직렬화를 사용한다. Paper의 NBT 기반 `serializeAsBytes()`/`deserializeBytes()`는 버전 변환 경로를 제공한다. [Paper 아이템 직렬화 API](https://jd.papermc.io/paper/26.3/org/bukkit/inventory/ItemStack.html#serializeAsBytes())
 
@@ -30,13 +34,27 @@
 
 아이템이 들어갈 공간이 없는 구매자는 수령을 미룰 수 있도록 기존 즉시 지급 UI를 바꿔야 한다. 실제 GUI/명령에서 구매와 물리 지급을 구분하고 미수령 상태를 안내한다. 현재 기존 MarketEvents에는 연결하지 않았으므로 기존 UI의 안전성이 개선됐다고 주장하지 않는다.
 
+## 수령과 관리자 검토
+
+```text
+/financial claim
+/financial delivery <소유자 UUID> [지급 UUID]
+/financial delivery resolve <소유자 UUID> <지급 UUID> delivered <저장 확인 근거>
+/financial delivery resolve <소유자 UUID> <지급 UUID> retry <미지급 확인 근거>
+```
+
+claim은 `limpi.financial.claim`(기본 true), 조회/해결은 `limpi.financial.admin.delivery`(기본 op)다. 새 접속 시 복구/수령을 자동 수행하고, 공간 부족은 claim을 안내한다. enable 시 이미 접속한 플레이어를 fresh login으로 취급하지 않는다. 실패 시 UUID와 오류를 로그에 남기고 인벤토리 조작·명령을 막은 뒤 이탈시킨다. REVIEW가 있으면 다음 접속도 거부한다.
+`EnableFinancialSystem: false`여도 이미 확정된 미수령 권리가 막히지 않도록 claim/지급 기록·해결 명령은 유지한다. 다른 금융 명령은 비활성화 안내를 반환한다.
+
+해결 명령은 owner가 오프라인일 때만 실행한다. DB의 before/after·checkpoint 기록과 실제 playerdata/아이템 소유를 확인하고 근거를 입력한다. delivered는 지급이 확인됐다는 운영자의 결정으로 DONE을 기록한다. retry는 미지급이 확인됐다는 결정으로 물품 권리를 PENDING으로 돌린다. actor/결정/근거/이전 evidence는 감사 원장에 보존하며 원본 물품을 자동 삭제하지 않는다. 잘못된 운영자 결정까지 자동 판별하는 명령은 아니므로 saved checkpoint/실제 물품 확인이 필요하다.
+
 ## 다음 구현·서버 시험
 
-1. Paper 인벤토리 어댑터/저장 파일 checkpoint 판독. 메인 스레드에서 전체 수량 계획을 적용하고 저장 오류를 확인한다. 성공/실패 시 플레이어 파일과 world inventory의 관계도 검증한다.
-2. 실패가 발생하면 거래 UUID를 로그에 남기고 이후 아이템 이동·다른 거래를 차단한다. 재접속 전에 임의 추가 지급을 하지 않는다. 접속 시 복구는 다른 지급보다 먼저 수행한다.
-3. 미수령 수령 명령과 공간 부족 안내, 운영자 REVIEW 조회/해결·원장 기록을 구현한다. 검토 항목을 자동 초기화하거나 소유 물품을 없애지 않는다.
+1. 구현한 Paper 어댑터/파일 checkpoint/force/접속 복구/실패 보호를 최종 실제 서버에서 확인한다. 정상 동작과 저장 실패/재시작을 구분한다.
+2. 취소를 무시하는 기존 능력 이벤트와 다른 플러그인의 아이템 변경을 검토한다. 지급 실패로 보호 중인 플레이어를 임의 변경하지 않도록 나머지 수명/취소 처리를 정비한다.
+3. 구현한 claim/관리자 조회/해결의 실제 명령 동작과 권한, 오프라인 확인, 감사 기록을 최종 서버에서 시험한다.
 4. legacy 매물을 먼저 모두 검사해 UUID/원본 아이템을 보존하며 catalog로 이전한다. 조회가 모호한 판매자는 보호한다. 마켓 Holder/매물 UUID·가격 quote, Long 명령 입력, 페이지, 구매/회수 경로를 연결한다.
 5. 신규 등록은 별도 회수 escrow가 필요하다. 인벤토리 물품 회수가 저장되기 전에 매물을 공개하지 않는다. 실패/재시작 후 회수 또는 반환을 판별한다.
 6. 실제 서버에서 playerdata 저장 실패·DB 완료 실패·강제 종료·다른 플러그인의 인벤토리 변경·재접속·백업 복원을 확인한다. JVM/파일 시스템 전원 장애와 SQLite/인벤토리의 동시 원자성은 단위 시험만으로 보장하지 않는다.
 
-순수 정책 6개, 실제 SQLite와 inventory fake를 결합한 지급 프로토콜 9개, 마켓 정산 7개 시험을 추가했다. 슬롯/아이템 보존·멱등 정산·실패 rollback·동시 매물 구매의 불변 조건을 시험했으며 실제 Paper 동작 검증은 아직 하지 않았다.
+초기 순수 정책 6개·지급 프로토콜 9개·마켓 정산 7개에 인벤토리 상한 1개·실제 gzip NBT 파일 4개·관리자 해결 4개 시험을 추가했다. 전체 저장소/경제/페이지를 포함해 총 107개 시험이 통과했다. 실제 Paper 이벤트/saveData/복구 동작 검증은 아직 하지 않았다.

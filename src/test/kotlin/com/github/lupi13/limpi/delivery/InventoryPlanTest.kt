@@ -4,6 +4,11 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class InventoryPlanTest {
+    @Test fun `inventory stack limit also bounds items whose component allows larger stacks`() {
+        val after = InventoryPlan.grant(listOf(null, null), listOf(ItemGrant("large stack component", 99, 99)), 64)
+        assertEquals(listOf(StoredStack("large stack component", 64, 64), StoredStack("large stack component", 35, 64)), after)
+        assertThrows(InventoryFull::class.java) { InventoryPlan.grant(listOf(null), listOf(ItemGrant("large stack component", 65, 99)), 64) }
+    }
     @Test fun `whole bundle must fit even if its first item fits`() {
         val before = listOf(StoredStack("ticket", 59, 64))
         assertThrows(InventoryFull::class.java) { InventoryPlan.grant(before, listOf(ItemGrant("ticket", 10, 64))) }

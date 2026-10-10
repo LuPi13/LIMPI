@@ -17,6 +17,12 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.financial.claim:
+    description: Claim pending items
+    default: true
+  limpi.financial.admin.delivery:
+    description: Inspect and resolve interrupted deliveries
+    default: op
   limpi.financial.send:
     description: Send money to an existing account
     default: true

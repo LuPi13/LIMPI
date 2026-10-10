@@ -1,7 +1,7 @@
 # LIMPI 작업 지침
 
 - 작업 전에 [정비 계획](docs/MAINTENANCE_PLAN.md), [Paper 26.3 기록](docs/PAPER_26_3_UPGRADE.md), [구현 기록](docs/IMPLEMENTATION_LOG.md)을 읽고 항목 ID로 진행 상태를 관리한다.
-- 사용자 승인 범위: refactor/maintenance-paper26.3에서 전체 문제 수정·구조 개선·문서·커밋·가능한 push. **main 변경/병합 금지. 실제 서버 시험은 전체 구현 이후.** 사용자가 전체 작업이 끝날 때까지 계속 진행하라고 명시했다. 중간 커밋을 전체 목표 완료로 취급하거나 서버 미검증 때문에 구현을 중단하지 않는다.
+- 사용자 승인 범위: refactor/maintenance-paper26.3에서 전체 문제 수정·구조 개선·문서·커밋·가능한 push. **main 변경/병합 금지. 실제 서버 시험은 전체 구현 이후([서버 시험 계획](docs/SERVER_TEST_PLAN.md)).** 사용자가 전체 작업이 끝날 때까지 계속 진행하라고 명시했다. 중간 커밋을 전체 목표 완료로 취급하거나 서버 미검증 때문에 구현을 중단하지 않는다.
 - 기존 UUID/능력 ID/잔액/해금/퀘스트/알 수 없는 사용자 필드를 보존한다. schema/migration/복구 없는 초기화·덮어쓰기를 하지 않는다.
 - 정본은 limpi.sqlite3이며 이전 YAML은 최초 가져오기 원본이다. stale YAML 자동 동기화/DB 삭제 후 재가져오기를 하지 않는다. [저장소·복구](docs/STORAGE_AND_RECOVERY.md)를 따른다.
 - Money는 비음수 Long/checked arithmetic. 음수 legacy balance는 임의 초기화하지 않고 원장을 남기는 관리자 복구만 허용한다.

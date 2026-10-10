@@ -20,7 +20,7 @@ object LittleEat : Ability(
     )
 ) {
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onEat(event: PlayerItemConsumeEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -33,6 +33,8 @@ object LittleEat : Ability(
         val player = event.entity as? Player ?: return
         if (player.ability != this) return
 
-        event.foodLevel = player.foodLevel - 2
+        // Losses drain twice as fast; any gain (cake, saturation, food) fills hunger as the description promises.
+        val current = player.foodLevel
+        event.foodLevel = if (event.foodLevel < current) (current - 2 * (current - event.foodLevel)).coerceAtLeast(0) else 20
     }
 }

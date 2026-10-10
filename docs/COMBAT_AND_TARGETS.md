@@ -41,5 +41,11 @@ Paper 실제 이벤트 순서·보호 플러그인·shield/흡수/토템·Damage
 - GatheringStorm: 삼지창 적중(폭풍 생성·쿨다운 시작)이 집전 번개보다 먼저 호출되므로 기존 조건으로는 vanilla 번개가 취소되지 않았다. 같은 틱에 폭풍을 만든 경우 번개를 취소하고, 이전 폭풍의 쿨다운 중일 때만 vanilla 번개를 유지한다.
 - EntityThrower: Paper가 드래곤 클릭을 부위로 전달하므로 부위를 드래곤 본체로 바꿔 드래곤 매달리기 분기가 동작하게 했다.
 - ShieldStrike/GatheringStorm: 피해 처리 중 시전자가 동기적으로 사망해 상태가 해제되면 `!!` 대신 안전하게 중단한다.
+- LetsBoom: 사후 vanilla 폭발이 대상 정책을 무시하고 아군·길들인 동물·본인 사망 드롭까지 파괴했다. 시전자가 죽어 있어 AbilityDamage.hit을 쓸 수 없으므로 폭발 호출 동안 적 LivingEntity가 아닌 피해와 걸이 엔티티 파괴를 취소한다. 지형 비파괴는 기존대로다.
+- PullingBow: 적이 아닌 대상에게도 끌어당김을 적용하던 것을 적 대상·MONITOR(취소되지 않은 적중)로 제한했다.
+- OverBalance/JudgementRay: 보호/개체 제한 플러그인이 레일 엔티티 생성을 취소하면 단발 능력이 효과 없이 소모되던 것을 막았다(생성 실패 시 소모 전 중단).
+- LittleEat: 케이크·포화 효과 같은 비소비 허기 증가에도 2를 빼던 것을 수정했다. 감소는 2배, 증가는 가득 채움. 섭취 처리는 MONITOR·ignoreCancelled.
+- HeavyEnchant: 모루 결과에 입력 인챈트를 순서대로 덮어써 더 높은 결과 레벨이 낮아지던 것을 최고 레벨 병합으로 고쳤다. 책의 stored enchant도 반영한다.
+- EmeraldFix: 결과 슬롯(미리보기)에 수리하며 에메랄드만 소모되던 것을 막았다.
 - 리뷰에서 피해 재귀(DamageContext/ChainBudget), 작업/속성 소유, 임시 엔티티 non-persistent, NaN 정규화, 설정 타입, 시전자 피해(Titan 의도) 경로는 결함이 없었다. 위 변경은 Paper 실제 이벤트 순서로 검증하지 않았다.
 

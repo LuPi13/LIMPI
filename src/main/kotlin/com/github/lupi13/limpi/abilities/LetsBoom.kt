@@ -21,6 +21,18 @@ object LetsBoom : Ability(
 ) {
 
 
+    private var exploding: java.util.UUID? = null
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    fun filterExplosion(event: org.bukkit.event.entity.EntityDamageEvent) {
+        val owner = exploding ?: return
+        val target = event.entity
+        val player = plugin.server.getPlayer(owner)
+        if (player == null || target !is org.bukkit.entity.LivingEntity || target.uniqueId == owner ||
+            !com.github.lupi13.limpi.abilities.AbilityManager.isEnemy(player, target)) event.isCancelled = true
+    }
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
+    fun protectHanging(event: org.bukkit.event.hanging.HangingBreakEvent) { if (exploding != null) event.isCancelled = true }
+
     // 취소된 사망에는 폭발하지 않는다. 같은 MONITOR에서 먼저 등록된 런타임 사망 정리 뒤에 시작하므로 이 작업은 정리되지 않는다.
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onPlayerDeath(event: PlayerDeathEvent) {
@@ -44,7 +56,10 @@ object LetsBoom : Ability(
                     location.world.spawnParticle(Particle.FLASH, location, (timer / 3.0).toInt(), 0.1, 0.1, 0.1, 0.0)
                 }
                 if ((timer % 10 == 0) && (timer >= 60)) {
-                    location.world.createExplosion(player, location, 4.0f, false, false, true)
+                    // The owner is dead, so AbilityDamage.hit cannot be used. Filter the synchronous explosion instead:
+                    // only enemies are hurt; drops (including the owner's death pile), frames and allies are protected.
+                    exploding = player.uniqueId
+                    try { location.world.createExplosion(player, location, 4.0f, false, false, true) } finally { exploding = null }
                     location.world.spawnParticle(Particle.EXPLOSION, location, 30, 2.5, 2.5, 2.5, 2.0)
                     location.world.spawnParticle(Particle.FLASH, location, 10, 2.0, 2.0, 2.0,2.0)
                 }

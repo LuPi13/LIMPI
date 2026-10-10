@@ -37,6 +37,8 @@ object RailgunEffect {
                 entity.setGravity(false); entity.isInvulnerable = true
                 entity.interactionHeight = settings.size.toFloat(); entity.interactionWidth = settings.size.toFloat()
             }
+            // A protection/entity-limit plugin can cancel the spawn; never consume the single-use ability without a shot.
+            check(rail.isValid) { "Railgun entity spawn was rejected" }
             if (consumed) AbilityManager.applyAbility(player, null, effect.scope.id)
             player.setCooldown(ability.material, if (consumed) settings.delay + settings.lifetime + 1 else settings.delay + 1)
             val speed = effect.attribute(Attribute.MOVEMENT_SPEED, -1.0, AttributeModifier.Operation.MULTIPLY_SCALAR_1)

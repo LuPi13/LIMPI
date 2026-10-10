@@ -52,6 +52,7 @@
 - [ ] 이탈/사망/월드 변경/disable 후 반복 작업·표시 엔티티·속성 modifier·포션 잔여 없음, 외부 플러그인 속성/포션 공존. [runtime](ABILITY_RUNTIME.md), [포션](ABILITY_POTIONS.md)
 - [ ] 연금술/소매치기(플레이어·NPC)/설탕/검 반환 물품 보존. [물품](ABILITY_ITEM_TRANSACTIONS.md), [설탕](SUGAR_CONSUMPTION.md)
 - [ ] WebShooter 레이저(GuardianBeam NMS)·ZombieKing 헬멧/낮밤·OverBalance 단발·ImpactLanding 비용 상한. [물리](ABILITY_PHYSICS.md), [Paper 전환](PAPER_26_3_UPGRADE.md#남은-서버-확인-순서)
+- [ ] LetsBoom 폭발이 아군/펫/본인 드롭/액자를 보호하고 적만 피해, PullingBow 비적 대상 무효, 레일 생성 취소 시 OverBalance 유지, LittleEat 케이크/포화, HeavyEnchant 모루(IV+IV, V+III, 책), EmeraldFix 결과 슬롯 무시.
 - [ ] 퀘스트 4종 완료/해금, 취소된 사망 미집계, LetsBoom이 취소된 사망에 폭발하지 않음.
 
 ## 5. 전투·대상

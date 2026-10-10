@@ -36,7 +36,7 @@ object PullingBow : Ability(
     }
 
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onArrowHit(event: ProjectileHitEvent) {
         if (event.entity !is AbstractArrow) return
         if (event.entity.shooter !is Player) return
@@ -45,6 +45,7 @@ object PullingBow : Ability(
         if (player.ability != this) return
 
         val hitEntity = event.hitEntity ?: return
+        if (hitEntity !is org.bukkit.entity.Damageable || !AbilityManager.isEnemy(player, hitEntity)) return
 
         val amp = config!!.getDouble("knockBackAmplifier")
         object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {

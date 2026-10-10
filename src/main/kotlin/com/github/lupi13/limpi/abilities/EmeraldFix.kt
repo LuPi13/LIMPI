@@ -35,6 +35,8 @@ object EmeraldFix : Ability(
         val player = event.whoClicked as? Player ?: return
         if (player.ability != this) return
 
+        // A result slot is only a preview that is rebuilt from its inputs; repairing it would spend the emerald for nothing.
+        if (event.slotType == org.bukkit.event.inventory.InventoryType.SlotType.RESULT) return
         val cursorItem = event.cursor
         if (cursorItem.type != Material.EMERALD) return
 

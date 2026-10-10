@@ -39,8 +39,20 @@ class GachaEvents(private val owner: Plugin) : Listener {
             val ability = requireNotNull(AbilityManager.getAbilityByCodeName(result.terms.ability))
             require(ability.grade.name == result.terms.grade)
             val current = AbilityManager.getPlayerAbilityCodeName(player).orEmpty()
-            require(current == result.terms.previous || current == result.terms.ability) { "Ability changed during pending selection" }
-            AbilityManager.applyAbility(player, ability)
+            // A consumed single-use ability leaves no ability; the paid selection still applies. Any other change is held
+            // for an administrator (/ability set to the selected ID, then claim acknowledges) instead of kicking every login.
+            if (current.isNotEmpty() && current != result.terms.previous && current != result.terms.ability) {
+                plugin.logger.warning("Selection ${result.id} for ${player.uniqueId} held: current ability $current is neither ${result.terms.previous} nor ${result.terms.ability}")
+                player.sendMessage(Component.text("선택한 능력 적용이 보류되었습니다. 관리자에게 거래 ${result.id}를 알려주세요.", NamedTextColor.YELLOW))
+                continue
+            }
+            try {
+                AbilityManager.applyAbility(player, ability)
+            } catch (_: com.github.lupi13.limpi.delivery.InventoryFull) {
+                // Nothing was prepared; the paid selection stays pending and must not block or kick the player.
+                player.sendMessage(Component.text("선택한 능력을 적용하려면 인벤토리 공간을 확보한 뒤 /financial claim을 사용하세요.", NamedTextColor.YELLOW))
+                continue
+            }
             FileManager.selections.acknowledge(
                 java.util.UUID.nameUUIDFromBytes("ability-select:${result.owner}:${result.id}".toByteArray(Charsets.UTF_8)),
                 result.owner, result.id, ability.codeName)
@@ -126,5 +138,6 @@ class GachaEvents(private val owner: Plugin) : Listener {
 
     @EventHandler fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) = animation.close(event.player.uniqueId)
     @EventHandler fun onWorldChange(event: org.bukkit.event.player.PlayerChangedWorldEvent) = animation.close(event.player.uniqueId)
-    @EventHandler fun onDeath(event: org.bukkit.event.entity.PlayerDeathEvent) = animation.close(event.entity.uniqueId)
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    fun onDeath(event: org.bukkit.event.entity.PlayerDeathEvent) = animation.close(event.entity.uniqueId)
 }

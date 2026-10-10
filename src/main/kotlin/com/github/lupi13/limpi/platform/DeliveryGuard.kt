@@ -32,6 +32,11 @@ class DeliveryGuard(private val controller: DeliveryController, private val jour
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Component.text("지급 저장소를 확인할 수 없습니다. 관리자에게 문의하세요."))
         }
     }
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun respawn(event: PlayerRespawnEvent) {
+        val player = event.player
+        player.server.scheduler.runTask(controller.plugin, Runnable { controller.respawned(player) })
+    }
     @EventHandler(priority = EventPriority.LOWEST)
     fun click(event: InventoryClickEvent) { if (controller.blocked(event.whoClicked.uniqueId)) event.isCancelled = true }
     @EventHandler(priority = EventPriority.LOWEST)

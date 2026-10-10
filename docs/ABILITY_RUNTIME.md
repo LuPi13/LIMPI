@@ -23,3 +23,8 @@
 **228개** 테스트 통과, test build 성공. 새 15개 시험은 scope 실패/정리/보존/종료, 레일건 설정, 실제 SQLite 검 반환·중복·회수 후 commit 실패/restart·관리자 판단이다. Paper task 실행/엔티티 제거/속성 공존·playerdata 저장은 실제 서버에서 아직 검증하지 않았다.
 
 전체 정비 완료 기록이 아니다. 능력 전환의 DB/profile과 물리 슬롯 journal, potion 소유/중첩 정책, 전투 취소·귀속·연쇄 제한·전체 능력 설정/명령·주식 원장·운영 도구 및 CI를 계속 진행한다.
+
+## 리뷰 반영 (2026-10-10)
+
+- 사망 정리(runtime scope/속성, 능력 상태, 뽑기 연출)는 MONITOR·ignoreCancelled다. 다른 플러그인이 취소한 사망은 효과를 끝내지 않는다. 같은 MONITOR에서 먼저 등록된 정리 뒤에 LetsBoom 사후 효과가 시작된다.
+- 보조 손 능력 아이템(BlunderBooster/JudgementRay/OverBalance/WebShooter)이 알레이·아이템 액자·갑옷 거치대 상호작용으로 빠져나간 뒤 restore가 두 번째 사본을 만들던 경로를 막았다. 상호작용한 손의 아이템이 능력/제한 아이템이면 PlayerInteractEntityEvent(갑옷 거치대 조작 포함)를 취소한다.

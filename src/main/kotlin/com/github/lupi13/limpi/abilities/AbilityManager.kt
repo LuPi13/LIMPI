@@ -78,6 +78,11 @@ object AbilityManager : Listener {
         val clickedRestricted = event.clickedInventory === player.inventory && event.slot == restricted
         if (active(event.cursor) || active(event.currentItem) || active(swapped) || clickedRestricted) event.isCancelled = true
     }
+    /** Allays, item frames and armor stands take the interacting hand's item; never let an ability item leave that way. */
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOW, ignoreCancelled = true)
+    fun onInteractEntity(event: org.bukkit.event.player.PlayerInteractEntityEvent) {
+        if (active(event.player.inventory.getItem(event.hand))) event.isCancelled = true
+    }
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onSwapHand(event: PlayerSwapHandItemsEvent) {
         if (active(event.mainHandItem) || active(event.offHandItem) || event.player.ability?.restrictedSlot == 40) event.isCancelled = true
@@ -132,7 +137,8 @@ object AbilityManager : Listener {
     fun releaseState(owner: java.util.UUID) = abilities.forEach { it.release(owner) }
     fun shutdown() = abilities.forEach { it.stop() }
     @EventHandler fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) = releaseState(event.player.uniqueId)
-    @EventHandler fun onDeath(event: org.bukkit.event.entity.PlayerDeathEvent) = releaseState(event.entity.uniqueId)
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    fun onDeath(event: org.bukkit.event.entity.PlayerDeathEvent) = releaseState(event.entity.uniqueId)
     @EventHandler fun onWorldChange(event: org.bukkit.event.player.PlayerChangedWorldEvent) = releaseState(event.player.uniqueId)
 
     /**

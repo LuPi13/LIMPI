@@ -59,7 +59,9 @@ object AbilityRuntime : Listener {
     }
     @EventHandler(priority = EventPriority.LOWEST)
     fun quit(event: PlayerQuitEvent) { closeOwner(event.player.uniqueId); clearAttributes(event.player) }
-    @EventHandler(priority = EventPriority.LOWEST)
+    // Only a death that actually happens ends effects. Registered before abilities, so at MONITOR this cleanup still
+    // runs before LetsBoom starts its post-death effect.
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun death(event: PlayerDeathEvent) { closeOwner(event.entity.uniqueId); clearAttributes(event.entity) }
     @EventHandler(priority = EventPriority.LOWEST)
     fun worldChange(event: PlayerChangedWorldEvent) { closeOwner(event.player.uniqueId); clearAttributes(event.player) }

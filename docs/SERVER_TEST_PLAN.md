@@ -36,6 +36,8 @@
 각 거래에서 **회수 저장 전 / 회수 저장 후 DB commit 전 / commit 후 지급 전**에 서버 프로세스를 강제 종료하고 재시작·재접속한다. 물품 수와 잔액이 보존되고 중복 지급이 없어야 한다. [지급 복구](DELIVERY_RECOVERY.md#다음-구현서버-시험)
 
 - [ ] 만석 인벤토리 미수령 → 공간 확보 → `/financial claim`.
+- [ ] 미수령/회수 대기 중 사망 화면에서 종료 → 재접속(사망 화면 유지, kick 없음) → 리스폰 후 복구.
+- [ ] 선택권 정산 직후 미수령 지급이 빈칸을 채워 제한 슬롯 relocation 공간 부족 → 보류 안내 → 공간 확보 후 claim.
 - [ ] REVIEW 상태 로그인 차단 → 오프라인 관리자 `removed|retained` 판단 → 원장 감사 기록.
 - [ ] 회수가 지급보다 먼저 복구되는 순서, 소유자 예약 공유(마켓/공통 회수/능력 전환 동시 준비 불가).
 - [ ] 별도 인벤토리 플러그인·보호 플러그인과 playerdata 저장 위치 호환.
@@ -45,6 +47,8 @@
 - [ ] 선택권/뽑기 양손 사용, useItemInHand DENY 존중, 연출 중 입력 무소모, 결과 조회 `/ability result`. [뽑기](GACHA_RULES_AND_RECOVERY.md)
 - [ ] 천장 경계(LEGENDARY 100번째, EPIC 조건부 10번째), 픽업 만료 경계, 후보 0개 거부.
 - [ ] 능력 전환: 같은 능력 no-op, 제한 슬롯의 일반 물품 relocation, 공간 부족 시 티켓 소비 전 거부, 전환 중 강제 종료. [전환](ABILITY_TRANSITIONS.md)
+- [ ] 보조 손 능력 아이템을 알레이/아이템 액자/갑옷 거치대에 넣을 수 없음, 복제 없음.
+- [ ] 다른 플러그인이 사망을 취소하면 효과/속성 유지.
 - [ ] 이탈/사망/월드 변경/disable 후 반복 작업·표시 엔티티·속성 modifier·포션 잔여 없음, 외부 플러그인 속성/포션 공존. [runtime](ABILITY_RUNTIME.md), [포션](ABILITY_POTIONS.md)
 - [ ] 연금술/소매치기(플레이어·NPC)/설탕/검 반환 물품 보존. [물품](ABILITY_ITEM_TRANSACTIONS.md), [설탕](SUGAR_CONSUMPTION.md)
 - [ ] WebShooter 레이저(GuardianBeam NMS)·ZombieKing 헬멧/낮밤·OverBalance 단발·ImpactLanding 비용 상한. [물리](ABILITY_PHYSICS.md), [Paper 전환](PAPER_26_3_UPGRADE.md#남은-서버-확인-순서)

@@ -144,4 +144,19 @@ class RemovalJournalTest {
             assertTrue(journal.pending(owner).isEmpty())
         }
     }
+    @Test fun `account rejection after saved removal becomes review instead of looping and admin can settle after repair`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store); val journal = journal(store); val record = prepare(journal)
+            val inventory = Inventory(before)
+            // The balance grows between prepare and settlement so the frozen credit would overflow.
+            inventory.afterSave = { setup(store, Long.MAX_VALUE) }
+            assertThrows(DeliveryRecoveryRequired::class.java) { journal.apply(record, inventory) }
+            assertEquals(after, inventory.saved); assertEquals(RemovalState.REVIEW, journal.pending(owner).single().state)
+            assertEquals(Long.MAX_VALUE, money(store))
+            assertThrows(DeliveryRecoveryRequired::class.java) { journal.recover(owner, inventory, freshLogin = true) }
+            setup(store, 10)
+            journal.resolve(UUID.randomUUID(), "CONSOLE", owner, id, true, "balance repaired; removal verified offline")
+            assertEquals(30_000_000_016, money(store)); assertEquals(RemovalState.DONE, journal.find(owner, id)?.state)
+        }
+    }
 }

@@ -13,7 +13,7 @@ import java.nio.file.Path
 import java.util.UUID
 import java.util.logging.Level
 
-class DeliveryController(private val plugin: Plugin, private val service: DeliveryService, private val escrow: MarketEscrow, private val removals: RemovalJournal,
+class DeliveryController(val plugin: Plugin, private val service: DeliveryService, private val escrow: MarketEscrow, private val removals: RemovalJournal,
                          private val transitions: com.github.lupi13.limpi.ability.AbilityTransitions) {
     private val checkpoint = NamespacedKey(plugin, "delivery_checkpoint")
     private val directory = plugin.config.getString("PlayerDataDirectory")?.takeIf(String::isNotBlank)?.let { configured ->
@@ -26,7 +26,12 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
     init { plugin.logger.info("Delivery checkpoint directory: ${directory.toAbsolutePath().normalize()}") }
 
     fun blocked(id: UUID) = id in blocked
-    fun release(id: UUID) { blocked.remove(id); service.release(id) }
+    fun release(id: UUID) { blocked.remove(id); awaitingRespawn.remove(id); service.release(id) }
+
+    /** Called one tick after respawn; only players deferred on the death screen are recovered here. */
+    fun respawned(player: Player) {
+        if (player.isOnline && !player.isDead && awaitingRespawn.remove(player.uniqueId)) claim(player, freshLogin = true)
+    }
 
     /** Block queued inventory actions and disconnect when the canonical profile cannot be loaded safely. */
     fun reject(player: Player, failure: Exception) {
@@ -35,8 +40,16 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
         player.kick(Component.text("계좌/능력 기록을 불러오지 못했습니다. 관리자에게 UUID ${player.uniqueId}를 알려주세요.", NamedTextColor.RED))
     }
 
+    private val awaitingRespawn = mutableSetOf<UUID>()
+
     fun claim(player: Player, freshLogin: Boolean = false): Boolean {
         if (blocked(player.uniqueId) && !freshLogin) return false
+        if (player.isDead) {
+            // A player rejoining on the death screen cannot receive or save inventory changes. Attempting recovery would
+            // fail identically on every login; keep inputs blocked and run the fresh recovery after respawn instead.
+            blocked.add(player.uniqueId); awaitingRespawn.add(player.uniqueId)
+            return false
+        }
         if (freshLogin) blocked.remove(player.uniqueId)
         try {
             val inventory = PaperDeliveryInventory(player, checkpoint, files)

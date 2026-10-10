@@ -71,12 +71,20 @@ class RemovalJournal(private val store: StateStore, private val players: PlayerR
     private fun complete(record: RemovalRecord) {
         val e = record.evidence
         val id = UUID.nameUUIDFromBytes("removal-settle:${e.owner}:${e.id}".toByteArray(Charsets.UTF_8))
-        invalidate(store.execute(id, "removal-settle:${e.owner}:${e.id}") { tx ->
-            check(decode(requireNotNull(tx.get(pendingKey(e.owner, e.id)))) == record)
-            val receipt = requireNotNull(effects[record.kind]).settle(tx, record)
-            tx.put(doneKey(e.owner, e.id), encode(record.copy(state = RemovalState.DONE)))
-            tx.put(pendingKey(e.owner, e.id), null); receipt
-        })
+        val committed = try {
+            store.execute(id, "removal-settle:${e.owner}:${e.id}") { tx ->
+                check(decode(requireNotNull(tx.get(pendingKey(e.owner, e.id)))) == record)
+                val receipt = requireNotNull(effects[record.kind]).settle(tx, record)
+                tx.put(doneKey(e.owner, e.id), encode(record.copy(state = RemovalState.DONE)))
+                tx.put(pendingKey(e.owner, e.id), null); receipt
+            }
+        } catch (failure: com.github.lupi13.limpi.economy.BankException) {
+            // Items are already physically removed; a deterministic account rule (e.g. balance overflow since prepare)
+            // would fail on every retry, so hand it to an administrator instead of looping on each login.
+            review(record, "Settlement rejected after physical removal: ${failure.reason}")
+            throw failure
+        }
+        invalidate(committed)
     }
     private fun invalidate(result: CommittedTransaction) = players.invalidate(result.entry.changedKeys.filter { it.startsWith("player/") }.map { UUID.fromString(it.removePrefix("player/")) })
     private fun review(record: RemovalRecord, reason: String) = store.atomic { tx ->

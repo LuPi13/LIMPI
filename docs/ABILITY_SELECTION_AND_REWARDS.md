@@ -1,6 +1,6 @@
 # 선택권·티켓·초기/퀘스트 보상
 
-2026-10-10. 실제 경로 연결과 저장소 단위 시험 완료. 전체 능력 전환/수명/속성 정비와 실제 서버 시험은 남아 있다.
+2026-10-10. 실제 경로 연결과 저장소 단위 시험 완료. 이후 능력 [runtime](ABILITY_RUNTIME.md)/[전환](ABILITY_TRANSITIONS.md)을 연결했다. 실제 서버 시험은 남아 있다.
 
 ## 선택권과 메뉴
 
@@ -37,4 +37,4 @@ TerraBurning/ExpRich는 실제 레벨 증가 때만 +2/+4를 주고 재진입을
 
 전체 213개 테스트 통과. 추가 29개는 실제 SQLite 선택권 회수/replay/실패/재시작/ack/관리자 판단, 제한 슬롯 물품 보존·공간 부족, 신규/legacy/0/비활성 대기 초기 지급과 실패, 퀘스트 완료/legacy repair/threshold/부분 저장 차단/typed progress, 레벨·경험치 감소/상한을 확인한다. GUI 페이지는 기존 공유 Pagination의 0/1/42/45/46/90/91개 및 범위 시험을 실제 두 메뉴에 연결했다.
 
-실제 Paper item PDC/legacy match·이벤트/자동 제작기·saveData·GUI·능력 장착/속성/효과는 서버 미검증이다. AB-02/03/04/05/06 전체 전환/세션/task/entity/AttributeModifier 및 42개 능력의 전투·수명 정비, 주식 원장·운영 도구/CI·남은 명령/대상 메뉴가 다음 범위다.
+실제 Paper item PDC/legacy match·이벤트/자동 제작기·saveData·GUI·능력 장착/속성/효과는 서버 미검증이다. 이 문서 작성 뒤 AB-02~06 전환/세션/속성, 전투·대상 메뉴, 주식 원장, 명령 정의, 운영 도구/CI를 각 계약 문서에 연결했다. 현재 남은 범위는 [구현 기록](IMPLEMENTATION_LOG.md)을 따른다.

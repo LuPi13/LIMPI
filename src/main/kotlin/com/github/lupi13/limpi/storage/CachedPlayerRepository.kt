@@ -33,7 +33,7 @@ open class CachedPlayerRepository(
 
     override fun profile(id: UUID): PlayerProfile {
         val data = current(id)
-        return PlayerProfile(id, data.getString("name"), data.getLong("money"),
+        return PlayerProfile(id, data.getString("name"), runCatching { com.github.lupi13.limpi.economy.Accounts.integralBalance(data) }.getOrNull(),
             data.getString("ability")?.takeIf { it.isNotBlank() }, data.getStringList("unlockedAbilities").toSet())
     }
 

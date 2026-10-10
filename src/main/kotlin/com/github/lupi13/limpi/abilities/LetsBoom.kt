@@ -21,7 +21,8 @@ object LetsBoom : Ability(
 ) {
 
 
-    @EventHandler
+    // 취소된 사망에는 폭발하지 않는다. 런타임 정리(LOWEST) 이후에 시작하므로 이 작업은 정리되지 않는다.
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onPlayerDeath(event: PlayerDeathEvent) {
         val player = event.entity
         if (player.ability != this) return

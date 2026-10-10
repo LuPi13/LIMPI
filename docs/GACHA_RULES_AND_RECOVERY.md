@@ -38,7 +38,7 @@
 
 TROLL 강제 적용은 해금 commit에서 gacha_apply_pending/{owner}/{id}를 함께 저장한다. 프로필 ability는 정산 내부에서 미리 바꾸지 않는다. 능력 레지스트리를 등록한 후 claim/접속 복구에서 기존 applyAbility를 호출하고, 프로필에 해당 코드가 저장된 것을 확인한 뒤 멱등 ack한다. 적용 또는 ack 실패 시 대기 기록과 결과는 남는다. 미확인 강제 적용이 있으면 다음 추첨 준비를 거부한다. 능력 시스템이 꺼져 있으면 이 대기를 보존하며 다시 켠 뒤 처리한다.
 
-같은 능력 재적용 검사를 속성 초기화보다 앞으로 옮겨 ack 재시도가 속성을 다시 초기화하지 않게 했다. 기존 능력 제한 슬롯을 비울 때는 그 능력의 activeItem과 일치할 때만 제거한다. 새 제한 슬롯 덮어쓰기·다른 플러그인 속성 공존·전체 능력 세션의 원자 전환(AB-02/03/04)은 아직 별도 정비 대상이다. 현재 TROLL 3개에는 제한 슬롯이 없으며 복구 adapter도 이 조건을 검사한다.
+같은 능력 재적용 검사를 속성 초기화보다 앞으로 옮겨 ack 재시도가 속성을 다시 초기화하지 않게 했다. 기존 능력 제한 슬롯을 비울 때는 그 능력의 activeItem과 일치할 때만 제거한다. 새 제한 슬롯 보존·속성 modifier 소유·전환 checkpoint는 이후 [능력 전환](ABILITY_TRANSITIONS.md)/[runtime](ABILITY_RUNTIME.md)에서 연결했다. 현재 TROLL 3개에는 제한 슬롯이 없으며 복구 adapter도 이 조건을 검사한다.
 
 GachaAnimation은 결과 표현만 담당한다. 해금/카운터/능력 적용/저장을 호출하지 않는다. owner UUID마다 하나의 반복 task와 display 목록을 추적하고 부분 spawn부터 소유권을 기록한다. 약 241틱 연출을 유지하되 중첩 지연 작업을 제거했다. 정상 종료·quit·world change·death·disable·spawn/실행 예외에서 task/display를 정리한다. 표시 엔티티는 persistent=false이며 연출이 실패하거나 중단돼도 확정 결과는 유지한다.
 
@@ -48,4 +48,4 @@ GachaAnimation은 결과 표현만 담당한다. 해금/카운터/능력 적용/
 
 Paper 이벤트/실제 saveData와 playerdata·양손 우클릭·보호 플러그인·task/display 정리·TROLL 실제 적용은 서버에서 시험하지 않았다. 최종 서버에서는 빠른 반복/양손 입력, 후보/픽업 경계, 저장 전후 실패/재시작, 연출 중 이탈/월드 변경/사망/disable, 결과 조회/관리자 복구, 능력 시스템 off→on 대기 보존을 확인한다.
 
-선택권 사용/적용 원장, PDC 티켓 식별·legacy 호환/공통 이동 제한과 초기·퀘스트 보상을 추가 연결했다. [선택권·보상](ABILITY_SELECTION_AND_REWARDS.md)을 따른다. AB-02/03/04의 전체 능력 전환·수명/속성 정비와 서버 검증은 남아 있다.
+선택권 사용/적용 원장, PDC 티켓 식별·legacy 호환/공통 이동 제한과 초기·퀘스트 보상을 추가 연결했다. [선택권·보상](ABILITY_SELECTION_AND_REWARDS.md)을 따른다. AB-02/03/04 전환·수명/속성은 이후 단계에서 연결했다. 서버 검증은 남아 있다.

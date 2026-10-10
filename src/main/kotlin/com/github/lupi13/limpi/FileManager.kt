@@ -133,7 +133,6 @@ class FileManager {
         fun getShopRatioConfig(): FileConfiguration = financial.getValue("shopRatio")
         fun getStockConfig(): FileConfiguration = financial.getValue("stock")
 
-        fun saveMisc() = saveFinancial("misc")
         fun saveSellPrice() = saveFinancial("sellPrice")
         fun saveShopRatio() = saveFinancial("shopRatio")
         fun saveStock() = saveFinancial("stock")

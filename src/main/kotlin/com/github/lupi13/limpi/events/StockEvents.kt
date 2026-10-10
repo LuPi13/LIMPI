@@ -4,6 +4,7 @@ import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.LIMPI
+import com.github.lupi13.limpi.economy.Accounts
 import com.github.lupi13.limpi.economy.Money
 import com.github.lupi13.limpi.menu.*
 import com.github.lupi13.limpi.stock.*
@@ -114,6 +115,11 @@ class StockEvents : Listener {
             }
         }
 
+        /** A malformed or negative legacy balance is shown as needing recovery, never as 0. */
+        private fun balanceDisplay(profile: FileConfiguration): Component =
+            runCatching { Accounts.integralBalance(profile) }.getOrNull()?.takeIf { it >= 0 }?.let(::moneyDisplay)
+                ?: Component.text("계좌 복구 필요", NamedTextColor.RED)
+
         private fun change(current: Long, previous: Long, color: NamedTextColor = NamedTextColor.WHITE): Component {
             if (previous <= 0) return Component.text("확인 불가", color)
             val percent = (current.toDouble() / previous - 1) * 100
@@ -192,7 +198,7 @@ class StockEvents : Listener {
                 meta.customName(Component.text("${data.getString("$code.name")} ($code)", NamedTextColor.WHITE))
                 meta.lore(listOf(
                     Component.text("현재 가격: ", NamedTextColor.WHITE).append(moneyDisplay(current.units))
-                        .append(Component.text("원, 보유 금액: ")).append(moneyDisplay(profile.getLong("money"))),
+                        .append(Component.text("원, 보유 금액: ")).append(balanceDisplay(profile)),
                     Component.text("보유 주식: ${holding.count}주", NamedTextColor.WHITE),
                     Component.text("취득 원가: ", NamedTextColor.WHITE).append(moneyDisplay(holding.costBasis.units))
                         .append(Component.text("원, 현재 가치: ")).append(moneyDisplay(BigInteger.valueOf(current.units)
@@ -243,9 +249,10 @@ class StockEvents : Listener {
             require(current.units == quote.price) { "가격이 변경되었습니다. 새 가격을 확인해 주세요." }
             val trading = FileManager.stocks
             val profile = FileManager.getPlayerData(player)
-            require(profile.getLong("money") >= 0) { "계좌 데이터에 오류가 있습니다. 관리자에게 확인을 요청하세요." }
+            val balance = runCatching { Accounts.balance(profile) }.getOrNull()
+            require(balance != null) { "계좌 데이터에 오류가 있습니다. 관리자에게 확인을 요청하세요." }
             val count = if (event.isLeftClick) {
-                minOf(if (event.isShiftClick) 100L else 1L, Money(profile.getLong("money")).units / current.units)
+                minOf(if (event.isShiftClick) 100L else 1L, balance.units / current.units)
             } else {
                 minOf(if (event.isShiftClick) 100L else 1L, trading.holding(profile, quote.code).count)
             }

@@ -6,7 +6,8 @@ import java.util.UUID
 data class PlayerProfile(
     val id: UUID,
     val name: String?,
-    val balance: Long,
+    /** null when the stored legacy value is not an integral Long; never coerced to 0. */
+    val balance: Long?,
     val abilityCode: String?,
     val unlockedAbilities: Set<String>,
 )

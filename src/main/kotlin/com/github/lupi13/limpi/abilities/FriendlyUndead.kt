@@ -39,8 +39,8 @@ object FriendlyUndead : Ability(
     }
 
 
-    // UndeadCooperation 퀘스트
-    @EventHandler
+    // UndeadCooperation 퀘스트: 취소된 사망은 처치가 아니므로 최종 결과만 관측한다.
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onAttack(event: EntityDeathEvent) {
         if (event.entity.killer !is Player) return
         val player = event.entity.killer as Player
@@ -53,6 +53,7 @@ object FriendlyUndead : Ability(
             if (targeter !is org.bukkit.entity.Mob) continue
             if (targeter.target?.uniqueId == entity.uniqueId) {
                 QuestManager.clearQuests(player, UndeadCooperation)
+                break
             }
         }
     }

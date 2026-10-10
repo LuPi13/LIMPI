@@ -220,25 +220,6 @@ object AbilityManager : Listener {
     }
 
     /**
-     * 플레이어에게 능력을 해금시킵니다.
-     *
-     * @param player 능력을 해금할 플레이어
-     * @param ability 해금할 능력의 Ability
-     */
-    fun unlockAbility(player: Player, ability: Ability) {
-        val config = FileManager.getPlayerData(player)
-        val unlockedAbilities = config.getStringList("unlockedAbilities")
-        if (!unlockedAbilities.contains(ability.codeName)) {
-            unlockedAbilities.add(ability.codeName)
-            config.set("unlockedAbilities", unlockedAbilities)
-            FileManager.savePlayerData(player, config)
-            player.sendMessage(Component.text("능력 ", NamedTextColor.WHITE)
-                .append(ability.displayName)
-                .append(Component.text("이(가) 해금되었습니다!", NamedTextColor.WHITE)))
-        }
-    }
-
-    /**
      * Grade에 맞는 뽑기로 뽑을 수 있는 랜덤 능력을 반환합니다.
      * @param grade 뽑을 능력의 등급
      * @return 뽑을 수 있는 랜덤 능력

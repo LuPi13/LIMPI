@@ -273,6 +273,15 @@
 - **339개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 14개 운영 도구 시험. Java 25로 운영 JAR help/없는 DB 거부/legacy-check를 직접 실행했다. 실제 운영 데이터 복사본·서버 DB 교체 절차는 미검증. [저장소·복구](STORAGE_AND_RECOVERY.md#운영-도구-서버-없이-실행).
 - 다음은 전체 범위 감사(남은 MONEY-01/ITEM-01/DATA-02/AB-04/AB-07/QUEST-01/OPS-01 잔여)다. 전체 목표는 계속 진행 중이다.
 
+### 2026-10-10 / 범위 감사 1차: 잔액 표시·사망 취소·잔여 우회 경로
+
+- 손상된 legacy 잔액을 관대한 `getLong`으로 0처럼 보여주던 경로를 제거했다. `PlayerProfile.balance`는 정수 Long이 아니면 null이고, `/financial spy`와 주식 GUI는 "계좌 복구 필요"를 표시한다. 주식 매수 수량 계산도 strict `Accounts.balance`를 사용한다. 원본 payload는 바꾸지 않는다.
+- LetsBoom은 MONITOR·ignoreCancelled에서만 폭발한다. 다른 플러그인이 취소한 사망에는 폭발하지 않으며 runtime 정리(LOWEST) 뒤에 시작하는 기존 순서를 유지한다. UndeadCooperation 퀘스트도 취소된 사망을 처치로 세지 않고(MONITOR·ignoreCancelled) 첫 일치 후 반복을 멈춘다(보상은 원래 결정적 UUID로 멱등).
+- 사용하지 않는 비원자 해금 `AbilityManager.unlockAbility`, 부분 수용만 확인하던 `validInventoryIndex`, 개수 확인과 분리된 `removeInventoryItem`/`getInventoryItemCount`, `getAllPlayersName`의 `name!!`, `saveMisc`를 제거했다. 이후 코드가 원장/회수 계약을 우회해 다시 쓰지 못하게 한다.
+- 남은 Kotlin 컴파일 경고(중복 else)를 제거했다. 경고 0개.
+- 여러 계약 문서에 남아 있던 "아직 연결되지 않음" 문장(이후 단계에서 연결 완료된 뽑기/선택권/보상/전환/전투/운영 도구)을 현재 상태와 링크로 고쳤다.
+- **340개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 1개는 손상 잔액 null 노출·거래 거부·원본 보존이다. 사망 취소 순서는 실제 Paper 이벤트로 검증하지 않았다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |
@@ -280,10 +289,10 @@
 | DATA-01 | 완료(단위 검증) | 캐시·단일 저장소·능력 hot path 구현. 실제 서버 성능 측정은 최종 서버 시험 때 수행 |
 | DATA-02 | 부분 해결 | strict YAML/원자 저장/SQLite/마이그레이션/이름 충돌 보호, 운영 export·검사·백업 도구 구현. 전체 사용자 오류 처리 감사, 운영 복구 시험은 남음 |
 | DATA-03 | 완료(단위 검증) | 기존 서버 플레이어 ensure/현재 이름/기존 데이터 보존 구현. 실제 접속 확인은 이후 |
-| MONEY-01 | 진행 중 | Money 규칙·주식·송금/관리자·마켓·수표·판매·상점/능력 상점 교환 연결 완료. 보상 등 잔여 경제 경로는 남음 |
+| MONEY-01 | 구현 완료(단위 검증) | Money 규칙·주식·송금/관리자·마켓·수표·판매·상점/능력 상점 교환·초기 지급 연결. 잔액 변경은 Accounts/BankService/InitialRewards에서만 하고 표시도 strict 읽기. 실제 서버 검증은 이후 |
 | MONEY-02 | 구현 완료(저장 단위 검증) | 송금·마켓·수표·판매·상점·능력 상점·뽑기·선택권·초기/퀘스트 보상·주식 원장과 필요한 물품 회수/미수령 연결. 실제 Paper 검증은 이후 |
 | MONEY-03 | 구현 완료(단위 검증) | 수표 발행/입금 멱등 원장·PDC·legacy 관리자 전환 연결. 실제 손·Paper 이벤트/저장 확인은 이후 |
-| ITEM-01 | 부분 해결 | 상점/능력 상점 전체 수량 미수령·판매/에메랄드 공통 회수/복구·Paper/관리자 연결. 초기 보상 미수령 연결 완료. 실제 서버 검증은 남음 |
+| ITEM-01 | 구현 완료(단위 검증) | 상점/능력 상점/초기 보상/연금술/소매치기/검 반환의 전체 수량 미수령·공통 회수/복구·관리자 연결. 부분 수용 helper 제거. NPC 소매치기 드롭만 world 경계(문서화). 실제 서버 검증은 남음 |
 | STOCK-01 | 구현 완료(단위 검증) | 가격/설정 정책과 실제 갱신 경로 연결. 실제 서버 실행 확인은 이후 |
 | STOCK-02 | 구현 완료(정책 단위 검증) | 시간 경계/재시작 상태/1초 검사 구현. Paper 반복 작업 동작은 서버 시험 이후 |
 | STOCK-03 | 구현 완료(단위 검증) | 취득 원가/매도/잔액 저장과 실패 시험. 과거 손상 원가의 자동 추정은 하지 않음 |
@@ -292,13 +301,13 @@
 | CFG-01 | 구현 완료(단위 검증) | 초기 보상·능력 상점과 31개 전체 능력 설정의 strict 타입·범위·기본값·schema/원본 보존 구현. 실제 Paper 설정 생성/enable은 이후 |
 | GACHA-01 | 구현 완료(저장 단위 검증) | 양손 티켓 회수·해금/천장/결과 원자 정산·ForceTroll 대기/ack·결과 조회·연출 정리 연결. Paper 실제 검증은 이후 |
 | GACHA-02 | 구현 완료(정책 단위 검증) | 공통 확률/천장·실제 추첨/help/pity 연결. EPIC 조건부/픽업 의미 보존. 실제 서버 확인은 이후 |
-| AB-07 | 부분 해결 | typed 획득 분류·후보/픽업 snapshot/소비 전 validation 구현. 뽑기 확정 원장/회수 연결 완료. 선택권 사용/PDC·legacy/guard 연결 완료. 서버 검증은 남음 |
+| AB-07 | 구현 완료(단위 검증) | typed 획득 분류·후보/픽업 snapshot/소비 전 validation, 뽑기 확정 원장/회수, 선택권 사용/PDC·legacy/guard 연결. 서버 검증은 남음 |
 | GUI-04 | 구현 완료(페이지 단위 검증) | 주식·선택/도감의 실제 Holder/page/sort에 공유 Pagination 연결. 서버 화면 검증은 이후 |
-| QUEST-01 | 부분 해결 | 4개 완료/해금 원자 정산·legacy repair·조화 confirmed progress/threshold 연결. 특수 처치/전투 귀속·서버 검증은 남음 |
+| QUEST-01 | 구현 완료(단위 검증) | 4개 완료/해금 원자 정산·legacy repair·조화 confirmed progress/threshold·취소된 사망 제외/엔더맨 무피해 확정 피해 조건 연결. 실제 처치 귀속은 서버 시험에서 확인 |
 | AB-08 | 부분 해결 | 레벨 감소/경험치 감소 보너스 제거·상한/재진입 보호, ZombieKing 야간 반복 수정 완료. 실제 서버 검증은 이후 |
 | AB-02 | 구현 완료(저장 단위 검증) | same-code no-op·전체 슬롯 relocation/preflight·전환 checkpoint/profile 원자 정산·restart/REVIEW/관리자 판단 구현. 실제 Paper save/이벤트·복구 시험은 이후 |
 | AB-01 | 구현 완료(단위 검증) | 단일 ID 레지스트리·명시적 bind/configure/start/stop/release·공통 runtime 구현. 서버 없는 실제 레지스트리/메타데이터 시험 통과. 실제 enable은 이후 |
-| AB-04 | 부분 해결 | UUID 능력 상태·작업/일시 엔티티/laser/속성 소유 범위와 이탈/사망/전환/종료 정리 구현. potion 중첩 정책·대상 메뉴와 실제 서버 검증은 남음 |
+| AB-04 | 구현 완료(단위 검증) | UUID 능력 상태·작업/일시 엔티티/laser/속성/potion lease 소유 범위와 이탈/사망/전환/종료 정리, 대상 메뉴 구현. 강제 종료 후 potion 정리·실제 서버 검증은 남음 |
 | AB-03 | 구현 완료(정책 단위 검증) | transient namespace modifier로 자기 속성만 정리한다. 외부 baseValue를 덮지 않는다. 실제 중첩은 서버 시험에서 확인 |
 | AB-05 | 구현 완료(정책 단위 검증) | 소모 이후 expected code의 owned railgun scope와 cleanup 구현. 실제 단발 애니메이션은 서버 시험에서 확인 |
 | AB-06 | 구현 완료(정책 단위 검증) | owned Web/붙잡기/레일건·world/quit/death/변경 cleanup·물리 경계 구현. 실제 Paper는 이후 |

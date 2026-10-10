@@ -113,8 +113,6 @@ class AbilityEnemySelect: Listener {
                                 .decoration(TextDecoration.ITALIC, false)
                         )
                     }
-
-                    else -> {}
                 }
             }
             lore.add(Component.text("클릭하여 범위를 변경합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))

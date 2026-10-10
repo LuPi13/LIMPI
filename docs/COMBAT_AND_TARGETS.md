@@ -33,4 +33,4 @@ EnemySettings/EnemyPolicy를 메뉴·실제 대상 판정에서 함께 사용한
 
 **255개** 테스트 통과, test build 성공. 새 18개 정책 시험은 context 중첩/예외/스레드 분리, 연쇄 방문/상한/수치, 고정 보너스/흡수, 게이지 취소/소모/상한, 오프라인 소유 정책과 메뉴 공통 설정/순환/손상 값 보존이다. 기존 SQLite 거래/복구 시험도 통과했다.
 
-Paper 실제 이벤트 순서·보호 플러그인·shield/흡수/토템·DamageSource 귀속/특수 처치 및 메뉴 화면을 실행한 결과는 아니다. 여전히 설정 전체 검증/성능 한계, 커스텀 상호작용/소매치기 자산, potion 소유 정책, 명령·주식 원장·운영 도구/CI 정비가 남아 있다.
+Paper 실제 이벤트 순서·보호 플러그인·shield/흡수/토템·DamageSource 귀속/특수 처치 및 메뉴 화면을 실행한 결과는 아니다. 작성 당시 남았던 설정 검증·소매치기 자산·potion 소유·명령·주식 원장·운영 도구/CI는 이후 단계에서 연결했다([설정](ABILITY_SETTINGS.md), [물품](ABILITY_ITEM_TRANSACTIONS.md), [포션](ABILITY_POTIONS.md), [명령](COMMANDS.md), [주식](STOCK_TRANSACTIONS.md), [저장소·복구](STORAGE_AND_RECOVERY.md)). 서버 검증은 남아 있다.

@@ -31,10 +31,6 @@ class Functions {
             return playerList
         }
 
-        fun getAllPlayersName(): List<String> {
-            return getAllPlayers().map { it.name!! }
-        }
-
         fun toMaterial(string: String): Material {
             for (material in Material.entries) {
                 if (string.equals(material.name, ignoreCase = true)) {
@@ -44,70 +40,6 @@ class Functions {
             return Material.AIR
         }
 
-
-        /**
-         * 인벤토리에 해당 아이템을 추가할 수 있는 지 확인
-         * @param[player] 플레이어
-         * @param[item] 아이템
-         * @return 인벤토리 index as int, null if full
-         */
-        fun validInventoryIndex(player: Player, item: ItemStack): Int? {
-            val inventory = player.inventory
-            var count = item.amount
-            for (i in 0..35) {
-                if (inventory.getItem(i) == null) {
-                    return i
-                }
-                if (inventory.getItem(i)!!.isSimilar(item)) {
-                    if (inventory.getItem(i)!!.amount + count <= inventory.getItem(i)!!.maxStackSize) {
-                        return i
-                    }
-                    else {
-                        count -= inventory.getItem(i)!!.maxStackSize - inventory.getItem(i)!!.amount
-                    }
-                }
-            }
-            return null
-        }
-
-
-        /**
-         * 인벤토리에 해당 아이템이 몇개 있는지 확인
-         * @param[player] 플레이어
-         * @param[item] 아이템
-         * @return 아이템 개수 as int
-         */
-        fun getInventoryItemCount(player: Player, item: ItemStack): Int {
-            var count = 0
-            for (inventoryItem in player.inventory) {
-                if (inventoryItem != null && inventoryItem.isSimilar(item)) {
-                    count += inventoryItem.amount
-                }
-            }
-            return count
-        }
-
-
-        /**
-         * 인벤토리에서 해당 아이템을 제거, 반드시 getInventoryItemCount로 개수를 확인한 후 사용할 것
-         * @param[player] 플레이어
-         * @param[item] 아이템
-         * @param[count] 제거할 아이템 개수
-         */
-        fun removeInventoryItem(player: Player, item: ItemStack, count: Int) {
-            var remaining = count
-            for (inventoryItem in player.inventory) {
-                if (inventoryItem != null && inventoryItem.isSimilar(item)) {
-                    if (inventoryItem.amount > remaining) {
-                        inventoryItem.amount -= remaining
-                        return
-                    } else {
-                        remaining -= inventoryItem.amount
-                        inventoryItem.amount = 0
-                    }
-                }
-            }
-        }
 
         /**
         * 현재 날짜 및 시간 출력

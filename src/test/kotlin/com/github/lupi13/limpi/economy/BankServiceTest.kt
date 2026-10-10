@@ -143,6 +143,18 @@ class BankServiceTest {
         }
     }
 
+    @Test fun `malformed legacy balance is exposed as unknown instead of zero`() {
+        SqliteStateStore(file()).use { store ->
+            val (profiles, bank) = fixture(store)
+            store.atomic { it.put(SqliteProfilePersistence.key(sender), "name: Sender\nmoney: 3.5\n") }
+            profiles.invalidate(listOf(sender))
+            assertNull(profiles.profile(sender).balance)
+            assertEquals("Sender", profiles.profile(sender).name)
+            assertThrows(BankException::class.java) { bank.transfer(UUID.randomUUID(), sender, recipient, 1) }
+            assertEquals("name: Sender\nmoney: 3.5\n", store.get(SqliteProfilePersistence.key(sender)))
+        }
+    }
+
     @Test fun `fingerprints preserve field boundaries Unicode and action identity`() {
         assertNotEquals(BankService.fingerprint("a|b", "c"), BankService.fingerprint("a", "b|c"))
         assertNotEquals(BankService.fingerprint("SET", "한글"), BankService.fingerprint("ADJUST", "한글"))

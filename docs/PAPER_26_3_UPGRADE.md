@@ -55,7 +55,7 @@ GuardianBeam 2.4.3은 26.x 이전 라이브러리이다. 최신 릴리스 2.4.8�
 
 배포용 JAR 크기는 6,032,228 bytes이다. wrapper JAR SHA-256은 `b3a875ddc1f044746e1b1a55f645584505f4a10438c1afea9f15e92a7c42ec13`으로 공식 배포 값과 일치한다.
 
-자동 테스트 소스가 없으므로 Gradle `test`는 NO-SOURCE였다. 컴파일 경고 3개(`Dodge`/`ShieldStrike`의 deprecated attribute defaultValue, `AbilityEnemySelect`의 불필요한 else)가 남아 있으며, 이번 전환에서 동작을 변경할 근거가 없어 별도 정비 대상으로 남겼다. Gradle 설정의 deprecation 경고는 수정 후 발생하지 않았다.
+자동 테스트 소스가 없으므로 Gradle `test`는 NO-SOURCE였다. 컴파일 경고 3개(`Dodge`/`ShieldStrike`의 deprecated attribute defaultValue, `AbilityEnemySelect`의 불필요한 else)가 남아 있으며, 이번 전환에서 동작을 변경할 근거가 없어 별도 정비 대상으로 남겼다(이후 정비에서 세 경고 모두 제거, 현재 Kotlin 컴파일 경고 0개). Gradle 설정의 deprecation 경고는 수정 후 발생하지 않았다.
 
 컴파일과 패키징 확인은 실제 서버 플레이 검증을 대신하지 않는다. 서버 실행/플러그인 배포는 하지 않았으며, 기존 데이터 파일과 외부 서버 설치 경로는 수정하지 않았다.
 

@@ -34,7 +34,7 @@
 
 공간이 없는 구매자의 권리는 미수령으로 보존한다. 실제 GUI/명령은 정산과 수령을 구분하고 claim을 안내한다. 등록 회수·원본 이전·운영자 해결도 연결했으며 [마켓 복구 절차](MARKET_RECOVERY.md)에 기록했다.
 
-상점 구매·수표 발행도 차감과 미수령을 같은 commit으로 연결했다. 판매/교환의 공통 `RemovalJournal`은 마켓과 owner의 회수 checkpoint 예약을 공유하며, 접속/claim에서 마켓·공통 회수를 지급보다 먼저 복구한다. [상점·판매 복구](SHOP_AND_SALE_RECOVERY.md), [수표](CHECKS_AND_LEGACY_MIGRATION.md)를 함께 따른다. 능력 상점/뽑기/초기 지급·보상 연결은 남아 있다.
+상점 구매·수표 발행도 차감과 미수령을 같은 commit으로 연결했다. 판매/교환의 공통 `RemovalJournal`은 마켓과 owner의 회수 checkpoint 예약을 공유하며, 접속/claim에서 마켓·공통 회수를 지급보다 먼저 복구한다. [상점·판매 복구](SHOP_AND_SALE_RECOVERY.md), [수표](CHECKS_AND_LEGACY_MIGRATION.md)를 함께 따른다. 능력 상점/뽑기/선택권/초기·퀘스트 보상은 이후 단계에서 연결했다.
 
 ## 수령과 관리자 검토
 

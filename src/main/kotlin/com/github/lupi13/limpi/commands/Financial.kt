@@ -35,8 +35,15 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
                 "spy" -> {
                     val id = runCatching { UUID.fromString(args[1]) }.getOrNull() ?: FileManager.players.findByName(args[1])
                     require(id != null) { "해당 계좌를 찾을 수 없습니다." }
-                    val profile = FileManager.players.profile(id)
-                    sender.sendMessage("${profile.name ?: id}: ${profile.balance}원${if (profile.balance < 0) " (계좌 복구 필요)" else ""}")
+                    val data = FileManager.players.snapshot(id)
+                    val name = data.getString("name") ?: id.toString()
+                    // Report malformed legacy values explicitly instead of throwing away the spy request.
+                    val balance = runCatching { Accounts.integralBalance(data) }.getOrNull()
+                    sender.sendMessage(when {
+                        balance == null -> "$name: 잔액 형식 오류 (계좌 복구 필요)"
+                        balance < 0 -> "$name: ${balance}원 (계좌 복구 필요)"
+                        else -> "$name: ${balance}원"
+                    })
                 }
                 else -> error("Unbound financial command ${route.id}")
             }

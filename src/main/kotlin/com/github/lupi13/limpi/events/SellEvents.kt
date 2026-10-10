@@ -1,172 +1,110 @@
 package com.github.lupi13.limpi.events
 
 import com.github.lupi13.limpi.FileManager
-import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.LIMPI
+import com.github.lupi13.limpi.delivery.StoredStack
+import com.github.lupi13.limpi.economy.*
+import com.github.lupi13.limpi.menu.*
+import com.github.lupi13.limpi.platform.PaperItemCodec
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
-import org.bukkit.Bukkit
 import org.bukkit.Material
-import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.inventory.ClickType
 import org.bukkit.event.inventory.InventoryClickEvent
-import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
-import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.scheduler.BukkitRunnable
+import java.util.Locale
+import java.util.UUID
+import java.util.logging.Level
 
+/** A read-only view of storage slots. Selected items never leave playerdata before confirmation. */
 class SellEvents : Listener {
     companion object {
-        val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
-        val timer: MutableMap<Player, Int> = HashMap()
-        val profit: MutableMap<Player, Int> = HashMap()
-        val closeToggle: MutableList<Player> = ArrayList()
-
-        fun getSellPrice(item: ItemStack): Int {
-            return when {
-                FileManager.getSellPriceConfig().getKeys(false).contains(item.type.toString().lowercase()) -> {
-                    FileManager.getSellPriceConfig().getInt(item.type.toString().lowercase()) * item.amount
+        private val plugin get() = JavaPlugin.getPlugin(LIMPI::class.java)
+        fun openSellGUI(player: Player, selected: Map<Int, StoredStack> = emptyMap(), expected: Inventory? = null) {
+            val before = PaperItemCodec.snapshot(player)
+            val holder = MenuHolder(MenuKind.SELL, 0, Component.text("LIMPI: 판매 선택", NamedTextColor.YELLOW))
+            val prices = mutableMapOf<Int, Long>()
+            var total = Money(0)
+            for ((slot, stack) in before.withIndex()) {
+                if (stack == null) continue
+                val icon = PaperItemCodec.item(stack.payload, stack.count)
+                try {
+                    val price = CatalogPrices.sell(FileManager.getSellPriceConfig().get(icon.type.name.lowercase(Locale.ROOT)))
+                    val chosen = selected[slot] == stack
+                    val value = price.times(stack.count.toLong())
+                    if (chosen) { val updated = total + value; prices[slot] = price.units; total = updated }
+                    val meta = icon.itemMeta
+                    meta.lore((meta.lore() ?: emptyList()) + listOf(
+                        Component.text("원본 슬롯 $slot / ${value.units}원", NamedTextColor.WHITE),
+                        Component.text(if (chosen) "선택됨 · 클릭하여 해제" else "클릭하여 이 스택 전체 선택", NamedTextColor.YELLOW)))
+                    icon.itemMeta = meta
+                    holder.actions[slot] = MenuAction.SaleSlot(slot, stack, price.units, chosen)
+                } catch (failure: Exception) {
+                    val meta = icon.itemMeta
+                    meta.lore((meta.lore() ?: emptyList()) + Component.text("가격 확인 필요 · 판매 불가", NamedTextColor.RED)); icon.itemMeta = meta
+                    plugin.logger.warning("Invalid sale quote for slot $slot: ${failure.message}")
                 }
-                else -> item.amount
+                holder.inventory.setItem(slot, icon)
             }
+            fun button(slot: Int, material: Material, label: String, action: MenuAction) {
+                val icon = ItemStack(material); val meta = icon.itemMeta
+                meta.customName(Component.text(label)); icon.itemMeta = meta
+                holder.inventory.setItem(slot, icon); holder.actions[slot] = action
+            }
+            button(45, Material.GOLD_INGOT, "선택한 스택 판매: ${total.units}원", MenuAction.SaleConfirm(before, prices.toMap()))
+            button(49, Material.CLOCK, "현재 인벤토리 새로고침", MenuAction.SaleRefresh)
+            button(53, Material.BARRIER, "선택 초기화", MenuAction.SaleClear)
+            openMenu(plugin, player, holder.inventory, expected)
         }
-
-        val SellGUIName = Component.text("LIMPI: 판매창", NamedTextColor.YELLOW, TextDecoration.BOLD)
-
-        fun openSellGUI(player: Player) {
-            val sellGUI: Inventory = Bukkit.createInventory(player, 54, SellGUIName)
-            val close = ItemStack(Material.GOLD_INGOT, 1)
-            val meta = close.itemMeta
-            val lore: MutableList<Component> = ArrayList()
-            meta!!.customName(Component.text("판매", NamedTextColor.RED))
-            lore.add(Component.text("0", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false))
-            meta.lore(lore)
-            close.itemMeta = meta
-            sellGUI.setItem(53, close)
-            player.openInventory(sellGUI)
-        }
-
     }
 
     @EventHandler
-    fun onClick(event: InventoryClickEvent) {
-        if (event.view.title() == SellGUIName) {
-            val player = event.whoClicked as Player
-            val sellGUI = event.view.topInventory
-
-            if (timer.containsKey(player) && timer[player]!! >= 0) {
-                player.sendMessage(Component.text("판매중입니다. 잠시만 기다려주세요.", NamedTextColor.RED))
-                event.isCancelled = true
-            }
-
-            if (event.currentItem != null && event.currentItem!!.hasItemMeta() && event.currentItem!!.itemMeta!!.customName() == Component.text("판매", NamedTextColor.RED)) {
-                var count = 0
-                for (i in 0..52) {
-                    if (sellGUI.getItem(i) != null) {
-                        count += 1
-                    }
+    fun click(event: InventoryClickEvent) {
+        val top = event.view.topInventory
+        val holder = top.holder as? MenuHolder ?: return
+        if (holder.kind != MenuKind.SELL) return
+        event.isCancelled = true
+        if (event.rawSlot !in 0 until top.size || event.click != ClickType.LEFT) return
+        val player = event.whoClicked as? Player ?: return
+        if (FileManager.delivery.blocked(player.uniqueId) || !player.hasPermission("limpi.financial.sell")) return
+        val action = holder.actions[event.rawSlot] ?: return
+        val selected = holder.actions.values.filterIsInstance<MenuAction.SaleSlot>().filter { it.selected }
+            .associate { it.index to it.stack }.toMutableMap()
+        try {
+            when (action) {
+                is MenuAction.SaleSlot -> {
+                    if (action.selected) selected.remove(action.index) else selected[action.index] = action.stack
+                    openSellGUI(player, selected, top)
                 }
-                if (count != 0) {
-                    timer[player] = 0
-                    val preprofit = profit[player] ?: 0
-                    object : BukkitRunnable() {
-                        override fun run() {
-                            if (timer[player]!! < 0) {
-                                player.closeInventory()
-                                cancel()
-                            }
-                            if (timer[player]!! >= 0 && (sellGUI.getItem(timer[player]!!) != null)) {
-                                try {
-                                    sellGUI.setItem(timer[player]!!, null)
-                                    player.playSound(player.location, Sound.BLOCK_CHAIN_BREAK, 0.8f, (Math.random() * 0.4 + 0.9).toFloat())
-                                } catch (ignored: ArrayIndexOutOfBoundsException) {
-                                    player.closeInventory()
-                                    timer[player] = -2
-                                    cancel()
-                                }
-                            }
-                            if (timer[player]!! >= 52) {
-                                val config = FileManager.getPlayerData(player)
-                                config["money"] = config.getLong("money") + preprofit
-                                FileManager.savePlayerData(player, config)
-                                player.sendMessage(moneyDisplay(preprofit)
-                                    .append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE)))
-                                player.closeInventory()
-                                timer[player] = -2
-                                cancel()
-                            }
-                            if (timer[player]!! <= 51) {
-                                timer[player] = timer[player]!! + 1
-                            }
+                MenuAction.SaleRefresh -> openSellGUI(player, selected, top)
+                MenuAction.SaleClear -> openSellGUI(player, emptyMap(), top)
+                is MenuAction.SaleConfirm -> {
+                    require(action.prices.isNotEmpty()) { "판매할 스택을 선택하세요." }
+                    for ((slot, price) in action.prices) {
+                        val item = PaperItemCodec.item(requireNotNull(action.before[slot]).payload, 1)
+                        require(CatalogPrices.sell(FileManager.getSellPriceConfig().get(item.type.name.lowercase(Locale.ROOT))).units == price) {
+                            "가격이 변경되었습니다. 새로고침 후 다시 확인하세요."
                         }
-                    }.runTaskTimer(plugin, 0L, 1L)
-                } else {
-                    player.sendMessage(Component.text("아이템을 올려놓고 눌러주세요.", NamedTextColor.RED))
+                    }
+                    val request = UUID.randomUUID()
+                    if (FileManager.delivery.sell(player, request, action.before, action.prices.mapValues { Money(it.value) })) {
+                        openSellGUI(player, emptyMap(), top)
+                    }
                 }
-                event.isCancelled = true
+                else -> Unit
             }
+        } catch (failure: BankException) {
+            player.sendMessage(Component.text(failure.reason.message, NamedTextColor.RED))
+        } catch (failure: IllegalArgumentException) {
+            player.sendMessage(Component.text(failure.message ?: "판매 대상을 다시 확인하세요.", NamedTextColor.RED))
+        } catch (failure: Exception) {
+            plugin.logger.log(Level.SEVERE, "Sale menu failed for ${player.uniqueId}", failure)
+            player.sendMessage(Component.text("판매 기록을 확인해야 합니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
-
-    @EventHandler
-    fun onInventoryClose(event: InventoryCloseEvent) {
-        if (event.view.title() == SellGUIName) {
-            val player = event.player as Player
-            if (!(timer.containsKey(player) && timer[player]!! >= 0)) {
-                for (i in 0..52) {
-                    if (event.view.topInventory.getItem(i) != null) {
-                        player.inventory.addItem(event.view.topInventory.getItem(i)!!)
-                    }
-                }
-            }
-            closeToggle.add(player)
-        }
-    }
-}
-
-fun sellTask(player: Player, inventory: Inventory) {
-    object : BukkitRunnable() {
-        override fun run() {
-            if (SellEvents.closeToggle.contains(player)) {
-                SellEvents.closeToggle.remove(player)
-                cancel()
-            }
-            var price = 0
-            for (item in inventory) {
-                if (item != null) {
-                    if (!(item.hasItemMeta() && item.itemMeta!!.customName() == Component.text("판매", NamedTextColor.RED))) {
-                        price += SellEvents.getSellPrice(item)
-                    }
-                }
-            }
-            val close = inventory.getItem(53)
-            val meta = close!!.itemMeta
-            val lore = meta!!.lore()
-            lore!![0] = moneyDisplay(price).decoration(TextDecoration.ITALIC, false)
-                .append(Component.text("원", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
-            if (SellEvents.timer.containsKey(player) && SellEvents.timer[player]!! >= 0) {
-                if (lore.size <= 1) {
-                    lore.add(Component.text("처리중", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false))
-                } else {
-                    val multi = (SellEvents.timer[player]!! / 2) % 3
-                    val dot = when (multi) {
-                        0 -> "."
-                        1 -> ".."
-                        2 -> "..."
-                        else -> ""
-                    }
-                    lore[1] = Component.text("처리중${dot}", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false)
-                }
-            }
-            meta.lore(lore)
-            close.itemMeta = meta
-            SellEvents.profit[player] = price
-        }
-    }.runTaskTimer(SellEvents.plugin, 0L, 1L)
 }

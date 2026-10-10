@@ -3,6 +3,7 @@ package com.github.lupi13.limpi.platform
 import com.github.lupi13.limpi.delivery.*
 import com.github.lupi13.limpi.market.*
 import com.github.lupi13.limpi.economy.Money
+import com.github.lupi13.limpi.economy.SaleSettlement
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.NamespacedKey
@@ -12,7 +13,7 @@ import java.nio.file.Path
 import java.util.UUID
 import java.util.logging.Level
 
-class DeliveryController(private val plugin: Plugin, private val service: DeliveryService, private val escrow: MarketEscrow) {
+class DeliveryController(private val plugin: Plugin, private val service: DeliveryService, private val escrow: MarketEscrow, private val removals: RemovalJournal) {
     private val checkpoint = NamespacedKey(plugin, "delivery_checkpoint")
     private val directory = plugin.config.getString("PlayerDataDirectory")?.takeIf(String::isNotBlank)?.let { configured ->
         val path = Path.of(configured)
@@ -30,7 +31,9 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
         if (freshLogin) blocked.remove(player.uniqueId)
         try {
             val inventory = PaperDeliveryInventory(player, checkpoint, files)
+            check(escrow.pending(player.uniqueId).size + removals.pending(player.uniqueId).size <= 1) { "Multiple interrupted removals" }
             escrow.recover(player.uniqueId, inventory, freshLogin)
+            removals.recover(player.uniqueId, inventory, freshLogin)
             val result = service.drain(player.uniqueId, inventory, freshLogin)
             if (result.delivered > 0) player.sendMessage(Component.text("미수령 물품 ${result.delivered}건을 지급했습니다.", NamedTextColor.GREEN))
             if (result.waitingForSpace > 0) player.sendMessage(Component.text(
@@ -59,6 +62,28 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
             blocked.add(player.uniqueId)
             plugin.logger.log(Level.SEVERE, "Market escrow $id failed for ${player.uniqueId}", failure)
             player.kick(Component.text("매물 회수 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
+            return false
+        }
+    }
+
+    fun sell(player: Player, id: UUID, before: List<StoredStack?>, prices: Map<Int, Money>): Boolean {
+        if (!claim(player)) return false
+        val inventory = PaperDeliveryInventory(player, checkpoint, files)
+        require(inventory.snapshot() == before) { "인벤토리가 변경되었습니다. 판매 대상을 다시 선택하세요." }
+        require(prices.isNotEmpty() && prices.keys.all { it in before.indices && before[it] != null })
+        val after = before.toMutableList().apply { prices.keys.forEach { this[it] = null } }.toList()
+        var prepared = false
+        try {
+            val record = removals.prepare(id, player.uniqueId, SaleSettlement.KIND, SaleSettlement.terms(prices), before, after)
+            prepared = true
+            removals.apply(record, inventory)
+            player.sendMessage(Component.text("${SaleSettlement.total(record).units}원 판매를 확정했습니다. 거래: $id", NamedTextColor.GREEN))
+            return true
+        } catch (failure: Exception) {
+            if (!prepared && (failure is com.github.lupi13.limpi.economy.BankException || failure is IllegalArgumentException)) throw failure
+            blocked.add(player.uniqueId)
+            plugin.logger.log(Level.SEVERE, "Sale removal $id failed for ${player.uniqueId}", failure)
+            player.kick(Component.text("판매 회수 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
             return false
         }
     }

@@ -47,7 +47,7 @@ class Check(private val plugin: Plugin) : Listener {
     fun legacy(item: ItemStack): LegacyCheck? {
         if (item.type != Material.PAPER || id(item) != null) return null
         val meta = item.itemMeta
-        val name = meta.itemName() ?: meta.customName() ?: return null
+        val name = meta.itemName()
         val plain = PlainTextComponentSerializer.plainText()
         return LegacyCheck.parse(plain.serialize(name), (meta.lore() ?: emptyList()).map(plain::serialize))
     }

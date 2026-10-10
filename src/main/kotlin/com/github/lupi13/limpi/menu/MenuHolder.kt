@@ -12,11 +12,16 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.plugin.Plugin
 
-enum class MenuKind { STOCK, SHOP, MARKET, ABILITY_SELECT, ABILITY_DICTIONARY, ABILITY_SHOP, ABILITY_ENEMY }
+enum class MenuKind { STOCK, SHOP, SELL, MARKET, ABILITY_SELECT, ABILITY_DICTIONARY, ABILITY_SHOP, ABILITY_ENEMY }
 sealed interface MenuAction {
     data class Page(val index: Int) : MenuAction
     data class StockQuote(val code: String, val price: Long) : MenuAction
     data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
+    data class ShopQuote(val code: String, val price: Long) : MenuAction
+    data class SaleSlot(val index: Int, val stack: com.github.lupi13.limpi.delivery.StoredStack, val price: Long, val selected: Boolean) : MenuAction
+    data class SaleConfirm(val before: List<com.github.lupi13.limpi.delivery.StoredStack?>, val prices: Map<Int, Long>) : MenuAction
+    data object SaleRefresh : MenuAction
+    data object SaleClear : MenuAction
 }
 
 /** Server-owned identity and actions: titles and item names carry no authority. */

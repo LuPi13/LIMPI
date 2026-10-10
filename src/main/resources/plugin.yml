@@ -17,6 +17,18 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.financial.admin.removal:
+    description: Inspect and resolve interrupted item sales and exchanges
+    default: op
+  limpi.financial.admin.catalog:
+    description: Configure server shop ratios and sale prices
+    default: op
+  limpi.financial.shop:
+    description: Buy items from the server shop
+    default: true
+  limpi.financial.sell:
+    description: Sell selected inventory stacks
+    default: true
   limpi.financial.check:
     description: Issue and redeem server-recorded checks
     default: true

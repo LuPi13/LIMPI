@@ -17,6 +17,10 @@ class FinancialTab: TabCompleter {
         val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
         val completions: MutableList<String> = mutableListOf()
         val list: MutableList<String> = mutableListOf()
+        if (args.size == 2 && args[0].equals("removal", true) && sender.hasPermission("limpi.financial.admin.removal")) {
+            StringUtil.copyPartialMatches(args[1], listOf("resolve"), completions)
+            return completions
+        }
         if (args.size == 2 && args[0].equals("check", true)) {
             if (sender.hasPermission("limpi.financial.check")) list.add("redeem")
             if (sender.hasPermission("limpi.financial.admin.check")) { list.add("inspect"); list.add("import") }
@@ -27,6 +31,7 @@ class FinancialTab: TabCompleter {
             if (args.size == 1) {
                 if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
                 if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
+                if (sender.hasPermission("limpi.financial.admin.removal")) list.add("removal")
                 if (sender.hasPermission("limpi.financial.admin.market")) list.add("market")
                 if (sender.hasPermission("limpi.financial.check") || sender.hasPermission("limpi.financial.admin.check")) list.add("check")
                 StringUtil.copyPartialMatches(args[0], list, completions)
@@ -43,9 +48,10 @@ class FinancialTab: TabCompleter {
                 if (sender.hasPermission("limpi.financial.check") || sender.hasPermission("limpi.financial.admin.check")) list.add("check")
                 if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
                 if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
+                if (sender.hasPermission("limpi.financial.admin.removal")) list.add("removal")
                 if (sender.hasPermission("limpi.financial.send")) list.add("send")
-                list.add("sell")
-                list.add("shop")
+                if (sender.hasPermission("limpi.financial.sell") || sender.hasPermission("limpi.financial.admin.catalog")) list.add("sell")
+                if (sender.hasPermission("limpi.financial.shop") || sender.hasPermission("limpi.financial.admin.catalog")) list.add("shop")
                 list.add("stock")
                 if (sender.hasPermission("limpi.financial.market")) list.add("market")
                 if (sender.isOp) {
@@ -58,6 +64,12 @@ class FinancialTab: TabCompleter {
 
             val needsPlayer: List<String> = listOf("spy", "set", "add", "send")
             val needsMaterial: List<String> = listOf("sell", "shop")
+            if (sender.hasPermission("limpi.financial.admin.catalog")) {
+                if (args.size == 2 && args[0] in needsMaterial) StringUtil.copyPartialMatches(args[1], listOf("set", "remove"), completions)
+                if (args.size == 3 && args[0] in needsMaterial && args[1] in listOf("set", "remove")) {
+                    StringUtil.copyPartialMatches(args[2], Functions.allMaterials, completions)
+                }
+            }
 
             if (args.size == 2 && needsPlayer.contains(args[0])) {
                 val playerNames = FileManager.players.knownNames()
@@ -89,16 +101,6 @@ class FinancialTab: TabCompleter {
 
             //only op
             if (sender.isOp) {
-                if (args.size == 2 && needsMaterial.contains(args[0])) {
-                    list.add("set")
-                    list.add("remove")
-                    StringUtil.copyPartialMatches(args[1], list, completions)
-                }
-
-                if (args.size == 3 && needsMaterial.contains(args[0]) && (args[1] == "set" || args[1] == "remove")) {
-                    StringUtil.copyPartialMatches(args[2], Functions.allMaterials, completions)
-                }
-
                 if (args.size == 5 && args[0] == "stock" && args[1] == "add") {
                     StringUtil.copyPartialMatches(args[4], Functions.allMaterials, completions)
                 }

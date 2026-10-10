@@ -13,6 +13,13 @@ object PaperItemCodec {
     fun payload(item: ItemStack): String = Base64.getEncoder().encodeToString(item.asOne().serializeAsBytes())
     fun item(payload: String, count: Int): ItemStack = ItemStack.deserializeBytes(Base64.getDecoder().decode(payload)).apply { amount = count }
     fun grant(item: ItemStack) = ItemGrant(payload(item), item.amount.toLong(), item.maxStackSize)
+    fun snapshot(player: Player): List<StoredStack?> {
+        check(Bukkit.isPrimaryThread())
+        return player.inventory.storageContents.map { item ->
+            if (item == null || item.type.isAir) null else StoredStack(payload(item), item.amount,
+                minOf(item.maxStackSize, player.inventory.maxStackSize))
+        }
+    }
 }
 
 class PaperDeliveryInventory(
@@ -21,10 +28,7 @@ class PaperDeliveryInventory(
     override fun stackLimit(): Int { checkMainThread(); return player.inventory.maxStackSize }
     override fun snapshot(): List<StoredStack?> {
         checkMainThread()
-        return player.inventory.storageContents.map { item ->
-            if (item == null || item.type.isAir) null else StoredStack(PaperItemCodec.payload(item), item.amount,
-                minOf(item.maxStackSize, player.inventory.maxStackSize))
-        }
+        return PaperItemCodec.snapshot(player)
     }
 
     override fun persistedCheckpoint(): UUID? { checkMainThread(); return files.read(player.uniqueId) }

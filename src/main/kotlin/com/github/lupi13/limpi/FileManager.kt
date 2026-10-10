@@ -4,10 +4,14 @@ import com.github.lupi13.limpi.player.PlayerRepository
 import com.github.lupi13.limpi.economy.BankService
 import com.github.lupi13.limpi.delivery.DeliveryJournal
 import com.github.lupi13.limpi.delivery.DeliveryService
+import com.github.lupi13.limpi.delivery.RemovalJournal
+import com.github.lupi13.limpi.economy.SaleSettlement
 import com.github.lupi13.limpi.platform.DeliveryController
 import com.github.lupi13.limpi.platform.PaperItemCodec
 import com.github.lupi13.limpi.market.*
 import com.github.lupi13.limpi.checks.CheckService
+import com.github.lupi13.limpi.economy.ShopService
+import com.github.lupi13.limpi.platform.PaperShopCatalog
 import org.bukkit.inventory.ItemStack
 import com.github.lupi13.limpi.storage.*
 import org.bukkit.Bukkit
@@ -33,6 +37,8 @@ class FileManager {
         private lateinit var marketService: MarketService
         private lateinit var marketEscrow: MarketEscrow
         private lateinit var checkService: CheckService
+        private lateinit var shopService: ShopService
+        private lateinit var removalJournal: RemovalJournal
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
@@ -43,6 +49,8 @@ class FileManager {
         val marketTrades: MarketService get() = marketService
         val escrow: MarketEscrow get() = marketEscrow
         val checks: CheckService get() = checkService
+        val shop: ShopService get() = shopService
+        val removals: RemovalJournal get() = removalJournal
 
         fun initialize(owner: Plugin) {
             plugin = owner
@@ -53,6 +61,7 @@ class FileManager {
             bankService = BankService(state, repository)
             deliveryJournal = DeliveryJournal(state)
             checkService = CheckService(state, deliveryJournal, repository)
+            shopService = ShopService(state, deliveryJournal, repository, PaperShopCatalog(owner)::offer)
             marketCatalog = MarketCatalog(state)
             val importedListings = LegacyMarketMigration.import(state, marketCatalog, repository::findByName) {
                 PaperItemCodec.grant(it as ItemStack)
@@ -60,7 +69,8 @@ class FileManager {
             owner.logger.info("Market catalog ready: $importedListings legacy listings imported")
             marketService = MarketService(state, marketCatalog, deliveryJournal, repository)
             marketEscrow = MarketEscrow(state, marketCatalog)
-            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow)
+            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement))
+            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal)
             financial.clear()
         }
 

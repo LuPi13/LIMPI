@@ -27,7 +27,7 @@ class MarketEscrow(private val store: StateStore, private val catalog: MarketCat
         val fingerprint = BankService.fingerprint("MARKET_REGISTER", catalog.encode(listing),
             YamlConfiguration().apply { set("before", InventoryImages.encode(before)); set("slot", slot) }.saveToString())
         val committed = store.execute(id, fingerprint) { tx ->
-            check(tx.documents("market_escrow_pending/$owner/").isEmpty()) { "An unresolved market registration exists" }
+            check(tx.documents("market_escrow_pending/$owner/").isEmpty() && tx.documents("removal_pending/$owner/").isEmpty()) { "An unresolved market registration exists" }
             check(catalog.read(tx, id) == null) { "Listing ID already exists" }
             catalog.write(tx, listing)
             tx.put(pendingKey(owner, id), encode(candidate))
@@ -44,24 +44,8 @@ class MarketEscrow(private val store: StateStore, private val catalog: MarketCat
             return // A replay must not remove a newly acquired identical stack.
         }
         check(decode(persisted) == record) { "Escrow changed before applying" }
-        // Only the freshly prepared caller or a fresh login may invoke this physical operation.
-        val current = inventory.snapshot()
-        val saved = inventory.persistedCheckpoint()
-        try {
-            when {
-                saved == record.checkpoint && current == record.after -> Unit
-                saved != record.checkpoint && current == record.before -> inventory.applyAndCheckpoint(record.before, record.after, record.checkpoint)
-                else -> {
-                    review(record, "Inventory or saved checkpoint differs from the escrow plan")
-                    throw DeliveryRecoveryRequired(record.owner, record.listing)
-                }
-            }
-            check(inventory.persistedCheckpoint() == record.checkpoint && inventory.snapshot() == record.after)
-            complete(record)
-        } catch (failure: Exception) {
-            if (failure is DeliveryRecoveryRequired) throw failure
-            throw DeliveryRecoveryRequired(record.owner, record.listing, failure)
-        }
+        PhysicalRemoval.apply(RemovalEvidence(record.listing, record.owner, record.checkpoint, record.before, record.after),
+            inventory, { reason -> review(record, reason) }, { complete(record) })
     }
 
     fun recover(owner: UUID, inventory: DeliveryInventory, freshLogin: Boolean) {

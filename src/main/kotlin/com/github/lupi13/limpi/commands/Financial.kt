@@ -20,7 +20,7 @@ import org.bukkit.inventory.meta.BookMeta
 import java.util.*
 import java.util.regex.Pattern
 
-class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean, private val marketCommands: MarketCommands, private val checkCommands: CheckCommands): CommandExecutor {
+class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean, private val marketCommands: MarketCommands, private val checkCommands: CheckCommands, private val catalogCommands: CatalogCommands, private val removalCommands: RemovalCommands): CommandExecutor {
 
     override fun onCommand(
         sender: CommandSender,
@@ -28,6 +28,7 @@ class Financial(private val accountCommands: AccountCommands, private val delive
         label: String,
         args: Array<out String>
     ): Boolean {
+        if (args.firstOrNull()?.equals("removal", true) == true) return removalCommands.execute(sender, args)
         if (deliveryCommands.handles(args)) return deliveryCommands.execute(sender, args)
         if (args.firstOrNull()?.equals("market", true) == true &&
             args.getOrNull(1)?.lowercase(Locale.ROOT) in setOf("escrow", "resolve", "owner")) return marketCommands.execute(sender, args)
@@ -38,6 +39,7 @@ class Financial(private val accountCommands: AccountCommands, private val delive
         }
         if (args.firstOrNull()?.equals("market", true) == true) return marketCommands.execute(sender, args)
         if (args.firstOrNull()?.equals("check", true) == true) return checkCommands.execute(sender, args)
+        if (args.firstOrNull()?.lowercase(Locale.ROOT) in setOf("sell", "shop")) return catalogCommands.execute(sender, args)
         if (accountCommands.handles(args)) return accountCommands.execute(sender, args)
         if (sender is Player) {
             val config = FileManager.getPlayerData(sender)
@@ -69,7 +71,7 @@ class Financial(private val accountCommands: AccountCommands, private val delive
                 page = Component.text("/financial send <이름 또는 UUID> <금액> [거래 ID]", NamedTextColor.GREEN)
                 page = page.append(Component.text(": 오프라인 계좌에도 송금합니다. 수수료 5%는 원 단위로 버립니다. 결과가 불확실하면 같은 거래 ID로 재시도하세요.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/financial sell", NamedTextColor.GREEN))
-                page = page.append(Component.text(": 아이템을 판매하는 창을 엽니다. 판매할 아이템을 넣고 오른쪽 아래 금을 클릭하면 판매됩니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text(": 원본 인벤토리의 스택을 선택하고 금을 눌러 판매합니다. 원본을 화면으로 옮기지 않습니다.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/financial shop", NamedTextColor.GREEN))
                 page = page.append(Component.text(": 아이템을 구매하는 창을 엽니다.\n\n", NamedTextColor.BLACK))
                 meta.addPages(page)
@@ -166,152 +168,6 @@ class Financial(private val accountCommands: AccountCommands, private val delive
                 }
             }
 
-
-            //  /fc sell
-            if (args[0].equals("sell", true)) {
-                if (args.size == 1) {
-                    SellEvents.openSellGUI(sender)
-                    sellTask(sender, sender.openInventory.topInventory)
-                    return true
-                }
-                else if (args[1].equals("set", true)) {
-                    if (sender.isOp) {
-                        if (args.size == 4) {
-                            val material = Functions.toMaterial(args[2])
-                            if (material == Material.AIR) {
-                                sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
-                                    .append(Component.text("은(는) 올바르지 않은 아이템입니다!", NamedTextColor.RED)))
-                                return true
-                            }
-                            val price: Long
-                            try {
-                                price = args[3].toLong()
-                            } catch (e: Exception) {
-                                sender.sendMessage(Component.text(args[3], NamedTextColor.YELLOW)
-                                    .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
-                                return true
-                            }
-                            FileManager.getSellPriceConfig()[material.name.lowercase(Locale.getDefault())] = price
-                            FileManager.saveSellPrice()
-                            sender.sendMessage(Component.text(material.name.lowercase(Locale.getDefault()), NamedTextColor.YELLOW)
-                                .append(Component.text("의 판매가격을 ", NamedTextColor.WHITE))
-                                .append(moneyDisplay(price))
-                                .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE)))
-                            return true
-                            }
-                        else {
-                            sender.sendMessage(Component.text("잘못된 형식입니다. /financial sell set <아이템> <금액>", NamedTextColor.RED))
-                            return true
-                        }
-                    }
-                    else {
-                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
-                        return true
-                    }
-                }
-                else if (args[1].equals("remove", true)) {
-                    if (sender.isOp) {
-                        if (args.size == 3) {
-                            val material = Functions.toMaterial(args[2])
-                            if (material == Material.AIR) {
-                                sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
-                                    .append(Component.text("은(는) 올바르지 않은 아이템입니다!", NamedTextColor.RED)))
-                                return true
-                            }
-                            FileManager.getSellPriceConfig()[material.name.lowercase(Locale.getDefault())] = null
-                            FileManager.saveSellPrice()
-                            sender.sendMessage(Component.text(material.name.lowercase(Locale.getDefault()), NamedTextColor.YELLOW)
-                                .append(Component.text("의 판매가격을 삭제했습니다.", NamedTextColor.WHITE)))
-                            return true
-                        }
-                        else {
-                            sender.sendMessage(Component.text("잘못된 형식입니다. /financial sell remove <아이템>", NamedTextColor.RED))
-                            return true
-                        }
-                    }
-                    else {
-                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
-                        return true
-                    }
-                }
-                else {
-                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial sell [set/remove]", NamedTextColor.RED))
-                    return true
-                }
-            }
-
-
-            //  /fc shop
-            if (args[0].equals("shop", true)) {
-                if (args.size == 1) {
-                    ShopEvents.openShopGUI(sender)
-                    return true
-                }
-                else if (args[1].equals("set", true)) {
-                    if (sender.isOp) {
-                        if (args.size == 4) {
-                            val material = Functions.toMaterial(args[2])
-                            if (material == Material.AIR) {
-                                sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
-                                    .append(Component.text("은(는) 올바르지 않은 아이템입니다!", NamedTextColor.RED)))
-                                return true
-                            }
-                            val ratio: Double
-                            try {
-                                ratio = args[3].toDouble()
-                            } catch (e: Exception) {
-                                sender.sendMessage(Component.text(args[3], NamedTextColor.YELLOW)
-                                    .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
-                                return true
-                            }
-                            FileManager.getShopRatioConfig()[material.name.lowercase(Locale.getDefault())] = ratio
-                            FileManager.saveShopRatio()
-                            sender.sendMessage(Component.text(material.name.lowercase(Locale.getDefault()), NamedTextColor.YELLOW)
-                                .append(Component.text("의 구매가격비율을 ", NamedTextColor.WHITE))
-                                .append(moneyDisplay(ratio))
-                                .append(Component.text("배로 설정했습니다.", NamedTextColor.WHITE)))
-                            return true
-                        }
-                        else {
-                            sender.sendMessage(Component.text("잘못된 형식입니다. /financial shop set <아이템> <비율>", NamedTextColor.RED))
-                            return true
-                        }
-                    }
-                    else {
-                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
-                        return true
-                    }
-                }
-                else if (args[1].equals("remove", true)) {
-                    if (sender.isOp) {
-                        if (args.size == 3) {
-                            val material = Functions.toMaterial(args[2])
-                            if (material == Material.AIR) {
-                                sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
-                                    .append(Component.text("은(는) 올바르지 않은 아이템입니다!", NamedTextColor.RED)))
-                                return true
-                            }
-                            FileManager.getShopRatioConfig()[material.name.lowercase(Locale.getDefault())] = null
-                            FileManager.saveShopRatio()
-                            sender.sendMessage(Component.text(material.name.lowercase(Locale.getDefault()), NamedTextColor.YELLOW)
-                                .append(Component.text("의 구매가격비율을 삭제했습니다.", NamedTextColor.WHITE)))
-                            return true
-                        }
-                        else {
-                            sender.sendMessage(Component.text("잘못된 형식입니다. /financial shop remove <아이템>", NamedTextColor.RED))
-                            return true
-                        }
-                    }
-                    else {
-                        sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
-                        return true
-                    }
-                }
-                else {
-                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial shop [set/remove]", NamedTextColor.RED))
-                    return true
-                }
-            }
 
             //  /fc stock
             if (args[0].equals("stock", true)) {

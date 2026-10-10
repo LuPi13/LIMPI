@@ -13,6 +13,26 @@ class YamlPlayerRepositoryTest {
     private val id = UUID.randomUUID()
     private fun file() = directory.resolve("$id.yml")
 
+    @Test fun `ambiguous historical names cannot resolve to the wrong account`() {
+        val other = UUID.randomUUID()
+        Files.writeString(file(), "name: SameName\nmoney: 100\n")
+        Files.writeString(directory.resolve("$other.yml"), "name: SameName\nmoney: 200\n")
+        val repository = YamlPlayerRepository(directory)
+        assertNull(repository.findByName("SameName"))
+        repository.ensure(id, "Renamed", 10000)
+        assertEquals(other, repository.findByName("SameName"))
+        assertEquals(id, repository.findByName("Renamed"))
+    }
+
+    @Test fun `empty custom sections survive unrelated edits`() {
+        Files.writeString(file(), "name: Player\nmoney: 100\ncustomEmpty: {}\n")
+        val repository = YamlPlayerRepository(directory)
+        val edit = repository.snapshot(id)
+        edit.set("ability", "web_shooter")
+        repository.save(id, edit)
+        assertTrue(YamlFiles.read(file()).contains("customEmpty"))
+    }
+
     @Test fun `existing players keep assets progress and custom fields on initialization`() {
         val original = "name: OldName\nmoney: 3000000000\nability: web_shooter\nunlockedAbilities: [web_shooter]\nquest:\n  progress: 12\ncustom: keep\n"
         Files.writeString(file(), original)

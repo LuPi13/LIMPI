@@ -1,6 +1,8 @@
 package com.github.lupi13.limpi.commands
 
 import com.github.lupi13.limpi.FileManager.Companion.getStockConfig
+import com.github.lupi13.limpi.FileManager
+import com.github.lupi13.limpi.events.StockEvents
 import com.github.lupi13.limpi.Functions
 import com.github.lupi13.limpi.LIMPI
 import org.bukkit.command.Command
@@ -20,16 +22,16 @@ class FinancialTab: TabCompleter {
                 list.add("help")
                 list.add("me")
                 list.add("check")
-                list.add("send")
+                if (sender.hasPermission("limpi.financial.send")) list.add("send")
                 list.add("sell")
                 list.add("shop")
                 list.add("stock")
                 list.add("market")
                 if (sender.isOp) {
                     list.add("spy")
-                    list.add("set")
-                    list.add("add")
                 }
+                if (sender.hasPermission("limpi.financial.admin.set")) list.add("set")
+                if (sender.hasPermission("limpi.financial.admin.add")) list.add("add")
                 StringUtil.copyPartialMatches(args[0], list, completions)
             }
 
@@ -37,14 +39,14 @@ class FinancialTab: TabCompleter {
             val needsMaterial: List<String> = listOf("sell", "shop")
 
             if (args.size == 2 && needsPlayer.contains(args[0])) {
-                val playerNames = plugin.server.onlinePlayers.map { it.name }
+                val playerNames = FileManager.players.knownNames()
                 StringUtil.copyPartialMatches(args[1], playerNames, completions)
             }
 
             if (args.size == 2 && args[0] == "stock") {
-                list.add("add")
                 list.add("show")
                 if (sender.isOp) {
+                    list.add("add")
                     list.add("remove")
                     list.add("refix")
                 }
@@ -75,7 +77,7 @@ class FinancialTab: TabCompleter {
                 }
 
                 if (args.size == 3 && args[0] == "stock" && (args[1] == "remove" || args[1] == "refix")) {
-                    for (name in getStockConfig().getKeys(false)) {
+                    for (name in StockEvents.codes(getStockConfig())) {
                         list.add(name)
                     }
                     list.add("all")

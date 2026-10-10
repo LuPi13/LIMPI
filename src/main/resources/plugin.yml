@@ -15,3 +15,14 @@ commands:
     description: command about ability, gacha, etc.
     usage: 잘못된 사용법이거나, config.yml에서 ability 시스템이 비활성화 되어 있습니다.
     aliases: [ab]
+
+permissions:
+  limpi.financial.send:
+    description: Send money to an existing account
+    default: true
+  limpi.financial.admin.set:
+    description: Set or repair an account balance
+    default: op
+  limpi.financial.admin.add:
+    description: Adjust an account balance
+    default: op

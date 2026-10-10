@@ -1,0 +1,57 @@
+# 플레이어 저장소·거래·복구 절차
+
+2026-10-10. `refactor/maintenance-paper26.3`의 구현 기준이다. 실제 서버 설치와 시험은 전체 정비 이후에 진행한다. 구현 진척은 [구현 기록](IMPLEMENTATION_LOG.md)을 확인한다.
+
+## 정본과 호환 경계
+
+| 대상 | 현재 저장 위치 | 비고 |
+| --- | --- | --- |
+| 플레이어 UUID·이름·잔액·능력·해금·퀘스트·보유 주식 | `plugins/LIMPI/limpi.sqlite3`, `documents`의 `player/<UUID>` | payload에 기존 YAML 필드를 보존. 캐시와 격리 편집 API 사용 |
+| 매물 | 같은 DB의 `financial/market` | 이전 구조를 보존한 payload. **구매/등록/회수 서비스의 원자 처리 연결은 아직 남음** |
+| 송금·관리자 잔액 변경 원장 | 같은 DB의 `transactions` | UUID·fingerprint·영수증·변경 키·시각 |
+| 최초 이전 정보 | 같은 DB의 `migration/legacy_yaml_v1` | 플레이어 수·잔액 합계·원본 SHA-256 |
+| 운영 설정·판매 가격·상점 비율·종목 가격 | 기존 YAML | DB 이전 대상이 아님 |
+| 기존 플레이어/market YAML | 기존 파일 + `backups/sqlite-v1/` | 최초 이전 원본. 이후 DB와 자동 동기화하지 않음 |
+
+플레이어 코드명/UUID를 재발급하지 않는다. 알 수 없는 필드와 빈 섹션도 보존한다. 같은 과거 이름이 여러 UUID에 연결되면 이름 조회를 거부한다. 이 경우 명령어에 UUID를 지정한다.
+
+## 최초 이전
+
+1. 실제 배포 전에 서버를 정상 종료하고 기존 플러그인 데이터와 월드/playerdata 전체의 복사본을 보관한다. 구현 중에는 실제 서버를 변경하지 않았다.
+2. 복사본을 사용하는 격리 서버에서 최초 enable을 검증한다. importer는 모든 `playerData/<UUID>.yml`과 `financial/market.yml`을 읽고 YAML/금액/schema를 검증한 뒤 저장을 시작한다. 별도의 운영자용 dry-run/export 명령은 아직 없다.
+3. 각 원본을 `backups/sqlite-v1/playerData/`와 `backups/sqlite-v1/financial/market.yml`에 보존한다. 이미 있는 백업이 현재 원본과 다르면 덮지 않고 거부한다.
+4. 모든 payload와 완료 marker를 한 SQLite 트랜잭션으로 저장한다. 로그에 가져온 플레이어 수와 잔액 합계가 나온다. 합계는 Long 합산 오버플로를 피하도록 BigInteger로 계산한다. marker의 각 원본 hash를 비교하고 UUID/능력/해금/퀘스트/매물도 복사본과 대조한다.
+5. commit 전에 실패하면 프로필/매물/marker가 부분 저장되지 않는다. YAML과 만들어진 백업은 보존한다. 오류 원인을 수정하고 재시도한다. 이미 성공한 DB는 재시작 때 과거 YAML을 다시 가져오지 않는다.
+
+소수/문자열/Long 초과 잔액, 잘못된 schemaVersion, 미래 버전, 깨진 YAML은 자동 0 초기화 대신 이전을 거부한다. 음수 legacy 잔액은 원본 그대로 남기고 은행 거래를 거부한다. 관리자가 기록을 확인한 후 `/financial set <UUID> <정상 금액>`으로 복구하면 원장에 이전 음수 잔액이 남는다.
+
+## 거래 재시도
+
+```text
+/financial send <이름 또는 UUID> <양수 금액> [거래 UUID]
+/financial set <이름 또는 UUID> <0 이상 금액> [거래 UUID]
+/financial add <이름 또는 UUID> <0이 아닌 증감액> [거래 UUID]
+```
+
+set/add는 콘솔도 지원한다. 권한은 `limpi.financial.send`(기본 true), `limpi.financial.admin.set`/`.add`(기본 op)다. 송금 수수료는 금액의 5%를 원 단위로 버리며 송신자에게 추가 차감한다.
+
+ID를 생략하면 새 UUID를 생성해 메시지로 안내한다. 결과가 불확실하면 **같은 송신자/명령/대상 UUID/금액/거래 UUID**로 재시도한다. 완료된 요청은 기존 영수증을 반환하고 잔액을 다시 변경하지 않는다. 같은 ID에 다른 요청을 넣으면 거부한다. ID를 생략해서 다시 입력하면 별도의 신규 거래다. 자동화에서는 요청 전에 UUID를 생성·보관해 전달한다.
+
+양쪽 잔액과 송금 영수증은 같은 commit에 들어간다. DB 저장 실패 시 성공 메시지를 보내지 않는다. 오류 로그의 거래 UUID와 `transactions`의 id로 확인할 수 있다. 직접 SQL로 잔액을 고치면 원장과 캐시 검증을 우회하므로 정상적인 관리자 변경에는 set/add를 사용한다.
+
+## 백업과 복구
+
+- 일반 백업은 서버 정상 종료와 DB 연결 종료 후 **LIMPI 데이터 폴더 전체 + 월드/playerdata**를 같은 시점에 복사한다. DB뿐 아니라 운영 YAML과 인벤토리도 함께 보관한다.
+- WAL 모드에서는 실행 중 `limpi.sqlite3` 하나만 복사하면 최신 commit이 빠질 수 있다. 남아 있는 `-wal`을 수동 삭제하지 않는다. 비정상 종료 상태를 확보할 때는 DB·WAL·관련 파일을 함께 보존한다. 실행 중 백업은 SQLite backup API를 사용하는 별도 도구가 필요하며 아직 구현하지 않았다. [SQLite WAL 설명](https://www.sqlite.org/wal.html)
+- 복구 전에 서버를 종료하고 현재 손상 상태를 별도 보존한다. 정상 종료 시점의 전체 백업을 새 복사본에 복원해 DB 무결성/프로필 수/잔액/원장/능력/퀘스트를 확인한다. 실제 복구 검증은 최종 격리 서버 시험 항목이다.
+- 최초 가져오기 직후 새 게임 변경이 전혀 없었다면 이전 YAML과 이전 JAR로 돌아갈 수 있다. **DB에서 거래/진행/매물 변경이 발생한 이후에는 오래된 YAML로 돌아가면 이후 변경을 잃는다.** 그때는 DB 백업을 복원하거나 검증된 export/역변환이 필요하다. DB를 지워 과거 YAML을 재가져오는 방식으로 복구하지 않는다.
+- SQLite schema는 user_version=1, application_id=`0x4C494D50`이다. 미래 schema/다른 application DB는 거부한다. 정체를 알 수 없는 기존 테이블을 LIMPI 테이블로 덮지 않는다.
+
+## 아직 남은 구현·검증
+
+- 마켓/수표/판매/상점/보상/아이템 지급을 원장과 복구 상태에 연결해야 한다. 저장 위치 이전만으로 이전 이벤트의 부분 반영/중복이 해결되지는 않는다.
+- Minecraft 인벤토리와 SQLite는 별도의 저장소다. 지급/회수에는 pending 상태와 저장 증거, 재시작 후 판별, 불확실한 상태의 관리자 확인 경로가 필요하다. DB 성공만으로 아이템 지급 완료를 확정하지 않는다.
+- 운영자용 dry-run/검사/export, 실행 중 백업 API, 실제 재시작/강제 종료 복구 시험, 서버 JVM native access 점검과 전체 서버 시험은 남아 있다.
+- 현재 DB 접근은 메인 스레드의 동기 처리다. 능력 hot path는 캐시를 사용하지만 거래/접속 저장 지연은 최종 서버에서 측정하고, Bukkit 객체를 넘기지 않는 저장 실행 구조를 추가 검토한다.
+
+사용한 드라이버: [sqlite-jdbc 3.53.4.0](https://github.com/xerial/sqlite-jdbc/releases/tag/3.53.4.0). DB 트랜잭션의 보장은 [SQLite atomic commit 설명](https://www.sqlite.org/atomiccommit.html)을 따른다. 전원 장애/파일 시스템/인벤토리 복구까지 단위 테스트로 보장했다고 주장하지 않는다.

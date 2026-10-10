@@ -3,6 +3,7 @@ package com.github.lupi13.limpi
 import com.github.lupi13.limpi.abilities.AbilityManager
 import com.github.lupi13.limpi.commands.Ability
 import com.github.lupi13.limpi.commands.AbilityTab
+import com.github.lupi13.limpi.commands.AccountCommands
 import com.github.lupi13.limpi.commands.Financial
 import com.github.lupi13.limpi.commands.FinancialTab
 import com.github.lupi13.limpi.events.*
@@ -57,7 +58,7 @@ class LIMPI : JavaPlugin() {
         time = System.currentTimeMillis()
         logger.info("Command setting...")
         if (config.getBoolean("EnableFinancialSystem")) {
-            getCommand("financial")!!.setExecutor(Financial())
+            getCommand("financial")!!.setExecutor(Financial(AccountCommands(FileManager.bank, FileManager.players, this)))
             getCommand("financial")!!.tabCompleter = FinancialTab()
         }
         if (config.getBoolean("EnableAbilitySystem")) {

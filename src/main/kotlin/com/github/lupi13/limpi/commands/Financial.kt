@@ -21,9 +21,8 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BookMeta
 import java.util.*
 import java.util.regex.Pattern
-import kotlin.math.absoluteValue
 
-class Financial: CommandExecutor {
+class Financial(private val accountCommands: AccountCommands): CommandExecutor {
 
     override fun onCommand(
         sender: CommandSender,
@@ -31,6 +30,7 @@ class Financial: CommandExecutor {
         label: String,
         args: Array<out String>
     ): Boolean {
+        if (accountCommands.handles(args)) return accountCommands.execute(sender, args)
         if (sender is Player) {
             val config = FileManager.getPlayerData(sender)
             val money = config.getLong("money")
@@ -54,8 +54,8 @@ class Financial: CommandExecutor {
                 page = page.append(Component.text(": 입력한 금액의 수표를 작성합니다. 우클릭하여 사용 가능합니다. ", NamedTextColor.BLACK))
                 meta.addPages(page)
 
-                page = Component.text("/financial send <플레이어> <금액>", NamedTextColor.GREEN)
-                page = page.append(Component.text(": 입력한 금액을 대상 플레이어에게 송금합니다. 수수료 5%가 부과됩니다.\n\n", NamedTextColor.BLACK))
+                page = Component.text("/financial send <이름 또는 UUID> <금액> [거래 ID]", NamedTextColor.GREEN)
+                page = page.append(Component.text(": 오프라인 계좌에도 송금합니다. 수수료 5%는 원 단위로 버립니다. 결과가 불확실하면 같은 거래 ID로 재시도하세요.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/financial sell", NamedTextColor.GREEN))
                 page = page.append(Component.text(": 아이템을 판매하는 창을 엽니다. 판매할 아이템을 넣고 오른쪽 아래 금을 클릭하면 판매됩니다.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/financial shop", NamedTextColor.GREEN))
@@ -201,180 +201,6 @@ class Financial: CommandExecutor {
             }
 
 
-            //  /fc send <player> <Long>
-            if (args[0].equals("send", true)) {
-                if (args.size == 3) {
-                    val targetName: String = args[1]
-                    try {
-                        val target: Player = FileManager.findPlayerByName(targetName)!!
-                        val targetConfig: FileConfiguration = FileManager.getPlayerData(target)
-
-                        if (target == sender) {
-                            sender.sendMessage(Component.text("자기 자신에게 송금할 수 없습니다!", NamedTextColor.RED))
-                            return true
-                        }
-
-                        val value: Long
-                        try {
-                            value = args[2].toLong()
-                        } catch (e: Exception) {
-                            sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
-                                .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
-                            return true
-                        }
-
-                        if ((value * 1.05).toLong() > money) {
-                            sender.sendMessage(Component.text("돈이 부족합니다! ", NamedTextColor.RED)
-                                .append(playerDisplay(sender))
-                                .append(Component.text("님은 현재 계좌에 ", NamedTextColor.RED))
-                                .append(moneyDisplay(money))
-                                .append(Component.text("원이 있습니다.", NamedTextColor.RED)))
-                            sender.sendMessage(Component.text("송금 시에는 5%의 수수료가 송금자에게로부터 추가로 부과됩니다.", NamedTextColor.RED))
-                            return true
-                        }
-
-                        if (value <= 0) {
-                            if (sender.isOp) {
-                                sender.sendMessage(Component.text("나쁜 사람...", NamedTextColor.YELLOW))
-                            }
-                            else {
-                                sender.sendMessage(Component.text("그러면 못써요", NamedTextColor.YELLOW))
-                                return true
-                            }
-                        }
-
-                        config["money"] = money - (value * 1.05).toLong()
-                        targetConfig["money"] = targetConfig.getLong("money") + value
-                        FileManager.savePlayerData(sender, config)
-                        FileManager.savePlayerData(target, targetConfig)
-                        sender.sendMessage(playerDisplay(target)
-                            .append(Component.text("님에게 ", NamedTextColor.WHITE))
-                            .append(moneyDisplay(value))
-                            .append(Component.text("원을 송금했습니다.", NamedTextColor.WHITE)))
-                        sender.sendMessage(Component.text("수수료 5%(", NamedTextColor.WHITE)
-                            .append(moneyDisplay((value * 0.05).toLong()))
-                            .append(Component.text("원)가 추가로 차감되었습니다.", NamedTextColor.WHITE)))
-                        sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
-                        target.sendMessage(playerDisplay(sender)
-                            .append(Component.text("님이 ", NamedTextColor.WHITE))
-                            .append(playerDisplay(target))
-                            .append(Component.text("님에게 ", NamedTextColor.WHITE))
-                            .append(moneyDisplay(value))
-                            .append(Component.text("원을 송금했습니다.", NamedTextColor.WHITE)))
-                        target.playSound(target, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
-                        return true
-
-                    } catch (e: Exception) {
-                        sender.sendMessage(Component.text("해당 플레이어를 찾을 수 없습니다!", NamedTextColor.RED))
-                        return true
-                    }
-                }
-                else {
-                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial send <플레이어> <금액>", NamedTextColor.RED))
-                }
-            }
-
-
-            //  /fc set <player> <Long>
-            if (args[0].equals("set", true)) {
-                if (!sender.isOp) {
-                    sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
-                    return true
-                }
-                if (args.size == 3) {
-                    val targetName: String = args[1]
-                    try {
-                        val target: Player = FileManager.findPlayerByName(targetName)!!
-                        val targetConfig: FileConfiguration = FileManager.getPlayerData(target)
-
-                        val value: Long
-                        try {
-                            value = args[2].toLong()
-                        } catch (e: Exception) {
-                            sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
-                                .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
-                            return true
-                        }
-
-                        if (value < 0) {
-                            sender.sendMessage(Component.text("나쁜 사람...", NamedTextColor.YELLOW))
-                        }
-
-                        targetConfig["money"] = value
-                        FileManager.savePlayerData(target, targetConfig)
-                        sender.sendMessage(playerDisplay(target)
-                            .append(Component.text("님의 계좌를 ", NamedTextColor.WHITE))
-                            .append(moneyDisplay(value))
-                            .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE)))
-                        sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
-
-                        target.sendMessage(playerDisplay(target)
-                            .append(Component.text("님의 계좌가 ", NamedTextColor.WHITE))
-                            .append(moneyDisplay(value)
-                            .append(Component.text("원으로 설정되었습니다.", NamedTextColor.WHITE))))
-                        target.playSound(target, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
-                        return true
-
-                    } catch (e: Exception) {
-                        sender.sendMessage(Component.text("해당 플레이어를 찾을 수 없습니다!", NamedTextColor.RED))
-                        return true
-                    }
-                }
-                else {
-                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial set <플레이어> <금액>", NamedTextColor.RED))
-                }
-            }
-
-
-            //  /fc add <player> <Long>
-            if (args[0].equals("add", true)) {
-                if (!sender.isOp) {
-                    sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED))
-                    return true
-                }
-                if (args.size == 3) {
-                    val targetName: String = args[1]
-                    try {
-                        val target: Player = FileManager.findPlayerByName(targetName)!!
-                        val targetConfig: FileConfiguration = FileManager.getPlayerData(target)
-
-                        val value: Long
-                        try {
-                            value = args[2].toLong()
-                        } catch (e: Exception) {
-                            sender.sendMessage(Component.text(args[2], NamedTextColor.YELLOW)
-                                .append(Component.text("은(는) 올바르지 않은 숫자입니다!", NamedTextColor.RED)))
-                            return true
-                        }
-
-                        targetConfig["money"] = value + targetConfig.getLong("money")
-                        FileManager.savePlayerData(target, targetConfig)
-                        sender.sendMessage(playerDisplay(target)
-                            .append(Component.text("님의 계좌에 ", NamedTextColor.WHITE))
-                            .append(moneyDisplay(value.absoluteValue))
-                            .append(Component.text("원을 ", NamedTextColor.WHITE))
-                            .append(Component.text(if (value > 0) "추가" else "차감", NamedTextColor.YELLOW))
-                            .append(Component.text("했습니다.", NamedTextColor.WHITE)))
-                        sender.playSound(sender, Sound.BLOCK_BEACON_ACTIVATE, 1F, 2F)
-
-                        target.sendMessage(playerDisplay(target)
-                            .append(Component.text("님의 계좌에 ", NamedTextColor.WHITE))
-                            .append(moneyDisplay(value.absoluteValue))
-                            .append(Component.text("원이 ", NamedTextColor.WHITE))
-                            .append(Component.text(if (value > 0) "추가" else "차감", NamedTextColor.YELLOW))
-                            .append(Component.text("되었습니다.", NamedTextColor.WHITE)))
-                        target.playSound(target, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
-                        return true
-
-                    } catch (e: Exception) {
-                        sender.sendMessage(Component.text("해당 플레이어를 찾을 수 없습니다!", NamedTextColor.RED))
-                        return true
-                    }
-                }
-                else {
-                    sender.sendMessage(Component.text("잘못된 형식입니다. /financial add <플레이어> <금액>", NamedTextColor.RED))
-                }
-            }
 
 
             //  /fc sell

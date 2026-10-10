@@ -20,6 +20,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:${kotlin.coreLibrariesVersion}"
     implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin.coreLibrariesVersion}"
     implementation 'fr.skytasul:guardianbeam:2.4.8'
+    implementation('org.xerial:sqlite-jdbc:3.53.4.0') {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
     testImplementation 'io.papermc.paper:paper-api:26.3.build.169-beta'
     testImplementation platform('org.junit:junit-bom:5.13.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

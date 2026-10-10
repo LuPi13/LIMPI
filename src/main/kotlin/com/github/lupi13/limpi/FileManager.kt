@@ -1,8 +1,8 @@
 package com.github.lupi13.limpi
 
 import com.github.lupi13.limpi.player.PlayerRepository
-import com.github.lupi13.limpi.storage.YamlFiles
-import com.github.lupi13.limpi.storage.YamlPlayerRepository
+import com.github.lupi13.limpi.economy.BankService
+import com.github.lupi13.limpi.storage.*
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import org.bukkit.configuration.file.FileConfiguration
@@ -18,18 +18,27 @@ class FileManager {
     companion object {
         private lateinit var plugin: Plugin
         private lateinit var repository: PlayerRepository
+        private lateinit var state: StateStore
+        private lateinit var bankService: BankService
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
+        val bank: BankService get() = bankService
+        val transactions: StateStore get() = state
 
         fun initialize(owner: Plugin) {
             plugin = owner
-            repository = YamlPlayerRepository(owner.dataFolder.toPath().resolve("playerData"))
+            state = SqliteStateStore(owner.dataFolder.toPath().resolve("limpi.sqlite3"))
+            val report = LegacyStateMigration.import(owner.dataFolder.toPath(), state)
+            owner.logger.info("Player storage ready: ${report.players} legacy profiles, balance sum ${report.balanceSum}, imported=${!report.reused}")
+            repository = CachedPlayerRepository(SqliteProfilePersistence(state))
+            bankService = BankService(state, repository)
             financial.clear()
         }
 
         fun setup() {
             for (name in listOf("misc", "sellPrice", "shopRatio", "stock", "market")) {
-                financial[name] = YamlFiles.read(financialPath(name))
+                financial[name] = if (name == "market") YamlFiles.parse(state.get("financial/market"))
+                    else YamlFiles.read(financialPath(name))
             }
         }
 
@@ -73,14 +82,17 @@ class FileManager {
         fun close() {
             if (::repository.isInitialized) repository.close()
             financial.clear()
+            if (::state.isInitialized) state.close()
         }
 
         private fun financialPath(name: String): Path = plugin.dataFolder.toPath().resolve("financial/$name.yml")
         private fun saveFinancial(name: String) = persist("save financial/$name.yml") {
             try {
-                YamlFiles.write(financialPath(name), financial.getValue(name))
+                if (name == "market") state.atomic { it.put("financial/market", financial.getValue(name).saveToString()) }
+                else YamlFiles.write(financialPath(name), financial.getValue(name))
             } catch (failure: Exception) {
-                financial[name] = YamlFiles.read(financialPath(name))
+                financial[name] = if (name == "market") YamlFiles.parse(state.get("financial/market"))
+                    else YamlFiles.read(financialPath(name))
                 throw failure
             }
         }

@@ -31,6 +31,7 @@ class AbilityTab: TabCompleter {
                 list.add("pickup")
                 list.add("ceiling")
                 list.add("pity")
+                list.add("result")
                 if (sender.isOp) {
                     list.add("set")
                     list.add("reload")

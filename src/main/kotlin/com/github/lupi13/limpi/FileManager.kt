@@ -7,6 +7,7 @@ import com.github.lupi13.limpi.delivery.DeliveryService
 import com.github.lupi13.limpi.delivery.RemovalJournal
 import com.github.lupi13.limpi.economy.SaleSettlement
 import com.github.lupi13.limpi.economy.ItemExchange
+import com.github.lupi13.limpi.gacha.GachaSettlement
 import com.github.lupi13.limpi.platform.DeliveryController
 import com.github.lupi13.limpi.platform.PaperItemCodec
 import com.github.lupi13.limpi.market.*
@@ -41,6 +42,7 @@ class FileManager {
         private lateinit var shopService: ShopService
         private lateinit var removalJournal: RemovalJournal
         private lateinit var itemExchange: ItemExchange
+        private lateinit var gachaSettlement: GachaSettlement
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
@@ -54,6 +56,7 @@ class FileManager {
         val shop: ShopService get() = shopService
         val removals: RemovalJournal get() = removalJournal
         val exchanges: ItemExchange get() = itemExchange
+        val gacha: GachaSettlement get() = gachaSettlement
 
         fun initialize(owner: Plugin) {
             plugin = owner
@@ -73,7 +76,8 @@ class FileManager {
             marketService = MarketService(state, marketCatalog, deliveryJournal, repository)
             marketEscrow = MarketEscrow(state, marketCatalog)
             itemExchange = ItemExchange(state, deliveryJournal)
-            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange))
+            gachaSettlement = GachaSettlement(state)
+            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange, GachaSettlement.KIND to gachaSettlement))
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal)
             financial.clear()
         }

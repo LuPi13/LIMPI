@@ -8,8 +8,8 @@
 - 현재 사용자 요청: `refactor/maintenance-paper26.3` 브랜치에서 전체 정비를 진행하고 문서·커밋·가능한 push를 유지한다. **main에 병합하지 않는다. 실제 서버 실행/플레이 검증은 전체 수정 이후로 미룬다.** 서버 시험을 지금 진행하거나 이를 이유로 구현을 중단하지 않는다.
 - 다음 작업 전에 [구현 기록](docs/IMPLEMENTATION_LOG.md)의 완료/미완료 항목과 다음 순서를 읽는다.
 - 플레이어/마켓 정본은 `limpi.sqlite3`다. 기존 YAML은 최초 이전 원본이며 이후 자동 동기화하지 않는다. [저장소·복구 절차](docs/STORAGE_AND_RECOVERY.md)를 따른다. DB를 삭제해 과거 YAML을 재가져오는 복구를 하지 않는다.
-- 송금·관리자 set/add·마켓·수표·판매·상점·능력 상점은 SQLite 멱등 원장을 사용한다. 같은 거래 UUID에 다른 요청을 허용하지 않는다. 캐시와 DB 변경을 함께 관리한다. 선택권 사용/뽑기/보상 등의 연결은 아직 남아 있으며 DB와 인벤토리가 원자적이라고 가정하지 않는다. [수표·전환 절차](docs/CHECKS_AND_LEGACY_MIGRATION.md)를 따른다. 기존 수표 공개 해시는 발행 증거가 아니며 자동 입금하지 않는다.
+- 송금·관리자 set/add·마켓·수표·판매·상점·능력 상점은 SQLite 멱등 원장을 사용한다. 같은 거래 UUID에 다른 요청을 허용하지 않는다. 캐시와 DB 변경을 함께 관리한다. 선택권 사용/초기·퀘스트 보상의 연결은 아직 남아 있으며 DB와 인벤토리가 원자적이라고 가정하지 않는다. [수표·전환 절차](docs/CHECKS_AND_LEGACY_MIGRATION.md)를 따른다. 기존 수표 공개 해시는 발행 증거가 아니며 자동 입금하지 않는다.
 - 지급/마켓의 조건은 [지급 복구](docs/DELIVERY_RECOVERY.md)와 [마켓 복구](docs/MARKET_RECOVERY.md)에 기록했다. Paper 지급·접속 복구·claim·관리자 검토와 마켓 등록 escrow/이전·GUI/명령을 연결했다. 실패 후 같은 live inventory를 정상 재시도 대상으로 사용하지 않는다. escrow를 지급보다 먼저 복구하고, 물리 시도마다 checkpoint를 구분하며 slotLimit을 반영한다. 실제 서버 검증은 남아 있다.
 - [상점·판매/공통 회수](docs/SHOP_AND_SALE_RECOVERY.md)를 읽는다. 마켓/판매 회수는 owner의 checkpoint 예약을 공유하고 지급보다 먼저 복구한다. 판매 선택 화면에는 원본 물품을 옮기지 않는다. `RemovalEffect`는 트랜잭션 내부 DB 정산만 수행하며 Bukkit/메시지/다른 DB transaction을 호출하지 않는다.
-- 능력 상점 구매는 ItemExchange로 에메랄드 회수→전체 수량 미수령을 연결했다. 선택권 사용/뽑기 소비·확정/초기 지급은 아직 직접 경로가 남아 있다. 기존 티켓 metadata를 유지했고 PDC 식별/이전과 공통 이동 제한은 다음 단계다. EmeraldFix는 누락 repair=50, 명시적 0 비활성 보존 정책이다.
-- [뽑기 규칙](docs/GACHA_RULES_AND_RECOVERY.md)을 읽는다. GachaPolicy와 실제 추첨/help/pity, typed 획득 분류/후보 snapshot을 연결했다. 기본 천장은 LEGENDARY 100/EPIC 조건부 10이며 EPIC보다 LEGENDARY가 우선한다. GACHA-01의 직접 소비→연출 종료 해금 경로는 아직 남아 있으므로 원자성 해결로 처리하지 않는다.
+- 능력 상점 구매는 ItemExchange로 에메랄드 회수→전체 수량 미수령을 연결했다. 뽑기 소비·확정은 공통 회수/GachaSettlement에 연결했다. 선택권 사용/초기 지급은 아직 직접 경로가 남아 있다. 기존 티켓 metadata를 유지했고 PDC 식별/이전과 공통 이동 제한은 다음 단계다. EmeraldFix는 누락 repair=50, 명시적 0 비활성 보존 정책이다.
+- [뽑기 규칙](docs/GACHA_RULES_AND_RECOVERY.md)을 읽는다. GachaPolicy와 실제 추첨/help/pity, typed 획득 분류/후보 snapshot을 연결했다. 기본 천장은 LEGENDARY 100/EPIC 조건부 10이며 EPIC보다 LEGENDARY가 우선한다. GACHA-01은 공통 회수→해금/천장/결과 원자 commit→표현으로 연결했다. 복구 중 재추첨하지 않는다. ForceTroll은 gacha_apply_pending으로 별도 적용/ack하며 능력 전환 전체 정비는 남아 있다.

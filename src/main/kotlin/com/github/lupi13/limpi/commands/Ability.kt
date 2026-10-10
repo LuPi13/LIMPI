@@ -40,6 +40,20 @@ class Ability: CommandExecutor {
         label: String,
         args: Array<out String>
     ): Boolean {
+        if (args.firstOrNull()?.equals("result", ignoreCase = true) == true) {
+            if (sender !is Player) { sender.sendMessage("플레이어만 자신의 뽑기 결과를 조회할 수 있습니다."); return true }
+            val id = args.getOrNull(1)?.let { runCatching { java.util.UUID.fromString(it) }.getOrNull() }
+            if (args.size != 2 || id == null) { sender.sendMessage("사용법: /ability result <거래 UUID>"); return true }
+            try {
+                val result = FileManager.gacha.find(sender.uniqueId, id)
+                if (result == null) sender.sendMessage("확정된 뽑기 결과가 없습니다. 회수 대기 기록은 관리자에게 확인하세요.")
+                else sender.sendMessage("뽑기 결과: ${result.terms.outcome.grade} / ${result.terms.outcome.ability}, 픽업=${result.terms.outcome.pickup}, 거래=$id")
+            } catch (failure: Exception) {
+                plugin.logger.log(java.util.logging.Level.WARNING, "Unable to read gacha result $id for ${sender.uniqueId}", failure)
+                sender.sendMessage("뽑기 결과를 읽지 못했습니다. 관리자에게 문의하세요.")
+            }
+            return true
+        }
         if (sender is Player) {
             val player: Player = sender
 
@@ -76,6 +90,8 @@ class Ability: CommandExecutor {
                 page = page.append(Component.text(": 현재 천장 시스템의 내 정보를 확인합니다.\n\n", NamedTextColor.BLACK))
                 page = page.append(Component.text("/ability pickup", NamedTextColor.GREEN))
                 page = page.append(Component.text(": 현재 뽑기에서 천장 시스템을 통해 확정적으로 얻을 수 있는 능력을 확인합니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text("/ability result <거래 UUID>", NamedTextColor.GREEN))
+                page = page.append(Component.text(": 저장된 자신의 뽑기 결과를 확인합니다.\n\n", NamedTextColor.BLACK))
                 meta.addPages(page)
 
                 if (sender.isOp) {

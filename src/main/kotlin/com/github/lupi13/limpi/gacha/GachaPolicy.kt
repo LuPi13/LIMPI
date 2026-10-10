@@ -33,6 +33,16 @@ data class GachaSettings(val legendary: PityCurve, val epic: PityCurve, val trol
 }
 data class DrawOutcome(val grade: DrawGrade, val ability: String, val pickup: Boolean, val after: GachaState)
 
+/** Shared by sampling and persisted-result validation; recovery never samples again. */
+fun GachaState.advance(grade: DrawGrade, pickup: Boolean): GachaState {
+    require(!pickup || grade == DrawGrade.LEGENDARY || grade == DrawGrade.EPIC)
+    return GachaState(
+        if (grade == DrawGrade.LEGENDARY) 0 else Math.incrementExact(legendaryCount),
+        if (grade == DrawGrade.EPIC) 0 else Math.incrementExact(epicCount),
+        if (grade == DrawGrade.LEGENDARY) { if (pickup) 0 else Math.incrementExact(legendaryMiss) } else legendaryMiss,
+        if (grade == DrawGrade.EPIC) { if (pickup) 0 else Math.incrementExact(epicMiss) } else epicMiss)
+}
+
 class GachaPolicy(val settings: GachaSettings) {
     private fun sample(random: () -> Double): Double = random().also { require(it.isFinite() && it >= 0 && it < 1) }
     fun grade(state: GachaState, random: () -> Double): DrawGrade = when {
@@ -58,11 +68,7 @@ class GachaPolicy(val settings: GachaSettings) {
         }
         val code = if (forced) requireNotNull(pickupCode) else pool[(sample(random) * pool.size).toInt()]
         val isPickup = pickupCode != null && code == pickupCode
-        val after = GachaState(
-            if (grade == DrawGrade.LEGENDARY) 0 else Math.incrementExact(state.legendaryCount),
-            if (grade == DrawGrade.EPIC) 0 else Math.incrementExact(state.epicCount),
-            if (grade == DrawGrade.LEGENDARY) { if (isPickup) 0 else Math.incrementExact(state.legendaryMiss) } else state.legendaryMiss,
-            if (grade == DrawGrade.EPIC) { if (isPickup) 0 else Math.incrementExact(state.epicMiss) } else state.epicMiss)
+        val after = state.advance(grade, isPickup)
         return DrawOutcome(grade, code, isPickup, after)
     }
     /** Unconditional next-draw probabilities preserve the original sequential conditional rolls. */

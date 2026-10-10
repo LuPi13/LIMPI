@@ -18,6 +18,7 @@ import com.github.lupi13.limpi.platform.DeliveryGuard
 import org.bukkit.plugin.java.JavaPlugin
 
 class LIMPI : JavaPlugin() {
+    private var gacha: GachaEvents? = null
     override fun onEnable() {
         // Plugin startup logic
 
@@ -53,12 +54,16 @@ class LIMPI : JavaPlugin() {
         }
         if (config.getBoolean("EnableAbilitySystem")) {
             server.pluginManager.registerEvents(AbilityManager, this)
-            server.pluginManager.registerEvents(GachaEvents(), this)
+            val gachaEvents = GachaEvents(this)
+            gacha = gachaEvents
+            server.pluginManager.registerEvents(gachaEvents, this)
             server.pluginManager.registerEvents(AbilityShop(), this)
             server.pluginManager.registerEvents(AbilityEnemySelect(), this)
             server.pluginManager.registerEvents(AbilitySelectEvent(), this)
             server.pluginManager.registerEvents(AbilityDictionary(), this)
             AbilityManager.registerAbilities()
+            FileManager.delivery.afterClaim = gachaEvents::recoverApplications
+            server.onlinePlayers.forEach { FileManager.delivery.claim(it) }
         }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
@@ -89,6 +94,8 @@ class LIMPI : JavaPlugin() {
     override fun onDisable() {
         // Plugin shutdown logic
         StockEvents.stop()
+        gacha?.close()
+        gacha = null
         FileManager.close()
         logger.info("LIMPI disabled.")
     }

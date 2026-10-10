@@ -5,16 +5,10 @@ import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.abilities.AbilityManager
 import com.github.lupi13.limpi.abilities.Grade
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
-import org.bukkit.Color
 import org.bukkit.Material
-import org.bukkit.Particle
-import org.bukkit.Sound
-import org.bukkit.entity.ItemDisplay
 import org.bukkit.entity.Player
-import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
@@ -23,16 +17,25 @@ import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.util.Transformation
-import org.bukkit.util.Vector
-import org.joml.AxisAngle4f
-import org.joml.Vector3f
 import kotlin.random.Random
 import com.github.lupi13.limpi.gacha.*
 import com.github.lupi13.limpi.abilities.AcquisitionType
 
-class GachaEvents : Listener {
+class GachaEvents(private val owner: Plugin) : Listener {
+    private val animation = GachaAnimation(owner)
+    fun close() = animation.closeAll()
+
+    fun recoverApplications(player: Player) {
+        for (result in FileManager.gacha.pendingApplications(player.uniqueId)) {
+            val ability = requireNotNull(AbilityManager.getAbilityByCodeName(result.terms.outcome.ability))
+            require(ability.grade == Grade.TROLL && ability.restrictedSlot == null)
+            AbilityManager.applyAbility(player, ability)
+            FileManager.gacha.acknowledgeApplication(
+                java.util.UUID.nameUUIDFromBytes("gacha-apply:${result.owner}:${result.id}".toByteArray(Charsets.UTF_8)),
+                result.owner, result.id, ability.codeName)
+        }
+    }
+
     companion object {
         val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
 
@@ -66,15 +69,21 @@ class GachaEvents : Listener {
     }
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST)
     fun onClickGacha(event: PlayerInteractEvent) {
+        if (event.action != Action.RIGHT_CLICK_AIR && event.action != Action.RIGHT_CLICK_BLOCK) return
+        if (event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return
         val player = event.player
-        if (event.action == Action.LEFT_CLICK_AIR || event.action == Action.LEFT_CLICK_BLOCK || event.action == Action.PHYSICAL) return
-        if (event.item == null || !event.item!!.isSimilar(getGachaTicketItem())) return
-        else {
+        val hand = event.hand ?: return
+        val item = player.inventory.getItem(hand)
+        if (!item.isSimilar(getGachaTicketItem())) return
+        event.isCancelled = true
+        if (!player.isOnline || player.isDead || animation.active(player.uniqueId)) return
+        if (!FileManager.delivery.claim(player)) return
+        try {
             val config = FileManager.getPlayerData(player)
-            val settings = GachaConfiguration.settings(plugin.config)
             val state = GachaConfiguration.state(config)
+            val settings = GachaConfiguration.settings(owner.config)
             val eligible = AbilityManager.abilities.filter { it.acquisition == AcquisitionType.GACHA }.toList()
             val candidates = DrawGrade.entries.associateWith { grade -> eligible.filter { it.grade.name == grade.name }.map { it.codeName } }
             val pickupTime = AbilityPickUp.getRoundedTime()
@@ -82,181 +91,25 @@ class GachaEvents : Listener {
                 DrawGrade.EPIC to AbilityPickUp.getEpicPickUp(pickupTime).codeName)
             val outcome = GachaPolicy(settings).draw(state, candidates, pickups, Random::nextDouble)
             val ability = requireNotNull(AbilityManager.getAbilityByCodeName(outcome.ability))
-            val grade = ability.grade
-            // Validation/selection precede consumption. Durable ticket+unlock settlement is the next migration.
-            event.isCancelled = true
-            event.item!!.amount -= 1
-            GachaConfiguration.write(config, outcome.after)
-            FileManager.savePlayerData(player, config)
-
-            val gachaLocation = player.eyeLocation.add(player.location.direction)
-            val gachaVisual = player.world.spawn(gachaLocation, ItemDisplay::class.java)
-            gachaVisual.transformation = Transformation(
-                Vector3f(0f, -0.5f, 0f),
-                AxisAngle4f(0f, 0f, 0f, 0f),
-                Vector3f(0.5f, 0.5f, 0.5f),
-                AxisAngle4f(0f, 0f, 0f, 0f)
-            )
-            gachaVisual.interpolationDelay = 0
-            gachaVisual.interpolationDuration = 0
-
-            val dust = Particle.DustOptions(Color.WHITE, 0.5f)
-            val dustTransition = when (grade) {
-                Grade.LEGENDARY -> Particle.DustTransition(Color.WHITE, Color.ORANGE, 1f)
-                Grade.EPIC -> Particle.DustTransition(Color.WHITE, Color.PURPLE, 1f)
-                Grade.RARE -> Particle.DustTransition(Color.WHITE, Color.TEAL, 1f)
-                Grade.COMMON -> Particle.DustTransition(Color.WHITE, Color.GREEN, 1f)
-                else -> Particle.DustTransition(Color.WHITE, Color.fromRGB(1, 1, 1), 1f)
-            }
-
-            val initialYaw = player.yaw
-
-            gachaVisual.setItemStack(getGachaTicketItem())
-            gachaVisual.setRotation(initialYaw, 0f)
-            player.world.spawnParticle(Particle.CLOUD, gachaLocation, 50, 0.3, 0.3, 0.3, 0.1)
-            player.world.playSound(gachaLocation, Sound.BLOCK_VAULT_OPEN_SHUTTER, 1.0f, 0.5f)
-            player.world.playSound(gachaLocation, Sound.BLOCK_TRIAL_SPAWNER_ABOUT_TO_SPAWN_ITEM, 1.0f, 0.5f)
-
-            object: BukkitRunnable() {
-                var timer = 0
-                override fun run() {
-                    if (timer == 1) {
-                        gachaVisual.transformation = Transformation(
-                            Vector3f(0f, 0f, 0f),
-                            AxisAngle4f(0f, 0f, 0f, 0f),
-                            Vector3f(1f, 1f, 1f),
-                            AxisAngle4f(0f, 0f, 0f, 0f)
-                        )
-                        gachaVisual.interpolationDelay = 0
-                        gachaVisual.interpolationDuration = 100
-                    }
-                    // 5초간 회전, 파티클, 점점 빨라짐
-                    if (timer <= 100) {
-                        gachaVisual.setRotation(gachaVisual.yaw + (timer / 2f), gachaVisual.pitch)
-                        if (timer <= 60) {
-                            gachaVisual.world.spawnParticle(
-                                Particle.DUST,
-                                gachaLocation,
-                                (timer / 10).coerceAtLeast(1),
-                                0.3, 0.3, 0.3,
-                                0.1, dust
-                            )
-                        }
-                        else {
-                            gachaVisual.world.spawnParticle(
-                                Particle.DUST_COLOR_TRANSITION,
-                                gachaLocation,
-                                ((timer-60) / 2).coerceAtLeast(1),
-                                0.3, 0.3, 0.3,
-                                0.1, dustTransition
-                            )
-                        }
-                    }
-
-                    // 감속, 아이템 표시
-                    else if (timer <= 140) {
-                        val abilityItem = ability.getItem()
-                        gachaVisual.setItemStack(abilityItem)
-                        gachaVisual.setRotation(gachaVisual.yaw + ((140 - timer) / 1.09f), gachaVisual.pitch)
-                    }
-
-                    // 뽑기 완료, 능력 표시
-                    else {
-                        gachaVisual.setRotation(initialYaw, 0f)
-                        gachaVisual.transformation = Transformation(
-                            Vector3f(0f, 0f, 0f),
-                            AxisAngle4f(0f, 0f, 0f, 0f),
-                            Vector3f(0.7f, 0.7f, 0.7f),
-                            AxisAngle4f(0f, 0f, 0f, 0f)
-                        )
-                        gachaVisual.interpolationDelay = 0
-                        gachaVisual.interpolationDuration = 10
-
-
-                        val gachaName = gachaVisual.world.spawn(gachaLocation.setRotation(initialYaw + 180f, 0f), TextDisplay::class.java)
-                        gachaName.text(ability.displayName
-                            .append(Component.text(" "))
-                            .append(ability.grade.displayGrade)
-                            .append(Component.text(" "))
-                            .append(ability.element.displayElement))
-
-                        //초기상태: 크기 0
-                        gachaName.transformation = Transformation(
-                            Vector3f(0f, 0f, 0f),
-                            AxisAngle4f(0f, 0f, 0f, 0f),
-                            Vector3f(0.0f, 0.0f, 0.0f),
-                            AxisAngle4f(0f, 0f, 0f, 0f)
-                        )
-                        gachaName.interpolationDelay = 0
-                        gachaName.interpolationDuration = 0
-
-                        // 1틱 후 크기 증가, 위치 위로
-                        object: BukkitRunnable() {
-                            override fun run() {
-                                gachaName.transformation = Transformation(
-                                    Vector3f(0f, 0.4f, 0f),
-                                    AxisAngle4f(0f, 0f, 0f, 0f),
-                                    Vector3f(0.5f, 0.5f, 0.5f),
-                                    AxisAngle4f(0f, 0f, 0f, 0f)
-                                )
-                                gachaName.interpolationDelay = 0
-                                gachaName.interpolationDuration = 10
-                            }
-                        }.runTaskLater(plugin, 1L)
-
-
-                        val gachaLore = gachaVisual.world.spawn(gachaLocation.subtract(0.0, 0.4, 0.0).setRotation(initialYaw + 180f, 0f), TextDisplay::class.java)
-                        val lore = Component.join(JoinConfiguration.separator(Component.text("\n")), ability.description)
-                        gachaLore.text(lore)
-
-                        //초기상태: 크기 0
-                        gachaLore.transformation = Transformation(
-                            Vector3f(0f, 0f, 0f),
-                            AxisAngle4f(0f, 0f, 0f, 0f),
-                            Vector3f(0.0f, 0.0f, 0.0f),
-                            AxisAngle4f(0f, 0f, 0f, 0f)
-                        )
-                        gachaLore.interpolationDelay = 0
-                        gachaLore.interpolationDuration = 10
-
-                        // 1틱 후 크기 증가, 위치 아래로
-                        object: BukkitRunnable() {
-                            override fun run() {
-                                gachaLore.transformation = Transformation(
-                                    Vector3f(0f, -0.25f, 0f),
-                                    AxisAngle4f(0f, 0f, 0f, 0f),
-                                    Vector3f(0.4f, 0.4f, 0.4f),
-                                    AxisAngle4f(0f, 0f, 0f, 0f)
-                                )
-                                gachaLore.interpolationDelay = 0
-                                gachaLore.interpolationDuration = 10
-                            }
-                        }.runTaskLater(plugin, 1L)
-
-
-                        // 5초 후 디스플레이 제거, 능력 획득
-                        object: BukkitRunnable() {
-                            override fun run() {
-                                AbilityManager.unlockAbility(player, ability)
-
-                                // TROLL 능력 강제 적용
-                                if ((plugin.config.getBoolean("ForceTroll")) && ability.grade == Grade.TROLL) {
-                                    player.sendMessage(Grade.TROLL.displayGrade.append(Component.text(" 능력이 강제 적용됩니다!", NamedTextColor.RED)))
-                                    AbilityManager.applyAbility(player, ability)
-                                }
-
-                                gachaVisual.remove()
-                                gachaName.remove()
-                                gachaLore.remove()
-                                player.world.playSound(gachaLocation, Sound.BLOCK_AMETHYST_CLUSTER_BREAK, 1f, 2f)
-                                player.world.spawnParticle(Particle.CLOUD, gachaLocation.add(Vector(0.0, 0.4, 0.0)), 50, 0.3, 0.3, 0.3, 0.1)
-                            }
-                        }.runTaskLater(plugin, 100L)
-                        cancel()
-                    }
-                    timer++
-                }
-            }.runTaskTimer(plugin, 0L, 1L)
+            val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, includeOffHand = true)
+            val slot = if (hand == org.bukkit.inventory.EquipmentSlot.OFF_HAND) before.lastIndex else player.inventory.heldItemSlot
+            val ticket = requireNotNull(before[slot])
+            require(ticket.payload == com.github.lupi13.limpi.platform.PaperItemCodec.payload(getGachaTicketItem()))
+            val after = before.toMutableList().apply { this[slot] = if (ticket.count == 1) null else ticket.copy(count = ticket.count - 1) }.toList()
+            val terms = GachaTerms(ticket.payload, slot, state, outcome, pickupTime, owner.config.getBoolean("ForceTroll") && outcome.grade == DrawGrade.TROLL)
+            val id = java.util.UUID.randomUUID()
+            if (!FileManager.delivery.remove(player, id, GachaSettlement.KIND, terms.encode(), before, after)) return
+            val result = requireNotNull(FileManager.gacha.find(player.uniqueId, id))
+            player.sendMessage(Component.text("뽑기 결과를 저장했습니다. 조회: /ability result ${result.id}", NamedTextColor.GREEN))
+            if (!FileManager.delivery.claim(player)) return
+            animation.start(player, ability, getGachaTicketItem())
+        } catch (failure: Exception) {
+            owner.logger.log(java.util.logging.Level.WARNING, "Gacha request failed for ${player.uniqueId}", failure)
+            player.sendMessage(Component.text("뽑기를 완료하지 못했습니다. 저장된 거래 기록은 유지됩니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
+
+    @EventHandler fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) = animation.close(event.player.uniqueId)
+    @EventHandler fun onWorldChange(event: org.bukkit.event.player.PlayerChangedWorldEvent) = animation.close(event.player.uniqueId)
+    @EventHandler fun onDeath(event: org.bukkit.event.entity.PlayerDeathEvent) = animation.close(event.entity.uniqueId)
 }

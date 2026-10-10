@@ -13,9 +13,10 @@ object PaperItemCodec {
     fun payload(item: ItemStack): String = Base64.getEncoder().encodeToString(item.asOne().serializeAsBytes())
     fun item(payload: String, count: Int): ItemStack = ItemStack.deserializeBytes(Base64.getDecoder().decode(payload)).apply { amount = count }
     fun grant(item: ItemStack) = ItemGrant(payload(item), item.amount.toLong(), item.maxStackSize)
-    fun snapshot(player: Player): List<StoredStack?> {
+    fun snapshot(player: Player, includeOffHand: Boolean = false): List<StoredStack?> {
         check(Bukkit.isPrimaryThread())
-        return player.inventory.storageContents.map { item ->
+        val items = player.inventory.storageContents.toList() + if (includeOffHand) listOf(player.inventory.itemInOffHand) else emptyList()
+        return items.map { item ->
             if (item == null || item.type.isAir) null else StoredStack(payload(item), item.amount,
                 minOf(item.maxStackSize, player.inventory.maxStackSize))
         }
@@ -24,11 +25,12 @@ object PaperItemCodec {
 
 class PaperDeliveryInventory(
     private val player: Player, private val checkpoint: NamespacedKey, private val files: PlayerCheckpointFile,
+    private val includeOffHand: Boolean = false,
 ) : DeliveryInventory {
     override fun stackLimit(): Int { checkMainThread(); return player.inventory.maxStackSize }
     override fun snapshot(): List<StoredStack?> {
         checkMainThread()
-        return PaperItemCodec.snapshot(player)
+        return PaperItemCodec.snapshot(player, includeOffHand)
     }
 
     override fun persistedCheckpoint(): UUID? { checkMainThread(); return files.read(player.uniqueId) }
@@ -37,7 +39,8 @@ class PaperDeliveryInventory(
         checkMainThread()
         check(player.isOnline && !player.isDead) { "Player is unavailable" }
         check(snapshot() == before) { "Inventory changed before delivery" }
-        check(after.size == player.inventory.storageContents.size)
+        val storageSize = player.inventory.storageContents.size
+        check(after.size == storageSize + if (includeOffHand) 1 else 0)
         // Decode everything before touching a slot, so a malformed payload cannot cause a partial replacement.
         val contents = after.map { stack -> stack?.let { PaperItemCodec.item(it.payload, it.count) } }.toTypedArray()
         // Verify the configured directory and save path before any physical item changes.
@@ -46,7 +49,8 @@ class PaperDeliveryInventory(
         player.saveData()
         files.confirm(player.uniqueId, probe)
         check(snapshot() == before) { "Inventory changed during save preflight" }
-        player.inventory.storageContents = contents
+        player.inventory.storageContents = contents.take(storageSize).toTypedArray()
+        if (includeOffHand) player.inventory.setItemInOffHand(contents.last())
         player.persistentDataContainer.set(checkpoint, PersistentDataType.STRING, id.toString())
         player.saveData()
         files.confirm(player.uniqueId, id)

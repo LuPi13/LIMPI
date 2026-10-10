@@ -21,6 +21,7 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
     } ?: plugin.server.worlds.first().worldFolder.toPath().resolve("playerdata")
     private val files = PlayerCheckpointFile(directory, checkpoint.toString())
     private val blocked = mutableSetOf<UUID>()
+    var afterClaim: (Player) -> Unit = {}
     init { plugin.logger.info("Delivery checkpoint directory: ${directory.toAbsolutePath().normalize()}") }
 
     fun blocked(id: UUID) = id in blocked
@@ -31,13 +32,16 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
         if (freshLogin) blocked.remove(player.uniqueId)
         try {
             val inventory = PaperDeliveryInventory(player, checkpoint, files)
-            check(escrow.pending(player.uniqueId).size + removals.pending(player.uniqueId).size <= 1) { "Multiple interrupted removals" }
+            val pendingRemovals = removals.pending(player.uniqueId)
+            check(escrow.pending(player.uniqueId).size + pendingRemovals.size <= 1) { "Multiple interrupted removals" }
             escrow.recover(player.uniqueId, inventory, freshLogin)
-            removals.recover(player.uniqueId, inventory, freshLogin)
+            val removalInventory = pendingRemovals.singleOrNull()?.let { removalInventory(player, it.evidence.before.size) } ?: inventory
+            removals.recover(player.uniqueId, removalInventory, freshLogin)
             val result = service.drain(player.uniqueId, inventory, freshLogin)
             if (result.delivered > 0) player.sendMessage(Component.text("미수령 물품 ${result.delivered}건을 지급했습니다.", NamedTextColor.GREEN))
             if (result.waitingForSpace > 0) player.sendMessage(Component.text(
                 "미수령 물품 ${result.waitingForSpace}건이 남아 있습니다. 공간을 확보한 뒤 /financial claim을 사용하세요.", NamedTextColor.YELLOW))
+            afterClaim(player)
             return true
         } catch (failure: Exception) {
             blocked.add(player.uniqueId)
@@ -79,7 +83,7 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
 
     fun remove(player: Player, id: UUID, kind: String, terms: String, before: List<StoredStack?>, after: List<StoredStack?>): Boolean {
         if (!claim(player)) return false
-        val inventory = PaperDeliveryInventory(player, checkpoint, files)
+        val inventory = removalInventory(player, before.size)
         require(inventory.snapshot() == before) { "인벤토리가 변경되었습니다. 소모 대상을 다시 확인하세요." }
         var prepared = false
         try {
@@ -94,5 +98,11 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
             player.kick(Component.text("물품 회수 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
             return false
         }
+    }
+
+    private fun removalInventory(player: Player, size: Int): PaperDeliveryInventory {
+        val storageSize = player.inventory.storageContents.size
+        require(size == storageSize || size == storageSize + 1) { "Unsupported removal inventory size $size" }
+        return PaperDeliveryInventory(player, checkpoint, files, size == storageSize + 1)
     }
 }

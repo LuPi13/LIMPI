@@ -211,22 +211,23 @@ object AbilityManager : Listener {
      * @param ability 적용할 능력의 Ability
      */
     fun applyAbility(player: Player, ability: Ability?) {
+        if (getPlayerAbilityCodeName(player).orEmpty() == ability?.codeName.orEmpty()) return
         Functions.resetPlayerAttributes(player)
         val currentAbility = getAbilityByCodeName(getPlayerAbilityCodeName(player) ?: "")
         if (ability == null) {
             player.sendMessage(Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE))
-            if (currentAbility?.restrictedSlot != null) player.inventory.setItem(currentAbility.restrictedSlot!!, null)
+            if (currentAbility?.restrictedSlot != null && currentAbility.activeItem?.isSimilar(player.inventory.getItem(currentAbility.restrictedSlot!!)) == true) {
+                player.inventory.setItem(currentAbility.restrictedSlot!!, null)
+            }
             setPlayerAbilityCodeName(player, "")
             return
         }
 
 
-        if (getPlayerAbilityCodeName(player) == ability.codeName) return // 이미 적용된 능력은 무시
-
         // 현재 적용된 능력이 있었다면 해당 능력을 비활성화합니다.
         if (currentAbility != null) {
             // 현재 적용된 능력이 restrictedSlot을 가지고 있다면 해당 슬롯을 비웁니다.
-            if (currentAbility.restrictedSlot != null) {
+            if (currentAbility.restrictedSlot != null && currentAbility.activeItem?.isSimilar(player.inventory.getItem(currentAbility.restrictedSlot!!)) == true) {
                 player.inventory.setItem(currentAbility.restrictedSlot!!, null)
             }
         }

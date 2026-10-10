@@ -12,3 +12,4 @@
 - 지급/마켓의 조건은 [지급 복구](docs/DELIVERY_RECOVERY.md)와 [마켓 복구](docs/MARKET_RECOVERY.md)에 기록했다. Paper 지급·접속 복구·claim·관리자 검토와 마켓 등록 escrow/이전·GUI/명령을 연결했다. 실패 후 같은 live inventory를 정상 재시도 대상으로 사용하지 않는다. escrow를 지급보다 먼저 복구하고, 물리 시도마다 checkpoint를 구분하며 slotLimit을 반영한다. 실제 서버 검증은 남아 있다.
 - [상점·판매/공통 회수](docs/SHOP_AND_SALE_RECOVERY.md)를 읽는다. 마켓/판매 회수는 owner의 checkpoint 예약을 공유하고 지급보다 먼저 복구한다. 판매 선택 화면에는 원본 물품을 옮기지 않는다. `RemovalEffect`는 트랜잭션 내부 DB 정산만 수행하며 Bukkit/메시지/다른 DB transaction을 호출하지 않는다.
 - 능력 상점 구매는 ItemExchange로 에메랄드 회수→전체 수량 미수령을 연결했다. 선택권 사용/뽑기 소비·확정/초기 지급은 아직 직접 경로가 남아 있다. 기존 티켓 metadata를 유지했고 PDC 식별/이전과 공통 이동 제한은 다음 단계다. EmeraldFix는 누락 repair=50, 명시적 0 비활성 보존 정책이다.
+- [뽑기 규칙](docs/GACHA_RULES_AND_RECOVERY.md)을 읽는다. GachaPolicy와 실제 추첨/help/pity, typed 획득 분류/후보 snapshot을 연결했다. 기본 천장은 LEGENDARY 100/EPIC 조건부 10이며 EPIC보다 LEGENDARY가 우선한다. GACHA-01의 직접 소비→연출 종료 해금 경로는 아직 남아 있으므로 원자성 해결로 처리하지 않는다.

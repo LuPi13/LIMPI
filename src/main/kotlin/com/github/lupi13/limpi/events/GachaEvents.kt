@@ -29,6 +29,8 @@ import org.bukkit.util.Vector
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
 import kotlin.random.Random
+import com.github.lupi13.limpi.gacha.*
+import com.github.lupi13.limpi.abilities.AcquisitionType
 
 class GachaEvents : Listener {
     companion object {
@@ -58,52 +60,8 @@ class GachaEvents : Listener {
          * @return 뽑힌 능력의 등급
          */
         fun getGradeForGacha(player: Player): Grade {
-            val grade: Grade
-
-            val config = plugin.config
-
-            val lBase = config.getDouble("LEGENDARYProbability.Base")
-            val lIncrement = config.getDouble("LEGENDARYProbability.Increment")
-            val lIncreaseCount = config.getInt("LEGENDARYProbability.IncreaseCount")
-
-            val eBase = config.getDouble("EPICProbability.Base")
-            val eIncrement = config.getDouble("EPICProbability.Increment")
-            val eIncreaseCount = config.getInt("EPICProbability.IncreaseCount")
-
-            val tBase = config.getDouble("TROLLProbability")
-            val rBase = config.getDouble("RAREProbability")
-
-            val playerConfig = FileManager.getPlayerData(player)
-
-            val playerLCount = playerConfig.getInt("LEGENDARY.Count", 0)
-
-            val playerECount = playerConfig.getInt("EPIC.Count", 0)
-
-            val lP = lBase + lIncrement * (playerLCount - lIncreaseCount + 1).coerceAtLeast(0)
-            val eP = eBase + eIncrement * (playerECount - eIncreaseCount + 1).coerceAtLeast(0)
-
-
-            // LEGENDARY 확률 계산
-            if (Random.nextDouble() <= lP) {
-                grade = Grade.LEGENDARY
-            }
-            // EPIC 확률 계산
-            else if (Random.nextDouble() <= eP) {
-                grade = Grade.EPIC
-            }
-            else {
-                // TROLL 확률 계산
-                grade = if (Random.nextDouble() <= tBase) {
-                    Grade.TROLL
-                }
-                // RARE 확률 계산
-                else if (Random.nextDouble() <= rBase) {
-                    Grade.RARE
-                } else {
-                    Grade.COMMON
-                }
-            }
-            return grade
+            val policy = GachaPolicy(GachaConfiguration.settings(plugin.config))
+            return Grade.valueOf(policy.grade(GachaConfiguration.state(FileManager.getPlayerData(player)), Random::nextDouble).name)
         }
     }
 
@@ -114,74 +72,22 @@ class GachaEvents : Listener {
         if (event.action == Action.LEFT_CLICK_AIR || event.action == Action.LEFT_CLICK_BLOCK || event.action == Action.PHYSICAL) return
         if (event.item == null || !event.item!!.isSimilar(getGachaTicketItem())) return
         else {
+            val config = FileManager.getPlayerData(player)
+            val settings = GachaConfiguration.settings(plugin.config)
+            val state = GachaConfiguration.state(config)
+            val eligible = AbilityManager.abilities.filter { it.acquisition == AcquisitionType.GACHA }.toList()
+            val candidates = DrawGrade.entries.associateWith { grade -> eligible.filter { it.grade.name == grade.name }.map { it.codeName } }
+            val pickupTime = AbilityPickUp.getRoundedTime()
+            val pickups = mapOf(DrawGrade.LEGENDARY to AbilityPickUp.getLegendaryPickUp(pickupTime).codeName,
+                DrawGrade.EPIC to AbilityPickUp.getEpicPickUp(pickupTime).codeName)
+            val outcome = GachaPolicy(settings).draw(state, candidates, pickups, Random::nextDouble)
+            val ability = requireNotNull(AbilityManager.getAbilityByCodeName(outcome.ability))
+            val grade = ability.grade
+            // Validation/selection precede consumption. Durable ticket+unlock settlement is the next migration.
             event.isCancelled = true
             event.item!!.amount -= 1
-
-            val config = FileManager.getPlayerData(player)
-
-            val grade = getGradeForGacha(player)
-
-            var ability = AbilityManager.getRandomAbilityByGrade(grade)
-            // 픽업 능력 및 config 처리
-            when (grade) {
-                Grade.LEGENDARY -> {
-                    var isPickUp = false
-                    // 확률적으로 픽업 등장
-                    if (Random.nextDouble() <= plugin.config.getDouble("LEGENDARYProbability.PickUp")) {
-                        isPickUp = true
-                    }
-                    // 천장에 의해 픽업 등장
-                    if (config.getInt("LEGENDARY.Ceiling",0) >= plugin.config.getInt("LEGENDARYProbability.SemiCeiling")) {
-                        isPickUp = true
-                    }
-
-                    if (isPickUp) {
-                        ability = AbilityPickUp.getLegendaryPickUp(AbilityPickUp.getRoundedTime())
-                    }
-                    config["LEGENDARY.Count"] = 0
-                    config["EPIC.Count"] = config.getInt("EPIC.Count") + 1
-                }
-                Grade.EPIC -> {
-                    var isPickUp = false
-                    // 확률적으로 픽업 등장
-                    if (Random.nextDouble() <= plugin.config.getDouble("EPICProbability.PickUp")) {
-                        isPickUp = true
-                    }
-                    // 천장에 의해 픽업 등장
-                    if (config.getInt("EPIC.Ceiling",0) >= plugin.config.getInt("EPICProbability.SemiCeiling")) {
-                        isPickUp = true
-                    }
-
-                    if (isPickUp) {
-                        ability = AbilityPickUp.getEpicPickUp(AbilityPickUp.getRoundedTime())
-                    }
-                    config["EPIC.Count"] = 0
-                    config["LEGENDARY.Count"] = config.getInt("LEGENDARY.Count") + 1
-                }
-                else -> {
-                    config["LEGENDARY.Count"] = config.getInt("LEGENDARY.Count") + 1
-                    config["EPIC.Count"] = config.getInt("EPIC.Count") + 1
-                }
-            }
-
-            // 천장 처리
-            if (grade == Grade.LEGENDARY) {
-                if (ability == AbilityPickUp.getLegendaryPickUp(AbilityPickUp.getRoundedTime())) {
-                    config["LEGENDARY.Ceiling"] = 0
-                } else {
-                    config["LEGENDARY.Ceiling"] = (config.getInt("LEGENDARY.Ceiling", 0) + 1)
-                }
-            }
-            else if (grade == Grade.EPIC) {
-                if (ability == AbilityPickUp.getEpicPickUp(AbilityPickUp.getRoundedTime())) {
-                    config["EPIC.Ceiling"] = 0
-                } else {
-                    config["EPIC.Ceiling"] = (config.getInt("EPIC.Ceiling", 0) + 1)
-                }
-            }
-
+            GachaConfiguration.write(config, outcome.after)
             FileManager.savePlayerData(player, config)
-
 
             val gachaLocation = player.eyeLocation.add(player.location.direction)
             val gachaVisual = player.world.spawn(gachaLocation, ItemDisplay::class.java)
@@ -249,7 +155,7 @@ class GachaEvents : Listener {
 
                     // 감속, 아이템 표시
                     else if (timer <= 140) {
-                        val abilityItem = ability!!.getItem()
+                        val abilityItem = ability.getItem()
                         gachaVisual.setItemStack(abilityItem)
                         gachaVisual.setRotation(gachaVisual.yaw + ((140 - timer) / 1.09f), gachaVisual.pitch)
                     }
@@ -268,7 +174,7 @@ class GachaEvents : Listener {
 
 
                         val gachaName = gachaVisual.world.spawn(gachaLocation.setRotation(initialYaw + 180f, 0f), TextDisplay::class.java)
-                        gachaName.text(ability!!.displayName
+                        gachaName.text(ability.displayName
                             .append(Component.text(" "))
                             .append(ability.grade.displayGrade)
                             .append(Component.text(" "))

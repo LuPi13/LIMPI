@@ -4,6 +4,7 @@ import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.abilities.Ability
 import com.github.lupi13.limpi.abilities.AbilityManager
 import com.github.lupi13.limpi.abilities.Grade
+import com.github.lupi13.limpi.abilities.AcquisitionType
 import net.kyori.adventure.text.Component
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin.getPlugin
@@ -21,10 +22,10 @@ class AbilityPickUp {
         fun getLegendaryPickUp(seed: Long): Ability {
             val legendaryAbilities = AbilityManager.abilities
                 .filter { it.grade == Grade.LEGENDARY }
-                .filter { it.howToGet == Component.text("뽑기로 획득") }
+                .filter { it.acquisition == AcquisitionType.GACHA }.toMutableList()
             val random = java.util.Random(seed)
             Collections.shuffle(legendaryAbilities, random)
-            return legendaryAbilities.firstOrNull()!!
+            return requireNotNull(legendaryAbilities.firstOrNull()) { "No eligible legendary pickup candidates" }
         }
 
         /**
@@ -35,10 +36,10 @@ class AbilityPickUp {
         fun getEpicPickUp(seed: Long): Ability {
             val epicAbilities = AbilityManager.abilities
                 .filter { it.grade == Grade.EPIC }
-                .filter { it.howToGet == Component.text("뽑기로 획득") }
+                .filter { it.acquisition == AcquisitionType.GACHA }.toMutableList()
             val random = java.util.Random(seed)
             Collections.shuffle(epicAbilities, random)
-            return epicAbilities.firstOrNull()!!
+            return requireNotNull(epicAbilities.firstOrNull()) { "No eligible epic pickup candidates" }
         }
 
         /**
@@ -48,8 +49,11 @@ class AbilityPickUp {
          */
         fun getRoundedTime(): Long {
             val currentTime = System.currentTimeMillis()
-            val pickUpChangeMinutes = plugin.config.getInt("PickUpChange")
-            val pickUpChangeMillis = pickUpChangeMinutes * 60 * 1000L
+            val raw = plugin.config.get("PickUpChange")
+            require(raw is Int || raw is Long) { "PickUpChange must be integral" }
+            val pickUpChangeMinutes = (raw as Number).toLong()
+            require(pickUpChangeMinutes > 0) { "PickUpChange must be positive" }
+            val pickUpChangeMillis = Math.multiplyExact(pickUpChangeMinutes, 60_000L)
             return (currentTime / pickUpChangeMillis) * pickUpChangeMillis
         }
 

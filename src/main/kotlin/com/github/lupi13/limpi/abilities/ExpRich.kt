@@ -11,6 +11,7 @@ import org.bukkit.event.player.PlayerLevelChangeEvent
 
 object ExpRich : Ability(
     grade = Grade.MYTHIC,
+    acquisition = AcquisitionType.QUEST,
     element = Element.NONE,
     displayName = Component.text("경험치 대가", NamedTextColor.YELLOW),
     codeName = "exp_rich",

@@ -24,6 +24,7 @@ import kotlin.random.Random
 
 object ZombieKing : Ability(
     grade = Grade.EPIC,
+    acquisition = AcquisitionType.QUEST,
     element = Element.UNDEAD,
     displayName = Component.text("좀비", NamedTextColor.DARK_GREEN)
         .append(Component.text("킹", NamedTextColor.GOLD)),

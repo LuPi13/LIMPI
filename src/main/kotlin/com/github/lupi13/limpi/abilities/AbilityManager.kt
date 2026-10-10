@@ -275,7 +275,7 @@ object AbilityManager : Listener {
 
         for (ability in shuffledAbilities) {
             if (ability.grade != grade) continue
-            if (ability.howToGet != Component.text("뽑기로 획득")) continue
+            if (ability.acquisition != AcquisitionType.GACHA) continue
             return ability
         }
         return null

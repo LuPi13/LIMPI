@@ -25,6 +25,7 @@ import kotlin.random.Random
 
 object JudgementRay : Ability(
     grade = Grade.MYTHIC,
+    acquisition = AcquisitionType.QUEST,
     element = Element.MAGIC,
     displayName = Component.text("심", NamedTextColor.RED)
         .append(Component.text("판", NamedTextColor.GREEN))

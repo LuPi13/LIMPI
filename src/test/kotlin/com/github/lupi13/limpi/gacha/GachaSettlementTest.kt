@@ -18,7 +18,7 @@ class GachaSettlementTest {
     private fun terms(grade: DrawGrade = DrawGrade.COMMON, force: Boolean = false, ability: String = "new_ability") =
         GachaTerms("ticket", 0, state, DrawOutcome(grade, ability, false, state.advance(grade, false)), 1000, force)
     private fun setup(store: StateStore) = store.atomic { tx ->
-        val data = YamlFiles.parse("name: player\nmoney: 123\nunlockedAbilities: [legacy_code]\nquests:\n  progress: 17\n")
+        val data = YamlFiles.parse("name: player\nmoney: 123\nunlockedAbilities: [existing_code]\nquests:\n  progress: 17\n")
         GachaConfiguration.write(data, state)
         tx.put(SqliteProfilePersistence.key(owner), data.saveToString())
     }
@@ -42,7 +42,7 @@ class GachaSettlementTest {
             inventory.afterSave = { assertNull(GachaSettlement(store).find(owner, id)); assertEquals(state, GachaConfiguration.state(YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))))) }
             journal(store).apply(record, inventory)
             val profile = YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner)))
-            assertEquals(listOf("legacy_code", "new_ability"), profile.getStringList("unlockedAbilities"))
+            assertEquals(listOf("existing_code", "new_ability"), profile.getStringList("unlockedAbilities"))
             assertEquals(terms().outcome.after, GachaConfiguration.state(profile))
             assertEquals(123, profile.getLong("money")); assertEquals(17, profile.getInt("quests.progress"))
             assertEquals(terms(), GachaSettlement(store).find(owner, id)!!.terms)
@@ -68,7 +68,7 @@ class GachaSettlementTest {
             assertNull(GachaSettlement(store).find(owner, id))
             assertTrue(GachaSettlement(store).pendingApplications(owner).isEmpty())
             assertEquals(state, GachaConfiguration.state(YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner)))))
-            assertEquals(listOf("legacy_code"), YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getStringList("unlockedAbilities"))
+            assertEquals(listOf("existing_code"), YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getStringList("unlockedAbilities"))
         }
         inventory.image = inventory.saved; inventory.afterSave = {}
         SqliteStateStore(directory.resolve("state.db")).use { store ->
@@ -79,8 +79,8 @@ class GachaSettlementTest {
     }
     @Test fun `duplicate unlock preserves old list while still recording paid draw`() {
         SqliteStateStore(directory.resolve("state.db")).use { store ->
-            setup(store); journal(store).apply(prepare(store, terms(ability = "legacy_code")), Inventory(before))
-            assertEquals(listOf("legacy_code"), YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getStringList("unlockedAbilities"))
+            setup(store); journal(store).apply(prepare(store, terms(ability = "existing_code")), Inventory(before))
+            assertEquals(listOf("existing_code"), YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getStringList("unlockedAbilities"))
             assertNotNull(GachaSettlement(store).find(owner, id))
         }
     }

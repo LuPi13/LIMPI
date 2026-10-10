@@ -29,7 +29,7 @@ class InitialRewardsTest {
     }
     @Test fun `existing profile is exempt with its balance unlock and unknown fields intact`() {
         SqliteStateStore(directory.resolve("state.db")).use { store ->
-            val payload = "money: 777\nunlockedAbilities: [legacy]\nunknown: keep\n"
+            val payload = "money: 777\nunlockedAbilities: [existing_code]\nunknown: keep\n"
             store.atomic { it.put(SqliteProfilePersistence.key(owner), payload) }
             service(store).register(owner, "name", Money(123), bundle)
             assertFalse(service(store).claim(owner)); assertEquals(payload, store.get(SqliteProfilePersistence.key(owner)))

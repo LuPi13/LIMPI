@@ -19,14 +19,13 @@
 
 - `82b7912`: 저장·조회 기반 정비와 테스트. origin에 push 완료.
 
-- `player/PlayerRepository`, `PlayerProfile`, `storage/YamlPlayerRepository` 도입. 기존 `FileManager`는 호출부 전환을 위한 얇은 호환 facade로 줄였다.
+- `player/PlayerRepository`, `PlayerProfile`, `storage/CachedPlayerRepository` 도입. 기존 `FileManager`는 호출부 전환을 위한 얇은 호환 facade로 줄였다.
 - 접속 프로필을 캐시하고 오프라인 프로필은 LRU 256개로 제한한다. 이탈 시 해당 캐시를 해제한다. 이름/UUID 인덱스를 초기 로드 때 구성하고 이름 변경 시 갱신한다.
 - `.ability` 조회는 캐시된 코드명 → 단일 능력 레지스트리의 ID map 조회를 사용한다. `AbilityManager()` 생성 47곳을 제거했다. 능력 정의·엔티티 분류 목록을 조회 때마다 다시 만들지 않는다.
 - YAML 편집은 격리된 스냅샷으로 한다. 저장 전 cache를 수정하지 않으며, 오래된 스냅샷은 변경한 필드만 최신 데이터에 병합한다. 동일 필드가 충돌하면 덮어쓰지 않고 실패한다.
 - `AtomicFiles`는 대상과 같은 디렉터리의 임시 파일을 force 후 atomic move로 교체한다. 지원되지 않는 atomic move를 비원자적 덮어쓰기로 대체하지 않는다.
 - 플레이어/경제/능력 YAML의 저장 실패를 더 이상 출력만 하고 숨기지 않는다. 기존 파일을 보존하고 예외를 전달한다. YAML 문법 오류도 빈 설정으로 바꾸지 않고 전달한다.
 - 신규/기존 서버 플레이어 모두 접속 시 `ensure()`를 사용한다. 기존 잔액/해금/퀘스트는 보존하며 누락된 기본값만 채운다. 플레이어 이름은 현재 이름으로 갱신한다.
-- 최초 schemaVersion=1 보완 전 기존 파일을 `playerData/backups/{uuid}.pre-schema-1.yml`에 보존한다. 더 높은 schemaVersion은 다운그레이드하지 않고 거부한다.
 - `economy/Money`에 비음수 Long 금액, checked 합/차/곱, 정수 수수료 계산을 구현했다. **기존 경제 호출부 전체 연결은 다음 단계로 남아 있다.**
 - 서버 전역 `System.out` 교체를 제거했다.
 
@@ -49,14 +48,13 @@
 
 ### 2026-10-10 / SQLite·송금 원장
 
-- `5870a95`: SQLite·이전·송금/관리자 원장 구현과 테스트. origin에 push 완료.
+- `5870a95`: SQLite·송금/관리자 원장 구현과 테스트. origin에 push 완료.
 
 - `storage/StateStore`와 `SqliteStateStore`를 도입했다. 플레이어 프로필과 마켓 상태를 `limpi.sqlite3`의 documents 테이블에 보존한다. 설정/종목 가격 YAML은 유지한다. 저장된 프로필 payload는 기존 YAML 필드 구조를 보존하며, 캐시/격리 편집/충돌 처리는 `CachedPlayerRepository`와 저장 어댑터로 분리했다.
 - SQLite JDBC 3.53.4.0을 배포 JAR에 포함했다. WAL, synchronous=FULL, busy timeout 5초, BEGIN IMMEDIATE를 사용한다. schema/application ID를 검사해 다른 DB와 미래 schema를 덮지 않는다. native 라이브러리를 재배치하지 않는다. Paper가 제공하는 SLF4J/Paper API와 JUnit은 배포 JAR에 넣지 않는다.
-- `LegacyStateMigration`은 모든 UUID YAML·market YAML을 먼저 읽고 검증한다. 원본 payload와 SHA-256, 플레이어 수/BigInteger 잔액 합계를 기록한다. `backups/sqlite-v1/`에 원본을 보존한 뒤 한 트랜잭션으로 가져오기와 완료 marker를 저장한다. 실패하면 일부 프로필이나 marker만 남지 않는다. 기존 YAML을 삭제하지 않는다. 이미 완료된 가져오기는 재시작 때 오래된 YAML로 현재 DB를 덮지 않는다.
-- 소수·문자열·Long 초과 금액은 가져오기를 거부한다. 음수 legacy 잔액은 지우지 않고 보존한다. schemaVersion은 정수·범위를 직접 검사해 소수나 Int 범위 초과 버전이 getInt() 변환으로 통과하지 않게 했다.
+- schemaVersion은 정수·범위를 직접 검사해 소수나 Int 범위 초과 버전이 getInt() 변환으로 통과하지 않게 했다.
 - `StateStore.execute()`는 거래 UUID/요청 fingerprint/완료 영수증/변경한 문서 키를 같은 commit에 기록한다. 같은 ID·같은 요청은 기존 결과를 반환하며 mutation을 다시 실행하지 않는다. 같은 ID·다른 요청은 거부한다. 중첩/범위 밖 transaction 사용을 막는다. rollback 실패 시 연결을 닫아 autoCommit 복구로 일부 변경이 commit되는 것을 막는다.
-- `BankService`의 송금은 양쪽 잔액·5% 정수 수수료·원장 영수증을 원자적으로 저장한다. 관리자 set/add도 원장에 이전/이후 잔액과 actor를 남긴다. 오버플로·잔액 부족·자기 송금·손상 계좌를 거부한다. 음수 legacy 잔액의 복구는 관리자가 명시적으로 set을 사용하는 경로로 제한한다.
+- `BankService`의 송금은 양쪽 잔액·5% 정수 수수료·원장 영수증을 원자적으로 저장한다. 관리자 set/add도 원장에 이전/이후 잔액과 actor를 남긴다. 오버플로·잔액 부족·자기 송금·손상 계좌를 거부한다. 손상(음수) 잔액의 복구는 관리자가 명시적으로 set을 사용하는 경로로 제한한다.
 - `/financial send|set|add <이름 또는 UUID> <금액> [거래 UUID]`를 서비스에 연결했다. 오프라인 기존 계좌를 지원한다. set/add는 콘솔도 사용한다. 권한 노드를 추가했고 이전의 파일별 송금/관리자 변경 코드는 제거했다. 메시지는 commit 이후에 보낸다. 실패 결과가 불확실하면 같은 ID로 재시도할 수 있도록 ID를 안내한다.
 - 이름 인덱스에서 같은 과거 이름을 가진 UUID가 여러 개면 임의 계좌로 송금하지 않고 이름 조회를 거부한다. UUID를 직접 지정할 수 있다. 원장 변경 이후 프로필 캐시를 무효화하므로 오래된 능력 편집을 저장해도 최신 송금 잔액을 되돌리지 않는다.
 - 운영/복구 경로와 아직 남은 경계를 [저장소·복구 절차](STORAGE_AND_RECOVERY.md)에 기록했다. **마켓은 저장 위치만 옮겼으며 거래 서비스 연결은 아직 남아 있다. 아이템/DB 동시 원자성은 구현하지 않았다.**
@@ -68,7 +66,7 @@
 - `delivery/InventoryPlan`을 추가했다. 아이템별 전체 수량과 중첩 상한을 확인하고, 부분 스택을 먼저 채운 다음 빈 슬롯을 배정한다. 모든 아이템이 들어가지 않으면 원본을 바꾸지 않고 전체 계획을 거부한다. 단일 아이템의 payload에는 이름/lore/PDC를 포함한 원본 구성요소가 들어가야 하며 다른 payload는 같은 material이어도 합치지 않는다. Long 수량을 항목 수만큼 객체로 만들지 않고 슬롯 단위로 처리한다.
 - `DeliveryJournal.stage()`는 잔액/매물/보상 트랜잭션 안에서 미수령 기록을 생성한다. 완료 후 같은 ID로 stage를 반복해도 새 지급을 만들지 않는다. 지급 예정 전체 수량, owner UUID, 원본 슬롯/완료 슬롯, 상태를 보존한다. 완료는 별도 멱등 원장과 함께 pending→done 문서 이동으로 저장한다.
 - `DeliveryService`는 PENDING→APPLYING 기록 후 인벤토리를 변경한다. 저장된 플레이어 파일의 checkpoint와 after 이미지가 확인된 뒤에만 DONE을 기록한다. 공간 부족은 PENDING 그대로 남긴다. 물리 저장/최종 DB commit 실패 후 같은 live inventory로 재시도하지 않으며 fresh login에서 기록과 저장 상태로 복구한다. 불일치는 REVIEW로 남기고 임의 덮어쓰기/재지급을 하지 않는다. 이전 APPLYING 처리 전에 다른 지급이 checkpoint를 덮지 않게 한다.
-- `market/MarketCatalog`에는 표시 코드와 별개의 영구 매물 UUID, seller UUID, 원본 아이템, ACTIVE/OWNERSHIP_REVIEW/SOLD/RETURNED 상태를 도입했다. 이름만 있고 소유자 확인이 안 되는 기존 매물을 보호할 수 있다. 원본 legacy market payload는 별도로 보존한다.
+- `market/MarketCatalog`에는 표시 코드와 별개의 영구 매물 UUID, seller UUID, 원본 아이템, ACTIVE/SOLD/RETURNED 상태를 도입했다.
 - `MarketService.buy()`는 구매자 차감/판매자 입금/정수 수수료/매물 SOLD/미수령 아이템/영수증을 같은 SQLite commit에 넣는다. 판매자의 변경 전 이름을 지급 계좌로 사용하지 않는다. 인벤토리 공간이 없어도 매물/아이템을 지우는 대신 미수령 권리를 보존하는 구조다. withdraw도 소유자에게 미수령 반환을 생성하고 거래 ID 재시도를 지원한다.
 - 은행·마켓의 원장 내부 계좌 조회/정수·schema 검증을 `economy/Accounts`로 공유했다. 마켓 정산은 캐시가 아닌 해당 DB 트랜잭션의 최신 값을 사용한다.
 - **이번 단계는 순수 정책/저장·거래 도메인 구현이다. FileManager 초기화·Paper 인벤토리 어댑터·기존 마켓 이벤트/명령은 아직 새 도메인에 연결하지 않았다.** 따라서 기존 마켓 화면의 결함을 해결 완료로 처리하지 않는다. [지급 복구 설계와 연결 조건](DELIVERY_RECOVERY.md)을 다음 작업 기준으로 삼는다.
@@ -92,12 +90,11 @@
 
 - `MarketEscrow`는 원본/회수 후 슬롯·시도 checkpoint를 원장과 함께 저장하고 매물을 ESCROW로 예약한다. 실제 회수와 playerdata 저장을 확인한 뒤 ACTIVE와 escrow 완료를 같은 DB commit으로 저장한다. 저장 전/후 실패는 fresh login에서 복구하며 상태 불일치는 REVIEW로 남긴다. 같은 prepare/apply를 재시도해도 나중에 획득한 동일 물품을 다시 회수하지 않는다.
 - 마켓 복구는 지급보다 먼저 실행해 중단된 회수의 checkpoint를 다른 지급이 덮지 않게 했다. REVIEW는 로그인 보호와 관리자 해결 경로에 연결했다. 등록 준비 저장 실패도 결과가 불확실하면 플레이어를 보호/이탈시킨다.
-- `LegacyMarketMigration`을 실제 초기화에 연결했다. 모든 기존 매물을 검증한 뒤 한번에 새 catalog로 이전한다. seller 이름은 UUID 인덱스로 확인하고 모호한 소유자는 OWNERSHIP_REVIEW로 보존한다. 원본 `financial/market` 문서는 지우지 않는다. 기존 무료(0원) 매물도 보존한다. malformed item/가격은 전체 이전을 거부한다.
 - `market_code/<code>`로 활성/보호/예약 코드를 원자 예약하고 SOLD/RETURNED 시 해제한다. 매물은 별도 영구 UUID를 사용해 코드 재사용 후 오래된 화면에서 새 매물을 구매하는 것을 막는다. 메뉴 목록은 현재 예약된 코드 인덱스를 사용하며 거래 이력을 지우지 않는다.
 - `MarketEvents`를 Holder/슬롯 action/매물 UUID·가격 quote로 다시 연결했다. 45개 단위 페이지, 상단 클릭만 처리, 특수 click/vanilla 이동 취소, 다음 틱 화면 전환, 갱신/삭제 quote 검증을 적용했다. 아이템 이름·lore·현재 목록 index를 거래 권한으로 사용하지 않는다. 기존 Int 잔액/가격과 분리 저장·직접 addItem 경로를 제거했다.
 - 구매는 원자 정산→미수령 수령으로 연결했고 공간 부족은 권리를 보존한다. 우클릭 흥정은 seller UUID로 온라인 여부를 확인한다. 등록/회수 명령은 `MarketCommands`로 분리해 Long·코드·권한·owner UUID를 검증한다. 기존 54개 제한을 제거했다. 관리자 회수도 원래 소유자에게 미수령으로 반환하고 실제 actor를 원장에 남긴다.
-- 관리자 escrow 조회/removed·retained 해결, legacy owner 확인을 원장과 연결했다. 확인 근거/actor/이전 evidence를 보존한다. 회수 해결은 owner가 오프라인일 때만 수행한다. 금융 기능을 꺼도 escrow/소유자 복구 명령은 유지한다. [마켓 운영·복구](MARKET_RECOVERY.md)에 명령과 판단 기준을 기록했다.
-- FileManager의 기존 market FileConfiguration cache와 saveMarket/getMarketConfig를 제거했다. 새 거래와 과거 payload가 서로 덮는 경로를 남기지 않는다. 원본 payload는 최초 이전/복구 증거로만 사용한다.
+- 관리자 escrow 조회/removed·retained 해결을 원장과 연결했다. 확인 근거/actor/이전 evidence를 보존한다. 회수 해결은 owner가 오프라인일 때만 수행한다. 금융 기능을 꺼도 escrow 복구 명령은 유지한다. [마켓 운영·복구](MARKET_RECOVERY.md)에 명령과 판단 기준을 기록했다.
+- FileManager의 기존 market FileConfiguration cache와 saveMarket/getMarketConfig를 제거했다. 새 거래와 과거 payload가 서로 덮는 경로를 남기지 않는다.
 - **마켓 구현과 연결은 완료했고 서버 검증은 아직 남아 있다.** 수표/판매/상점/능력 상점/보상은 계속 정비해야 한다.
 
 ## 검증
@@ -115,13 +112,12 @@
 
 ### 2026-10-10 / 수표 발행·사용 원장·기존 수표 전환
 
-- `0866e31`: 수표 원장/연결·legacy 전환 구현과 테스트. origin에 push 완료.
+- `0866e31`: 수표 원장/연결 구현과 테스트. origin에 push 완료.
 
 - `checks/CheckService`는 서버 UUID/ISSUED/REDEEMED/금액·발행인·사용인·입금 거래를 보존한다. 발행인 차감·발행 기록·미수령·영수증을 한 commit에 저장한다. 양수 Long을 사용하고 잔액 전액 발행을 허용한다. 같은 거래 UUID를 다시 발행해도 차감/종이가 늘지 않는다.
 - 입금은 표시 금액 대신 저장된 금액으로 사용 상태·입금 잔액·영수증을 함께 저장한다. 알 수 없는 UUID/사용한 수표/오버플로를 거부한다. 독립 DB 연결에서 복사본을 경쟁 입금해도 하나만 성공한다. commit 후 물리 종이 정리에 실패해도 남은 같은 UUID 종이는 가치가 없으며 중복 입금되지 않는다.
 - `items/Check`를 PDC UUID·format/중첩 상한 1로 재작성하고 실제 이벤트 손을 읽도록 연결했다. 금융 명령의 기존 공개 해시 발행 코드를 제거하고 `CheckCommands`로 분리했다. 발행 거래 UUID 재시도, 주 손 redeem, 관리자 inspect/import, 권한·help/tab을 연결했다. 금융 비활성화 중 기존 수표 입금과 관리자 조회/전환도 가능하다.
-- `LegacyCheck`는 기존 형식만 검사한다. 공개 해시는 발행 증거가 아니므로 자동 입금하지 않는다. 관리자 전환은 owner/issuer UUID·actor·근거·semantic fingerprint를 기록해 새 claim/미수령을 만들며 과거 발행인 차감을 다시 하지 않는다. 원본을 보존하고 같은 fingerprint의 복사본/스택은 중복 승인하지 않는다. [수표·기존 전환 절차](CHECKS.md)에 운영 판단과 남은 서버 검증을 기록했다.
-- 수표 추가 후 총 **134개** 테스트 통과(실패/에러/스킵 0), `test build --console=plain` 성공(exit code 0). 전액/큰 금액·실패 rollback·재시작 replay·중복/경쟁 입금·오버플로·legacy 중복 승인/감사를 시험했다. 실제 Paper 손/PDC/이벤트/종이 정리·보호 플러그인 연동은 최종 서버 시험으로 남긴다.
+- 수표 추가 후 총 **134개** 테스트 통과(실패/에러/스킵 0), `test build --console=plain` 성공(exit code 0). 전액/큰 금액·실패 rollback·재시작 replay·중복/경쟁 입금·오버플로를 시험했다. 실제 Paper 손/PDC/이벤트/종이 정리·보호 플러그인 연동은 최종 서버 시험으로 남긴다.
 
 ### 2026-10-10 / 상점·판매 원장·공통 회수·메뉴 연결
 
@@ -134,7 +130,6 @@
 - `SaleSettlement`는 저장된 선택 슬롯별 단가와 정확한 감소 수량으로 최신 잔액을 정산한다. 준비 시 총액/계좌 overflow를 검사하고, 정산/완료/영수증을 함께 commit한다. 회수 저장 전·후 및 정산 실패는 fresh login으로 복구하며 완료 replay가 나중에 획득한 동일 물품을 다시 지우지 않는다.
 - 판매 화면을 원본 storage 슬롯의 읽기 전용 선택으로 바꿨다. 기존 임시 물품 이동/애니메이션 삭제/종료 addItem 반환·Player map·틱 작업을 제거했다. 확정 전 원본·가격 변경은 거부한다. 선택/해제·새로고침·초기화를 제공한다. 실제 회수/저장 후에만 입금한다.
 - 접속/claim에서 마켓·공통 회수를 지급보다 먼저 복구하고, REVIEW 로그인 보호·실패 live inventory 차단에 연결했다. `/financial removal` 조회와 오프라인 owner의 removed/retained 해결을 추가했다. actor/note/원본 evidence·정산을 기록하며 금융 비활성화 중에도 복구 명령을 사용할 수 있다. [상점·판매 복구](SHOP_AND_SALE_RECOVERY.md)에 운영/서버 시험을 기록했다.
-- Paper 26.3의 non-null itemName getter에 맞춰 수표 legacy 조회의 불필요한 Elvis를 제거했다. 기존 발행기는 itemName을 사용하므로 이전 형식은 유지한다. 판매/지급의 inventory snapshot을 같은 Paper codec으로 공유했다.
 - 총 **151개** 테스트 통과(실패/에러/스킵 0), `test build --console=plain` 성공(exit code 0). 상점 큰 금액/무료·부족/손상·stale·rollback/restart replay, 회수 전·후 저장/정산 실패·REVIEW/해결 rollback·반복 회수 방지·다중/부분 슬롯·마켓 충돌을 추가 시험했다. 실제 GUI/손·저장/보호 플러그인 동작은 서버 시험으로 남긴다.
 
 ### 2026-10-10 / 능력 상점 에메랄드 교환·수리 설정
@@ -169,16 +164,16 @@
 - GachaAnimation은 확정 결과 표현만 실행한다. 1 owner/1 task와 표시 목록, 부분 spawn 추적, persistent=false, 정상 종료/quit/world change/death/disable/예외 정리를 구현하고 중첩 지연 작업을 제거했다. 연출 중 입력은 티켓을 소비하지 않는다. itemUse DENY를 존중한다.
 - /ability result <거래 UUID> 자신의 확정 결과 조회, 도움말/탭 연결. 회수 대기/관리자 removed|retained는 기존 financial removal 절차를 사용한다.
 - **184개** 테스트 통과(실패/에러/스킵 0), test build 성공. 실제 SQLite로 새 10개 시험: 원자 결과/상태 보존, replay/fingerprint, 물리 회수 후 commit 실패→재시작, 중복 해금, 강제 적용/ack 실패, 관리자 판단, invalid snapshot/카운터/목록, strict terms, offhand 복구. Paper 실행·playerdata save·연출/능력 적용은 미검증이다.
-- 다음 단계는 선택권 사용/해금의 공통 회수 원장 연결, PDC/legacy 티켓 정책/이동 제한과 초기·퀘스트 보상, 이후 능력 메뉴·세션·속성 전체 정비다. 전체 정비 목표는 완료하지 않았다.
+- 다음 단계는 선택권 사용/해금의 공통 회수 원장 연결, PDC 티켓 정책/이동 제한과 초기·퀘스트 보상, 이후 능력 메뉴·세션·속성 전체 정비다. 전체 정비 목표는 완료하지 않았다.
 
 ### 2026-10-10 / 선택권·초기/퀘스트 보상·능력 메뉴
 
 - 선택권 직접 차감→즉시 능력 변경을 AbilitySelection의 frozen 회수→적용 대기/결과 원자 정산→platform apply/ack로 연결했다. 양손/기존 metadata를 보존하고 locked/same/stale 상태·중복 요청·실패/restart/관리자 판단을 검증한다.
 - 선택/도감 Player page/sort map과 title/item 비교를 제거하고 MenuHolder/능력 ID/공유 Pagination/다음 틱 전환으로 이전했다. 일반 선택/admin 무소모 적용의 permission node를 정의했다.
-- 새 티켓 PDC와 exact legacy template 인식, 공통 수동/자동 이동·crafting guard를 연결했다. 예전 지급 대기 NBT는 재발행하지 않는다. 실제 PDC/자동 제작기 시험은 이후다.
+- 새 티켓 PDC 인식, 공통 수동/자동 이동·crafting guard를 연결했다. 실제 PDC/자동 제작기 시험은 이후다.
 - AbilityInventoryPlan으로 제한 슬롯의 일반 물품 전체 relocation을 계획한다. 공간 부족은 티켓 소비 전 거부하고 old activeItem만 제거한다. 인벤토리 클릭 때 원본 물품을 addItem 후 덮어쓰던 경로를 제거했다. 새 apply의 DB 저장 실패는 live inventory를 되돌린다. 전체 전환 내구성/속성/세션 정비는 아직 별도 범위다.
 - InitialRewards는 신규 plugin profile 생성과 frozen WAITING을 함께 등록하고 능력 활성 시 원자 미수령/GRANTED를 만든다. 기존 profile은 EXEMPT. 명시적 0/Long·config 변경·비활성 대기/replay/commit 실패를 시험했다.
-- 4개 퀘스트 완료/해금을 QuestRewards에 연결하고 legacy 완료/보상 누락을 최초 원장 시 repair한다. 조화 진행은 confirmed positive damage의 MONITOR에서 원자 progress/threshold/완료/해금/영수증으로 저장한다. 기존 progress/ID를 유지한다.
+- 4개 퀘스트 완료/해금을 QuestRewards에 연결했다. 조화 진행은 confirmed positive damage의 MONITOR에서 원자 progress/threshold/완료/해금/영수증으로 저장한다. 기존 progress/ID를 유지한다.
 - TerraBurning/ExpRich는 레벨 증가만 보너스·재진입 보호·experience 감소 비배수·Int 상한 포화 정책으로 연결했다.
 - **213개** 테스트 통과(실패/에러/스킵 0), test build 성공. 새 29개 저장/정책 시험이며 Paper 실제 실행은 하지 않았다. 자세한 계약/검증 경계는 [선택권·보상](ABILITY_SELECTION_AND_REWARDS.md).
 - 중간 기록에서 목표를 끝내지 않는다. 다음은 능력 세션/속성/단발·이동·42개 능력/전투·대상 메뉴, 주식 원장/운영 도구/CI/명령 정비다.
@@ -243,7 +238,7 @@
 ### 2026-10-10 / 주식 UUID 원장·실현 손익
 
 - 주식 거래를 canonical SQLite 계좌·현재 quote 재검사·UUID fingerprint/영수증·cache 무효화에 연결했다. 잔액/수량/취득 원가/실현 손익은 같은 commit이다. quote 변경/삭제·재시작 후 replay도 재정산하지 않는다.
-- 손익을 signed checked Long으로 기록하고 정확한 원가 배분/전량 매도와 legacy unknown field를 보존한다. malformed 숫자/section을 0으로 읽어 자산을 덮지 않는다. GUI에서 거래 UUID를 표시한다.
+- 손익을 signed checked Long으로 기록하고 정확한 원가 배분/전량 매도와 알 수 없는 field를 보존한다. malformed 숫자/section을 0으로 읽어 자산을 덮지 않는다. GUI에서 거래 UUID를 표시한다.
 - **301개** 시험 통과(실패/에러/스킵 0), test build 성공. 주식 기존 8개를 실제 SQLite로 이전하고 5개 추가. [주식 계약](STOCK_TRANSACTIONS.md). 실제 Paper는 미검증.
 - 다음은 남은 물리 효과 경계·명령 정의·운영 backup/export/check 도구/CI·전체 범위 감사다. 전체 목표는 계속 진행 중이다.
 
@@ -264,18 +259,18 @@
 
 ### 2026-10-10 / 운영 검사·백업·export·복사본 복구 도구와 CI
 
-- 서버 없이 실행하는 `LIMPI-operations-<version>.jar`(Main `ops/OperationsCli`)를 build/libs에 추가했다. check/backup/export/export-check/restore-dry-run/restore-copy/legacy-check. Paper/Bukkit 클래스를 싣지 않는 별도 shadow 구성이다. 서버 자동 복사는 없다.
+- 서버 없이 실행하는 `LIMPI-operations-<version>.jar`(Main `ops/OperationsCli`)를 build/libs에 추가했다. check/backup/export/export-check/restore-dry-run/restore-copy. Paper/Bukkit 클래스를 싣지 않는 별도 shadow 구성이다. 서버 자동 복사는 없다.
 - 원본 DB는 read-only·없는 파일 생성 금지·application_id/user_version/테이블/integrity 검사. 출력은 새 파일만 같은 디렉터리 임시 파일→force→검증→무덮어쓰기 이동. backup은 SQLite backup API로 열린 writer의 commit된 WAL을 포함하고 사본 SHA-256을 비교한다.
 - export는 payload 원문·원장 id/fingerprint/영수증/변경 키/시각과 길이 접두 SHA-256을 보존한다. import는 SafeConstructor·중복 키 거부·checksum. restore-copy는 새 DB에 문서/원장을 복원하며 거래 UUID replay가 재정산하지 않는다. 서버 DB 교체는 하지 않는다.
-- 구조 검사: 플레이어 수·BigInteger 잔액 합·pending/REVIEW·음수 legacy·중복 이름 경고, 깨진 YAML/비정수 금액/미래 문서 schema/owner·id key 불일치/색인 없는 market_code/주식 보유 음수·overflow 오류. 오류는 restore를 막고 backup/export는 법의학 보존으로 게시한다. payload를 로그에 출력하지 않는다.
+- 구조 검사: 플레이어 수·BigInteger 잔액 합·pending/REVIEW·음수 잔액·중복 이름 경고, 깨진 YAML/비정수 금액/미래 문서 schema/owner·id key 불일치/색인 없는 market_code/주식 보유 음수·overflow 오류. 오류는 restore를 막고 backup/export는 법의학 보존으로 게시한다. payload를 로그에 출력하지 않는다.
 - 소스에서 쓰지 않는 kotlin-reflect 의존성을 제거했다. `.github/workflows/build.yml`(Java 25 temurin, `./gradlew test build`, test report 업로드)과 gradlew 실행 비트를 추가했다. CI는 서버를 실행/배포하지 않는다.
 - read-only WAL 접근이 빈 `-wal`/`-shm` sidecar를 만들 수 있다는 SQLite 동작을 시험·문서에 반영했다(원본 DB 바이트 불변 확인).
-- **339개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 14개 운영 도구 시험. Java 25로 운영 JAR help/없는 DB 거부/legacy-check를 직접 실행했다. 실제 운영 데이터 복사본·서버 DB 교체 절차는 미검증. [저장소·복구](STORAGE_AND_RECOVERY.md#운영-도구-서버-없이-실행).
+- **339개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 14개 운영 도구 시험. Java 25로 운영 JAR help/없는 DB 거부를 직접 실행했다. 서버 DB 교체 절차는 미검증. [저장소·복구](STORAGE_AND_RECOVERY.md#운영-도구-서버-없이-실행).
 - 다음은 전체 범위 감사(남은 MONEY-01/ITEM-01/DATA-02/AB-04/AB-07/QUEST-01/OPS-01 잔여)다. 전체 목표는 계속 진행 중이다.
 
 ### 2026-10-10 / 범위 감사 1차: 잔액 표시·사망 취소·잔여 우회 경로
 
-- 손상된 legacy 잔액을 관대한 `getLong`으로 0처럼 보여주던 경로를 제거했다. `PlayerProfile.balance`는 정수 Long이 아니면 null이고, `/financial spy`와 주식 GUI는 "계좌 복구 필요"를 표시한다. 주식 매수 수량 계산도 strict `Accounts.balance`를 사용한다. 원본 payload는 바꾸지 않는다.
+- 손상된 잔액을 관대한 `getLong`으로 0처럼 보여주던 경로를 제거했다. `PlayerProfile.balance`는 정수 Long이 아니면 null이고, `/financial spy`와 주식 GUI는 "계좌 복구 필요"를 표시한다. 주식 매수 수량 계산도 strict `Accounts.balance`를 사용한다. 원본 payload는 바꾸지 않는다.
 - LetsBoom은 MONITOR·ignoreCancelled에서만 폭발한다. 다른 플러그인이 취소한 사망에는 폭발하지 않으며 runtime 정리(LOWEST) 뒤에 시작하는 기존 순서를 유지한다. UndeadCooperation 퀘스트도 취소된 사망을 처치로 세지 않고(MONITOR·ignoreCancelled) 첫 일치 후 반복을 멈춘다(보상은 원래 결정적 UUID로 멱등).
 - 사용하지 않는 비원자 해금 `AbilityManager.unlockAbility`, 부분 수용만 확인하던 `validInventoryIndex`, 개수 확인과 분리된 `removeInventoryItem`/`getInventoryItemCount`, `getAllPlayersName`의 `name!!`, `saveMisc`를 제거했다. 이후 코드가 원장/회수 계약을 우회해 다시 쓰지 못하게 한다.
 - 남은 Kotlin 컴파일 경고(중복 else)를 제거했다. 경고 0개.
@@ -287,7 +282,6 @@
 ### 2026-10-10 / 독립 리뷰 반영: 주식·설탕 관리자 복구와 명령 경계
 
 - 최근 Codex 커밋 6개(명령·주식 상장 중지, 주식 원장, 물리, 설탕, 포션)를 별도 리뷰했다. 주식 원장·물리에서는 결함이 없었다. 다음을 수정했다.
-- 과거 매도 공식이 남긴 음수 averagePrice 보유는 거래 거부만 되고 복구 경로가 없었다. `/financial stock repair`로 이전 raw 값·actor를 원장에 남기고 수량/원가를 복구한다. [주식](STOCK_TRANSACTIONS.md#손상된-기존-보유의-관리자-복구)
 - 설탕 대기 결과의 효과 key가 registry에서 사라지거나 대기 payload가 손상되면 claim 예외로 매 접속 kick되던 잠금을 제거했다. 오류 기록 후 건너뛰고, `/financial sugar`·`sugar void`로 환불 없이 감사 종료한다. [설탕](SUGAR_CONSUMPTION.md#적용할-수-없는-결과)
 - `stock restore`가 기준가를 검증하지 않아 손상 기준가 하나가 모든 주기 가격 갱신을 멈출 수 있던 문제를 수정했다(refix는 기준가를 새로 쓰므로 제외). stock add 입력 오류에 항목별 메시지를 추가했다.
 - Transcendence `duration_ticks: 0`(설정 허용값)이 lease의 양수 기간 요구로 매 발동 예외가 되던 문제를 수정했다(0이면 포션 없음).
@@ -306,12 +300,10 @@
 
 ### 2026-10-10 / 3차 독립 리뷰 반영: 저장소·경제 GUI
 
-- 저장소/legacy 이전과 경제 GUI(판매/상점/마켓/능력 상점/주식)를 별도 리뷰했다. snapshot merge·flatten·cache 무효화·이전 원자성·GUI quote 재검증·마켓 이중 구매·판매 snapshot 일치는 결함이 없었다. 다음을 수정했다.
-- **DB 분실/교체 시 stale YAML 재가져오기:** DB 안 marker만으로 완료를 판단해 DB가 없어지면 과거 YAML을 다시 가져와 이후 변경을 덮을 수 있었다. DB 밖 `backups/sqlite-v1/IMPORTED` 완료 기록(기존 배포는 backfill)이 있고 DB marker가 없으면 enable을 거부한다. [저장소·복구](STORAGE_AND_RECOVERY.md#최초-이전)
-- **money 없는 이전 프로필의 초기 자금:** `ensure`가 기존 프로필에도 InitialMoney를 원장 없이 채웠다. 신규 프로필만 초기 잔액을 받고 이전 프로필은 "계좌 복구 필요"로 남는다.
+- 저장소와 경제 GUI(판매/상점/마켓/능력 상점/주식)를 별도 리뷰했다. snapshot merge·flatten·cache 무효화·GUI quote 재검증·마켓 이중 구매·판매 snapshot 일치는 결함이 없었다. 다음을 수정했다.
 - **판매로 돈 생성:** EntityThrower 임시 손 아이템/능력 아이템을 판매 대상에서 제외했다.
 - cache(Long)와 DB 재판독(Int)의 정수 비교 차이로 생기던 가짜 snapshot 충돌을 값 비교로 고쳤다.
-- **346개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 3개는 DB 분실 재가져오기 거부·완료 기록 backfill·이전 프로필 money 비보완이다.
+- **346개** 시험 통과(실패/에러/스킵 0), test build 성공. (이 시점의 이전 관련 시험은 이후 제거)
 
 ### 2026-10-10 / 3차 리뷰 반영: 전투 능력
 
@@ -325,14 +317,11 @@
 - **347개** 시험 통과, test build 성공. 새 1개는 인챈트 최고 레벨 병합이다. 나머지는 Paper 이벤트 경로라 서버 시험 계획에 추가했다.
 - 이로써 42개 능력 전체와 경제/저장/복구/명령/GUI 경로가 최소 한 번 독립 리뷰를 거쳤다. 리뷰는 정적 분석이며 실제 서버 검증을 대신하지 않는다.
 
-### 2026-10-10 / 이전 데이터 가져오기·호환 제거 (새 서버 전제)
+### 2026-10-10 / 새 서버 전제로 이전 데이터 기능 제거
 
-- **사용자 결정:** 기존 플레이 이력은 버리고 완전히 새로운 서버에서 처음부터 적용한다. 이전 데이터 이전·호환 코드를 모두 지웠다. 아래 과거 기록에 나오는 최초 이전·legacy 수표/매물/티켓·평균가 호환·`legacy-check`·`stock repair`·`market owner` 설명은 이 시점에 무효다.
-- 제거: `LegacyStateMigration`(playerData YAML→SQLite, `backups/sqlite-v1`, `IMPORTED`), `LegacyMarketMigration`·`OWNERSHIP_REVIEW`·`/financial market owner`(모든 매물은 판매자 UUID 필수), `LegacyCheck`·`check_legacy`·`/financial check import`, 옛 티켓 metadata template 인식(PDC만 인정), 주식 `averagePrice`×수량 원가 추정과 `/financial stock repair`(costBasis만 정본), YAML 프로필 저장소(`YamlProfilePersistence`/`YamlPlayerRepository`/pre-schema 백업), 퀘스트 legacy 보정(`QuestManager.reconcile`), operations `legacy-check`.
-- 유지: SQLite 정본, 원장/복구, 손상 profile 차단과 `/financial set` 복구, 신규 profile 초기 보상 1회(이미 있는 profile EXEMPT는 중복 방지로 유지), 미래 schema 거부, 운영 check/backup/export/restore-copy.
-- YAML 저장소 기반 캐시 시험을 SQLite persistence의 `CachedPlayerRepositoryTest`로 옮겼다(merge/충돌/실패 쓰기/캐시/손상 payload/미래 schema/정수 값 비교).
-- 문서: `STORAGE_AND_RECOVERY.md` 재작성, `CHECKS_AND_LEGACY_MIGRATION.md`→`CHECKS.md`, 마켓/지급/선택권/주식/명령/Paper 기록·`SERVER_TEST_PLAN.md`(0~2단계를 새 서버 기준으로)·`AGENTS.md`·정비 계획 7절을 갱신했다.
-- **324개** 시험 통과(실패/에러/스킵 0), test build 성공. legacy 전용 시험은 삭제했다.
+- **사용자 결정:** 기존 플레이 이력은 버리고 완전히 새로운 서버에서 처음부터 적용한다. 이전 버전 데이터의 가져오기·호환 코드(프로필/매물/수표/티켓/주식 평균가, 운영 도구의 이전 검사, 관련 관리자 명령)와 그 시험·문서·서버 시험 항목을 모두 지웠다. 위 과거 기록에서도 해당 설명을 삭제했다.
+- YAML 저장소 기반 캐시 시험은 SQLite persistence의 `CachedPlayerRepositoryTest`로 옮겼다.
+- **324개** 시험 통과(실패/에러/스킵 0), test build 성공.
 
 ## 항목별 진행 상태
 

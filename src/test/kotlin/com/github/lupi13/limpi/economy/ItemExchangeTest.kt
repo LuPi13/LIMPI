@@ -13,7 +13,7 @@ class ItemExchangeTest {
     private val owner = UUID.randomUUID()
     private val id = UUID.randomUUID()
     private val before = listOf(StoredStack("emerald", 64, 64), StoredStack("named emerald", 64, 64), StoredStack("emerald", 64, 64))
-    private val terms = ExchangeTerms("EPIC", "emerald", 100, ItemGrant("legacy compatible epic ticket", 10, 64))
+    private val terms = ExchangeTerms("EPIC", "emerald", 100, ItemGrant("compatible epic ticket", 10, 64))
     private fun setup(store: StateStore) = store.atomic { it.put(SqliteProfilePersistence.key(owner), "name: player\nmoney: 100\nunlockedAbilities: [Kept]\n") }
     private fun exchange(store: StateStore) = ItemExchange(store, DeliveryJournal(store))
     private fun journal(store: StateStore) = RemovalJournal(store, CachedPlayerRepository(SqliteProfilePersistence(store)), mapOf(ItemExchange.KIND to exchange(store)))

@@ -12,10 +12,10 @@ class AbilitySelectionTest {
     @TempDir lateinit var directory: Path
     private val owner = UUID.randomUUID()
     private val id = UUID.randomUUID()
-    private val before = List<StoredStack?>(36) { null } + StoredStack("legacy epic ticket", 2, 64)
+    private val before = List<StoredStack?>(36) { null } + StoredStack("epic ticket", 2, 64)
     private val after = before.dropLast(1) + before.last()!!.copy(count = 1)
-    private val terms = SelectionTerms("legacy epic ticket", 36, "EPIC", "old", "chosen")
-    private fun setup(store: StateStore) = store.atomic { it.put(SqliteProfilePersistence.key(owner), "name: player\nmoney: 0\nability: old\nunlockedAbilities: [old, chosen, unknown_legacy]\n") }
+    private val terms = SelectionTerms("epic ticket", 36, "EPIC", "old", "chosen")
+    private fun setup(store: StateStore) = store.atomic { it.put(SqliteProfilePersistence.key(owner), "name: player\nmoney: 0\nability: old\nunlockedAbilities: [old, chosen, unknown_code]\n") }
     private fun journal(store: StateStore) = RemovalJournal(store, CachedPlayerRepository(SqliteProfilePersistence(store)), mapOf(AbilitySelection.KIND to AbilitySelection(store)))
     private fun prepare(store: StateStore, frozen: SelectionTerms = terms, request: UUID = id) =
         journal(store).prepare(request, owner, AbilitySelection.KIND, frozen.encode(), before, after)
@@ -36,7 +36,7 @@ class AbilitySelectionTest {
             journal(store).apply(prepare(store), inventory)
             assertEquals(terms, AbilitySelection(store).pending(owner).single().terms)
             val profile = YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner)))
-            assertEquals("old", profile.getString("ability")); assertEquals(listOf("old", "chosen", "unknown_legacy"), profile.getStringList("unlockedAbilities"))
+            assertEquals("old", profile.getString("ability")); assertEquals(listOf("old", "chosen", "unknown_code"), profile.getStringList("unlockedAbilities"))
             assertEquals(RemovalState.DONE, journal(store).find(owner, id)!!.state)
         }
     }

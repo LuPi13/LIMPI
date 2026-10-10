@@ -28,7 +28,7 @@ object ExpRich : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onPlayerGainExp(event: PlayerExpChangeEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -37,7 +37,7 @@ object ExpRich : Ability(
         event.amount = com.github.lupi13.limpi.ability.LevelBonus.experience(event.amount, 3)
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onLevelChange(event: PlayerLevelChangeEvent) {
         val player = event.player
         if (player.ability != this) return

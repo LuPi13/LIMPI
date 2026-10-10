@@ -44,23 +44,22 @@ object DefenseAllIn : Ability(
 
 
     val lastDamageTime = mutableMapOf<java.util.UUID, Long>()
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     fun onDamage(event: EntityDamageEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
         if (player.ability != this) return
-        player.noDamageTicks = config!!.getInt("noDamageMilliseconds") / 50 // Convert milliseconds to ticks (20 ticks = 1 second)
-        if (lastDamageTime.containsKey(player.uniqueId) && (System.currentTimeMillis() - lastDamageTime[player.uniqueId]!! <= config!!.getInt("noDamageMilliseconds"))) {
+        if (config!!.getInt("noDamageMilliseconds") > 0 && lastDamageTime.containsKey(player.uniqueId) && (System.nanoTime() / 1_000_000 - lastDamageTime[player.uniqueId]!! < config!!.getInt("noDamageMilliseconds"))) {
             event.isCancelled = true
             return
         }
 
         event.setDamage(1.0)
-        lastDamageTime[player.uniqueId] = System.currentTimeMillis()
+
     }
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     fun onAttack(event: EntityDamageByEntityEvent) {
         if (event.damager is Player) {
             val player = event.damager as Player
@@ -78,6 +77,11 @@ object DefenseAllIn : Ability(
             event.damage = 1.0
             event.setDamage(1.0)
         }
+    }
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    fun confirmed(event: EntityDamageEvent) {
+        val player = event.entity as? Player ?: return
+        if (player.ability == this && event.finalDamage > 0) lastDamageTime[player.uniqueId] = System.nanoTime() / 1_000_000
     }
     override fun release(owner: java.util.UUID) { lastDamageTime.remove(owner) }
     override fun stop() { lastDamageTime.clear() }

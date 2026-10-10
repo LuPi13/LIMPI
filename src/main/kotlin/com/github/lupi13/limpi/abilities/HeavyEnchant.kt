@@ -24,7 +24,7 @@ object HeavyEnchant : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onEnchant(event: EnchantItemEvent) {
         val player = event.enchanter
         if (player.ability != this) return
@@ -36,7 +36,7 @@ object HeavyEnchant : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onAnvil(event: PrepareAnvilEvent) {
         val player = event.viewers[0] as Player
         if (player.ability != this) return

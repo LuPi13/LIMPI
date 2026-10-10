@@ -14,7 +14,6 @@ import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerToggleSneakEvent
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 import kotlin.math.abs
 import kotlin.math.acos
@@ -215,7 +214,8 @@ object CometStrike : Ability(
                                 for (entity in nearbyEntities) {
                                     val directionVector = entity.location.clone().subtract(player.location).toVector()
                                     if (directionVector.length() <= range) {
-                                        (entity as Damageable).damage(damage, player)
+                                        if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity as Damageable, player.ability!!.codeName, damage,
+                                                respectTargets = player.ability == this@CometStrike)) continue
                                         entity.velocity = directionVector.normalize().setY((if (directionVector.y > 0) { directionVector.y } else { 0.0 }) + 0.2)
                                     }
                                 }
@@ -226,7 +226,7 @@ object CometStrike : Ability(
                                     player.fallDistance = 0.0f
                                 }
                                 else {
-                                    player.damage(damage, player)
+                                    com.github.lupi13.limpi.platform.AbilityDamage.hit(player, player, player.ability!!.codeName, damage, self = true)
                                 }
 
                                 player.world.spawnParticle(

@@ -335,7 +335,7 @@ object BladeLeaper : Ability(
                         if (entity == player || entity == thrownSword) continue
                         if (!AbilityManager.isEnemy(player, entity)) continue
 
-                        entity.damage(damage, player)
+                        if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
                         //넉백
                         val knockback = entity.location.clone().subtract(tpLocation!!).toVector().normalize().multiply(0.5)

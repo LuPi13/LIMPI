@@ -61,75 +61,21 @@ object HarmonySword : Ability(
     var amplified: MutableMap<java.util.UUID, Double> = mutableMapOf()
 
 
+    private val reserved = mutableSetOf<java.util.UUID>()
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {
-        if (event.damager !is Player && event.damager !is AbstractArrow) return
-
-        // 플레이어
-        if (event.damager is Player) {
-            val player = event.damager as Player
-            if (player.ability != this) return
-            val entity = event.entity as? LivingEntity ?: return
-
-            // 플레이어가 검을 들고 있는지 확인
-            if (!sword.contains(player.inventory.itemInMainHand.type)) return
-
-
-            val showToast: Boolean = ((amplified[player.uniqueId] ?: 0.0) < config!!.getDouble("required_damage"))
-            amplified[player.uniqueId] = (amplified[player.uniqueId] ?: 0.0) + event.finalDamage
-            if (!showToast) return
-            if (amplified[player.uniqueId]!! < config!!.getDouble("required_damage")) {
-                var actionBar = Component.text("HARMONY ", NamedTextColor.RED, TextDecoration.BOLD)
-
-                for (i in 0 until (amplified[player.uniqueId]!! / config!!.getDouble("required_damage") * 40.0).toInt()) {
-                    actionBar = actionBar.append(Component.text("|", NamedTextColor.RED).decoration(TextDecoration.BOLD, false))
-                }
-                for (i in 0 until (40 - amplified[player.uniqueId]!! / config!!.getDouble("required_damage") * 40.0).toInt()) {
-                    actionBar = actionBar.append(Component.text("·", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
-                }
-
-                player.sendActionBar(actionBar)
-            }
-            else {
-                player.sendActionBar(
-                    Component.text("HARMONY: 화살 강화됨.", NamedTextColor.RED, TextDecoration.BOLD)
-                )
-                player.playSound(
-                    player.location,
-                    Sound.BLOCK_RESPAWN_ANCHOR_CHARGE,
-                    0.5f, 2.0f
-                )
-            }
-        }
-
-        // 화살
-        if (event.damager is AbstractArrow) {
-            val arrow = event.damager as AbstractArrow
-            if (arrow.shooter !is Player) return
-
-            val player = arrow.shooter as Player
-            if (player.ability != this || !amplified.contains(player.uniqueId) || amplified[player.uniqueId]!! < config!!.getDouble("required_damage")) return
-
-            // 화살 피해량 증가
-            val amplifier = config!!.getDouble("damage_amplifier")
-            event.damage *= amplifier
-            player.world.playSound(
-                arrow.location,
-                Sound.ENTITY_WARDEN_DEATH,
-                0.7f, 2.0f
-            )
-            arrow.world.spawnParticle(
-                Particle.DRAGON_BREATH,
-                arrow.location,
-                30, 0.1, 0.1, 0.1, 0.2
-            )
-            amplified[player.uniqueId] = 0.0 // 강화된 화살 사용 후 제거
-
-            confirmedHits[event] = player.uniqueId
-        }
+        if (com.github.lupi13.limpi.combat.DamageContext.current != null) return
+        val arrow = event.damager as? AbstractArrow ?: return
+        val player = arrow.shooter as? Player ?: return
+        val target = event.entity as? LivingEntity ?: return
+        if (player.ability != this || !AbilityManager.isEnemy(player, target)) return
+        val charge = amplified[player.uniqueId] ?: 0.0
+        if (charge < config!!.getDouble("required_damage") || !reserved.add(player.uniqueId)) return
+        confirmedHits[event] = player.uniqueId
+        event.damage *= config!!.getDouble("damage_amplifier")
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onArrowHitBlock(event: ProjectileHitEvent) {
         if (event.entity !is AbstractArrow) return
         val arrow = event.entity as AbstractArrow
@@ -154,14 +100,40 @@ object HarmonySword : Ability(
     }
     private val confirmedHits = java.util.WeakHashMap<org.bukkit.event.entity.EntityDamageByEntityEvent, java.util.UUID>()
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
-    fun recordConfirmedHit(event: org.bukkit.event.entity.EntityDamageByEntityEvent) {
-        val owner = confirmedHits.remove(event) ?: return
-        if (event.isCancelled || event.finalDamage <= 0) return
-        val player = plugin.server.getPlayer(owner) ?: return
-        QuestManager.harmonyHit(player, "harmony_sword")
+    fun recordConfirmedHit(event: EntityDamageByEntityEvent) {
+        val boosted = confirmedHits.remove(event)
+        if (boosted != null) reserved.remove(boosted)
+        if (event.isCancelled || event.finalDamage <= 0 || com.github.lupi13.limpi.combat.DamageContext.current != null) return
+        if (boosted != null) {
+            val player = plugin.server.getPlayer(boosted) ?: return
+            if (player.ability != this) return
+            amplified[boosted] = com.github.lupi13.limpi.combat.ChargeGauge.consume(amplified[boosted] ?: 0.0, true)
+            player.playSound(player.location, Sound.ENTITY_WARDEN_DEATH, 0.7f, 2.0f)
+            event.entity.world.spawnParticle(Particle.DRAGON_BREATH, event.entity.boundingBox.center.toLocation(event.entity.world), 30, 0.1, 0.1, 0.1, 0.2)
+            QuestManager.harmonyHit(player, "harmony_sword")
+            return
+        }
+        val player = event.damager as? Player ?: return
+        if (player.inventory.itemInMainHand.type !in sword) return
+        val target = event.entity as? LivingEntity ?: return
+        if (player.ability != this || !AbilityManager.isEnemy(player, target)) return
+        val required = config!!.getDouble("required_damage")
+        val previous = amplified[player.uniqueId] ?: 0.0
+        val next = com.github.lupi13.limpi.combat.ChargeGauge.gain(previous, event.finalDamage, required)
+        amplified[player.uniqueId] = next
+        if (previous >= required) return
+        if (next >= required) {
+            player.sendActionBar(Component.text("HARMONY: 화살 강화됨.", NamedTextColor.RED, TextDecoration.BOLD))
+            player.playSound(player.location, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.5f, 2.0f)
+        } else {
+            val filled = (next / required * 40).toInt().coerceIn(0, 40)
+            player.sendActionBar(Component.text("HARMONY ", NamedTextColor.RED, TextDecoration.BOLD)
+                .append(Component.text("|".repeat(filled), NamedTextColor.RED).decoration(TextDecoration.BOLD, false))
+                .append(Component.text("·".repeat(40 - filled), NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false)))
+        }
     }
 
-    override fun release(owner: java.util.UUID) { amplified.remove(owner) }
-    override fun stop() { amplified.clear() }
+    override fun release(owner: java.util.UUID) { amplified.remove(owner); reserved.remove(owner); confirmedHits.entries.removeIf { it.value == owner } }
+    override fun stop() { amplified.clear(); reserved.clear(); confirmedHits.clear() }
 
 }

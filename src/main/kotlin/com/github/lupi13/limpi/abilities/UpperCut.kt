@@ -43,7 +43,7 @@ object UpperCut : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onKnockBack(event: EntityKnockbackByEntityEvent) {
         if (event.pushedBy !is Player) return
         val player = event.pushedBy as Player

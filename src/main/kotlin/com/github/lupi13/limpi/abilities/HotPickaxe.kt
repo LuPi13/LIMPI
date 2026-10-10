@@ -47,19 +47,22 @@ object HotPickaxe : Ability(
         Material.WOODEN_PICKAXE
     )
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {
+        if (event.finalDamage <= 0 || com.github.lupi13.limpi.combat.DamageContext.current != null) return
         val player = event.damager as? Player ?: return
         if (player.ability != this) return
 
         if (!pickaxes.contains(player.inventory.itemInMainHand.type)) return
+        val target = event.entity as? org.bukkit.entity.Damageable ?: return
+        if (!AbilityManager.isEnemy(player, target)) return
 
         // 적에게 불태우기 효과 적용
         event.entity.fireTicks = config!!.getInt("fireTicks")
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onBreakBlock(event: BlockDropItemEvent) {
         val player = event.player
         if (player.ability != this) return

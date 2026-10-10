@@ -8,7 +8,6 @@ import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.scheduler.BukkitRunnable
 
 object LetsBoom : Ability(
     grade = Grade.TROLL,

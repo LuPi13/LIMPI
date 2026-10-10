@@ -61,7 +61,7 @@ object ImpactLanding : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDamage(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
         if (player.ability != this) return
@@ -69,6 +69,7 @@ object ImpactLanding : Ability(
         if (event.cause != EntityDamageEvent.DamageCause.FALL) return
         event.isCancelled = true
         val damage = event.damage
+        if (!damage.isFinite() || damage <= 0) return
 
         player.world.playSound(player.location, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, (damage / 8.0).toFloat(), (8.0 / damage).toFloat())
 
@@ -83,7 +84,7 @@ object ImpactLanding : Ability(
             val shockDamage = calculateShockwaveDamage(damage, distance)
             if (shockDamage < config!!.getDouble("minimumDamage")) continue // 최소 피해량 설정
 
-            entity.damage(shockDamage, player)
+            com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, shockDamage)
         }
 
         // 파티클 효과

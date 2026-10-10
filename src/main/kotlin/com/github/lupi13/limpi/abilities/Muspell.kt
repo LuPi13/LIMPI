@@ -16,7 +16,6 @@ import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
 import kotlin.math.acos
 
 object Muspell : Ability(
@@ -63,7 +62,7 @@ object Muspell : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onArrowLaunch(event: ProjectileLaunchEvent) {
         val player = event.entity.shooter as? Player ?: return
         if (player.ability != this) return
@@ -206,8 +205,10 @@ object Muspell : Ability(
                     entities.removeIf { it.location.distance(hitLocation) > damageRange }
 
                     for (entity in entities) {
-                        entity.fireTicks = fireTicks
-                        (entity as Damageable).damage(damage / (entity.boundingBox.center.subtract(hitLocation.toVector()).length()).coerceIn(1.0, damageRange), player)
+                        if (com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity as Damageable, codeName,
+                                damage / entity.boundingBox.center.subtract(hitLocation.toVector()).length().coerceIn(1.0, damageRange.coerceAtLeast(1.0)))) {
+                            entity.fireTicks = fireTicks
+                        }
                     }
                     world.spawnParticle(
                         Particle.SMOKE,

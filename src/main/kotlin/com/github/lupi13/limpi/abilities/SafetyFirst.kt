@@ -34,7 +34,7 @@ object SafetyFirst : Ability(
         }
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onPlayerBreakBlock(event: BlockBreakEvent) {
         val player = event.player
         if (player.ability != this) return

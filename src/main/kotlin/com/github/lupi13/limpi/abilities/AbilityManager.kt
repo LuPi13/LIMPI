@@ -24,7 +24,6 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin.getPlugin
-import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
 
 object AbilityManager : Listener {
@@ -286,100 +285,25 @@ object AbilityManager : Listener {
         EnderDragon::class.java, Wither::class.java
     )
     fun isEnemy(player: Player, entity: Damageable): Boolean {
-        // 플레이어의 설정에서 해당 엔티티를 적으로 간주하는지 확인합니다.
-        val config = FileManager.getPlayerData(player)
-
-        var result = true
-
-        // 플레이어
-        if (entity is Player) {
-            val targetLevel = config.getInt("AbilityEnemy.PLAYER", 1)
-            val teams = player.scoreboard.teams
-            var isTargetSameTeam = false
-            if (entity == player) {
-                isTargetSameTeam = true // 자기 자신은 항상 같은 팀으로 간주
-            } else {
-                // 플레이어와 플레이어 팀이 같은 팀에 속하는지 확인
-                for (team in teams) {
-                    if (team.entries.contains(entity.name) && team.hasEntry(player.name)) {
-                        isTargetSameTeam = true
-                        break
-                    }
-                }
-            }
-            result = when (targetLevel) {
-                0 -> false // 적으로 간주하지 않음
-                1 -> !isTargetSameTeam // 같은 팀에 속하지 않는 플레이어만 적으로 간주함
-                2 -> true // 플레이어는 항상 적으로 간주함
-                else -> true // 기본값은 적으로 간주함
-            }
-            if (entity == player) result = false
-        }
-
-        // 비공격적
-        else if (nonAggressive.any { it.isInstance(entity) }) {
-            val targetLevel = config.getInt("AbilityEnemy.NON_AGGRESSIVE", 2)
-            val isTargetingPlayer = (entity is Mob) && entity.target == player
-            result =  when (targetLevel) {
-                0 -> false // 적으로 간주하지 않음
-                1 -> isTargetingPlayer // 플레이어를 공격하는 비공격적 몹만 적으로 간주함
-                2 -> true // 비공격적 몹도 적으로 간주함
-                else -> true // 기본값은 적으로 간주함
-            }
-        }
-
-        // 중립적
-        else if (neutral.any { it.isInstance(entity) }) {
-            val targetLevel = config.getInt("AbilityEnemy.NEUTRAL", 2)
-            val isTargetingPlayer = (entity is Mob) && entity.target == player
-            result = when (targetLevel) {
-                0 -> false // 적으로 간주하지 않음
-                1 -> isTargetingPlayer // 플레이어를 공격하는 중립 몹만 적으로 간주함
-                2 -> true // 중립 몹도 적으로 간주함
-                else -> true // 기본값은 적으로 간주함
-            }
-        }
-
-        // 공격적
-        else if (aggressive.any { it.isInstance(entity) }) {
-            val targetLevel = config.getInt("AbilityEnemy.AGGRESSIVE", 2)
-            val isTargetingPlayer = (entity is Mob) && entity.target == player
-            result = when (targetLevel) {
-                0 -> false // 적으로 간주하지 않음
-                1 -> isTargetingPlayer // 플레이어를 공격하는 공격적 몹만 적으로 간주함
-                2 -> true // 공격적 몹도 적으로 간주함
-                else -> true // 기본값은 적으로 간주함
-            }
-        }
-
-        // Tameable 예외
+        if (entity.uniqueId == player.uniqueId || entity.world.uid != player.world.uid) return false
+        val settings = com.github.lupi13.limpi.combat.EnemySettings.read(FileManager.getPlayerData(player))
+        fun sameTeam(name: String?): Boolean = name != null && player.scoreboard.getEntryTeam(player.name)?.hasEntry(name) == true
         if (entity is Tameable && entity.isTamed) {
-            val targetLevel = config.getInt("AbilityEnemy.TAMED", 2)
-            val playerTeam = player.scoreboard.teams
-            val tamer = entity.owner
-            if (tamer !is Player) return true
-            val teams = player.scoreboard.teams
-            var isTargetSameTeam = false
-            if (tamer == player) {
-                isTargetSameTeam = true // 자기 자신은 항상 같은 팀으로 간주
-            } else {
-                // 플레이어와 플레이어 팀이 같은 팀에 속하는지 확인
-                for (team in teams) {
-                    if (team.entries.contains(tamer.name) && team.hasEntry(player.name)) {
-                        isTargetSameTeam = true
-                        break
-                    }
-                }
-            }
-            result = when (targetLevel) {
-                0 -> !((entity.owner is Player || entity.owner is OfflinePlayer))
-                1 -> !isTargetSameTeam // 플레이어와 플레이어 팀이 소유한 길들여진 몹은 적으로 간주하지 않음
-                2 -> true // 길들여진 몹도 적으로 간주함
-                else -> true // 기본값은 적으로 간주함
-            }
+            val owner = entity.owner
+            val same = owner?.uniqueId == player.uniqueId || sameTeam(owner?.name)
+            return com.github.lupi13.limpi.combat.EnemyPolicy.hostile(com.github.lupi13.limpi.combat.TargetGroup.TAMED,
+                settings.mode(com.github.lupi13.limpi.combat.TargetGroup.TAMED), sameTeam = same, hasPlayerOwner = owner != null)
         }
-
-        return result
+        val group = when {
+            entity is Player -> com.github.lupi13.limpi.combat.TargetGroup.PLAYER
+            nonAggressive.any { it.isInstance(entity) } -> com.github.lupi13.limpi.combat.TargetGroup.NON_AGGRESSIVE
+            neutral.any { it.isInstance(entity) } -> com.github.lupi13.limpi.combat.TargetGroup.NEUTRAL
+            aggressive.any { it.isInstance(entity) } -> com.github.lupi13.limpi.combat.TargetGroup.AGGRESSIVE
+            else -> null
+        }
+        return com.github.lupi13.limpi.combat.EnemyPolicy.hostile(group, group?.let(settings::mode) ?: 2,
+            sameTeam = (entity as? Player)?.let { sameTeam(it.name) } ?: false,
+            targetingOwner = (entity as? Mob)?.target?.uniqueId == player.uniqueId)
     }
 
 

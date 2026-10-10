@@ -41,7 +41,7 @@ object CookieRun : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onConsume(event: PlayerItemConsumeEvent) {
         val player = event.player
         if (player.ability != this) return

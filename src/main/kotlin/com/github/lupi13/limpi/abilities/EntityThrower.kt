@@ -22,7 +22,6 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 import kotlin.math.log
 import kotlin.random.Random
@@ -100,7 +99,7 @@ object EntityThrower : Ability(
 
     val heldEntity: MutableMap<java.util.UUID, Entity> = mutableMapOf()
     private val heldEffects = mutableMapOf<java.util.UUID, com.github.lupi13.limpi.platform.AbilityEffect>()
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onInteractEntity(event: PlayerInteractEntityEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -304,6 +303,8 @@ object EntityThrower : Ability(
                 for (entity in nearbyEntities) {
                     if (entity !is Damageable || entity == player || entity == targetEntity) continue
                     if (!entity.boundingBox.overlaps(targetEntity.boundingBox)) continue
+                    val damage = config!!.getDouble("collisionDamage")
+                    if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
                     // TNT, 크리퍼의 경우, 즉시 폭발
                     if (config!!.getBoolean("tntAndCreeperExplodeImmediately")) {
@@ -340,16 +341,14 @@ object EntityThrower : Ability(
 
 
                     // 데미지 주기
-                    val damage = config!!.getDouble("collisionDamage")
-                    entity.damage(damage, player)
                     if (targetEntity is Damageable) {
-                        targetEntity.damage(damage, player)
+                        com.github.lupi13.limpi.platform.AbilityDamage.hit(player, targetEntity, codeName, damage)
                     }
 
                     // 부딪히고 넉백
                     val vector = targetEntity.velocity.normalize()
-                    entity.velocity = vector.multiply(0.2)
-                    targetEntity.velocity = vector.multiply(-0.2)
+                    entity.velocity = vector.clone().multiply(0.2)
+                    targetEntity.velocity = vector.clone().multiply(-0.2)
                     player.world.playSound(entity.location, Sound.ENTITY_PLAYER_HURT, 1f, 1f)
                     cancel() // 충돌 후 반복문 종료
                     return
@@ -362,7 +361,7 @@ object EntityThrower : Ability(
     //이하는 restrictHand 아이템 제한
 
     // 플레이어 죽었을 때 제거
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onDropItem(event: ItemSpawnEvent) {
         if (event.entity.itemStack.isSimilar(getRestrictHand())) {
             event.entity.remove()
@@ -371,7 +370,7 @@ object EntityThrower : Ability(
     }
 
     //Q키로 아이템 버리기 제한
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onPlayerDropItem(event: PlayerDropItemEvent) {
         if (event.itemDrop.itemStack.isSimilar(getRestrictHand())) {
             event.isCancelled = true
@@ -379,7 +378,7 @@ object EntityThrower : Ability(
     }
 
     //인벤토리 내 클릭, 이동 금지
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onInventoryClick(event: InventoryClickEvent) {
         val item = event.currentItem ?: return
         if (!item.isSimilar(getRestrictHand())) return
@@ -388,7 +387,7 @@ object EntityThrower : Ability(
     }
 
     //안잡고 있는데 움직이면 삭제(왜 움직일때냐면 이거 하나때문에 bukkitrunnable 쓰기는 너무 귀찮아서)
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onMove(event: PlayerMoveEvent) {
         val player = event.player
         if (heldEntity.containsKey(player.uniqueId)) return

@@ -33,7 +33,7 @@ object LongThrow : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onDropItem(event: PlayerDropItemEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -44,7 +44,7 @@ object LongThrow : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onPotionLaunch(event: ProjectileLaunchEvent) {
         val entity = event.entity
         if (!(entity is SplashPotion || entity is LingeringPotion)) return

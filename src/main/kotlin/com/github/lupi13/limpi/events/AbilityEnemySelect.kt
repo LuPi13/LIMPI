@@ -16,6 +16,9 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
+import com.github.lupi13.limpi.combat.*
+import com.github.lupi13.limpi.menu.*
+import org.bukkit.event.inventory.ClickType
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -117,7 +120,7 @@ class AbilityEnemySelect: Listener {
             lore.add(Component.text("클릭하여 범위를 변경합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
 
             val playerConfig = FileManager.getPlayerData(player)
-            val targetLevel = playerConfig.getInt("AbilityEnemy.${category.name}", 2)
+            val targetLevel = EnemySettings.read(playerConfig).mode(TargetGroup.valueOf(category.name))
             for (i in 0..2) {
                 if (i == targetLevel) {
                     lore[i] = lore[i].color(NamedTextColor.GREEN).decoration(TextDecoration.STRIKETHROUGH, false)
@@ -137,57 +140,46 @@ class AbilityEnemySelect: Listener {
          * 적 선택 GUI를 생성합니다.
          * @param player 플레이어
          */
-        fun openEnemySelectGUI(player: Player) {
-            val enemySelectGUI: Inventory = Bukkit.createInventory(player, 9, enemySelectGUIName)
-
-            enemySelectGUI.setItem(0, getEnemySelectItem(player, NON_AGGRESSIVE))
-            enemySelectGUI.setItem(2, getEnemySelectItem(player, NEUTRAL))
-            enemySelectGUI.setItem(4, getEnemySelectItem(player, TAMED))
-            enemySelectGUI.setItem(6, getEnemySelectItem(player, AGGRESSIVE))
-            enemySelectGUI.setItem(8, getEnemySelectItem(player, PLAYER))
-
-            player.openInventory(enemySelectGUI)
+        fun openEnemySelectGUI(player: Player, expected: Inventory? = null) {
+            if (!player.hasPermission("limpi.ability.enemy") || FileManager.delivery.blocked(player.uniqueId)) return
+            val holder = MenuHolder(MenuKind.ABILITY_ENEMY, 0, enemySelectGUIName, 9)
+            val settings = EnemySettings.read(FileManager.getPlayerData(player))
+            listOf(NON_AGGRESSIVE, NEUTRAL, TAMED, AGGRESSIVE, PLAYER).forEachIndexed { index, category ->
+                val slot = index * 2
+                holder.inventory.setItem(slot, getEnemySelectItem(player, category))
+                holder.actions[slot] = MenuAction.EnemyMode(category.name, settings.mode(TargetGroup.valueOf(category.name)))
+            }
+            openMenu(plugin, player, holder.inventory, expected)
         }
     }
 
-
     @EventHandler
     fun onInventoryClick(event: InventoryClickEvent) {
-        if (event.view.title() != enemySelectGUIName) return
+        val holder = event.view.topInventory.holder as? MenuHolder ?: return
+        if (holder.kind != MenuKind.ABILITY_ENEMY) return
         event.isCancelled = true
-        val enemySelectGUI = event.view.topInventory
-        val player = event.whoClicked as Player
-        if (event.currentItem == null || event.clickedInventory !== enemySelectGUI) return
-
-        val item = event.currentItem!!
-        event.isCancelled = true
-
-        if (item.type == Material.AIR) return // 빈 슬롯 클릭
-
-        val category = when (event.slot) {
-            0 -> NON_AGGRESSIVE
-            2 -> NEUTRAL
-            4 -> TAMED
-            6 -> AGGRESSIVE
-            8 -> PLAYER
-            else -> return // 잘못된 슬롯 클릭
+        val player = event.whoClicked as? Player ?: return
+        if (event.clickedInventory !== event.view.topInventory || event.click !in listOf(ClickType.LEFT, ClickType.RIGHT) ||
+            !player.hasPermission("limpi.ability.enemy") || FileManager.delivery.blocked(player.uniqueId)) return
+        val action = holder.actions[event.rawSlot] as? MenuAction.EnemyMode ?: return
+        try {
+            val category = EnemyCategory.valueOf(action.category)
+            val group = TargetGroup.valueOf(action.category)
+            val data = FileManager.getPlayerData(player)
+            val mode = EnemySettings.read(data).mode(group)
+            if (mode != action.mode) { openEnemySelectGUI(player, event.view.topInventory); return }
+            val next = EnemyPolicy.cycle(mode, event.click == ClickType.LEFT)
+            data.set("AbilityEnemy.${category.name}", next)
+            FileManager.savePlayerData(player, data)
+            player.playSound(player.location, when (next) {
+                0 -> Sound.ENTITY_ALLAY_AMBIENT_WITH_ITEM
+                1 -> Sound.ENTITY_ALLAY_AMBIENT_WITHOUT_ITEM
+                else -> Sound.ENTITY_VEX_CHARGE
+            }, 1f, 1.5f)
+            openEnemySelectGUI(player, event.view.topInventory)
+        } catch (failure: Exception) {
+            plugin.logger.log(java.util.logging.Level.WARNING, "Unable to change ability target settings for ${player.uniqueId}", failure)
+            player.sendMessage(Component.text("대상 설정을 저장하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
-
-        val playerConfig = FileManager.getPlayerData(player)
-        val currentLevel = playerConfig.getInt("AbilityEnemy.${category.name}", 2)
-        val upDown = if (event.isLeftClick) 1 else -1
-        var newLevel = currentLevel + upDown
-        if (newLevel > 2) newLevel = 0
-        if (newLevel < 0) newLevel = 2
-
-        playerConfig.set("AbilityEnemy.${category.name}", newLevel)
-        FileManager.savePlayerData(player, playerConfig)
-
-        when (newLevel) {
-            0 -> player.playSound(player.location, Sound.ENTITY_ALLAY_AMBIENT_WITH_ITEM, 1f, 1.5f)
-            1 -> player.playSound(player.location, Sound.ENTITY_ALLAY_AMBIENT_WITHOUT_ITEM, 1f, 1.5f)
-            2 -> player.playSound(player.location, Sound.ENTITY_VEX_CHARGE, 1f, 1.5f)
-        }
-        openEnemySelectGUI(player)
     }
 }

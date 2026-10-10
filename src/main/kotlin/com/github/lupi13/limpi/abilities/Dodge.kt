@@ -9,7 +9,6 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 
 object Dodge : Ability(
@@ -45,7 +44,7 @@ object Dodge : Ability(
     }
 
     val velocityMap: MutableMap<java.util.UUID, Vector> = mutableMapOf()
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onPlayerMove(event: PlayerMoveEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -91,7 +90,7 @@ object Dodge : Ability(
     val lastSneakTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
     val lastDodgeTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onSneak(event: PlayerToggleSneakEvent) {
         val player = event.player
         val cooldown = config!!.getInt("cooldown")

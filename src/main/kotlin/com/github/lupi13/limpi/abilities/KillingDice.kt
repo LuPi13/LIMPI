@@ -14,7 +14,6 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 import kotlin.math.max
 import kotlin.math.pow
@@ -70,7 +69,7 @@ object KillingDice : Ability(
         if (target.isDead || !target.isValid) return
 
         // 대상의 잃은 체력에 비례하여 즉사 확률 계산
-        val instantKillProbability = ((1 - target.health / target.getAttribute(Attribute.MAX_HEALTH)!!.baseValue).pow(config!!.getDouble("instantKillDegree")))
+        val instantKillProbability = ((1 - target.health / target.getAttribute(Attribute.MAX_HEALTH)!!.value).coerceIn(0.0, 1.0).pow(config!!.getDouble("instantKillDegree")))
         val killDelay = config!!.getInt("KillDelay")
         if (Random.nextDouble() <= instantKillProbability) {
             target.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, max(killDelay, 20), 0, true, false, false))
@@ -114,8 +113,9 @@ object KillingDice : Ability(
                         center.clone(),
                         50, 0.2, 0.2, 0.2, 0.1
                     )
-                    target.damage(Double.MAX_VALUE, player)
-                    target.health = 0.0
+                    com.github.lupi13.limpi.platform.AbilityDamage.hit(player, target, codeName,
+                        com.github.lupi13.limpi.combat.DamageNumbers.execution(target.health, target.absorptionAmount),
+                        com.github.lupi13.limpi.combat.HitKind.EXECUTION)
 
                     target.world.playSound(target.location, Sound.ENTITY_ALLAY_DEATH, 1.0F, 2.0F)
                 }
@@ -124,25 +124,27 @@ object KillingDice : Ability(
     }
 
 
-    // 데미지 감소
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {
-        if (event.damager is Player) {
-            val player = event.damager as Player
-            if (player.ability != this) return
+        if (com.github.lupi13.limpi.combat.DamageContext.current != null) return
+        val player = when (val attacker = event.damager) {
+            is Player -> attacker
+            is Projectile -> attacker.shooter as? Player
+            else -> null
+        } ?: return
+        if (player.ability != this || event.entity !is LivingEntity || !AbilityManager.isEnemy(player, event.entity as LivingEntity)) return
+        event.damage *= config!!.getDouble("damageReduction")
+    }
 
-            event.damage = event.damage * config!!.getDouble("damageReduction")
-            event.setDamage(event.damage)
-            killFromDice(player, event.entity as LivingEntity)
-        }
-        else if (event.damager is Projectile) {
-            if ((event.damager as Projectile).shooter !is Player) return
-            val player = (event.damager as Projectile).shooter as Player
-            if (player.ability != this) return
-
-            event.damage = event.damage * config!!.getDouble("damageReduction")
-            event.setDamage(event.damage)
-            killFromDice(player, event.entity as LivingEntity)
-        }
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    fun onConfirmedDamage(event: EntityDamageByEntityEvent) {
+        if (event.finalDamage <= 0 || com.github.lupi13.limpi.combat.DamageContext.current != null) return
+        val player = when (val attacker = event.damager) {
+            is Player -> attacker
+            is Projectile -> attacker.shooter as? Player
+            else -> null
+        } ?: return
+        val target = event.entity as? LivingEntity ?: return
+        if (player.ability == this && AbilityManager.isEnemy(player, target)) killFromDice(player, target)
     }
 }

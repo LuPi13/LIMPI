@@ -73,8 +73,8 @@ object RailgunEffect {
                     for (entity in world.getNearbyEntities(rail.boundingBox.center.toLocation(world), settings.size * 2, settings.size * 2, settings.size * 2)) {
                         if (entity !is Damageable || entity == player || entity == rail || !entity.boundingBox.overlaps(rail.boundingBox)) continue
                         if (AbilityManager.isEnemy(player, entity)) {
-                            entity.damage(settings.damage, player)
-                            if (consumed && entity is Enderman && entity.isDead) killedEnderman = true
+                            val accepted = AbilityDamage.hit(player, entity, if (consumed) "over_balance" else "judgement_ray", settings.damage)
+                            if (consumed && entity is Enderman && accepted) killedEnderman = true
                             if (consumed && entity is EnderDragon && entity.isDead && !killedEnderman)
                                 QuestManager.clearQuests(player, DoEndermansDreamOfFreeingEnd)
                         } else if (!consumed && settings.heal > 0) entity.heal(settings.heal)

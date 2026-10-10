@@ -10,7 +10,6 @@ import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageByEntityEvent
-import org.bukkit.scheduler.BukkitRunnable
 import kotlin.random.Random
 
 object ChainLightning : Ability(
@@ -48,66 +47,57 @@ object ChainLightning : Ability(
             config?.set("probability", 0.8)
             config?.set("radius", 5.0)
         }
+        if (!config!!.contains("maximumChainHops")) config!!.set("maximumChainHops", 16)
         saveConfig()
     }
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onAttack(event: EntityDamageByEntityEvent) {
-//        if (event.damager !is Player || (event.damager as Player).ability != this) return
-        if (event.damager !is Player && event.damager !is AbstractArrow) return
-        val player: Player
-        if (event.damager is Player) {
-            player = event.damager as Player
-        }
-        else {
-            if ((event.damager as AbstractArrow).shooter !is Player) return
-            player = (event.damager as AbstractArrow).shooter as Player
-        }
-        if (player.ability != this) return
-        if (event.entity !is Damageable) return
-
-        val damage = event.damage * config!!.getDouble("damageRatio")
+        if (event.finalDamage <= 0) return
+        val context = com.github.lupi13.limpi.combat.DamageContext.current
+        if (context != null && context.kind != com.github.lupi13.limpi.combat.HitKind.CHAIN) return
+        val player = when (val attacker = event.damager) {
+            is Player -> attacker
+            is AbstractArrow -> attacker.shooter as? Player
+            else -> null
+        } ?: return
+        if (player.ability != this || !player.isOnline || player.isDead) return
+        if (context != null && (context.owner != player.uniqueId || context.ability != codeName)) return
+        val target = event.entity as? Damageable ?: return
+        if (!AbilityManager.isEnemy(player, target)) return
+        val ratio = config!!.getDouble("damageRatio")
         val probability = config!!.getDouble("probability")
         val radius = config!!.getDouble("radius")
-
-        if (Random.nextDouble() > probability) return
-
-        val target = event.entity as Damageable
-
-
-        val entities = target.getNearbyEntities(radius*2, radius*2, radius*2)
-        entities.shuffle()
-
-        var newTarget: Damageable? = null
-        for (entity in entities) {
-            if (entity !is Damageable) continue
-            if (entity == target || entity == player) continue
-            if (entity.location.distance(target.location) > radius) continue
-            if (entity is LivingEntity && entity.noDamageTicks > 10) continue
-
-            newTarget = entity
-            break
-        }
-
-        if (newTarget == null) return
-
-        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+        val maximum = config!!.getInt("maximumChainHops")
+        require(ratio.isFinite() && ratio >= 0 && probability in 0.0..1.0 && radius.isFinite() && radius > 0 && maximum in 1..256)
+        if (ratio == 0.0 || Random.nextDouble() >= probability) return
+        val damage = (event.finalDamage * ratio).coerceAtMost(com.github.lupi13.limpi.combat.DamageNumbers.MAXIMUM)
+        val budget = context?.chain ?: com.github.lupi13.limpi.combat.ChainBudget(target.uniqueId, maximum)
+        val next = target.getNearbyEntities(radius * 2, radius * 2, radius * 2).shuffled().filterIsInstance<Damageable>()
+            .firstOrNull { candidate ->
+                candidate.isValid && !candidate.isDead && candidate.world.uid == player.world.uid &&
+                    !budget.visited(candidate.uniqueId) && candidate.location.distanceSquared(target.location) <= radius * radius &&
+                    (candidate !is LivingEntity || candidate.noDamageTicks <= 10) && AbilityManager.isEnemy(player, candidate)
+            } ?: return
+        if (!budget.reserve(next.uniqueId, damage)) return
+        val from = target.boundingBox.center.toLocation(target.world)
+        object : com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
             override fun tick() {
-                //전기 효과
-                val from = target.boundingBox.center.toLocation(target.world)
-                val to = newTarget.boundingBox.center.toLocation(newTarget.world)
-                val vector = to.clone().subtract(from.clone()).toVector().normalize()
-                val distance = from.distance(to)
-
-                for (i in 0..(distance*10).toInt()) {
-                    val loc = from.clone().add(vector.clone().multiply(i/10.0))
-                    loc.world.spawnParticle(org.bukkit.Particle.ELECTRIC_SPARK, loc, 1, 0.0, 0.0, 0.0, 0.01)
+                if (!next.isValid || next.isDead || next.world.uid != player.world.uid || !AbilityManager.isEnemy(player, next)) return
+                val to = next.boundingBox.center.toLocation(next.world)
+                val delta = to.toVector().subtract(from.toVector())
+                val distance = delta.length()
+                if (distance > 1.0e-8) {
+                    val direction = delta.normalize()
+                    for (i in 0..(distance.coerceAtMost(radius * 2) * 10).toInt()) {
+                        to.world.spawnParticle(org.bukkit.Particle.ELECTRIC_SPARK, from.clone().add(direction.clone().multiply(i / 10.0)), 1, 0.0, 0.0, 0.0, 0.01)
+                    }
                 }
                 to.world.playSound(to, Sound.ENTITY_BEE_DEATH, 0.7f, 2f)
-
-                newTarget.damage(damage, player)
+                com.github.lupi13.limpi.platform.AbilityDamage.hit(player, next, codeName, damage,
+                    com.github.lupi13.limpi.combat.HitKind.CHAIN, budget)
             }
-        }.runTaskLater(plugin,4L)
+        }.runTaskLater(plugin, 4L)
     }
 }

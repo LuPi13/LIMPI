@@ -17,6 +17,7 @@ sealed interface MenuAction {
     data class Page(val index: Int) : MenuAction
     data class AbilityCode(val code: String) : MenuAction
     data class AbilitySort(val ordinal: Int) : MenuAction
+    data class EnemyMode(val category: String, val mode: Int) : MenuAction
     data class StockQuote(val code: String, val price: Long) : MenuAction
     data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
     data class ShopQuote(val code: String, val price: Long) : MenuAction
@@ -28,8 +29,9 @@ sealed interface MenuAction {
 }
 
 /** Server-owned identity and actions: titles and item names carry no authority. */
-class MenuHolder(val kind: MenuKind, val page: Int, title: Component) : InventoryHolder {
-    private val view = Bukkit.createInventory(this, 54, title)
+class MenuHolder(val kind: MenuKind, val page: Int, title: Component, size: Int = 54) : InventoryHolder {
+    init { require(size in 9..54 && size % 9 == 0) }
+    private val view = Bukkit.createInventory(this, size, title)
     val actions = mutableMapOf<Int, MenuAction>()
     override fun getInventory(): Inventory = view
 }

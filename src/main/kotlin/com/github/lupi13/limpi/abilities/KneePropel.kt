@@ -12,7 +12,6 @@ import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
 import kotlin.math.min
 
 object KneePropel : Ability(
@@ -41,7 +40,7 @@ object KneePropel : Ability(
 
 
     val timer = mutableMapOf<java.util.UUID, Int>()
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onSneak(event: PlayerToggleSneakEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -127,7 +126,7 @@ object KneePropel : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onMove(event: PlayerMoveEvent) {
         val player = event.player
         if (player.ability != this) return

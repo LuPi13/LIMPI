@@ -17,6 +17,9 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.ability.enemy:
+    description: Configure ability target categories
+    default: true
   limpi.financial.admin.transition:
     description: Inspect and resolve interrupted ability inventory transitions
     default: op

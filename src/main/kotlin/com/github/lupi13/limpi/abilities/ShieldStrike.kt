@@ -12,7 +12,6 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 import kotlin.math.min
 
@@ -107,7 +106,7 @@ object ShieldStrike : Ability(
                                 if (entity == player) continue
                                 if (!AbilityManager.isEnemy(player, entity)) continue
 
-                                entity.damage(damage, player)
+                                if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
                                 entity.velocity = vector[player.uniqueId]!!.clone().multiply(min(knockbackAmplifier / entity.boundingBox.volume, maxKnockback)).setY(0.3)
                                 player.velocity = vector[player.uniqueId]!!.clone().multiply(-0.1).setY(0.2)
                                 val centerPosition = player.boundingBox.center.getMidpoint(entity.boundingBox.center).toLocation(player.world)

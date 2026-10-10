@@ -20,7 +20,6 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
@@ -118,75 +117,47 @@ object Transcendence : Ability(
     var transcending: MutableMap<java.util.UUID, Boolean> = mutableMapOf()
 
 
-    @EventHandler
+    private val enhancedHits = java.util.WeakHashMap<EntityDamageByEntityEvent, java.util.UUID>()
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {
-        var player: Player? = null
-        if (event.damager !is Player && event.damager !is AbstractArrow) return
+        if (com.github.lupi13.limpi.combat.DamageContext.current != null) return
+        val player = when (val attacker = event.damager) {
+            is Player -> attacker.takeIf { it.inventory.itemInMainHand.type in sword }
+            is AbstractArrow -> attacker.shooter as? Player
+            else -> null
+        } ?: return
+        val target = event.entity as? Damageable ?: return
+        if (player.ability != this || !AbilityManager.isEnemy(player, target) || transcending[player.uniqueId] != true) return
+        event.damage *= config!!.getDouble(if (event.damager is Player) "sword_damage_amplifier" else "arrow_damage_amplifier")
+        enhancedHits[event] = player.uniqueId
+    }
 
-        // 플레이어
-        if (event.damager is Player) {
-            player = event.damager as Player
-            if (player.ability != this) return
-
-            // 플레이어가 검을 들고 있는지 확인
-            if (!sword.contains(player.inventory.itemInMainHand.type)) return
-
-
-            // 게이지 채우기
-            if (!transcending.contains(player.uniqueId)) {
-                swordGauge[player.uniqueId] = ((swordGauge[player.uniqueId] ?: 0.0) + event.finalDamage).coerceAtMost(config!!.getDouble("sword_required_damage"))
-            }
-
-            // 통달상태
-            else {
-                val entity = event.entity as? LivingEntity ?: return
-                event.damage *= config!!.getDouble("sword_damage_amplifier")
-                player.playSound(
-                    player.location,
-                    Sound.ENTITY_WARDEN_DEATH,
-                    0.7f, 2.0f
-                )
-                entity.world.spawnParticle(
-                    Particle.DRAGON_BREATH,
-                    entity.boundingBox.center.toLocation(entity.world),
-                    30, 0.1, 0.1, 0.1, 0.2
-                )
-                if (player.getCooldown(player.inventory.itemInMainHand.type) == 0) {
-                    shootArrow(player, config!!.getInt("additional_arrow_count"))
-                }
-            }
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
+    fun confirmedDamage(event: EntityDamageByEntityEvent) {
+        val boosted = enhancedHits.remove(event)
+        if (event.isCancelled || event.finalDamage <= 0 || com.github.lupi13.limpi.combat.DamageContext.current != null) return
+        val player = when (val attacker = event.damager) {
+            is Player -> attacker.takeIf { it.inventory.itemInMainHand.type in sword }
+            is AbstractArrow -> attacker.shooter as? Player
+            else -> null
+        } ?: return
+        val target = event.entity as? Damageable ?: return
+        if (player.ability != this || !AbilityManager.isEnemy(player, target)) return
+        if (boosted == player.uniqueId && transcending[player.uniqueId] == true) {
+            player.playSound(player.location, Sound.ENTITY_WARDEN_DEATH, 0.7f, 2.0f)
+            target.world.spawnParticle(Particle.DRAGON_BREATH, target.boundingBox.center.toLocation(target.world), 30, 0.1, 0.1, 0.1, 0.2)
+            if (event.damager is Player && player.getCooldown(player.inventory.itemInMainHand.type) == 0) shootArrow(player, config!!.getInt("additional_arrow_count"))
+        } else if (transcending[player.uniqueId] == null) {
+            if (event.damager is Player) swordGauge[player.uniqueId] = com.github.lupi13.limpi.combat.ChargeGauge.gain(
+                swordGauge[player.uniqueId] ?: 0.0, event.finalDamage, config!!.getDouble("sword_required_damage"))
+            else arrowGauge[player.uniqueId] = com.github.lupi13.limpi.combat.ChargeGauge.gain(
+                arrowGauge[player.uniqueId] ?: 0.0, event.finalDamage, config!!.getDouble("arrow_required_damage"))
+            showGauge(player)
         }
+    }
 
-
-        // 화살
-        if (event.damager is AbstractArrow) {
-            player = (event.damager as AbstractArrow).shooter as? Player ?: return
-            if (player.ability != this) return
-
-
-            if (!transcending.contains(player.uniqueId)) {
-                arrowGauge[player.uniqueId] = ((arrowGauge[player.uniqueId] ?: 0.0) + event.finalDamage).coerceAtMost(config!!.getDouble("arrow_required_damage"))
-            }
-
-            // 통달상태
-            else {
-                event.damage *= config!!.getDouble("arrow_damage_amplifier")
-                player.playSound(
-                    player.location,
-                    Sound.ENTITY_WARDEN_DEATH,
-                    0.7f, 2.0f
-                )
-                event.damager.world.spawnParticle(
-                    Particle.DRAGON_BREATH,
-                    event.damager.location,
-                    30, 0.1, 0.1, 0.1, 0.2
-                )
-            }
-        }
-
-        // 게이지 프린트
-        if (player == null) return
-        if (!transcending.contains(player.uniqueId)) {
+    private fun showGauge(player: Player) {
+        if (transcending[player.uniqueId] == null) {
             var actionBar = Component.text("TRANSCENDENCE ", NamedTextColor.LIGHT_PURPLE, TextDecoration.BOLD)
             for (i in 0 until ((swordGauge[player.uniqueId] ?: 0.0) / config!!.getDouble("sword_required_damage") * 30.0).toInt()) {
                 actionBar = actionBar.append(Component.text("|", NamedTextColor.RED).decoration(TextDecoration.BOLD, false))
@@ -209,7 +180,7 @@ object Transcendence : Ability(
     }
 
     // F키로 통달 상태로 전환
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onSwapHand(event: PlayerSwapHandItemsEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -384,7 +355,7 @@ object Transcendence : Ability(
 
 
     // 화살 발사부터 검격 발생
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onArrowShoot(event: ProjectileLaunchEvent) {
         val arrow = event.entity as? AbstractArrow ?: return
         if (arrow.shooter !is Player) return
@@ -405,7 +376,7 @@ object Transcendence : Ability(
                         .filterIsInstance<Damageable>()
                         .filter { it != player && it != arrow.shooter && it != arrow && AbilityManager.isEnemy(player, it) }
                     for (entity in entities) {
-                        entity.damage(damage, player)
+                        com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)
                     }
 
                     arrow.world.spawnParticle(
@@ -427,7 +398,7 @@ object Transcendence : Ability(
             }
         }.runTaskTimer(plugin, 0L, 1L)
     }
-    override fun release(owner: java.util.UUID) { swordGauge.remove(owner); arrowGauge.remove(owner); transcending.remove(owner) }
-    override fun stop() { swordGauge.clear(); arrowGauge.clear(); transcending.clear() }
+    override fun release(owner: java.util.UUID) { swordGauge.remove(owner); arrowGauge.remove(owner); transcending.remove(owner); enhancedHits.entries.removeIf { it.value == owner } }
+    override fun stop() { swordGauge.clear(); arrowGauge.clear(); transcending.clear(); enhancedHits.clear() }
 
 }

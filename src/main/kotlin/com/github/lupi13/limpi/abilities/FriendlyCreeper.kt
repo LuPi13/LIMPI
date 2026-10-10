@@ -17,7 +17,7 @@ object FriendlyCreeper : Ability(
     description = listOf(
         Component.text("크리퍼가 나를 적대하지 않습니다.", NamedTextColor.WHITE))
 ) {
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onTarget(event: EntityTargetLivingEntityEvent) {
         val target = event.target
         if (target == null || (event.target !is Player)) return

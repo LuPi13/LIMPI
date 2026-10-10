@@ -14,7 +14,6 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 import kotlin.math.max
 import kotlin.math.min
@@ -88,7 +87,7 @@ object WebShooter : Ability(
 
 
     var isMoving = mutableSetOf<java.util.UUID>()
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onSwapHand(event: PlayerSwapHandItemsEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -178,7 +177,7 @@ object WebShooter : Ability(
                             val damage = (config!!.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length().pow(2.0)))
 //                            player.sendActionBar(Component.text("피해량: ${damage}", NamedTextColor.RED))
                             if (damage >= 1.0) {
-                                entity.damage(damage, player)
+                                if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
                                 val knockbackVector = entity.boundingBox.center.subtract(player.boundingBox.center).normalize()
                                     .multiply(config!!.getDouble("knockbackAmplifier")).multiply(player.velocity.length())
@@ -285,7 +284,7 @@ object WebShooter : Ability(
                                 // 피해량: 상대속도에 비례
                                 val damage = (config!!.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length()).pow(2.0)) / 2.0
                                 if (damage >= 1.0) {
-                                    entity.damage(damage, player)
+                                    if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
                                     val knockbackVector = entity.boundingBox.center.subtract(player.boundingBox.center).normalize()
                                         .multiply(config!!.getDouble("knockbackAmplifier")).multiply(player.velocity.length())

@@ -9,7 +9,6 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.weather.LightningStrikeEvent
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 import kotlin.math.cos
 import kotlin.math.pow
@@ -75,7 +74,7 @@ object GatheringStorm : Ability(
 
 
     //투사 속도 증가
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onTridentLaunch(event: ProjectileLaunchEvent) {
         if (event.entity !is Trident) return
         val trident = event.entity as Trident
@@ -95,7 +94,7 @@ object GatheringStorm : Ability(
     // 폭풍 생성
     val stormCooldown = mutableMapOf<java.util.UUID, Long>()
     val stormDuration = mutableMapOf<Location, Int>()
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onTridentHit(event: ProjectileHitEvent) {
         if (event.entity !is Trident) return
         val trident = event.entity as Trident
@@ -186,10 +185,10 @@ object GatheringStorm : Ability(
                         // 확률적으로 피해를 줌
                         if (Random.nextDouble() <= probability) {
                             if (entity is Turtle) {
-                                entity.damage(3.4*(10.0.pow(38.0)), player)
+                                if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, com.github.lupi13.limpi.combat.DamageNumbers.MAXIMUM)) continue
                             }
                             else {
-                                entity.damage(damage, player)
+                                if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
                             }
 
                             // 번개에 의한 몹 변환
@@ -292,7 +291,7 @@ object GatheringStorm : Ability(
     }
 
     // 기존 집전 효과 취소
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun cancelChannelingLightning(event: LightningStrikeEvent) {
         if (event.cause != LightningStrikeEvent.Cause.TRIDENT) return
         val player = event.lightning.causingEntity as? Player ?: return

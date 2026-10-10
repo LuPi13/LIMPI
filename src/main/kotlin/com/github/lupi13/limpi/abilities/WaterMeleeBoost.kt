@@ -35,8 +35,9 @@ object WaterMeleeBoost : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {
+        if (com.github.lupi13.limpi.combat.DamageContext.current != null) return
         val attacker = event.damager
         if (attacker !is Player || attacker.ability != this) return
 

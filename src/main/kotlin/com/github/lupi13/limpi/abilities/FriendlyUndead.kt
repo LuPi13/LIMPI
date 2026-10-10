@@ -26,7 +26,7 @@ object FriendlyUndead : Ability(
         Phantom::class.java, PigZombie::class.java, Zoglin::class.java, SkeletonHorse::class.java,
         ZombieHorse::class.java, Wither::class.java
     )
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onTarget(event: EntityTargetLivingEntityEvent) {
         val target = event.target
         if (target == null || (event.target !is Player)) return
@@ -50,8 +50,8 @@ object FriendlyUndead : Ability(
 
         for (targeter in entity.getNearbyEntities(32.0, 32.0, 32.0)) {
             if (!undead.any { it.isInstance(targeter) }) continue
-            if (targeter !is LivingEntity) continue
-            if (targeter.getTargetEntity(32) == entity) {
+            if (targeter !is org.bukkit.entity.Mob) continue
+            if (targeter.target?.uniqueId == entity.uniqueId) {
                 QuestManager.clearQuests(player, UndeadCooperation)
             }
         }

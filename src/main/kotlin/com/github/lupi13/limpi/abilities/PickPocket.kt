@@ -27,7 +27,7 @@ object PickPocket : Ability(
 
     val playerFishHookMap = mutableMapOf<java.util.UUID, FishHook>()
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onThrowFishHook(event: ProjectileLaunchEvent) {
         val entity = event.entity
         if (entity !is FishHook) return

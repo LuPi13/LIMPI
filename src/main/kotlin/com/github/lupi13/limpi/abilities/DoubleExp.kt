@@ -15,12 +15,12 @@ object DoubleExp : Ability(
     description = listOf(
         Component.text("경험치 획득량이 2배로 증가합니다.", NamedTextColor.WHITE))
 ) {
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onPlayerGainExp(event: PlayerExpChangeEvent) {
         val player = event.player
         if (player.ability != this) return
 
         // 경험치 획득량을 2배로 증가
-        event.amount *= 2
+        event.amount = com.github.lupi13.limpi.ability.LevelBonus.experience(event.amount, 2)
     }
 }

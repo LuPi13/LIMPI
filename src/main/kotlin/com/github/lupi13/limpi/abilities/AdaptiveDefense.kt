@@ -41,32 +41,30 @@ object AdaptiveDefense : Ability(
 
     val damageHistory = mutableMapOf<java.util.UUID, EntityDamageEvent.DamageCause>()
     val damageStack = mutableMapOf<java.util.UUID, Int>()
-    @EventHandler
+    private val pending = java.util.WeakHashMap<EntityDamageEvent, Pair<java.util.UUID, Int>>()
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     fun onDamage(event: EntityDamageEvent) {
-        if (event.entity !is Player) return
-        if (event.cause == EntityDamageEvent.DamageCause.VOID) return // Void damage는 제외
-
-        val player = event.entity as Player
-        if (player.ability != this) return
-
-        if (player.noDamageTicks > 10) return
-
-        if (!damageHistory.containsKey(player.uniqueId) || damageHistory[player.uniqueId] != event.cause) {
-            damageHistory[player.uniqueId] = event.cause
-            damageStack[player.uniqueId] = 0
-        }
-        else {
-            damageStack[player.uniqueId] = (damageStack[player.uniqueId] ?: 0) + 1
-            val reduction = config!!.getDouble("damage_reduction")
-            if (damageStack[player.uniqueId]!! > 0) {
-                val factor = reduction.pow(damageStack[player.uniqueId]!!)
-                event.damage *= factor
-                player.sendActionBar(Component.text("피해 감쇠: ", NamedTextColor.YELLOW)
-                    .append(Component.text(String.format("%.1f", factor * 100) + "%", NamedTextColor.GREEN)))
-            }
-        }
+        val player = event.entity as? Player ?: return
+        if (player.ability != this || event.cause == EntityDamageEvent.DamageCause.VOID || player.noDamageTicks > 10) return
+        val count = if (damageHistory[player.uniqueId] == event.cause) ((damageStack[player.uniqueId] ?: 0).toLong() + 1).coerceAtMost(Int.MAX_VALUE.toLong()).toInt() else 0
+        val reduction = config!!.getDouble("damage_reduction")
+        require(reduction in 0.0..1.0)
+        event.damage *= reduction.pow(count)
+        pending[event] = player.uniqueId to count
     }
-    override fun release(owner: java.util.UUID) { damageHistory.remove(owner); damageStack.remove(owner) }
-    override fun stop() { damageHistory.clear(); damageStack.clear() }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
+    fun confirmed(event: EntityDamageEvent) {
+        val (owner, count) = pending.remove(event) ?: return
+        if (event.isCancelled || event.finalDamage <= 0) return
+        val player = plugin.server.getPlayer(owner) ?: return
+        if (player.ability != this) return
+        damageHistory[owner] = event.cause
+        damageStack[owner] = count
+        if (count > 0) player.sendActionBar(Component.text("피해 감쇠: ", NamedTextColor.YELLOW)
+            .append(Component.text(String.format("%.1f", config!!.getDouble("damage_reduction").pow(count) * 100) + "%", NamedTextColor.GREEN)))
+    }
+    override fun release(owner: java.util.UUID) { damageHistory.remove(owner); damageStack.remove(owner); pending.entries.removeIf { it.value.first == owner } }
+    override fun stop() { damageHistory.clear(); damageStack.clear(); pending.clear() }
 
 }

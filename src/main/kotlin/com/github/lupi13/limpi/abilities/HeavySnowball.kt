@@ -39,7 +39,7 @@ object HeavySnowball : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onSnowballHit(event: ProjectileHitEvent) {
         val projectile = event.entity
         if (projectile !is Snowball) return
@@ -50,6 +50,6 @@ object HeavySnowball : Ability(
         val hitEntity = event.hitEntity
         if (hitEntity !is LivingEntity) return
 
-        hitEntity.damage(config!!.getDouble("damage"), shooter)
+        com.github.lupi13.limpi.platform.AbilityDamage.hit(shooter, hitEntity, codeName, config!!.getDouble("damage"))
     }
 }

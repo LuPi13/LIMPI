@@ -7,7 +7,6 @@ import org.bukkit.entity.AbstractArrow
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.ProjectileHitEvent
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 
 object PullingBow : Ability(
@@ -45,7 +44,7 @@ object PullingBow : Ability(
     }
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onArrowHit(event: ProjectileHitEvent) {
         if (event.entity !is AbstractArrow) return
         if (event.entity.shooter !is Player) return

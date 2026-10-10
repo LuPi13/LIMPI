@@ -14,7 +14,6 @@ import org.bukkit.event.entity.EntityResurrectEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 import kotlin.math.cos
 import kotlin.math.sin
@@ -179,7 +178,7 @@ object BlunderBooster : Ability(
     }
 
     // 손 스왑 시 회피 기능 실행
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onSwapHand(event: PlayerSwapHandItemsEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -193,7 +192,7 @@ object BlunderBooster : Ability(
     }
 
     // 플레이어가 피해를 입었을 때 블런더 에너지를 소모하고 피해를 무효화
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     fun onPlayerDamaged(event: EntityDamageEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
@@ -222,12 +221,12 @@ object BlunderBooster : Ability(
     }
 
     // 플레이어가 죽을 때 블런더 부스터 효과를 제거하고 되살아남음
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onUseTotemOfUndying(event: EntityResurrectEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
         if (player.ability != this) return
-        if (event.hand == EquipmentSlot.HAND) return
+        if (event.hand != EquipmentSlot.OFF_HAND) return
 
 
         // 블런더 부스터 효과 제거

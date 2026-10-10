@@ -24,7 +24,7 @@ object TerraBurning : Ability(
     private val changing = mutableSetOf<java.util.UUID>()
 
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onLevelChange(event: PlayerLevelChangeEvent) {
         val player = event.player
         if (player.ability != this) return

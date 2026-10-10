@@ -20,7 +20,7 @@ object LittleEat : Ability(
     )
 ) {
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onEat(event: PlayerItemConsumeEvent) {
         val player = event.player
         if (player.ability != this) return
@@ -28,7 +28,7 @@ object LittleEat : Ability(
         player.foodLevel = 22
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onFoodChange(event: FoodLevelChangeEvent) {
         val player = event.entity as? Player ?: return
         if (player.ability != this) return

@@ -18,7 +18,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.player.PlayerBedEnterEvent
-import org.bukkit.scheduler.BukkitRunnable
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -136,7 +135,7 @@ object ZombieKing : Ability(
 
 
     // 침대 이용 불가
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onBedUse(event: PlayerBedEnterEvent) {
         if (event.player.ability != this) return
         event.isCancelled = true
@@ -147,7 +146,7 @@ object ZombieKing : Ability(
 
 
     // 즉시 회복을 즉시 피해로 변경
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onHealed(event: EntityRegainHealthEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
@@ -155,25 +154,26 @@ object ZombieKing : Ability(
 
         if (event.regainReason != EntityRegainHealthEvent.RegainReason.MAGIC) return
         event.isCancelled = true
-        player.health = (player.health - event.amount).coerceAtLeast(0.0)
+        com.github.lupi13.limpi.platform.AbilityDamage.hit(player, player, codeName, event.amount,
+            com.github.lupi13.limpi.combat.HitKind.MAGIC_CONVERSION, self = true)
     }
 
     // 즉시 피해를 즉시 회복으로 변경
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDamaged(event: EntityDamageEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
         if (player.ability != this) return
         if (player.gameMode == GameMode.CREATIVE) return
 
-        if (event.cause != EntityDamageEvent.DamageCause.MAGIC) return
+        if (event.cause != EntityDamageEvent.DamageCause.MAGIC || com.github.lupi13.limpi.combat.DamageContext.current != null) return
         event.isCancelled = true
-        player.health = (player.health + event.damage).coerceAtMost(player.getAttribute(Attribute.MAX_HEALTH)!!.value)
+        player.heal(event.damage, EntityRegainHealthEvent.RegainReason.CUSTOM)
     }
 
 
     // 모든 근접 공격에 대해 고정피해를 입히는 이벤트
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onEntityDamage(event: EntityDamageByEntityEvent) {
         if (event.damager !is Player) return
         val player = event.damager as Player
@@ -181,9 +181,18 @@ object ZombieKing : Ability(
 
         if (event.entity !is Damageable) return
         val target = event.entity as Damageable
+        if (com.github.lupi13.limpi.combat.DamageContext.current != null || !AbilityManager.isEnemy(player, target)) return
         if (target !is LivingEntity || (target.noDamageTicks > 10)) return
 
-        target.health = (target.health - config!!.getDouble("damage_addition")).coerceAtLeast(0.0)
+        com.github.lupi13.limpi.platform.AbilityDamage.addFixed(event, config!!.getDouble("damage_addition"), target)
+    }
+
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+    fun commandUndead(event: EntityDamageByEntityEvent) {
+        if (event.finalDamage <= 0 || com.github.lupi13.limpi.combat.DamageContext.current != null) return
+        val player = event.damager as? Player ?: return
+        val target = event.entity as? LivingEntity ?: return
+        if (player.ability != this) return
 
         // 주변 언데드의 공격 대상 변경
         if (!AbilityManager.isEnemy(player, target)) return
@@ -196,18 +205,18 @@ object ZombieKing : Ability(
     }
 
     // 적에게 피해를 입을 때 좀비 소환
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onEntityDamageByPlayer(event: EntityDamageByEntityEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
         if (player.ability != this) return
 
-        val damager: Damageable = event.damager as? Damageable ?: return
+        if (event.finalDamage <= 0) return
+        val damager = event.damager as? LivingEntity ?: return
         if (!AbilityManager.isEnemy(player, damager)) return
         if (Random.nextDouble() < config!!.getDouble("reinforcement_probability")) {
             // 50회 생성 시도
             for (i in 1..50) {
-                player.sendMessage("소환 시도 $i")
                 val location = player.location.clone().add(
                     Random.nextDouble(-40.0, 40.0),
                     Random.nextDouble(-5.0, 5.0),
@@ -224,7 +233,7 @@ object ZombieKing : Ability(
                 if (!location.block.getRelative(0, -1, 0).isSolid) continue
 
                 player.world.spawn(location, org.bukkit.entity.Zombie::class.java) {
-                    it.target = damager as LivingEntity
+                    it.target = damager
                 }
                 player.sendMessage(Component.text("좀비가 소환되었습니다. $location", NamedTextColor.GREEN))
                 return

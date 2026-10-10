@@ -17,6 +17,9 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.ability.shop:
+    description: Exchange emeralds for ability tickets
+    default: true
   limpi.financial.admin.removal:
     description: Inspect and resolve interrupted item sales and exchanges
     default: op

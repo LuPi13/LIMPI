@@ -6,6 +6,7 @@ import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.meta.Damageable
 
@@ -20,46 +21,46 @@ object EmeraldFix : Ability(
     ),
     needFile = true
 ){
-    override val details: List<Component> by lazy {
-        listOf(
+    override val details: List<Component> get() = listOf(
             Component.text("인벤토리에서 커서에 에메랄드를 들고 ", NamedTextColor.WHITE),
             Component.text("수리하고 싶은 아이템을 우클릭하면", NamedTextColor.WHITE),
             Component.text("내구도를 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("repair")}", NamedTextColor.GREEN))
+                .append(Component.text("${RepairPolicy.amount(config?.get("repair"))}", NamedTextColor.GREEN))
                 .append(Component.text(" 수리합니다.", NamedTextColor.WHITE))
         )
-    }
 
     override fun setUpFile() {
         super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("repair", config!!.getInt("repair"))
+        val data = requireNotNull(config)
+        if (!data.contains("repair")) {
+            data.set("repair", RepairPolicy.DEFAULT_AMOUNT)
+            saveConfig()
         }
-        saveConfig()
+        if (RepairPolicy.amount(data.get("repair")) == 0) plugin.logger.warning("emerald_fix repair=0 disables repair; preserving explicit setting")
     }
 
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onInventoryClick(event: InventoryClickEvent) {
-        val player = event.whoClicked as Player
+        val player = event.whoClicked as? Player ?: return
         if (player.ability != this) return
 
         val cursorItem = event.cursor
         if (cursorItem.type != Material.EMERALD) return
 
         val clickedItem = event.currentItem ?: return
-        if (clickedItem.type == Material.AIR || clickedItem.itemMeta == null || !((clickedItem.itemMeta as Damageable).hasDamage())) return
+        val data = clickedItem.itemMeta as? Damageable ?: return
+        if (!data.hasDamage()) return
 
         if (event.isRightClick) {
-            val data = clickedItem.itemMeta as Damageable
-            val repairAmount = config!!.getInt("repair")
-            if (data.damage == 0) return
-            data.damage = (data.damage - repairAmount).coerceAtLeast(0)
+            val repairAmount = RepairPolicy.amount(config?.get("repair"))
+            if (data.damage == 0 || repairAmount == 0) return
+            event.isCancelled = true
+            data.damage = RepairPolicy.damageAfter(data.damage, repairAmount)
             clickedItem.itemMeta = data
             event.currentItem = clickedItem
-            event.cursor.amount -= 1
+            event.view.setCursor(cursorItem.clone().apply { amount-- })
             player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1f, 1.5f)
-            event.isCancelled = true
         }
     }
 }

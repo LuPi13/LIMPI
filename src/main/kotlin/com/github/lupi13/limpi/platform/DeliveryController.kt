@@ -67,23 +67,31 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
     }
 
     fun sell(player: Player, id: UUID, before: List<StoredStack?>, prices: Map<Int, Money>): Boolean {
-        if (!claim(player)) return false
-        val inventory = PaperDeliveryInventory(player, checkpoint, files)
-        require(inventory.snapshot() == before) { "인벤토리가 변경되었습니다. 판매 대상을 다시 선택하세요." }
         require(prices.isNotEmpty() && prices.keys.all { it in before.indices && before[it] != null })
         val after = before.toMutableList().apply { prices.keys.forEach { this[it] = null } }.toList()
+        return remove(player, id, SaleSettlement.KIND, SaleSettlement.terms(prices), before, after).also { success ->
+            if (success) {
+                val record = requireNotNull(removals.find(player.uniqueId, id))
+                player.sendMessage(Component.text("${SaleSettlement.total(record).units}원 판매를 확정했습니다. 거래: $id", NamedTextColor.GREEN))
+            }
+        }
+    }
+
+    fun remove(player: Player, id: UUID, kind: String, terms: String, before: List<StoredStack?>, after: List<StoredStack?>): Boolean {
+        if (!claim(player)) return false
+        val inventory = PaperDeliveryInventory(player, checkpoint, files)
+        require(inventory.snapshot() == before) { "인벤토리가 변경되었습니다. 소모 대상을 다시 확인하세요." }
         var prepared = false
         try {
-            val record = removals.prepare(id, player.uniqueId, SaleSettlement.KIND, SaleSettlement.terms(prices), before, after)
+            val record = removals.prepare(id, player.uniqueId, kind, terms, before, after)
             prepared = true
             removals.apply(record, inventory)
-            player.sendMessage(Component.text("${SaleSettlement.total(record).units}원 판매를 확정했습니다. 거래: $id", NamedTextColor.GREEN))
             return true
         } catch (failure: Exception) {
             if (!prepared && (failure is com.github.lupi13.limpi.economy.BankException || failure is IllegalArgumentException)) throw failure
             blocked.add(player.uniqueId)
-            plugin.logger.log(Level.SEVERE, "Sale removal $id failed for ${player.uniqueId}", failure)
-            player.kick(Component.text("판매 회수 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
+            plugin.logger.log(Level.SEVERE, "Item removal $id ($kind) failed for ${player.uniqueId}", failure)
+            player.kick(Component.text("물품 회수 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
             return false
         }
     }

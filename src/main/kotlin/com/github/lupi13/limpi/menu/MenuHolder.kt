@@ -18,6 +18,7 @@ sealed interface MenuAction {
     data class StockQuote(val code: String, val price: Long) : MenuAction
     data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
     data class ShopQuote(val code: String, val price: Long) : MenuAction
+    data class ItemExchangeQuote(val product: String, val price: Long, val reward: com.github.lupi13.limpi.delivery.ItemGrant) : MenuAction
     data class SaleSlot(val index: Int, val stack: com.github.lupi13.limpi.delivery.StoredStack, val price: Long, val selected: Boolean) : MenuAction
     data class SaleConfirm(val before: List<com.github.lupi13.limpi.delivery.StoredStack?>, val prices: Map<Int, Long>) : MenuAction
     data object SaleRefresh : MenuAction

@@ -6,6 +6,7 @@ import com.github.lupi13.limpi.delivery.DeliveryJournal
 import com.github.lupi13.limpi.delivery.DeliveryService
 import com.github.lupi13.limpi.delivery.RemovalJournal
 import com.github.lupi13.limpi.economy.SaleSettlement
+import com.github.lupi13.limpi.economy.ItemExchange
 import com.github.lupi13.limpi.platform.DeliveryController
 import com.github.lupi13.limpi.platform.PaperItemCodec
 import com.github.lupi13.limpi.market.*
@@ -39,6 +40,7 @@ class FileManager {
         private lateinit var checkService: CheckService
         private lateinit var shopService: ShopService
         private lateinit var removalJournal: RemovalJournal
+        private lateinit var itemExchange: ItemExchange
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
@@ -51,6 +53,7 @@ class FileManager {
         val checks: CheckService get() = checkService
         val shop: ShopService get() = shopService
         val removals: RemovalJournal get() = removalJournal
+        val exchanges: ItemExchange get() = itemExchange
 
         fun initialize(owner: Plugin) {
             plugin = owner
@@ -69,7 +72,8 @@ class FileManager {
             owner.logger.info("Market catalog ready: $importedListings legacy listings imported")
             marketService = MarketService(state, marketCatalog, deliveryJournal, repository)
             marketEscrow = MarketEscrow(state, marketCatalog)
-            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement))
+            itemExchange = ItemExchange(state, deliveryJournal)
+            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange))
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal)
             financial.clear()
         }

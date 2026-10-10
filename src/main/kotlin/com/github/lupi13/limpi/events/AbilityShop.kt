@@ -21,7 +21,14 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
-import kotlin.math.min
+import com.github.lupi13.limpi.FileManager
+import com.github.lupi13.limpi.delivery.*
+import com.github.lupi13.limpi.economy.*
+import com.github.lupi13.limpi.menu.*
+import com.github.lupi13.limpi.platform.PaperItemCodec
+import org.bukkit.event.inventory.ClickType
+import java.util.UUID
+import java.util.logging.Level
 
 class AbilityShop : Listener {
     companion object {
@@ -64,124 +71,83 @@ class AbilityShop : Listener {
             }
 
             if (isShopDisplay) {
-                val price = if (grade == null) {
-                    plugin.config.getInt("TicketPrice")
-                } else {
-                    plugin.config.getInt("SelectPrice.${grade.name}")
-                }
-                val money = Functions.getInventoryItemCount(player!!, ItemStack(Material.EMERALD))
-                lore = lore + Component.text("가격: 에메랄드 ", NamedTextColor.WHITE)
-                    .append(moneyDisplay(price))
-                    .append(Component.text("개, 현재 보유 에메랄드: ", NamedTextColor.WHITE))
-                    .append(moneyDisplay(money))
-                    .append(Component.text("개", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false)
-                lore = lore + Component.text("좌클릭하여 구매합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
-                lore = lore + Component.text("Shift를 누르고 클릭하면 10개/최대한 많이 구매합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
+                val code = grade?.name ?: "GACHA"
+                lore = lore + Component.text("가격: 에메랄드 ${price(code)}개", NamedTextColor.WHITE)
+                lore = lore + Component.text("좌클릭 1개 · Shift+좌클릭 최대 10개", NamedTextColor.WHITE)
             }
             meta!!.lore(lore)
             item.itemMeta = meta
             return item
         }
 
-        fun openAbilityShopGUI(player: Player) {
-            val shopGUI: Inventory = Bukkit.createInventory(player, 9, abilityShopGUIName)
+        private fun price(code: String): Long {
+            val path = if (code == "GACHA") "TicketPrice" else "SelectPrice.${Grade.valueOf(code).name}"
+            return CatalogPrices.sell(requireNotNull(plugin.config.get(path)) { "Missing ability shop price $path" }).units
+        }
 
-            shopGUI.setItem(1, getSelectTicketItem(null, true, player))  // 뽑기권
-            shopGUI.setItem(2, getSelectTicketItem(Grade.TROLL, true, player))
-            shopGUI.setItem(3, getSelectTicketItem(Grade.COMMON, true, player))
-            shopGUI.setItem(4, getSelectTicketItem(Grade.RARE, true, player))
-            shopGUI.setItem(5, getSelectTicketItem(Grade.EPIC, true, player))
-            shopGUI.setItem(6, getSelectTicketItem(Grade.LEGENDARY, true, player))
-            shopGUI.setItem(7, getSelectTicketItem(Grade.MYTHIC, true, player))
-
-            player.openInventory(shopGUI)
+        fun openAbilityShopGUI(player: Player, expected: Inventory? = null) {
+            if (!player.hasPermission("limpi.ability.shop") || !FileManager.delivery.claim(player)) return
+            val holder = MenuHolder(MenuKind.ABILITY_SHOP, 0, abilityShopGUIName)
+            val grades = listOf<Grade?>(null) + Grade.entries
+            for ((index, grade) in grades.withIndex()) {
+                val code = grade?.name ?: "GACHA"
+                try {
+                    val unit = price(code)
+                    val reward = getSelectTicketItem(grade, false, null)
+                    val grant = PaperItemCodec.grant(reward)
+                    val meta = reward.itemMeta
+                    meta.lore((meta.lore() ?: emptyList()) + listOf(
+                        Component.text("가격: 에메랄드 ${unit}개", NamedTextColor.WHITE),
+                        Component.text("좌클릭 1개 · Shift+좌클릭 최대 10개", NamedTextColor.YELLOW),
+                        Component.text("공간 부족 시 /financial claim으로 수령", NamedTextColor.GRAY)))
+                    reward.itemMeta = meta
+                    holder.inventory.setItem(index + 1, reward)
+                    holder.actions[index + 1] = MenuAction.ItemExchangeQuote(code, unit, grant)
+                } catch (failure: Exception) {
+                    plugin.logger.warning("Invalid ability shop product $code: ${failure.message}")
+                }
+            }
+            openMenu(plugin, player, holder.inventory, expected)
         }
     }
-
 
     @EventHandler
     fun onClick(event: InventoryClickEvent) {
-        if (event.view.title() != abilityShopGUIName) return
+        val top = event.view.topInventory
+        val holder = top.holder as? MenuHolder ?: return
+        if (holder.kind != MenuKind.ABILITY_SHOP) return
         event.isCancelled = true
-        val abilityShopGUI = event.view.topInventory
-        val player = event.whoClicked as Player
-        if (event.currentItem == null || event.clickedInventory !== abilityShopGUI) return
-
-        val item = event.currentItem!!
-        event.isCancelled = true
-
-        val grade = when (item) {
-            getSelectTicketItem(Grade.TROLL, true, player) -> Grade.TROLL
-            getSelectTicketItem(Grade.COMMON, true, player) -> Grade.COMMON
-            getSelectTicketItem(Grade.RARE, true, player) -> Grade.RARE
-            getSelectTicketItem(Grade.EPIC, true, player) -> Grade.EPIC
-            getSelectTicketItem(Grade.LEGENDARY, true, player) -> Grade.LEGENDARY
-            getSelectTicketItem(Grade.MYTHIC, true, player) -> Grade.MYTHIC
-            else -> null  // 뽑기권
-        }
-
-        val price = when (grade) {
-            Grade.TROLL -> plugin.config.getInt("SelectPrice.TROLL")
-            Grade.COMMON -> plugin.config.getInt("SelectPrice.COMMON")
-            Grade.RARE -> plugin.config.getInt("SelectPrice.RARE")
-            Grade.EPIC -> plugin.config.getInt("SelectPrice.EPIC")
-            Grade.LEGENDARY -> plugin.config.getInt("SelectPrice.LEGENDARY")
-            Grade.MYTHIC -> plugin.config.getInt("SelectPrice.MYTHIC")
-            else -> plugin.config.getInt("TicketPrice")
-        }
-
-        val money = Functions.getInventoryItemCount(player, ItemStack(Material.EMERALD))
-
-        var count = if (money < price) 0 else 1
-        if (event.click.isShiftClick) {
-            count = min(money / price, 10)
-        }
-
-        if (event.click.isLeftClick) {
-            if (count == 0) {
-                player.sendMessage(Component.text("에메랄드가 부족합니다! ", NamedTextColor.RED))
-                player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
-                return
+        if (event.rawSlot !in 0 until top.size || event.click !in setOf(ClickType.LEFT, ClickType.SHIFT_LEFT)) return
+        val player = event.whoClicked as? Player ?: return
+        if (!player.hasPermission("limpi.ability.shop") || FileManager.delivery.blocked(player.uniqueId)) return
+        val quote = holder.actions[event.rawSlot] as? MenuAction.ItemExchangeQuote ?: return
+        val request = UUID.randomUUID()
+        try {
+            require(price(quote.product) == quote.price) { "가격이 변경되었습니다. 화면을 다시 열어주세요." }
+            if (!FileManager.delivery.claim(player)) return
+            val before = PaperItemCodec.snapshot(player)
+            val currency = PaperItemCodec.payload(ItemStack(Material.EMERALD))
+            val available = InventoryPlan.count(before, currency)
+            val maximum = if (event.click == ClickType.SHIFT_LEFT) 10L else 1L
+            val count = if (quote.price == 0L) maximum else minOf(maximum, available / quote.price)
+            require(count > 0) { "일반 에메랄드가 부족합니다." }
+            val cost = Math.multiplyExact(quote.price, count)
+            val terms = ExchangeTerms(quote.product, currency, cost, quote.reward.copy(count = count))
+            val completed = if (cost == 0L) {
+                FileManager.exchanges.free(request, player.uniqueId, terms); true
+            } else FileManager.delivery.remove(player, request, ItemExchange.KIND, terms.encode(), before,
+                InventoryPlan.remove(before, currency, cost))
+            if (completed) {
+                player.sendMessage(Component.text("${quote.product} ${count}개 구매를 확정했습니다. 거래: $request", NamedTextColor.GREEN))
+                if (FileManager.delivery.claim(player)) openAbilityShopGUI(player, top)
             }
-
-            // 뽑기권
-            if (item.isSimilar(getSelectTicketItem(null, true, player))) {
-                if (Functions.validInventoryIndex(player, GachaEvents.getGachaTicketItem()) != null) {
-                    player.inventory.addItem(GachaEvents.getGachaTicketItem().apply { amount = count })
-                    Functions.removeInventoryItem(player, ItemStack(Material.EMERALD), price * count)
-                    player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-                    player.sendMessage(item.displayName()
-                        .append(Component.text(" $count", NamedTextColor.GREEN))
-                        .append(Component.text("개 구매 완료.", NamedTextColor.WHITE)))
-                    openAbilityShopGUI(player)
-                } else {
-                    player.sendMessage(Component.text("인벤토리가 가득 찼습니다.", NamedTextColor.RED))
-                    player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
-                }
-                return
-            }
-
-            // 능력 선택권
-            else {
-                if (Functions.validInventoryIndex(player, getSelectTicketItem(grade!!, false, null)) != null) {
-                    player.inventory.addItem(getSelectTicketItem(grade, false, null).apply { amount = count })
-                    Functions.removeInventoryItem(player, ItemStack(Material.EMERALD), price * count)
-                    player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-                    player.sendMessage(
-                        item.displayName()
-                            .append(Component.text(" $count", NamedTextColor.GREEN))
-                            .append(Component.text("개 구매 완료.", NamedTextColor.WHITE))
-                    )
-                    openAbilityShopGUI(player)
-                } else {
-                    player.sendMessage(Component.text("인벤토리가 가득 찼습니다.", NamedTextColor.RED))
-                    player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
-                }
-            }
+        } catch (failure: IllegalArgumentException) {
+            player.sendMessage(Component.text(failure.message ?: "상품/가격을 확인하세요.", NamedTextColor.RED))
+        } catch (failure: Exception) {
+            plugin.logger.log(Level.SEVERE, "Ability shop exchange $request failed", failure)
+            player.sendMessage(Component.text("구매/회수 기록을 확인해야 합니다. 거래 UUID: $request", NamedTextColor.RED))
         }
     }
-
-
 
     // 소모성 인벤토리(조합대 등)에 넣기 금지
     val allowedInventoryType = setOf(

@@ -27,7 +27,7 @@ class AbilityTab: TabCompleter {
                 list.add("select")
                 list.add("dictionary")
                 list.add("dict")
-                list.add("shop")
+                if (sender.hasPermission("limpi.ability.shop")) list.add("shop")
                 list.add("pickup")
                 list.add("ceiling")
                 list.add("pity")

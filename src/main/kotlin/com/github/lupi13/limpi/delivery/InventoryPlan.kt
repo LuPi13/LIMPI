@@ -12,6 +12,21 @@ data class ItemGrant(val payload: String, val count: Long, val limit: Int) {
 class InventoryFull : IllegalStateException("The complete delivery does not fit")
 
 object InventoryPlan {
+    fun count(before: List<StoredStack?>, payload: String): Long = before.filterNotNull().filter { it.payload == payload }
+        .fold(0L) { sum, stack -> Math.addExact(sum, stack.count.toLong()) }
+
+    fun remove(before: List<StoredStack?>, payload: String, count: Long): List<StoredStack?> {
+        require(count > 0 && payload.isNotBlank())
+        require(count(before, payload) >= count) { "소모할 아이템이 부족합니다." }
+        var remaining = count
+        return before.map { stack ->
+            if (stack == null || stack.payload != payload || remaining == 0L) stack
+            else {
+                val taken = minOf(remaining, stack.count.toLong()).toInt(); remaining -= taken
+                if (taken == stack.count) null else stack.copy(count = stack.count - taken)
+            }
+        }
+    }
     /** Build a complete replacement without touching the caller's inventory, or fail without a partial result. */
     fun grant(before: List<StoredStack?>, items: List<ItemGrant>, slotLimit: Int = Int.MAX_VALUE): List<StoredStack?> {
         require(before.isNotEmpty()); require(items.isNotEmpty())

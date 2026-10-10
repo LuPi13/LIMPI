@@ -24,20 +24,11 @@ object CookieRun : Ability(
     override val details: List<Component> by lazy {
         listOf(
             Component.text("쿠키를 먹으면 신속 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("intensity") - 1}", NamedTextColor.GREEN)),
+                .append(Component.text("${config!!.getInt("intensity")}", NamedTextColor.GREEN)),
             Component.text(" 버프를 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("duration") / 20}", NamedTextColor.GREEN))
                 .append(Component.text("초 동안 얻습니다.", NamedTextColor.WHITE))
         )
-    }
-
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("duration", 200)
-            config?.set("intensity", 1)
-        }
-        saveConfig()
     }
 
 
@@ -48,7 +39,9 @@ object CookieRun : Ability(
         if (event.item.type != Material.COOKIE) return
 
         val duration = config!!.getInt("duration")
-        val intensity = config!!.getInt("intensity") - 1 // PotionEffectType intensity starts from 0
+        val level = config!!.getInt("intensity")
+        if (duration == 0 || level == 0) return
+        val intensity = level - 1
         player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, duration, intensity))
     }
 }

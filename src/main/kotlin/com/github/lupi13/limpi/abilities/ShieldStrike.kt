@@ -42,18 +42,6 @@ object ShieldStrike : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("cooldown", 10000)
-            config?.set("velocity", 1.1)
-            config?.set("damage", 8.0)
-            config?.set("knockbackAmplifier", 1.3)
-            config?.set("maxKnockback", 1.5)
-            config?.set("allowJump", false)
-        }
-        saveConfig()
-    }
 
     val lastSneakTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
     val lastStrikeTime: MutableMap<java.util.UUID, Long> = mutableMapOf()

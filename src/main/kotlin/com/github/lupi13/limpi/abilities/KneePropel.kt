@@ -27,18 +27,8 @@ object KneePropel : Ability(
     needFile = true
 ) {
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("baseLevel", 0)
-            config?.set("increment", 1)
-            config?.set("increaseTick", 10)
-            config?.set("maxStrength", 10)
-        }
-        saveConfig()
-    }
 
-
+    private val charging = mutableMapOf<java.util.UUID, com.github.lupi13.limpi.platform.AbilityEffect>()
     val timer = mutableMapOf<java.util.UUID, Int>()
     @EventHandler(ignoreCancelled = true)
     fun onSneak(event: PlayerToggleSneakEvent) {
@@ -47,16 +37,28 @@ object KneePropel : Ability(
 
         // 지면에서 웅크리기
         if (event.isSneaking && (player as LivingEntity).isOnGround) {
+            charging.remove(player.uniqueId)?.close()
             timer[player.uniqueId] = 1
 
             object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+                init {
+                    charging[player.uniqueId] = effect
+                    own { if (charging[player.uniqueId] === effect) { charging.remove(player.uniqueId); timer.remove(player.uniqueId) } }
+                }
                 val baseLevel = config!!.getInt("baseLevel")
                 val increment = config!!.getInt("increment")
                 val increaseTick = config!!.getInt("increaseTick")
                 val maxStrength = config!!.getInt("maxStrength")
-                val maxTick = maxStrength * increaseTick / increment
+                val maxTick = ((maxStrength.toLong() * increaseTick + increment - 1) / increment).toInt()
                 override fun tick() {
-                    val strength = min(baseLevel + increment * (timer[player.uniqueId]!! / increaseTick), maxStrength)
+                    val current = timer[player.uniqueId] ?: -1
+                    if (current < 0) {
+                        val launched = !(player as LivingEntity).isOnGround && player.getPotionEffect(PotionEffectType.JUMP_BOOST) != null
+                        player.sendActionBar(Component.text(if (launched) "JUMP!!!" else "CANCELLED", if (launched) NamedTextColor.YELLOW else NamedTextColor.GRAY))
+                        cancel()
+                        return
+                    }
+                    val strength = (baseLevel.toLong() + increment.toLong() * (current / increaseTick)).coerceAtMost(maxStrength.toLong()).toInt()
 
                     if (strength > 0) {
                         player.addPotionEffect(PotionEffect(PotionEffectType.JUMP_BOOST, 2, strength - 1, true, false, false))
@@ -77,14 +79,10 @@ object KneePropel : Ability(
                     }
 //                    [||||||····] 60칸 분할
                     var message = Component.text("Jump Boost ${min(timer[player.uniqueId]!! / increaseTick, maxStrength / increment)} [", color)
-                    val gaugeTimer = if (timer[player.uniqueId]!! >= maxTick) {
-                        60
-                    } else {
-                        timer[player.uniqueId]!! % increaseTick
-                    }
+                    val filled = if (current >= maxTick) 60 else ((current % increaseTick).toLong() * 60 / increaseTick).toInt()
 
                     for (i in 0 until 60) {
-                        message = if (i < gaugeTimer * 60 / increaseTick) {
+                        message = if (i < filled) {
                             message.append(Component.text("|", color))
                         } else {
                             message.append(Component.text("·", NamedTextColor.GRAY))
@@ -97,26 +95,7 @@ object KneePropel : Ability(
                         player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, min(timer[player.uniqueId]!! / (maxTick * 2.0) + 0.3, 0.8).toFloat(), min(timer[player.uniqueId]!! / (maxTick / 1.5) + 0.5, 2.0).toFloat())
                     }
 
-                    if (timer[player.uniqueId] == -1) {
-                        player.getPotionEffect(PotionEffectType.JUMP_BOOST)?.let {
-                            if (!(player as LivingEntity).isOnGround && (it.amplifier >= 0)) {
-                                player.playSound(player.location, Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 0.8F, 2F)
-                                player.playSound(player.location, Sound.ITEM_TRIDENT_THROW, 0.8F, 0.7F)
-                                player.playSound(player.location, Sound.ITEM_TRIDENT_RIPTIDE_3, 0.8F, 2F)
-                                player.sendActionBar(Component.text("JUMP!!!", NamedTextColor.YELLOW, TextDecoration.BOLD))
-                            } else {
-                                player.playSound(player.location, Sound.ENTITY_VEX_HURT, 1f, 0.5f)
-                                player.sendActionBar(Component.text("CANCELLED", NamedTextColor.GRAY, TextDecoration.BOLD))
-                            }
-                        }
-                        timer[player.uniqueId] = -1
-                        cancel()
-                    }
-                    if (player.isDead) {
-                        timer[player.uniqueId] = -1
-                        cancel()
-                    }
-                    timer[player.uniqueId] = timer[player.uniqueId]!! + 1
+                    timer[player.uniqueId] = (current.toLong() + 1).coerceAtMost(maxTick.toLong()).toInt()
                 }
             }.runTaskTimer(plugin, 0L, 1L)
         }
@@ -135,7 +114,7 @@ object KneePropel : Ability(
             timer[player.uniqueId] = -1
         }
     }
-    override fun release(owner: java.util.UUID) { timer.remove(owner) }
-    override fun stop() { timer.clear() }
+    override fun release(owner: java.util.UUID) { charging.remove(owner)?.close(); timer.remove(owner) }
+    override fun stop() { charging.values.toList().forEach { it.close() }; charging.clear(); timer.clear() }
 
 }

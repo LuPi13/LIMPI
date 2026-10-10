@@ -22,16 +22,6 @@ object LongThrow : Ability(
     needFile = true
 ){
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("item", 2.0)
-            config?.set("splash_potion", 2.0)
-            config?.set("lingering_potion", 2.0)
-        }
-        saveConfig()
-    }
-
 
     @EventHandler(ignoreCancelled = true)
     fun onDropItem(event: PlayerDropItemEvent) {

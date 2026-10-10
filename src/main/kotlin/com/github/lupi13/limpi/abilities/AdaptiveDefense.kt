@@ -30,14 +30,6 @@ object AdaptiveDefense : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("damage_reduction", 0.8)
-        }
-        saveConfig()
-    }
-
 
     val damageHistory = mutableMapOf<java.util.UUID, EntityDamageEvent.DamageCause>()
     val damageStack = mutableMapOf<java.util.UUID, Int>()

@@ -59,19 +59,6 @@ object OverBalance : Ability(
     }
 
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("shootingDelayTicks", 100)
-            config?.set("damage", 256.0)
-            config?.set("velocity", 2.0)
-            config?.set("accelerateTimeTicks", 20)
-            config?.set("size", 3.0)
-            config?.set("lifeTimeTicks", 200)
-        }
-        saveConfig()
-    }
-
 
     fun getRailGunItem(): ItemStack {
         val item = ItemStack(Material.ECHO_SHARD)
@@ -100,7 +87,7 @@ object OverBalance : Ability(
         event.isCancelled = true // Reserved offhand is a custom input; its vanilla swap is intentionally cancelled.
         if (player.getCooldown(material) > 0) { AbilityManager.showCooldown(player, material); return }
         try {
-            val settings = com.github.lupi13.limpi.ability.RailgunSettings.read(requireNotNull(config), healing = false)
+            val settings = com.github.lupi13.limpi.ability.RailgunSettings.read(requireNotNull(config).asConfiguration(), healing = false)
             com.github.lupi13.limpi.platform.RailgunEffect.start(player, this, settings, consumed = true)
         } catch (failure: Exception) {
             plugin.logger.log(java.util.logging.Level.WARNING, "Unable to start railgun $codeName for ${player.uniqueId}", failure)

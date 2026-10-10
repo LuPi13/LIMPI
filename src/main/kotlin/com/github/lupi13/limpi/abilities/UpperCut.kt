@@ -34,14 +34,6 @@ object UpperCut : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("knockBackAmplifier", 1.1)
-        }
-        saveConfig()
-    }
-
 
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onKnockBack(event: EntityKnockbackByEntityEvent) {

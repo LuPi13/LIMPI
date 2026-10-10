@@ -58,19 +58,6 @@ object BladeLeaper : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("throwLifeTimeTicks", 40)
-            config?.set("throwVelocity", 2.0)
-            config?.set("throwGravity", 0.03)
-            config?.set("damageRadius", 4.0)
-            config?.set("damage", 8.0)
-            config?.set("coolTimeTicks", 200)
-        }
-        saveConfig()
-    }
-
 
     val swords = mutableListOf(
         Material.WOODEN_SWORD,

@@ -46,21 +46,6 @@ object Muspell : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("damage", 10.0)
-            config?.set("damage_range", 3.0)
-            config?.set("lifetime_ticks", 100)
-            config?.set("fire_ticks", 100)
-            config?.set("velocity", 1.5)
-            config?.set("track_search_distance", 40.0)
-            config?.set("track_search_angle", 15.0)
-            config?.set("tracking_coefficient", 0.2)
-        }
-        saveConfig()
-    }
-
 
     @EventHandler(ignoreCancelled = true)
     fun onArrowLaunch(event: ProjectileLaunchEvent) {

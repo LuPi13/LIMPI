@@ -35,14 +35,6 @@ object PullingBow : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("knockBackAmplifier", 1.1)
-        }
-        saveConfig()
-    }
-
 
     @EventHandler(ignoreCancelled = true)
     fun onArrowHit(event: ProjectileHitEvent) {

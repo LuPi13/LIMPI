@@ -31,6 +31,7 @@ class LIMPI : JavaPlugin() {
         logger.info("File setting...")
         config.options().copyDefaults()
         saveDefaultConfig()
+        AbilityManager.initialize(this)
         FileManager.initialize(this)
         AbilityRuntime.initialize(this)
         server.onlinePlayers.forEach { FileManager.makePlayerData(it); FileManager.delivery.claim(it) }

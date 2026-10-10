@@ -40,15 +40,6 @@ object HarmonySword : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("required_damage", 20.0)
-            config?.set("damage_amplifier", 1.2)
-        }
-        saveConfig()
-    }
-
 
     val sword = listOf(
         Material.WOODEN_SWORD,

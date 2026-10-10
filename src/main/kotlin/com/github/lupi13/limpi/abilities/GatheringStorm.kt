@@ -59,19 +59,6 @@ object GatheringStorm : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("projection_velocity", 2.0)
-            config?.set("storm_radius", 10.0)
-            config?.set("storm_damage", 4.0)
-            config?.set("damage_probability", 0.2)
-            config?.set("storm_duration_tick", 200)
-            config?.set("storm_cooldown_milliseconds", 20000)
-        }
-        saveConfig()
-    }
-
 
     //투사 속도 증가
     @EventHandler(ignoreCancelled = true)

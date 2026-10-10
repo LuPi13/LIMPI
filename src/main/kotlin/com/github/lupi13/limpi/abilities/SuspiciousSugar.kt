@@ -41,16 +41,6 @@ object SuspiciousSugar : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("areaChance", 0.1)
-            config?.set("duration", 200)
-            config?.set("range", 10.0)
-        }
-        saveConfig()
-    }
-
 
     @EventHandler
     fun onClick(event: PlayerInteractEvent) {

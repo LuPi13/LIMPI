@@ -50,15 +50,6 @@ object KillingDice : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("damageReduction", 0.5)
-            config?.set("instantKillDegree", 2.0)
-            config?.set("KillDelay", 10)
-        }
-        saveConfig()
-    }
 
     /**
      * 대상의 잃은 체력에 비례하여 즉사시킵니다.

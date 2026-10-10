@@ -40,14 +40,6 @@ object ImpactLanding : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("dampingRatio", 2.0)
-            config?.set("minimumDamage", 0.5)
-        }
-        saveConfig()
-    }
 
     /**
      * 가우스분포를 응용한 충격파 피해 계산 함수

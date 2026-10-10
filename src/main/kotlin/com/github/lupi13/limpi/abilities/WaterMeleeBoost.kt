@@ -26,14 +26,6 @@ object WaterMeleeBoost : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("damageBoost", 1.5)
-        }
-        saveConfig()
-    }
-
 
     @EventHandler(ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {

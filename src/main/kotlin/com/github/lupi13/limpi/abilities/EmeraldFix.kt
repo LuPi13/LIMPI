@@ -29,16 +29,6 @@ object EmeraldFix : Ability(
                 .append(Component.text(" 수리합니다.", NamedTextColor.WHITE))
         )
 
-    override fun setUpFile() {
-        super.setUpFile()
-        val data = requireNotNull(config)
-        if (!data.contains("repair")) {
-            data.set("repair", RepairPolicy.DEFAULT_AMOUNT)
-            saveConfig()
-        }
-        if (RepairPolicy.amount(data.get("repair")) == 0) plugin.logger.warning("emerald_fix repair=0 disables repair; preserving explicit setting")
-    }
-
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onInventoryClick(event: InventoryClickEvent) {

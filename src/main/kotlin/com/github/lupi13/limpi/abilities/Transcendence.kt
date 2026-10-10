@@ -89,27 +89,6 @@ object Transcendence : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("sword_required_damage", 30.0)
-            config?.set("arrow_required_damage", 30.0)
-            config?.set("sword_damage_amplifier", 1.3)
-            config?.set("arrow_damage_amplifier", 1.3)
-            config?.set("duration_ticks", 200)
-            config?.set("resistance_level", 1)
-            config?.set("speed_level", 1)
-            config?.set("additional_arrow_count", 3)
-            config?.set("additional_arrow_velocity", 2.0)
-            config?.set("additional_arrow_spread", 30.0)
-            config?.set("additional_arrow_cooldown", 10)
-            config?.set("additional_sword_damage", 2.0)
-            config?.set("additional_sword_range", 3.0)
-            config?.set("additional_sword_ticks", 3)
-        }
-        saveConfig()
-    }
-
 
     var swordGauge: MutableMap<java.util.UUID, Double> = mutableMapOf()
     var arrowGauge: MutableMap<java.util.UUID, Double> = mutableMapOf()
@@ -185,6 +164,8 @@ object Transcendence : Ability(
         val player = event.player
         if (player.ability != this) return
 
+        if (config!!.getInt("duration_ticks") == 0) return
+
         if (!sword.contains(player.inventory.itemInMainHand.type) &&
             !sword.contains(player.inventory.itemInOffHand.type)) return
 
@@ -247,13 +228,13 @@ object Transcendence : Ability(
 
                 if (ticks == 20) {
                     transcending[player.uniqueId] = true
-                    player.addPotionEffect(PotionEffect(
+                    if (config!!.getInt("resistance_level") > 0) player.addPotionEffect(PotionEffect(
                         PotionEffectType.RESISTANCE,
                         config!!.getInt("duration_ticks"),
                         config!!.getInt("resistance_level") - 1,
                         true, true, true)
                     )
-                    player.addPotionEffect(PotionEffect(
+                    if (config!!.getInt("speed_level") > 0) player.addPotionEffect(PotionEffect(
                         PotionEffectType.SPEED,
                         config!!.getInt("duration_ticks"),
                         config!!.getInt("speed_level") - 1,
@@ -292,7 +273,7 @@ object Transcendence : Ability(
                 ticks++
                 if ((ticks >= 21) && (ticks <= (config!!.getInt("duration_ticks") + 21))) {
                     // 게이지 감소
-                    val color = TextColor.color(255, (120 - ticks * 3).coerceAtLeast(0), 255)
+                    val color = TextColor.color(255, (120L - ticks.toLong() * 3).coerceAtLeast(0).toInt(), 255)
                     var actionBar = Component.text("TRANSCENDENCE ", color, TextDecoration.BOLD)
                     for (i in 0 until (61 - ((ticks - 21.0) * (61.0 / config!!.getInt("duration_ticks")))).toInt()) {
                         actionBar = actionBar.append(Component.text("|", color).decoration(TextDecoration.BOLD, false))

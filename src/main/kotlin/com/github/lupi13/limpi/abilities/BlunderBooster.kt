@@ -59,17 +59,6 @@ object BlunderBooster : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("energy_max", 200)
-            config?.set("energy_per_tick", 1)
-            config?.set("dodge_energy", 100)
-            config?.set("velocity", 2.0)
-            config?.set("ignore_damage_energy", 150)
-        }
-        saveConfig()
-    }
 
     fun getBlunderBoosterItem(): ItemStack {
         val item = ItemStack(Material.TOTEM_OF_UNDYING)
@@ -137,15 +126,15 @@ object BlunderBooster : Ability(
 
         val currentEnergy = energyMap.getOrDefault(player.uniqueId, 0)
         if (currentEnergy < config!!.getInt("energy_max")) {
-            val newEnergy = currentEnergy + config!!.getInt("energy_per_tick")
-            energyMap[player.uniqueId] = newEnergy.coerceAtMost(config!!.getInt("energy_max"))
+            val newEnergy = currentEnergy.toLong() + config!!.getInt("energy_per_tick")
+            energyMap[player.uniqueId] = newEnergy.coerceAtMost(config!!.getInt("energy_max").toLong()).toInt()
         }
 
         // 블런더 에너지를 표시하는 액션바 메시지: 게이지 효과
         var message = Component.text("BLUNDER ENERGY: ", NamedTextColor.DARK_RED, TextDecoration.BOLD)
         val energy = energyMap[player.uniqueId] ?: 0
         val maxEnergy = config!!.getInt("energy_max")
-        val gauge = energy * 30 / maxEnergy
+        val gauge = energy.toLong() * 30 / maxEnergy
         for (i in 0 until 30) {
             message = if (i < gauge) {
                 message.append(Component.text("|", NamedTextColor.DARK_RED).decoration(TextDecoration.BOLD, false))
@@ -187,7 +176,7 @@ object BlunderBooster : Ability(
 
         if (energyMap.getOrDefault(player.uniqueId, 0) < config!!.getInt("dodge_energy")) return
 
-        energyMap[player.uniqueId] = energyMap[player.uniqueId]!! - config!!.getInt("dodge_energy")
+        energyMap[player.uniqueId] = energyMap.getOrDefault(player.uniqueId, 0) - config!!.getInt("dodge_energy")
         dodgeWithFire(player)
     }
 
@@ -209,7 +198,7 @@ object BlunderBooster : Ability(
         if (energyMap.getOrDefault(player.uniqueId, 0) < config!!.getInt("ignore_damage_energy")) return
 
         // 블런더 에너지를 소모하고 피해를 무효화
-        energyMap[player.uniqueId] = energyMap[player.uniqueId]!! - config!!.getInt("ignore_damage_energy")
+        energyMap[player.uniqueId] = energyMap.getOrDefault(player.uniqueId, 0) - config!!.getInt("ignore_damage_energy")
         event.damage = 0.0 // 피해를 무효화
         event.isCancelled = true
 

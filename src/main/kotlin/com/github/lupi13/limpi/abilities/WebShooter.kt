@@ -48,19 +48,6 @@ object WebShooter : Ability(
     }
 
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("range", 64.0)
-            config?.set("velocityAmplifier", 0.15)
-            config?.set("maxVelocity", 1.0)
-            config?.set("damageAmplifier", 8.0)
-            config?.set("knockbackAmplifier", 3.0)
-            config?.set("liquidDragCoefficient", 0.3)
-        }
-        saveConfig()
-    }
-
 
     fun getWebShooterItem(): ItemStack {
         val item = ItemStack(Material.TURTLE_SCUTE)

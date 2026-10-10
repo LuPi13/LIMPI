@@ -52,7 +52,7 @@ object ZombieKing : Ability(
                 .append(Component.text("즉시 피해", NamedTextColor.DARK_BLUE))
                 .append(Component.text(" 효과가 서로 바뀌어 적용됩니다.", NamedTextColor.WHITE)),
             Component.text("방어력이 ", NamedTextColor.WHITE)
-                .append(Component.text(config!!.getInt("armor_point"), NamedTextColor.GREEN))
+                .append(Component.text(config!!.getDouble("armor_point"), NamedTextColor.GREEN))
                 .append(Component.text("만큼 추가됩니다.", NamedTextColor.WHITE)),
             Component.text("모든 근접 공격이 ", NamedTextColor.WHITE)
                 .append(Component.text(config!!.getDouble("damage_addition"), NamedTextColor.GREEN))
@@ -72,16 +72,6 @@ object ZombieKing : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("armor_point", 2)
-            config?.set("damage_addition", 3.0)
-            config?.set("bullying_range", 32.0)
-            config?.set("reinforcement_probability", 0.3)
-        }
-        saveConfig()
-    }
 
     // 낮에 불타는 메서드
     private val armorEffects = mutableMapOf<java.util.UUID, com.github.lupi13.limpi.platform.AbilityEffect>()

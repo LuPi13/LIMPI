@@ -55,21 +55,6 @@ object EntityThrower : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("heldHeight", 0.5)
-            config?.set("forceDropDistance", 5.0)
-            config?.set("baseThrowVelocity", 1.0)
-            config?.set("maxThrowVelocity", 3.0)
-            config?.set("collisionDamage", 6.0)
-            config?.set("phantomRandomMovementIntensity", 0.01)
-            config?.set("tntAndCreeperExplodeImmediately", true)
-            config?.set("enderManTeleportProbability", 0.01)
-        }
-        saveConfig()
-    }
-
 
     /**
      * 엔티티를 들고 있는 상태에서 플레이어가 우클릭할 때 사용되는 아이템입니다.
@@ -255,7 +240,7 @@ object EntityThrower : Ability(
         clearRestrictHand(player)
         if (!targetEntity.isValid || targetEntity.isDead || targetEntity.world.uid != player.world.uid) return
         val baseThrowVelocity = config!!.getDouble("baseThrowVelocity")
-        val sizeBonus = log(1.0 / (targetEntity.boundingBox.volume) + 1, 2.5)
+        val sizeBonus = log(1.0 / targetEntity.boundingBox.volume.coerceAtLeast(1.0e-9) + 1, 2.5)
         val maxVelocity = config!!.getDouble("maxThrowVelocity")
         var velocity = (baseThrowVelocity * sizeBonus).coerceAtMost(maxVelocity)
         // TNT, 크리퍼, 팬텀은 속도 2배

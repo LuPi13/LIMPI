@@ -33,15 +33,6 @@ object Dodge : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("cooldown", 5000)
-            config?.set("velocity", 2.0)
-            config?.set("allowJump", false)
-        }
-        saveConfig()
-    }
 
     val velocityMap: MutableMap<java.util.UUID, Vector> = mutableMapOf()
     @EventHandler(ignoreCancelled = true)

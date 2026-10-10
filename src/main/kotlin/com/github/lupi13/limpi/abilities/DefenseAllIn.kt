@@ -34,14 +34,6 @@ object DefenseAllIn : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("noDamageMilliseconds", 1000)
-        }
-        saveConfig()
-    }
-
 
     val lastDamageTime = mutableMapOf<java.util.UUID, Long>()
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)

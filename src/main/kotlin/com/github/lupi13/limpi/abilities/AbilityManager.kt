@@ -27,7 +27,12 @@ import org.bukkit.plugin.java.JavaPlugin.getPlugin
 import java.io.File
 
 object AbilityManager : Listener {
-    private var plugin: Plugin = getPlugin(LIMPI::class.java)
+    private lateinit var plugin: Plugin
+    fun initialize(owner: Plugin) {
+        check(!::plugin.isInitialized || plugin === owner || !plugin.isEnabled)
+        plugin = owner
+        abilities.forEach { it.bind(owner) }
+    }
     /**
      * 능력들의 리스트입니다.
      * 이 리스트는 플러그인 시작 시 초기화되어야 합니다.

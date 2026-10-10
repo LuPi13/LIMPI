@@ -30,14 +30,6 @@ object HeavySnowball : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("damage", 1.0)
-        }
-        saveConfig()
-    }
-
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onSnowballHit(event: ProjectileHitEvent) {

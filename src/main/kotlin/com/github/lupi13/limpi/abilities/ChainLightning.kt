@@ -40,17 +40,6 @@ object ChainLightning : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("damageRatio", 0.9)
-            config?.set("probability", 0.8)
-            config?.set("radius", 5.0)
-        }
-        if (!config!!.contains("maximumChainHops")) config!!.set("maximumChainHops", 16)
-        saveConfig()
-    }
-
 
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     fun onAttack(event: EntityDamageByEntityEvent) {

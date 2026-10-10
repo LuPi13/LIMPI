@@ -40,22 +40,6 @@ object Alchemy : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("coal", 0.3)
-            config?.set("iron_nugget", 0.15)
-            config?.set("iron_ingot", 0.1)
-            config?.set("gold_nugget", 0.15)
-            config?.set("gold_ingot", 0.1)
-            config?.set("redstone", 0.1)
-            config?.set("lapis_lazuli", 0.05)
-            config?.set("emerald", 0.039)
-            config?.set("diamond", 0.01)
-            config?.set("netherite_ingot", 0.001)
-        }
-        saveConfig()
-    }
 
     @EventHandler
     fun onInteract(event: PlayerInteractEvent) {

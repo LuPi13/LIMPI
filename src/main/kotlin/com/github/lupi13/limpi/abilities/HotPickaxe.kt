@@ -30,13 +30,6 @@ object HotPickaxe : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("fireTicks", 60)
-        }
-        saveConfig()
-    }
 
     val pickaxes = listOf(
         Material.NETHERITE_PICKAXE,

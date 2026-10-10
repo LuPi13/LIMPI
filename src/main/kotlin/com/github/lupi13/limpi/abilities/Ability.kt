@@ -1,26 +1,19 @@
 package com.github.lupi13.limpi.abilities
 
-import com.github.lupi13.limpi.LIMPI
 import com.github.lupi13.limpi.quests.Quest
-import com.github.lupi13.limpi.storage.AtomicFiles
-import com.github.lupi13.limpi.storage.YamlFiles
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.event.Listener
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.Plugin
-import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
-import java.nio.file.Files
 import java.util.Locale.getDefault
-import java.util.logging.Level
 
 abstract class Ability(
     val grade: Grade,
@@ -37,9 +30,14 @@ abstract class Ability(
     open val relatedQuest: List<Quest>? = null,
     open val needFile: Boolean = false,
     open var file: File? = null,
-    open var config: YamlConfiguration? = null,
+    open var config: com.github.lupi13.limpi.config.AbilitySettings? = null,
 ) : Listener {
-    protected open val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
+    private var owner: Plugin? = null
+    protected val plugin: Plugin get() = requireNotNull(owner) { "Ability $codeName has not been bound" }
+    fun bind(owner: Plugin) {
+        check(this.owner == null || this.owner === owner || this.owner?.isEnabled == false)
+        this.owner = owner
+    }
     open fun start() {}
     open fun stop() {}
     open fun release(owner: java.util.UUID) {}
@@ -48,20 +46,7 @@ abstract class Ability(
         if (!needFile) return
 
         file = File(plugin.dataFolder.toString() + File.separator + "ability", "${codeName}.yml")
-        if (!Files.exists(file!!.toPath())) AtomicFiles.write(file!!.toPath(), "")
-        config = YamlFiles.read(file!!.toPath())
-    }
-
-    fun saveConfig() {
-        val data = config ?: return
-        val path = requireNotNull(file) { "Ability $codeName has no configuration file" }.toPath()
-        try {
-            YamlFiles.write(path, data)
-        } catch (e: Exception) {
-            config = YamlFiles.read(path)
-            plugin.logger.log(Level.SEVERE, "Unable to save ability $codeName; previous file preserved", e)
-            throw e
-        }
+        config = com.github.lupi13.limpi.config.AbilitySpecs.all.getValue(codeName).load(file!!.toPath())
     }
 
     fun registerEvents() {

@@ -33,7 +33,7 @@ object Titan : Ability(
             .append(Component.text(" 능력을 계승합니다?", NamedTextColor.WHITE)),
         Component.text("그 가 폭발 합니다.", NamedTextColor.WHITE)
     ),
-    needFile = true
+    needFile = false
 ) {
     override val details: List<Component> by lazy {
         listOf(

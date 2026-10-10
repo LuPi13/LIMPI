@@ -39,15 +39,6 @@ object HarmonyArrow : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("required_damage", 20.0)
-            config?.set("damage_amplifier", 1.2)
-        }
-        saveConfig()
-    }
-
 
     var amplified: MutableMap<java.util.UUID, Double> = mutableMapOf()
 

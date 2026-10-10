@@ -50,22 +50,6 @@ object CometStrike : Ability(
         )
     }
 
-    override fun setUpFile() {
-        super.setUpFile()
-        if (file != null && file!!.length() == 0L) {
-            config?.set("cooldown_milliseconds", 10000)
-            config?.set("jump_forward_amplifier", 0.02)
-            config?.set("jump_amplifier", 0.1)
-            config?.set("striking_speed", 5.0)
-            config?.set("max_striking_angle", 45.0)
-            config?.set("max_strike_ticks", 100)
-            config?.set("range", 4.0)
-            config?.set("damage", 10.0)
-        }
-        saveConfig()
-    }
-
-
 
     val lastSneakTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
     val lastStrikeTime: MutableMap<java.util.UUID, Long> = mutableMapOf()

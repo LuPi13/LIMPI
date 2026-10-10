@@ -28,6 +28,13 @@ class DeliveryController(private val plugin: Plugin, private val service: Delive
     fun blocked(id: UUID) = id in blocked
     fun release(id: UUID) { blocked.remove(id); service.release(id) }
 
+    /** Block queued inventory actions and disconnect when the canonical profile cannot be loaded safely. */
+    fun reject(player: Player, failure: Exception) {
+        blocked.add(player.uniqueId)
+        plugin.logger.log(Level.SEVERE, "Profile initialization failed for ${player.uniqueId}; inventory use is blocked", failure)
+        player.kick(Component.text("계좌/능력 기록을 불러오지 못했습니다. 관리자에게 UUID ${player.uniqueId}를 알려주세요.", NamedTextColor.RED))
+    }
+
     fun claim(player: Player, freshLogin: Boolean = false): Boolean {
         if (blocked(player.uniqueId) && !freshLogin) return false
         if (freshLogin) blocked.remove(player.uniqueId)

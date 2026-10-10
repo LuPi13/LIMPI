@@ -22,7 +22,13 @@ class JoinAndQuit: Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     fun onJoin(event: PlayerJoinEvent) {
         val player: Player = event.player
-        FileManager.makePlayerData(player)
+        try {
+            FileManager.makePlayerData(player)
+        } catch (failure: Exception) {
+            // A malformed/future profile or DB failure must not leave a player active without a canonical profile.
+            FileManager.delivery.reject(player, failure)
+            return
+        }
         if (!FileManager.delivery.claim(player, freshLogin = true)) return
         player.sendMessage(Component.text("환영합니다, ", NamedTextColor.WHITE)
             .append(Functions.playerDisplay(player))

@@ -34,7 +34,11 @@ class LIMPI : JavaPlugin() {
         AbilityManager.initialize(this)
         FileManager.initialize(this)
         AbilityRuntime.initialize(this)
-        server.onlinePlayers.forEach { FileManager.makePlayerData(it); FileManager.delivery.claim(it) }
+        server.onlinePlayers.forEach { player ->
+            // One malformed profile blocks only that player; it must not abort enable for everyone else.
+            try { FileManager.makePlayerData(player) } catch (failure: Exception) { FileManager.delivery.reject(player, failure); return@forEach }
+            FileManager.delivery.claim(player)
+        }
         if (config.getBoolean("EnableFinancialSystem")) {
             FileManager.setup()
         }

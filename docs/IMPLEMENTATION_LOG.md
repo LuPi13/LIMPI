@@ -280,18 +280,21 @@
 - 사용하지 않는 비원자 해금 `AbilityManager.unlockAbility`, 부분 수용만 확인하던 `validInventoryIndex`, 개수 확인과 분리된 `removeInventoryItem`/`getInventoryItemCount`, `getAllPlayersName`의 `name!!`, `saveMisc`를 제거했다. 이후 코드가 원장/회수 계약을 우회해 다시 쓰지 못하게 한다.
 - 남은 Kotlin 컴파일 경고(중복 else)를 제거했다. 경고 0개.
 - 여러 계약 문서에 남아 있던 "아직 연결되지 않음" 문장(이후 단계에서 연결 완료된 뽑기/선택권/보상/전환/전투/운영 도구)을 현재 상태와 링크로 고쳤다.
-- **340개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 1개는 손상 잔액 null 노출·거래 거부·원본 보존이다. 사망 취소 순서는 실제 Paper 이벤트로 검증하지 않았다.
+- 접속/enable 때 프로필 초기화(손상·미래 schema·DB 오류)가 실패하면 예외를 Bukkit에 흘려 프로필 없는 활성 플레이어를 남기던 경로를 막았다. `DeliveryController.reject`가 해당 UUID의 인벤토리/명령 입력을 차단하고 원인 로그와 함께 연결을 끊는다. enable 중 한 명의 실패가 나머지 플레이어 초기화를 중단하지 않는다. 원본 payload는 바꾸지 않는다.
+- 감사 확인: 모든 GUI가 MenuHolder(click 전체/상단 drag 취소), 모든 능력 반복 작업이 AbilityRunnable 소유, 직접 health 대입 없음, 잔액 변경 경로는 Accounts/BankService/InitialRewards뿐이다.
+- **340개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 1개는 손상 잔액 null 노출·거래 거부·원본 보존이다. 사망 취소 순서·접속 kick은 실제 Paper 이벤트로 검증하지 않았다.
 
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |
 | --- | --- | --- |
 | DATA-01 | 완료(단위 검증) | 캐시·단일 저장소·능력 hot path 구현. 실제 서버 성능 측정은 최종 서버 시험 때 수행 |
-| DATA-02 | 부분 해결 | strict YAML/원자 저장/SQLite/마이그레이션/이름 충돌 보호, 운영 export·검사·백업 도구 구현. 전체 사용자 오류 처리 감사, 운영 복구 시험은 남음 |
+| DATA-02 | 구현 완료(단위 검증) | strict YAML/원자 저장/SQLite/마이그레이션/이름 충돌 보호, 운영 export·검사·백업 도구, 접속 프로필 실패 차단/kick, 손상 잔액 표시 구현. 운영 데이터 복구 시험은 서버 시험 단계 |
 | DATA-03 | 완료(단위 검증) | 기존 서버 플레이어 ensure/현재 이름/기존 데이터 보존 구현. 실제 접속 확인은 이후 |
 | MONEY-01 | 구현 완료(단위 검증) | Money 규칙·주식·송금/관리자·마켓·수표·판매·상점/능력 상점 교환·초기 지급 연결. 잔액 변경은 Accounts/BankService/InitialRewards에서만 하고 표시도 strict 읽기. 실제 서버 검증은 이후 |
 | MONEY-02 | 구현 완료(저장 단위 검증) | 송금·마켓·수표·판매·상점·능력 상점·뽑기·선택권·초기/퀘스트 보상·주식 원장과 필요한 물품 회수/미수령 연결. 실제 Paper 검증은 이후 |
 | MONEY-03 | 구현 완료(단위 검증) | 수표 발행/입금 멱등 원장·PDC·legacy 관리자 전환 연결. 실제 손·Paper 이벤트/저장 확인은 이후 |
+| SELL-01 | 구현 완료(단위 검증) | 판매 세션 1개·frozen 입력/가격·공통 회수 checkpoint 후 멱등 정산·REVIEW/관리자 판단. 실제 서버 검증은 이후 |
 | ITEM-01 | 구현 완료(단위 검증) | 상점/능력 상점/초기 보상/연금술/소매치기/검 반환의 전체 수량 미수령·공통 회수/복구·관리자 연결. 부분 수용 helper 제거. NPC 소매치기 드롭만 world 경계(문서화). 실제 서버 검증은 남음 |
 | STOCK-01 | 구현 완료(단위 검증) | 가격/설정 정책과 실제 갱신 경로 연결. 실제 서버 실행 확인은 이후 |
 | STOCK-02 | 구현 완료(정책 단위 검증) | 시간 경계/재시작 상태/1초 검사 구현. Paper 반복 작업 동작은 서버 시험 이후 |
@@ -304,7 +307,7 @@
 | AB-07 | 구현 완료(단위 검증) | typed 획득 분류·후보/픽업 snapshot/소비 전 validation, 뽑기 확정 원장/회수, 선택권 사용/PDC·legacy/guard 연결. 서버 검증은 남음 |
 | GUI-04 | 구현 완료(페이지 단위 검증) | 주식·선택/도감의 실제 Holder/page/sort에 공유 Pagination 연결. 서버 화면 검증은 이후 |
 | QUEST-01 | 구현 완료(단위 검증) | 4개 완료/해금 원자 정산·legacy repair·조화 confirmed progress/threshold·취소된 사망 제외/엔더맨 무피해 확정 피해 조건 연결. 실제 처치 귀속은 서버 시험에서 확인 |
-| AB-08 | 부분 해결 | 레벨 감소/경험치 감소 보너스 제거·상한/재진입 보호, ZombieKing 야간 반복 수정 완료. 실제 서버 검증은 이후 |
+| AB-08 | 구현 완료(단위 검증) | 레벨 감소/경험치 감소 보너스 제거·상한/재진입 보호, ZombieKing 야간 반복 수정 완료. 실제 서버 검증은 이후 |
 | AB-02 | 구현 완료(저장 단위 검증) | same-code no-op·전체 슬롯 relocation/preflight·전환 checkpoint/profile 원자 정산·restart/REVIEW/관리자 판단 구현. 실제 Paper save/이벤트·복구 시험은 이후 |
 | AB-01 | 구현 완료(단위 검증) | 단일 ID 레지스트리·명시적 bind/configure/start/stop/release·공통 runtime 구현. 서버 없는 실제 레지스트리/메타데이터 시험 통과. 실제 enable은 이후 |
 | AB-04 | 구현 완료(단위 검증) | UUID 능력 상태·작업/일시 엔티티/laser/속성/potion lease 소유 범위와 이탈/사망/전환/종료 정리, 대상 메뉴 구현. 강제 종료 후 potion 정리·실제 서버 검증은 남음 |

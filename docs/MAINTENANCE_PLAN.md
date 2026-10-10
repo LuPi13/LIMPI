@@ -36,7 +36,7 @@
 | ID | 우선순위/상태 | 근거와 영향 | 수정 방향 |
 | --- | --- | --- | --- |
 | DATA-01 | P1 / 완료(단위 검증) | `FileManager.getPlayerData()`는 조회마다 YAML을 읽고, `PlayerAbilityExtension.kt`의 `Player.ability`도 이 경로를 사용한다. `.ability` 호출 86곳, `AbilityManager()` 생성 47곳. `BlunderBooster`는 매 틱 온라인 플레이어를 조회하고 `ZombieKing`도 주기적으로 조회한다. | 타입 있는 `PlayerProfile`을 UUID로 캐시하고 단일 repository에서 관리. 접속 시 로드, 변경 시 기록, 종료 시 정리. 매 틱 파일 접근 제거. Bukkit 객체 접근은 메인 스레드, 비동기 저장에는 불변 스냅샷 사용. |
-| DATA-02 | P0 / 부분 해결 | `FileManager.savePlayerData()`와 경제 파일 저장이 예외를 출력하고 끝나 호출자가 실패를 모른다. 이름으로 UUID를 찾을 때 플레이어 파일 전체를 읽고 `listFiles()!!`에도 의존한다. | 저장 성공/실패를 반환하고 실패 시 보상·중단. 이름/UUID 인덱스, 파일 이상 복구 정책, 구조화된 로그 도입. |
+| DATA-02 | P0 / 구현 완료(단위 검증) | `FileManager.savePlayerData()`와 경제 파일 저장이 예외를 출력하고 끝나 호출자가 실패를 모른다. 이름으로 UUID를 찾을 때 플레이어 파일 전체를 읽고 `listFiles()!!`에도 의존한다. | 저장 성공/실패를 반환하고 실패 시 보상·중단. 이름/UUID 인덱스, 파일 이상 복구 정책, 구조화된 로그 도입. |
 | DATA-03 | P1 / 완료(단위 검증) | `JoinAndQuit`는 `!hasPlayedBefore()`일 때만 프로필을 만들므로 기존 서버 플레이어에게 새로 설치하면 초기화가 빠질 수 있다. 이름 변경도 초기 저장 이후 갱신되지 않는다. | 서버 첫 접속 여부와 별개로 `getOrCreate(UUID)` 보장. 접속 시 현재 이름 갱신. 기존 값은 보존하며 누락 필드만 기본값으로 보완. |
 | MONEY-01 | P0 / 구현 완료(단위 검증) | `Financial`은 `Long`을 쓰지만 `MarketEvents`/`ShopEvents`에는 `config["money"] as Int`, `StockEvents`에는 `getInt()`와 Int 곱셈이 있다. 큰 잔액에서 캐스팅 실패·값 손실·오버플로가 가능하다. 수수료는 Double 계산에 의존한다. | `Money`를 Long 최소 단위로 통일. 양수/상한 검증, checked add/multiply, 수수료 반올림 규칙을 한곳에 정의. 기존 YAML 숫자 타입도 안전하게 읽음. |
 | MONEY-02 | P0 / 구현 완료(단위 검증) | 최초 결함은 파일별 송금/마켓 정산·판매/상점의 분리 저장·물품 유실이었다. 현재 송금/마켓/수표/상점 원자 원장과 판매 공통 회수/정산을 연결했다. | [상점·판매 복구](SHOP_AND_SALE_RECOVERY.md), [구현 기록](IMPLEMENTATION_LOG.md). 능력 상점/뽑기/보상·주식 거래 UUID 원장 연결도 완료했다. 실제 서버 검증은 남음. DB와 인벤토리는 같은 트랜잭션이 아님. |
@@ -74,9 +74,9 @@
 
 | ID | 우선순위/상태 | 근거와 영향 | 수정 방향 |
 | --- | --- | --- | --- |
-| GUI-01 | P0 / 부분 해결 | GUI를 title/아이템 표시로 식별하고 커스텀 Holder/PDC를 쓰지 않는다. `MarketEvents`는 화면을 열 때 매물과 클릭 시 현재 YAML 키 목록을 연결하므로 매물 변경 시 다른 매물을 사거나 인덱스 오류가 날 수 있다. | `InventoryHolder`에 메뉴 세션/슬롯별 안정적인 매물 ID를 저장. 클릭 시 서버 상태와 가격/소유권/재고를 다시 확인하고 거래를 확정. 표시 문자열을 권한/동작 근거로 쓰지 않음. |
-| GUI-02 | P1 / 부분 해결 | 주식 클릭은 상단 인벤토리인지 확인하지 않고 아이템 이름을 substring 파싱한다. 대부분 GUI에 drag 처리도 없다. shift/숫자키/오프핸드 처리와 능력 아이템 제한이 중복·불일치한다. | 중앙 메뉴 입력 처리, 상단/하단/허용 액션 규칙, drag·shift·hotbar·doubleclick·offhand 시나리오 시험. PDC와 서버 소유 세션으로 동작 식별. |
-| GUI-03 | P1 / 부분 해결 | 여러 `InventoryClickEvent` 핸들러가 그 안에서 바로 `openInventory()`를 호출한다. | Bukkit 이벤트 규약에 맞춰 화면 전환은 다음 틱으로 예약하고 예약 시 세션 유효성 재확인. |
+| GUI-01 | P0 / 구현 완료(정책 단위 검증) | GUI를 title/아이템 표시로 식별하고 커스텀 Holder/PDC를 쓰지 않는다. `MarketEvents`는 화면을 열 때 매물과 클릭 시 현재 YAML 키 목록을 연결하므로 매물 변경 시 다른 매물을 사거나 인덱스 오류가 날 수 있다. | `InventoryHolder`에 메뉴 세션/슬롯별 안정적인 매물 ID를 저장. 클릭 시 서버 상태와 가격/소유권/재고를 다시 확인하고 거래를 확정. 표시 문자열을 권한/동작 근거로 쓰지 않음. |
+| GUI-02 | P1 / 구현 완료(정책 단위 검증) | 주식 클릭은 상단 인벤토리인지 확인하지 않고 아이템 이름을 substring 파싱한다. 대부분 GUI에 drag 처리도 없다. shift/숫자키/오프핸드 처리와 능력 아이템 제한이 중복·불일치한다. | 중앙 메뉴 입력 처리, 상단/하단/허용 액션 규칙, drag·shift·hotbar·doubleclick·offhand 시나리오 시험. PDC와 서버 소유 세션으로 동작 식별. |
+| GUI-03 | P1 / 구현 완료(정책 단위 검증) | 여러 `InventoryClickEvent` 핸들러가 그 안에서 바로 `openInventory()`를 호출한다. | Bukkit 이벤트 규약에 맞춰 화면 전환은 다음 틱으로 예약하고 예약 시 세션 유효성 재확인. |
 | GUI-04 | P1 / 구현 완료(페이지 단위 검증) | 선택/도감의 Player page/sort map과 빈 마지막 페이지를 제거하고 실제 Holder/page/sort action을 공유 Pagination에 연결했다. | 0/1/42/45/46/90/91개 공유 정책 시험 완료. [선택권·보상](ABILITY_SELECTION_AND_REWARDS.md). 실제 화면 확인은 이후. |
 | GACHA-01 | P0 / 구현 완료(저장 단위 검증) | 기존 직접 소비·연출 종료 해금을 제거했다. 양손 회수 확인 뒤 해금/천장/결과를 한 commit에 확정하고 연출/ForceTroll 적용 대기를 분리했다. | [뽑기·복구 절차](GACHA_RULES_AND_RECOVERY.md). 실패 주입·재시작·멱등 시험 완료. Paper 손/저장/표시 정리·능력 전환은 최종 서버 시험 및 AB-02/03/04 정비로 확인. |
 | GACHA-02 | P1 / 구현 완료(정책 단위 검증) | 공통 GachaPolicy로 실제 추첨/help/pity를 연결했다. 기본 LEGENDARY 100번째·EPIC 조건부 10번째, 기존 순차 조건부와 픽업 의미를 보존한다. 설정/카운터/후보 snapshot을 검증한다. | [규칙·후속 복구](GACHA_RULES_AND_RECOVERY.md). GACHA-01의 원장/회수/표현 분리를 연결했다. 실제 서버 시험은 이후 수행. |

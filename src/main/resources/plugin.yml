@@ -17,6 +17,12 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.financial.market:
+    description: Use the player market
+    default: true
+  limpi.financial.admin.market:
+    description: Resolve market escrow and listing ownership
+    default: op
   limpi.financial.claim:
     description: Claim pending items
     default: true

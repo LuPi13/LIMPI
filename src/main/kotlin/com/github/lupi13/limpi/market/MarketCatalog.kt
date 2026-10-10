@@ -6,7 +6,7 @@ import com.github.lupi13.limpi.storage.*
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
-enum class ListingState { ACTIVE, OWNERSHIP_REVIEW, SOLD, RETURNED }
+enum class ListingState { ESCROW, ACTIVE, OWNERSHIP_REVIEW, SOLD, RETURNED }
 data class MarketListing(
     val id: UUID, val code: String, val name: String, val seller: UUID?, val sellerName: String,
     val price: Money, val item: ItemGrant, val state: ListingState = ListingState.ACTIVE,
@@ -14,7 +14,6 @@ data class MarketListing(
 ) {
     init {
         require(code.matches(Regex("[A-Z0-9]{4}"))); require(name.isNotBlank()); require(sellerName.isNotBlank())
-        require(price.units > 0)
         require(state == ListingState.OWNERSHIP_REVIEW || seller != null) { "Active listings require a known seller UUID" }
         require(state != ListingState.SOLD || buyer != null)
     }
@@ -22,12 +21,25 @@ data class MarketListing(
 
 /** Each listing has a permanent UUID; a reused four-letter code cannot revive an old GUI quote. */
 class MarketCatalog(private val store: StateStore) {
+    fun imported() = store.get("migration/market_catalog_v1") != null
+    fun available(): List<MarketListing> = store.documents("market_code/").map { (key, id) ->
+        requireNotNull(find(UUID.fromString(id))).also { check(key == "market_code/${it.code}") }
+    }
     fun listings(): List<MarketListing> = store.documents("market_listing/").map { (key, payload) ->
         decode(payload).also { check(key == key(it.id)) }
     }
-    fun find(id: UUID): MarketListing? = store.get(key(id))?.let(::decode)
-    fun read(tx: StateTransaction, id: UUID): MarketListing? = tx.get(key(id))?.let(::decode)
-    fun write(tx: StateTransaction, listing: MarketListing) = tx.put(key(listing.id), encode(listing))
+    fun find(id: UUID): MarketListing? = store.get(key(id))?.let { decode(it).also { listing -> check(listing.id == id) } }
+    fun read(tx: StateTransaction, id: UUID): MarketListing? = tx.get(key(id))?.let { decode(it).also { listing -> check(listing.id == id) } }
+    fun write(tx: StateTransaction, listing: MarketListing) {
+        val index = "market_code/${listing.code}"
+        if (listing.state in setOf(ListingState.ACTIVE, ListingState.OWNERSHIP_REVIEW, ListingState.ESCROW)) {
+            val reserved = tx.get(index)
+            if (reserved != null && reserved != listing.id.toString()) throw MarketException(MarketFailure.CODE_EXISTS)
+            tx.put(index, listing.id.toString())
+        } else if (tx.get(index) == listing.id.toString()) tx.put(index, null)
+        tx.put(key(listing.id), encode(listing))
+    }
+    fun findByCode(code: String): MarketListing? = store.get("market_code/$code")?.let { find(UUID.fromString(it)) }
 
     /** Only the legacy migration or a future confirmed inventory escrow may publish a new listing. */
     fun importLegacy(tx: StateTransaction, listings: List<MarketListing>) {
@@ -39,14 +51,14 @@ class MarketCatalog(private val store: StateStore) {
         tx.put("migration/market_catalog_v1", "imported: ${listings.size}\n")
     }
 
-    private fun encode(listing: MarketListing) = YamlConfiguration().apply {
+    internal fun encode(listing: MarketListing) = YamlConfiguration().apply {
         set("schemaVersion", 1); set("id", listing.id.toString()); set("code", listing.code); set("name", listing.name)
         set("seller", listing.seller?.toString()); set("sellerName", listing.sellerName); set("price", listing.price.units)
         set("item.payload", listing.item.payload); set("item.count", listing.item.count); set("item.limit", listing.item.limit)
         set("state", listing.state.name); set("buyer", listing.buyer?.toString())
     }.saveToString()
 
-    private fun decode(payload: String): MarketListing {
+    internal fun decode(payload: String): MarketListing {
         val data = YamlFiles.parse(payload)
         require(data.get("schemaVersion") == 1) { "Unsupported market catalog schema" }
         fun number(path: String): Long = when (val value = data.get(path)) {

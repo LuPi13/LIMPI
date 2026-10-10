@@ -12,6 +12,27 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class MarketServiceTest {
+    @Test fun `code reuse creates a distinct listing and an old quote cannot buy the replacement`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store); service(store).withdraw(UUID.randomUUID(), seller, listingId)
+            val replacement = UUID.randomUUID()
+            store.atomic { MarketCatalog(store).write(it, MarketListing(replacement, "AB12", "replacement", seller, "seller", Money(101), item)) }
+            assertEquals(replacement, MarketCatalog(store).findByCode("AB12")?.id)
+            assertEquals(MarketFailure.NOT_AVAILABLE, assertThrows(MarketException::class.java) {
+                service(store).buy(UUID.randomUUID(), buyer, listingId, 101)
+            }.reason)
+            assertEquals(1000, money(store, buyer)); assertEquals(ListingState.ACTIVE, MarketCatalog(store).find(replacement)?.state)
+        }
+    }
+
+    @Test fun `free legacy sale retains the item claim without charging either account`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store, price = 0)
+            val result = service(store).buy(UUID.randomUUID(), buyer, listingId, 0)
+            assertEquals(0, result.fee); assertEquals(1000, money(store, buyer)); assertEquals(200, money(store, seller))
+            assertEquals(item, DeliveryJournal(store).pending(buyer).single().items.single())
+        }
+    }
     @TempDir lateinit var directory: Path
     private val buyer = UUID.randomUUID()
     private val seller = UUID.randomUUID()

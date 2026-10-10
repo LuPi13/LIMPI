@@ -9,7 +9,6 @@ import com.github.lupi13.limpi.items.Check
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.command.Command
@@ -22,7 +21,7 @@ import org.bukkit.inventory.meta.BookMeta
 import java.util.*
 import java.util.regex.Pattern
 
-class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean): CommandExecutor {
+class Financial(private val accountCommands: AccountCommands, private val deliveryCommands: DeliveryCommands, private val enabled: Boolean, private val marketCommands: MarketCommands): CommandExecutor {
 
     override fun onCommand(
         sender: CommandSender,
@@ -31,10 +30,13 @@ class Financial(private val accountCommands: AccountCommands, private val delive
         args: Array<out String>
     ): Boolean {
         if (deliveryCommands.handles(args)) return deliveryCommands.execute(sender, args)
+        if (args.firstOrNull()?.equals("market", true) == true &&
+            args.getOrNull(1)?.lowercase(Locale.ROOT) in setOf("escrow", "resolve", "owner")) return marketCommands.execute(sender, args)
         if (!enabled) {
             sender.sendMessage(Component.text("금융 시스템이 비활성화되어 있습니다. 미수령 수령·지급 기록 명령은 사용할 수 있습니다.", NamedTextColor.RED))
             return true
         }
+        if (args.firstOrNull()?.equals("market", true) == true) return marketCommands.execute(sender, args)
         if (accountCommands.handles(args)) return accountCommands.execute(sender, args)
         if (sender is Player) {
             val config = FileManager.getPlayerData(sender)
@@ -80,7 +82,7 @@ class Financial(private val accountCommands: AccountCommands, private val delive
                 meta.addPages(page)
 
                 page = Component.text("/financial market remove <코드>", NamedTextColor.GREEN)
-                page = page.append(Component.text(": 장터에서 아이템을 삭제합니다.\n\n", NamedTextColor.BLACK))
+                page = page.append(Component.text(": 장터에서 회수하고 소유자의 미수령 물품으로 반환합니다.\n\n", NamedTextColor.BLACK))
                 meta.addPages(page)
 
                 if (sender.isOp) {
@@ -113,7 +115,7 @@ class Financial(private val accountCommands: AccountCommands, private val delive
                     page = page.append(Component.text(": 주식을 삭제합니다.\n\n", NamedTextColor.BLACK))
                     meta.addPages(page)
                     page = Component.text("/financial market remove <코드>", NamedTextColor.GREEN)
-                    page = page.append(Component.text(": 다른 사람이 장터에 올린 아이템을 강제로 제거합니다.\n\n", NamedTextColor.BLACK))
+                    page = page.append(Component.text(": 관리자 권한으로 회수해 원래 소유자의 미수령 물품으로 반환합니다.\n\n", NamedTextColor.BLACK))
                     meta.addPages(page)
                 }
 
@@ -544,108 +546,7 @@ class Financial(private val accountCommands: AccountCommands, private val delive
             }
 
 
-            //  /fc market
-            if (args[0].equals("market", true)) {
-                if (args.size == 1) {
-                    MarketEvents.openMarketGUI(sender)
-                    return true
-                }
-                else if (args[1].equals("add", true)) {
-                    if (args.size != 4) {
-                        sender.sendMessage(Component.text("잘못된 형식입니다. /financial market add <코드> <가격>", NamedTextColor.RED))
-                        return true
-                    }
-                    val code = args[2]
-                    if (!Pattern.matches("[0-9A-Z]{4}", code)) {
-                        sender.sendMessage(Component.text("코드는 대문자 알파벳과 숫자로만 이루어진 4글자로 입력해주세요.", NamedTextColor.RED))
-                        return true
-                    }
-                    val price: Int
-                    try {
-                        price = args[3].toInt()
-                        if (price < 0) {
-                            throw Exception()
-                        }
-                    } catch (e: Exception) {
-                        sender.sendMessage(Component.text(args[3], NamedTextColor.YELLOW)
-                            .append(Component.text("은(는) 올바르지 않은 가격입니다!", NamedTextColor.RED)))
-                        return true
-                    }
 
-                    if (sender.inventory.itemInMainHand.type == Material.AIR) {
-                        sender.sendMessage(Component.text("손에 아이템을 들고 있어야 합니다.", NamedTextColor.RED))
-                        return true
-                    }
-
-                    val marketConfig = FileManager.getMarketConfig()
-
-                    if (marketConfig.getKeys(false).size >= 54) {
-                        sender.sendMessage(Component.text("장터에 아이템이 가득 찼습니다. (54개 이상은 업데이트 예정)", NamedTextColor.RED))
-                        return true
-                    }
-
-                    if (marketConfig.getKeys(false).contains(code)) {
-                        sender.sendMessage(Component.text("이미 존재하는 코드입니다.", NamedTextColor.RED))
-                        return true
-                    }
-
-                    val item = sender.inventory.itemInMainHand
-                    var name = PlainTextComponentSerializer.plainText().serialize(item.displayName())
-                    name = name.substring(1, name.length - 1)
-                    if (name == "") {
-                        name = item.type.name
-                    }
-
-                    marketConfig["$code.item"] = item
-                    marketConfig["$code.price"] = price
-                    marketConfig["$code.seller"] = sender.name
-                    sender.sendMessage(Component.text(name, NamedTextColor.GREEN)
-                        .append(Component.text("을(를) 장터에 추가했습니다.", NamedTextColor.WHITE)))
-                    sender.inventory.setItemInMainHand(ItemStack(Material.AIR))
-                    FileManager.saveMarket()
-                }
-                else if (args[1].equals("remove", true)) {
-                    if (args.size != 3) {
-                        sender.sendMessage(Component.text("잘못된 형식입니다. /financial market remove <코드>", NamedTextColor.RED))
-                        return true
-                    }
-                    val code = args[2]
-                    val marketConfig = FileManager.getMarketConfig()
-                    if (marketConfig.getKeys(false).contains(code)) {
-                        if (marketConfig.getString("$code.seller") != sender.name) {
-                            if (sender.isOp) {
-                                sender.sendMessage(Component.text("다른 사람의 아이템을 관리자 권한으로 삭제합니다.", NamedTextColor.YELLOW))
-                            }
-                            else {
-                                sender.sendMessage(Component.text("다른 사람이 등록한 아이템은 삭제할 수 없습니다.", NamedTextColor.RED))
-                                return true
-                            }
-                        }
-                        val item = marketConfig.getItemStack("$code.item")!!
-                        var name: String
-                        try {
-                            name = PlainTextComponentSerializer.plainText().serialize(item.displayName())
-                            name = name.substring(1, name.length - 1)
-                            if (name == "") {
-                                name = item.type.name
-                            }
-                        }
-                        catch (e: Exception) {
-                            name = item.type.name
-                        }
-                        if (marketConfig.getString("$code.seller") == sender.name) {
-                            sender.inventory.addItem(item)
-                        }
-                        marketConfig.set(code, null)
-                        sender.sendMessage(Component.text(name, NamedTextColor.GREEN)
-                            .append(Component.text("을(를) 장터에서 삭제했습니다.", NamedTextColor.WHITE)))
-                        FileManager.saveMarket()
-                    }
-                    else {
-                        sender.sendMessage(Component.text("존재하지 않는 코드입니다.", NamedTextColor.RED))
-                    }
-                }
-            }
         }
 
 

@@ -16,6 +16,7 @@ enum class MenuKind { STOCK, SHOP, MARKET, ABILITY_SELECT, ABILITY_DICTIONARY, A
 sealed interface MenuAction {
     data class Page(val index: Int) : MenuAction
     data class StockQuote(val code: String, val price: Long) : MenuAction
+    data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
 }
 
 /** Server-owned identity and actions: titles and item names carry no authority. */

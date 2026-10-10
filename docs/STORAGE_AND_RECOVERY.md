@@ -7,7 +7,7 @@
 | 대상 | 현재 저장 위치 | 비고 |
 | --- | --- | --- |
 | 플레이어 UUID·이름·잔액·능력·해금·퀘스트·보유 주식 | `plugins/LIMPI/limpi.sqlite3`, `documents`의 `player/<UUID>` | payload에 기존 YAML 필드를 보존. 캐시와 격리 편집 API 사용 |
-| 매물 | 같은 DB의 `financial/market` | 이전 구조를 보존한 payload. **구매/등록/회수 서비스의 원자 처리 연결은 아직 남음** |
+| 매물 | 같은 DB의 `market_listing/<UUID>`·`market_code/<code>` | 원장/등록 escrow/미수령·GUI/명령 연결. `financial/market`은 최초 이전 원본으로 보존 |
 | 송금·관리자 잔액 변경 원장 | 같은 DB의 `transactions` | UUID·fingerprint·영수증·변경 키·시각 |
 | 최초 이전 정보 | 같은 DB의 `migration/legacy_yaml_v1` | 플레이어 수·잔액 합계·원본 SHA-256 |
 | 운영 설정·판매 가격·상점 비율·종목 가격 | 기존 YAML | DB 이전 대상이 아님 |
@@ -49,8 +49,8 @@ ID를 생략하면 새 UUID를 생성해 메시지로 안내한다. 결과가 �
 
 ## 아직 남은 구현·검증
 
-- 지급/마켓 정책·저장 도메인은 추가했다. 실제 호출부는 아직 연결하지 않았다. pending/checkpoint/DONE/REVIEW 계약과 다음 연결 순서는 [지급 복구 설계](DELIVERY_RECOVERY.md)에 기록했다.
-- 마켓/수표/판매/상점/보상/아이템 지급을 원장과 복구 상태에 연결해야 한다. 저장 위치 이전만으로 이전 이벤트의 부분 반영/중복이 해결되지는 않는다.
+- 지급/마켓 정책·저장·플랫폼·GUI/명령을 연결했다. checkpoint/DONE/REVIEW 계약은 [지급 복구](DELIVERY_RECOVERY.md), 등록 escrow/원본 이전·관리자 판단은 [마켓 복구](MARKET_RECOVERY.md)에 기록했다.
+- 수표/판매/상점/능력 상점/보상·초기 지급을 원장과 복구 상태에 연결해야 한다. 마켓 연결 완료를 다른 경제 경로의 완료로 처리하지 않는다.
 - Minecraft 인벤토리와 SQLite는 별도의 저장소다. 지급/회수에는 pending 상태와 저장 증거, 재시작 후 판별, 불확실한 상태의 관리자 확인 경로가 필요하다. DB 성공만으로 아이템 지급 완료를 확정하지 않는다.
 - 운영자용 dry-run/검사/export, 실행 중 백업 API, 실제 재시작/강제 종료 복구 시험, 서버 JVM native access 점검과 전체 서버 시험은 남아 있다.
 - 현재 DB 접근은 메인 스레드의 동기 처리다. 능력 hot path는 캐시를 사용하지만 거래/접속 저장 지연은 최종 서버에서 측정하고, Bukkit 객체를 넘기지 않는 저장 실행 구조를 추가 검토한다.

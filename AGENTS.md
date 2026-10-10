@@ -8,5 +8,5 @@
 - 현재 사용자 요청: `refactor/maintenance-paper26.3` 브랜치에서 전체 정비를 진행하고 문서·커밋·가능한 push를 유지한다. **main에 병합하지 않는다. 실제 서버 실행/플레이 검증은 전체 수정 이후로 미룬다.** 서버 시험을 지금 진행하거나 이를 이유로 구현을 중단하지 않는다.
 - 다음 작업 전에 [구현 기록](docs/IMPLEMENTATION_LOG.md)의 완료/미완료 항목과 다음 순서를 읽는다.
 - 플레이어/마켓 정본은 `limpi.sqlite3`다. 기존 YAML은 최초 이전 원본이며 이후 자동 동기화하지 않는다. [저장소·복구 절차](docs/STORAGE_AND_RECOVERY.md)를 따른다. DB를 삭제해 과거 YAML을 재가져오는 복구를 하지 않는다.
-- 송금·관리자 set/add는 `BankService`와 SQLite 멱등 원장을 사용한다. 같은 거래 UUID에 다른 요청을 허용하지 않는다. 캐시와 DB 변경을 함께 관리한다. 마켓/수표/판매/아이템 지급의 연결은 아직 남아 있으며 DB와 인벤토리가 원자적이라고 가정하지 않는다.
-- 지급/마켓의 연결 조건은 [지급 복구 설계](docs/DELIVERY_RECOVERY.md)에 기록했다. Paper 지급 어댑터·저장된 playerdata checkpoint 확인·접속 복구·claim·관리자 검토는 연결했다. 실패 후 같은 live inventory를 정상 재시도 대상으로 사용하지 않는다. 물리 시도마다 checkpoint를 구분하고 slotLimit을 반영한다. 마켓 이벤트·명령과 등록 escrow 연결은 아직 남아 있다.
+- 송금·관리자 set/add·마켓은 SQLite 멱등 원장을 사용한다. 같은 거래 UUID에 다른 요청을 허용하지 않는다. 캐시와 DB 변경을 함께 관리한다. 수표/판매/상점/보상의 연결은 아직 남아 있으며 DB와 인벤토리가 원자적이라고 가정하지 않는다.
+- 지급/마켓의 조건은 [지급 복구](docs/DELIVERY_RECOVERY.md)와 [마켓 복구](docs/MARKET_RECOVERY.md)에 기록했다. Paper 지급·접속 복구·claim·관리자 검토와 마켓 등록 escrow/이전·GUI/명령을 연결했다. 실패 후 같은 live inventory를 정상 재시도 대상으로 사용하지 않는다. escrow를 지급보다 먼저 복구하고, 물리 시도마다 checkpoint를 구분하며 slotLimit을 반영한다. 실제 서버 검증은 남아 있다.

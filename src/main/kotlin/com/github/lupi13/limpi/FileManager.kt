@@ -5,6 +5,9 @@ import com.github.lupi13.limpi.economy.BankService
 import com.github.lupi13.limpi.delivery.DeliveryJournal
 import com.github.lupi13.limpi.delivery.DeliveryService
 import com.github.lupi13.limpi.platform.DeliveryController
+import com.github.lupi13.limpi.platform.PaperItemCodec
+import com.github.lupi13.limpi.market.*
+import org.bukkit.inventory.ItemStack
 import com.github.lupi13.limpi.storage.*
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
@@ -25,12 +28,18 @@ class FileManager {
         private lateinit var bankService: BankService
         private lateinit var deliveryJournal: DeliveryJournal
         private lateinit var deliveryController: DeliveryController
+        private lateinit var marketCatalog: MarketCatalog
+        private lateinit var marketService: MarketService
+        private lateinit var marketEscrow: MarketEscrow
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
         val transactions: StateStore get() = state
         val deliveries: DeliveryJournal get() = deliveryJournal
         val delivery: DeliveryController get() = deliveryController
+        val market: MarketCatalog get() = marketCatalog
+        val marketTrades: MarketService get() = marketService
+        val escrow: MarketEscrow get() = marketEscrow
 
         fun initialize(owner: Plugin) {
             plugin = owner
@@ -40,14 +49,20 @@ class FileManager {
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)
             deliveryJournal = DeliveryJournal(state)
-            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal))
+            marketCatalog = MarketCatalog(state)
+            val importedListings = LegacyMarketMigration.import(state, marketCatalog, repository::findByName) {
+                PaperItemCodec.grant(it as ItemStack)
+            }
+            owner.logger.info("Market catalog ready: $importedListings legacy listings imported")
+            marketService = MarketService(state, marketCatalog, deliveryJournal, repository)
+            marketEscrow = MarketEscrow(state, marketCatalog)
+            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow)
             financial.clear()
         }
 
         fun setup() {
-            for (name in listOf("misc", "sellPrice", "shopRatio", "stock", "market")) {
-                financial[name] = if (name == "market") YamlFiles.parse(state.get("financial/market"))
-                    else YamlFiles.read(financialPath(name))
+            for (name in listOf("misc", "sellPrice", "shopRatio", "stock")) {
+                financial[name] = YamlFiles.read(financialPath(name))
             }
         }
 
@@ -55,13 +70,11 @@ class FileManager {
         fun getSellPriceConfig(): FileConfiguration = financial.getValue("sellPrice")
         fun getShopRatioConfig(): FileConfiguration = financial.getValue("shopRatio")
         fun getStockConfig(): FileConfiguration = financial.getValue("stock")
-        fun getMarketConfig(): FileConfiguration = financial.getValue("market")
 
         fun saveMisc() = saveFinancial("misc")
         fun saveSellPrice() = saveFinancial("sellPrice")
         fun saveShopRatio() = saveFinancial("shopRatio")
         fun saveStock() = saveFinancial("stock")
-        fun saveMarket() = saveFinancial("market")
 
         /** Idempotent initialization: existing money, abilities and unknown fields are preserved. */
         fun makePlayerData(player: Player) = persist("initialize ${player.uniqueId}") {
@@ -97,11 +110,9 @@ class FileManager {
         private fun financialPath(name: String): Path = plugin.dataFolder.toPath().resolve("financial/$name.yml")
         private fun saveFinancial(name: String) = persist("save financial/$name.yml") {
             try {
-                if (name == "market") state.atomic { it.put("financial/market", financial.getValue(name).saveToString()) }
-                else YamlFiles.write(financialPath(name), financial.getValue(name))
+                YamlFiles.write(financialPath(name), financial.getValue(name))
             } catch (failure: Exception) {
-                financial[name] = if (name == "market") YamlFiles.parse(state.get("financial/market"))
-                    else YamlFiles.read(financialPath(name))
+                financial[name] = YamlFiles.read(financialPath(name))
                 throw failure
             }
         }

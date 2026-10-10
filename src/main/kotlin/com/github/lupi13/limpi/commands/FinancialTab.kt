@@ -21,7 +21,11 @@ class FinancialTab: TabCompleter {
             if (args.size == 1) {
                 if (sender.hasPermission("limpi.financial.claim")) list.add("claim")
                 if (sender.hasPermission("limpi.financial.admin.delivery")) list.add("delivery")
+                if (sender.hasPermission("limpi.financial.admin.market")) list.add("market")
                 StringUtil.copyPartialMatches(args[0], list, completions)
+            }
+            if (args.size == 2 && args[0] == "market" && sender.hasPermission("limpi.financial.admin.market")) {
+                StringUtil.copyPartialMatches(args[1], listOf("escrow", "resolve", "owner"), completions)
             }
             return completions
         }
@@ -36,7 +40,7 @@ class FinancialTab: TabCompleter {
                 list.add("sell")
                 list.add("shop")
                 list.add("stock")
-                list.add("market")
+                if (sender.hasPermission("limpi.financial.market")) list.add("market")
                 if (sender.isOp) {
                     list.add("spy")
                 }
@@ -64,9 +68,15 @@ class FinancialTab: TabCompleter {
             }
 
             if (args.size == 2 && args[0] == "market") {
-                list.add("add")
-                list.add("remove")
+                if (sender.hasPermission("limpi.financial.market")) { list.add("add"); list.add("remove") }
+                if (sender.hasPermission("limpi.financial.admin.market")) { list.add("escrow"); list.add("resolve"); list.add("owner") }
                 StringUtil.copyPartialMatches(args[1], list, completions)
+            }
+            if (args.size == 3 && args[0] == "market" && args[1] == "remove") {
+                StringUtil.copyPartialMatches(args[2], FileManager.market.available().filter {
+                    it.state == com.github.lupi13.limpi.market.ListingState.ACTIVE &&
+                        (sender.hasPermission("limpi.financial.admin.market") || (sender as? org.bukkit.entity.Player)?.uniqueId == it.seller)
+                }.map { it.code }, completions)
             }
 
 

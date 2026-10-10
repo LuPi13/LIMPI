@@ -7,8 +7,12 @@ import com.github.lupi13.limpi.storage.*
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
-enum class MarketFailure { NOT_AVAILABLE, STALE_QUOTE, UNKNOWN_OWNER, OWN_LISTING, NOT_OWNER }
-class MarketException(val reason: MarketFailure) : IllegalStateException(reason.name)
+enum class MarketFailure(val message: String) {
+    NOT_AVAILABLE("더 이상 거래할 수 없는 매물입니다."), STALE_QUOTE("매물이나 가격이 변경되었습니다. 새 화면을 확인하세요."),
+    UNKNOWN_OWNER("매물 소유자를 확인해야 합니다. 관리자에게 문의하세요."), OWN_LISTING("자신의 매물은 구매할 수 없습니다. 회수 명령을 사용하세요."),
+    NOT_OWNER("다른 플레이어의 매물입니다."), CODE_EXISTS("이미 사용 중인 매물 코드입니다."),
+}
+class MarketException(val reason: MarketFailure) : IllegalStateException(reason.message)
 data class MarketReceipt(
     val id: UUID, val listing: UUID, val buyer: UUID?, val seller: UUID,
     val price: Long, val fee: Long, val deliveryOwner: UUID, val replayed: Boolean,
@@ -42,15 +46,29 @@ class MarketService(
     }
 
     /** Withdrawing a listing always returns it to its owner; inventory space does not erase the claim. */
-    fun withdraw(id: UUID, seller: UUID, listingId: UUID): MarketReceipt {
-        val committed = store.execute(id, BankService.fingerprint("MARKET_WITHDRAW", seller.toString(), listingId.toString())) { tx ->
+    fun withdraw(id: UUID, seller: UUID, listingId: UUID, actor: String = seller.toString()): MarketReceipt {
+        require(actor.isNotBlank())
+        val committed = store.execute(id, BankService.fingerprint("MARKET_WITHDRAW", actor, seller.toString(), listingId.toString())) { tx ->
             val listing = available(tx, listingId)
             if (listing.seller != seller) throw MarketException(MarketFailure.NOT_OWNER)
             catalog.write(tx, listing.copy(state = ListingState.RETURNED))
             deliveries.stage(tx, id, seller, "market return ${listing.id}", listOf(listing.item))
-            receipt(id, listing, null, 0, seller)
+            receipt(id, listing, null, 0, seller, actor)
         }
         return result(committed)
+    }
+
+    fun assignOwner(id: UUID, actor: String, listingId: UUID, owner: UUID, note: String) {
+        require(actor.isNotBlank() && note.isNotBlank())
+        store.execute(id, BankService.fingerprint("MARKET_OWNER", actor, listingId.toString(), owner.toString(), note)) { tx ->
+            val previous = requireNotNull(catalog.read(tx, listingId))
+            check(previous.state == ListingState.OWNERSHIP_REVIEW)
+            val account = Accounts.read(tx, owner)
+            catalog.write(tx, previous.copy(seller = owner, sellerName = account.getString("name") ?: owner.toString(), state = ListingState.ACTIVE))
+            YamlConfiguration().apply {
+                set("actor", actor); set("owner", owner.toString()); set("note", note); set("previousEvidence", catalog.encode(previous))
+            }.saveToString()
+        }
     }
 
     private fun available(tx: StateTransaction, id: UUID): MarketListing {
@@ -60,10 +78,11 @@ class MarketService(
         return listing
     }
 
-    private fun receipt(id: UUID, listing: MarketListing, buyer: UUID?, fee: Long, owner: UUID) = YamlConfiguration().apply {
+    private fun receipt(id: UUID, listing: MarketListing, buyer: UUID?, fee: Long, owner: UUID, actor: String = buyer?.toString() ?: owner.toString()) = YamlConfiguration().apply {
         set("id", id.toString()); set("listing", listing.id.toString()); set("buyer", buyer?.toString())
         set("seller", requireNotNull(listing.seller).toString()); set("price", listing.price.units)
         set("fee", fee); set("deliveryOwner", owner.toString())
+        set("actor", actor)
     }.saveToString()
 
     private fun result(committed: CommittedTransaction): MarketReceipt {

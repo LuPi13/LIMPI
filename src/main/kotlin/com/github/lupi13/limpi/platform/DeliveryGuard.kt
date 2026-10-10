@@ -2,6 +2,8 @@ package com.github.lupi13.limpi.platform
 
 import com.github.lupi13.limpi.delivery.DeliveryJournal
 import com.github.lupi13.limpi.delivery.DeliveryState
+import com.github.lupi13.limpi.market.MarketEscrow
+import com.github.lupi13.limpi.market.EscrowState
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -15,11 +17,11 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 /** Block queued client inventory actions while a failed operation is being disconnected. */
-class DeliveryGuard(private val controller: DeliveryController, private val journal: DeliveryJournal, private val logger: Logger) : Listener {
+class DeliveryGuard(private val controller: DeliveryController, private val journal: DeliveryJournal, private val escrow: MarketEscrow, private val logger: Logger) : Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     fun login(event: AsyncPlayerPreLoginEvent) {
         try {
-            if (journal.pending(event.uniqueId).any { it.state == DeliveryState.REVIEW }) {
+            if (journal.pending(event.uniqueId).any { it.state == DeliveryState.REVIEW } || escrow.pending(event.uniqueId).any { it.state == EscrowState.REVIEW }) {
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
                     Component.text("지급 검토가 필요합니다. 관리자에게 UUID ${event.uniqueId}를 알려주세요."))
             }

@@ -313,6 +313,11 @@
 - cache(Long)와 DB 재판독(Int)의 정수 비교 차이로 생기던 가짜 snapshot 충돌을 값 비교로 고쳤다.
 - **346개** 시험 통과(실패/에러/스킵 0), test build 성공. 새 3개는 DB 분실 재가져오기 거부·완료 기록 backfill·이전 프로필 money 비보완이다.
 
+### 2026-10-10 / 3차 리뷰 반영: 전투 능력
+
+- 13개 전투/이동 능력과 피해·runtime 공통 경로를 리뷰했다. WebShooter 드래곤 부위 CCE, GatheringStorm 집전 번개 미취소(이벤트 순서), EntityThrower 드래곤 부위 대상, ShieldStrike/GatheringStorm의 시전자 동기 사망 후 `!!` NPE를 수정했다. [전투](COMBAT_AND_TARGETS.md#리뷰-반영-2026-10-10)
+- **346개** 시험 통과, test build 성공. 이번 변경은 Paper 이벤트 경로라 단위 시험을 추가하지 않고 서버 시험 계획에 넣었다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |

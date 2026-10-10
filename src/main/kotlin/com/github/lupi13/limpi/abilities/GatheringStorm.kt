@@ -81,6 +81,7 @@ object GatheringStorm : Ability(
     // 폭풍 생성
     val stormCooldown = mutableMapOf<java.util.UUID, Long>()
     val stormDuration = mutableMapOf<Location, Int>()
+    private val stormCreatedTick = mutableMapOf<java.util.UUID, Int>()
     @EventHandler(ignoreCancelled = true)
     fun onTridentHit(event: ProjectileHitEvent) {
         if (event.entity !is Trident) return
@@ -115,6 +116,7 @@ object GatheringStorm : Ability(
         val duration = config!!.getInt("storm_duration_tick")
         val location = trident.location
         stormCooldown[player.uniqueId] = currentTime
+        stormCreatedTick[player.uniqueId] = org.bukkit.Bukkit.getCurrentTick()
         stormDuration[location] = 0
 
 
@@ -246,7 +248,7 @@ object GatheringStorm : Ability(
                 // 회오리 효과
                 for (r in 1 until radius.toInt()) {
                     for (angle in 0 until 360 step 30) {
-                        if (Random.nextDouble() >= (stormDuration[location]!! / (duration / 10.0)).pow(2.0).coerceAtMost(0.3)) continue
+                        if (Random.nextDouble() >= ((stormDuration[location] ?: return) / (duration / 10.0)).pow(2.0).coerceAtMost(0.3)) continue
                         val radius = r + Random.nextDouble(-0.5, 0.5)
                         val radians = Math.toRadians(angle.toDouble() + Random.nextDouble(-15.0, 15.0))
                         val x = radius * cos(radians)
@@ -268,8 +270,9 @@ object GatheringStorm : Ability(
                     }
                 }
 
-                stormDuration[location] = stormDuration[location]!! + 1
-                if (stormDuration[location]!! >= duration) {
+                val elapsed = (stormDuration[location] ?: return) + 1
+                stormDuration[location] = elapsed
+                if (elapsed >= duration) {
                     stormDuration.remove(location)
                     cancel()
                 }
@@ -284,15 +287,17 @@ object GatheringStorm : Ability(
         val player = event.lightning.causingEntity as? Player ?: return
         if (player.ability != this) return
 
+        // The trident hit (which creates the storm and starts the cooldown) fires before Channeling's lightning, so a
+        // storm created this tick replaces the vanilla strike. Only a hit during an earlier storm's cooldown keeps it.
+        val createdNow = stormCreatedTick[player.uniqueId] == org.bukkit.Bukkit.getCurrentTick()
         val currentTime = System.currentTimeMillis()
         val cooldown = config!!.getInt("storm_cooldown_milliseconds")
-        if (stormCooldown.containsKey(player.uniqueId) && currentTime - stormCooldown[player.uniqueId]!! < cooldown) {
-            return
-        }
+        val onCooldown = stormCooldown[player.uniqueId]?.let { currentTime - it < cooldown } ?: false
+        if (!createdNow && onCooldown) return
 
         event.isCancelled = true
     }
-    override fun release(owner: java.util.UUID) { stormCooldown.remove(owner) }
-    override fun stop() { stormCooldown.clear(); stormDuration.clear() }
+    override fun release(owner: java.util.UUID) { stormCooldown.remove(owner); stormCreatedTick.remove(owner) }
+    override fun stop() { stormCooldown.clear(); stormDuration.clear(); stormCreatedTick.clear() }
 
 }

@@ -97,8 +97,10 @@ object ShieldStrike : Ability(
                                 if (!AbilityManager.isEnemy(player, entity)) continue
 
                                 if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
-                                entity.velocity = vector[player.uniqueId]!!.clone().multiply(min(knockbackAmplifier / entity.boundingBox.volume.coerceAtLeast(1e-9), maxKnockback)).setY(0.3)
-                                player.velocity = vector[player.uniqueId]!!.clone().multiply(-0.1).setY(0.2)
+                                // The owner can die synchronously inside hit (e.g. guardian thorns), releasing this state.
+                                val dash = vector[player.uniqueId] ?: break
+                                entity.velocity = dash.clone().multiply(min(knockbackAmplifier / entity.boundingBox.volume.coerceAtLeast(1e-9), maxKnockback)).setY(0.3)
+                                player.velocity = dash.clone().multiply(-0.1).setY(0.2)
                                 val centerPosition = player.boundingBox.center.getMidpoint(entity.boundingBox.center).toLocation(player.world)
                                 player.world.playSound(centerPosition, Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1.5f)
                                 player.world.spawnParticle(Particle.CRIT, centerPosition, 30, 0.2, 0.2, 0.2, 1.0)

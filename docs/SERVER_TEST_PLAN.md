@@ -57,6 +57,7 @@
 ## 5. 전투·대상
 
 - [ ] 보호 플러그인이 취소한 피해에 게이지/부가 효과 없음, 토템/흡수/방패, 처치 귀속. [전투](COMBAT_AND_TARGETS.md)
+- [ ] 엔더 드래곤 대상 WebShooter 충돌/EntityThrower 매달리기, GatheringStorm 집전 번개 대체(쿨다운 중에는 vanilla 번개).
 - [ ] ChainLightning 연쇄 상한, 아군/중립/길들인 몹(오프라인 주인)/팀 대상 정책과 대상 메뉴 일치.
 
 ## 6. 메뉴·명령

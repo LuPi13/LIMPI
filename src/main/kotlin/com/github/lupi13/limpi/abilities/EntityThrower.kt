@@ -100,7 +100,8 @@ object EntityThrower : Ability(
         // 양손 모두 비워져 있으면 이벤트가 두 번 호출됨, 이에 따라 하나만 호출하게 리턴
         if (event.hand != EquipmentSlot.HAND) return
 
-        val targetEntity = event.rightClicked
+        // Paper resolves dragon clicks to a part; hold the dragon itself so the dragon branch can apply.
+        val targetEntity = (event.rightClicked as? org.bukkit.entity.EnderDragonPart)?.parent ?: event.rightClicked
 
         //나를 잡고 있는 플레이어일 경우
         if (targetEntity is Player && heldEntity.containsKey(targetEntity.uniqueId) && heldEntity[targetEntity.uniqueId] == player) {

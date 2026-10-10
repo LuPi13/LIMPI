@@ -16,6 +16,7 @@ import com.github.lupi13.limpi.items.Check
 import com.github.lupi13.limpi.menu.ReadOnlyMenuListener
 import com.github.lupi13.limpi.platform.DeliveryGuard
 import com.github.lupi13.limpi.platform.AbilityTicketGuard
+import com.github.lupi13.limpi.platform.AbilityRuntime
 import org.bukkit.plugin.java.JavaPlugin
 
 class LIMPI : JavaPlugin() {
@@ -29,6 +30,7 @@ class LIMPI : JavaPlugin() {
         config.options().copyDefaults()
         saveDefaultConfig()
         FileManager.initialize(this)
+        AbilityRuntime.initialize(this)
         server.onlinePlayers.forEach { FileManager.makePlayerData(it); FileManager.delivery.claim(it) }
         if (config.getBoolean("EnableFinancialSystem")) {
             FileManager.setup()
@@ -46,6 +48,7 @@ class LIMPI : JavaPlugin() {
         server.pluginManager.registerEvents(DeliveryGuard(FileManager.delivery, FileManager.deliveries, FileManager.escrow, FileManager.removals, logger), this)
         server.pluginManager.registerEvents(ReadOnlyMenuListener(), this)
         server.pluginManager.registerEvents(AbilityTicketGuard(), this)
+        server.pluginManager.registerEvents(AbilityRuntime, this)
         if (config.getBoolean("EnableFinancialSystem")) {
             server.pluginManager.registerEvents(checks, this)
             server.pluginManager.registerEvents(SellEvents(), this)
@@ -96,6 +99,9 @@ class LIMPI : JavaPlugin() {
     override fun onDisable() {
         // Plugin shutdown logic
         StockEvents.stop()
+        AbilityRuntime.closeAll()
+        if (config.getBoolean("EnableAbilitySystem")) AbilityManager.shutdown()
+        server.onlinePlayers.forEach(AbilityRuntime::clearAttributes)
         gacha?.close()
         gacha = null
         FileManager.close()

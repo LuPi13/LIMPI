@@ -98,7 +98,8 @@ object EntityThrower : Ability(
     }
 
 
-    val heldEntity: MutableMap<Player, Entity> = mutableMapOf()
+    val heldEntity: MutableMap<java.util.UUID, Entity> = mutableMapOf()
+    private val heldEffects = mutableMapOf<java.util.UUID, com.github.lupi13.limpi.platform.AbilityEffect>()
     @EventHandler
     fun onInteractEntity(event: PlayerInteractEntityEvent) {
         val player = event.player
@@ -116,7 +117,7 @@ object EntityThrower : Ability(
         val targetEntity = event.rightClicked
 
         //나를 잡고 있는 플레이어일 경우
-        if (targetEntity is Player && heldEntity.containsKey(targetEntity) && heldEntity[targetEntity] == player) {
+        if (targetEntity is Player && heldEntity.containsKey(targetEntity.uniqueId) && heldEntity[targetEntity.uniqueId] == player) {
             player.sendActionBar(Component.text("자신을 붙잡고 있는 상대는 붙잡을 수 없습니다!", NamedTextColor.RED))
             return
         }
@@ -127,13 +128,24 @@ object EntityThrower : Ability(
         event.isCancelled = true
 
         // 들고 있는 엔티티 없으면 붙잡기 시작
-        if (!heldEntity.containsKey(player)) {
-            heldEntity[player] = targetEntity
+        if (!heldEntity.containsKey(player.uniqueId)) {
+            heldEntity[player.uniqueId] = targetEntity
 
-            object: BukkitRunnable() {
-                override fun run() {
+            object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+                init {
+                    heldEffects[player.uniqueId] = effect
+                    own {
+                        if (heldEffects[player.uniqueId] === effect) {
+                            heldEffects.remove(player.uniqueId)
+                            heldEntity.remove(player.uniqueId)
+                            clearRestrictHand(player)
+                        }
+                    }
+                }
+                override fun tick() {
+                    if (targetEntity.world.uid != player.world.uid) { cancel(); return }
                     // 플레이어가 죽었거나 엔티티를 놓았을 때 반복문 종료
-                    if (!heldEntity.containsKey(player) || heldEntity[player] != targetEntity || player.isDead || !player.isOnline) {
+                    if (!heldEntity.containsKey(player.uniqueId) || heldEntity[player.uniqueId] != targetEntity || player.isDead || !player.isOnline) {
                         clearRestrictHand(player)
                         player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         cancel()
@@ -141,7 +153,7 @@ object EntityThrower : Ability(
                     }
                     // 플레이어가 엔티티를 들고 있는 상태에서 엔티티가 유효하지 않거나 죽었을 때
                     if (targetEntity.isDead || !targetEntity.isValid) {
-                        heldEntity.remove(player)
+                        heldEntity.remove(player.uniqueId)
                         clearRestrictHand(player)
                         player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         cancel()
@@ -149,7 +161,7 @@ object EntityThrower : Ability(
                     }
                     // 플레이어가 너무 멀리 떨어지면 엔티티를 놓아줌
                     if (targetEntity.location.distance(Location(player.world, player.boundingBox.centerX, player.boundingBox.maxY + config!!.getDouble("heldHeight"), player.boundingBox.centerZ))> config!!.getDouble("forceDropDistance")) {
-                        heldEntity.remove(player)
+                        heldEntity.remove(player.uniqueId)
                         clearRestrictHand(player)
                         player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         cancel()
@@ -158,7 +170,7 @@ object EntityThrower : Ability(
                     // 플레이어의 양손이 restrictHand가 아니면 엔티티를 놓아줌
                     if (!player.inventory.itemInMainHand.isSimilar(getRestrictHand()) ||
                         !player.inventory.itemInOffHand.isSimilar(getRestrictHand())) {
-                        heldEntity.remove(player)
+                        heldEntity.remove(player.uniqueId)
                         clearRestrictHand(player)
                         player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         cancel()
@@ -213,6 +225,7 @@ object EntityThrower : Ability(
                                     targetEntity.teleport(targetEntity.location.add(teleportDelta))
                                     player.world.spawnParticle(Particle.DUST, player.location.add(0.0, 3.0, 0.0), 30, 0.3, 1.0, 0.3, 0.1, dust)
                                     player.world.playSound(player.location, Sound.ENTITY_ENDERMAN_TELEPORT, 1f, 1f)
+                                    break
                                 }
                             }
                         }
@@ -232,12 +245,16 @@ object EntityThrower : Ability(
             event.action == Action.LEFT_CLICK_BLOCK ||
             event.action == Action.PHYSICAL) return
 
-        if (!heldEntity.containsKey(player)) return
+        if (!heldEntity.containsKey(player.uniqueId)) return
         if (event.hand != EquipmentSlot.HAND) return
 
         event.isCancelled = true
 
-        val targetEntity = heldEntity[player]!!
+        val targetEntity = heldEntity[player.uniqueId]!!
+        heldEffects.remove(player.uniqueId)?.close()
+        heldEntity.remove(player.uniqueId)
+        clearRestrictHand(player)
+        if (!targetEntity.isValid || targetEntity.isDead || targetEntity.world.uid != player.world.uid) return
         val baseThrowVelocity = config!!.getDouble("baseThrowVelocity")
         val sizeBonus = log(1.0 / (targetEntity.boundingBox.volume) + 1, 2.5)
         val maxVelocity = config!!.getDouble("maxThrowVelocity")
@@ -249,9 +266,10 @@ object EntityThrower : Ability(
 
         // 팬텀은 1초 간 방향을 유지하며 날아감
         if (targetEntity is Phantom) {
-            object: BukkitRunnable() {
+            object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
                 var timer = 0.0
-                override fun run() {
+                override fun tick() {
+                    if (!targetEntity.isValid || targetEntity.isDead || targetEntity.world.uid != player.world.uid) { cancel(); return }
                     if (timer++ >= 20) { // 1초 후에 반복문 종료
                         cancel()
                         return
@@ -264,13 +282,14 @@ object EntityThrower : Ability(
 
         targetEntity.velocity = player.location.direction.multiply(velocity)
         player.world.playSound(player.location, Sound.ENTITY_BREEZE_SHOOT, 0.5f, velocity.toFloat())
-        heldEntity.remove(player)
+        heldEntity.remove(player.uniqueId)
         clearRestrictHand(player)
 
         // 이후 엔티티가 다른 엔티티와 충돌했을 때 피해를 주는 로직
-        object: BukkitRunnable() {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
             var timer = 0
-            override fun run() {
+            override fun tick() {
+                if (targetEntity.world.uid != player.world.uid) { cancel(); return }
                 if (timer++ >= 60 && targetEntity.velocity.length() <= 0.7) { // 60틱(3초) 후에 엔티티가 빠르지 않다면 종료
                     cancel()
                     return
@@ -298,9 +317,10 @@ object EntityThrower : Ability(
 
                     // 팬텀의 경우, 1초간 부딪힌 적을 붙잡고 하늘로 솟아오름
                     if (targetEntity is Phantom) {
-                        object: BukkitRunnable() {
+                        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
                             var timer1 = 0.0
-                            override fun run() {
+                            override fun tick() {
+                                if (!targetEntity.isValid || !entity.isValid || targetEntity.isDead || entity.isDead || targetEntity.world.uid != player.world.uid || entity.world.uid != player.world.uid) { cancel(); return }
                                 if (timer1++ >= 20) {
                                     cancel() // 1초 후에 반복문 종료
                                     return
@@ -371,7 +391,10 @@ object EntityThrower : Ability(
     @EventHandler
     fun onMove(event: PlayerMoveEvent) {
         val player = event.player
-        if (heldEntity.containsKey(player)) return
+        if (heldEntity.containsKey(player.uniqueId)) return
         clearRestrictHand(player)
     }
+    override fun release(owner: java.util.UUID) { heldEffects.remove(owner)?.close(); heldEntity.remove(owner); org.bukkit.Bukkit.getPlayer(owner)?.let(::clearRestrictHand) }
+    override fun stop() { heldEffects.values.toList().forEach { it.close() }; heldEffects.clear(); heldEntity.clear() }
+
 }

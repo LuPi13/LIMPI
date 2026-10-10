@@ -92,8 +92,8 @@ object ChainLightning : Ability(
 
         if (newTarget == null) return
 
-        object: BukkitRunnable() {
-            override fun run() {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+            override fun tick() {
                 //전기 효과
                 val from = target.boundingBox.center.toLocation(target.world)
                 val to = newTarget.boundingBox.center.toLocation(newTarget.world)

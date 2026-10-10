@@ -68,29 +68,31 @@ object CometStrike : Ability(
 
 
 
-    val lastSneakTime: MutableMap<Player, Long> = mutableMapOf()
-    val lastStrikeTime: MutableMap<Player, Long> = mutableMapOf()
+    val lastSneakTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
+    val lastStrikeTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     fun onSneak(event: PlayerToggleSneakEvent) {
         val player = event.player
         val cooldown = config!!.getInt("cooldown_milliseconds")
         if (player.ability != this && player.ability != Titan) return
         if (!(player as Entity).isOnGround || !event.isSneaking) return
 
-        if ((lastSneakTime[player] != null) && (System.currentTimeMillis() - lastSneakTime[player]!! <= 300)) { // 300ms 이내에 두 번 웅크리면
-            if ((lastStrikeTime[player] == null) || (System.currentTimeMillis() - lastStrikeTime[player]!! > cooldown)) { // 쿨타임이 지나면
-                player.getAttribute(Attribute.MOVEMENT_SPEED)!!.baseValue = 0.0
-                player.getAttribute(Attribute.GRAVITY)!!.baseValue = 0.0
-                player.getAttribute(Attribute.SAFE_FALL_DISTANCE)!!.baseValue = Double.MAX_VALUE
+        if ((lastSneakTime[player.uniqueId] != null) && (System.currentTimeMillis() - lastSneakTime[player.uniqueId]!! <= 300)) { // 300ms 이내에 두 번 웅크리면
+            if ((lastStrikeTime[player.uniqueId] == null) || (System.currentTimeMillis() - lastStrikeTime[player.uniqueId]!! > cooldown)) { // 쿨타임이 지나면
+                val effect = com.github.lupi13.limpi.platform.AbilityRuntime.begin(player, codeName)
+                effect.attribute(Attribute.MOVEMENT_SPEED, -1.0, org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1)
+                effect.attribute(Attribute.GRAVITY, -1.0, org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1)
+                effect.attribute(Attribute.SAFE_FALL_DISTANCE, 1.0e9, org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER)
+                val wasGliding = player.isGliding
+                effect.own { player.isGliding = wasGliding; player.fallDistance = 0f }
 
 
-                object: BukkitRunnable() {
                     var ticks = 0
                     var strikingDirection: Vector? = null
                     val range = config!!.getDouble("range")
                     val damage = config!!.getDouble("damage")
-                    override fun run() {
+                effect.repeat { session ->
 
                         var tempStrikingDirection = player.location.direction
                         val angle = player.pitch.toDouble()
@@ -249,22 +251,21 @@ object CometStrike : Ability(
                         }
 
                         if (ticks >= config!!.getInt("max_strike_ticks")) {
-                            player.getAttribute(Attribute.MOVEMENT_SPEED)!!.baseValue = 0.1
-                            player.getAttribute(Attribute.GRAVITY)!!.baseValue = 0.08
-                            player.getAttribute(Attribute.SAFE_FALL_DISTANCE)!!.baseValue = 3.0
-                            cancel()
+                            session.close()
                         }
                         ticks++
-                    }
-                }.runTaskTimer(plugin, 0L, 1L)
+                }
 
 
-                lastStrikeTime[player] = System.currentTimeMillis()
+                lastStrikeTime[player.uniqueId] = System.currentTimeMillis()
             }
             else {
-                AbilityManager.showCooldown(player, cooldown, lastStrikeTime[player]!!)
+                AbilityManager.showCooldown(player, cooldown, lastStrikeTime[player.uniqueId]!!)
             }
         }
-        lastSneakTime[player] = System.currentTimeMillis()
+        lastSneakTime[player.uniqueId] = System.currentTimeMillis()
     }
+    override fun release(owner: java.util.UUID) { lastSneakTime.remove(owner); lastStrikeTime.remove(owner) }
+    override fun stop() { lastSneakTime.clear(); lastStrikeTime.clear() }
+
 }

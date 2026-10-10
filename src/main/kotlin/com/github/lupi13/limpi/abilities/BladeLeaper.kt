@@ -1,6 +1,11 @@
 package com.github.lupi13.limpi.abilities
 
-import com.github.lupi13.limpi.Functions
+import com.github.lupi13.limpi.FileManager
+import com.github.lupi13.limpi.ability.AbilityItemTerms
+import com.github.lupi13.limpi.ability.AbilityItemUse
+import com.github.lupi13.limpi.platform.PaperItemCodec
+import org.bukkit.event.Event
+import java.util.UUID
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.*
@@ -12,7 +17,6 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.AxisAngle4f
@@ -84,15 +88,28 @@ object BladeLeaper : Ability(
         val player = event.player
         if (player.ability != this) return
 
-        if (event.action.isLeftClick) return
+        if (!event.action.isRightClick || event.useItemInHand() == Event.Result.DENY) return
+        if (FileManager.delivery.blocked(player.uniqueId)) return
 
         if (event.hand != EquipmentSlot.HAND) return
 
         if (event.item == null || event.item!!.type !in swords) return
 
-        val item = event.item!!
+        val item = player.inventory.itemInMainHand.clone().asOne()
+        if (item.type !in swords) return
+        val originalPayload = PaperItemCodec.payload(item)
 
         val cooldown = config!!.getInt("coolTimeTicks")
+        val velocity = config!!.getDouble("throwVelocity")
+        val gravity = config!!.getDouble("throwGravity")
+        val lifeTime = config!!.getInt("throwLifeTimeTicks")
+        val radius = config!!.getDouble("damageRadius")
+        val damage = config!!.getDouble("damage")
+        require(cooldown >= 0 && lifeTime in 1..Int.MAX_VALUE - 26)
+        require(velocity.isFinite() && velocity > 0 && gravity.isFinite() && gravity >= 0)
+        require(radius.isFinite() && radius > 0 && radius <= Float.MAX_VALUE / 1.5)
+        require(damage.isFinite() && damage >= 0)
+        val creative = player.gameMode == GameMode.CREATIVE
         if (player.getCooldown(item.type) > 0) {
             AbilityManager.showCooldown(player, item.type)
             return
@@ -100,13 +117,22 @@ object BladeLeaper : Ability(
 
 
         val meta = item.itemMeta as org.bukkit.inventory.meta.Damageable
-        if (player.gameMode != GameMode.CREATIVE) {
+        if (!creative) {
             val unbreaking = meta.enchants[Enchantment.UNBREAKING] ?: 0
-            if (Random.nextDouble() <= 1.0 / (unbreaking + 1)) {
-                meta.damage = meta.damage + 1
+            if (!meta.isUnbreakable && Random.nextDouble() <= 1.0 / (unbreaking.toDouble() + 1.0)) {
+                meta.damage = Math.addExact(meta.damage, 1)
             }
             item.itemMeta = meta
-            player.inventory.setItem(EquipmentSlot.HAND, null)
+            if (!FileManager.delivery.claim(player)) return
+            val before = PaperItemCodec.snapshot(player, true)
+            val slot = player.inventory.heldItemSlot
+            val source = requireNotNull(before[slot])
+            if (player.ability != this || source.payload != originalPayload) return
+            val after = before.toMutableList().apply { this[slot] = if (source.count == 1) null else source.copy(count = source.count - 1) }
+            val maximumDamage = if (meta.hasMaxDamage()) meta.maxDamage else item.type.maxDurability.toInt()
+            val returned = if (meta.isUnbreakable || meta.damage < maximumDamage) PaperItemCodec.grant(item) else null
+            val terms = AbilityItemTerms(codeName, slot, source.payload, returned)
+            if (!FileManager.delivery.remove(player, UUID.randomUUID(), AbilityItemUse.KIND, terms.encode(), before, after)) return
         }
 
         val color = when (item.type) {
@@ -126,31 +152,34 @@ object BladeLeaper : Ability(
         val direction = player.eyeLocation.direction.clone().rotateAroundY(Math.toRadians(-90.0))
         val startPosition = player.eyeLocation.add(direction.multiply(0.5))
 
-        val thrownSword = player.world.spawn(startPosition, ItemDisplay::class.java)
-        thrownSword.setItemStack(item)
-        thrownSword.transformation = Transformation(
-            Vector3f(0f, -0.5f, 0f),
-            AxisAngle4f(0f, 0f, 0f, 0f),
-            Vector3f(0f, 0f, 0f),
-            AxisAngle4f(0f, 0f, 0f, 0f)
-        )
-        thrownSword.interpolationDelay = 0
-        thrownSword.interpolationDuration = 0
-
-        val world = thrownSword.world
-        val velocity = config!!.getDouble("throwVelocity")
-        val gravity = config!!.getDouble("throwGravity")
-        val lifeTime = config!!.getInt("throwLifeTimeTicks")
-        val radius = config!!.getDouble("damageRadius")
-
-        world.playSound(thrownSword.location, Sound.BLOCK_RESPAWN_ANCHOR_SET_SPAWN, 1f, 2f)
+        val world = player.world
 
         // 1초간 준비, 1초간 이동, 0.5초간 점멸 및 공격
-        object: BukkitRunnable() {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+            init {
+                own {
+                    if (!creative && plugin.isEnabled && player.isOnline && !player.isDead && !FileManager.delivery.blocked(player.uniqueId)) {
+                        plugin.server.scheduler.runTask(plugin, Runnable {
+                            if (player.isOnline && !player.isDead) FileManager.delivery.claim(player)
+                        })
+                    }
+                }
+            }
+            val thrownSword = spawn(startPosition, ItemDisplay::class.java) { display ->
+                display.setItemStack(item)
+                display.transformation = Transformation(Vector3f(0f, -0.5f, 0f), AxisAngle4f(), Vector3f(), AxisAngle4f())
+                display.interpolationDelay = 0
+                display.interpolationDuration = 0
+            }
+            init { setup {
+                own { vector.remove(thrownSword) }
+                world.playSound(thrownSword.location, Sound.BLOCK_RESPAWN_ANCHOR_SET_SPAWN, 1f, 2f)
+            } }
             var ticks = 0
             var tpLocation: Location? = null
 
-            override fun run() {
+            override fun tick() {
+                if (!thrownSword.isValid) { cancel(); return }
                 ticks++
 
                 // 10틱: 선딜; 플레이어 옆에 위치하게
@@ -306,7 +335,7 @@ object BladeLeaper : Ability(
                         if (entity == player || entity == thrownSword) continue
                         if (!AbilityManager.isEnemy(player, entity)) continue
 
-                        entity.damage(config!!.getDouble("damage"))
+                        entity.damage(damage, player)
 
                         //넉백
                         val knockback = entity.location.clone().subtract(tpLocation!!).toVector().normalize().multiply(0.5)
@@ -315,30 +344,9 @@ object BladeLeaper : Ability(
                     }
                 }
 
-                // 검 제거
-                if (ticks > 25+lifeTime) {
-                    if (player.gameMode != GameMode.CREATIVE) {
-                        val meta = thrownSword.itemStack.itemMeta as org.bukkit.inventory.meta.Damageable
-                        if (meta.damage < item.type.maxDurability) {
-                            if (Functions.validInventoryIndex(player, item) != null) {
-                                player.inventory.addItem(item)
-                            }
-                            else {
-                                player.world.dropItem(tpLocation!!, item)
-                            }
-                        }
-                        else {
-                            player.playSound(player.location, Sound.ENTITY_ITEM_BREAK, 1f, 1f)
-                        }
-                    }
-
-
-                    if (player.gameMode != GameMode.CREATIVE)
-                    vector.remove(thrownSword)
-                    thrownSword.remove()
-                    cancel()
-                }
+                if (ticks > 25 + lifeTime) cancel()
             }
         }.runTaskTimer(plugin, 0L, 1L)
     }
+    override fun stop() { vector.clear() }
 }

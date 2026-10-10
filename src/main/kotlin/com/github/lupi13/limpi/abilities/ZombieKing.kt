@@ -85,13 +85,22 @@ object ZombieKing : Ability(
     }
 
     // 낮에 불타는 메서드
-    init {
-        object: BukkitRunnable() {
-            override fun run() {
+    private val armorEffects = mutableMapOf<java.util.UUID, com.github.lupi13.limpi.platform.AbilityEffect>()
+    override fun start() {
+        com.github.lupi13.limpi.platform.AbilityRuntime.global(20) {
                 for (player in plugin.server.onlinePlayers) {
-                    if (player.ability != this@ZombieKing) continue
-                    player.getAttribute(Attribute.ARMOR)!!.baseValue = config!!.getDouble("armor_point")
-                    if (!player.world.isDayTime) break
+                    if (player.ability != this@ZombieKing || player.isDead || com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) {
+                        armorEffects.remove(player.uniqueId)?.close()
+                        continue
+                    }
+                    if (armorEffects[player.uniqueId]?.scope?.closed != false) {
+                        val amount = (requireNotNull(config).get("armor_point") as? Number)?.toDouble() ?: error("Invalid armor_point")
+                        require(amount.isFinite() && amount >= 0)
+                        val effect = com.github.lupi13.limpi.platform.AbilityRuntime.begin(player, codeName)
+                        armorEffects[player.uniqueId] = effect
+                        effect.attribute(Attribute.ARMOR, amount, org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER)
+                    }
+                    if (!player.world.isDayTime) continue
 
                     val helmet = player.inventory.helmet
                     if (helmet.isEmpty || (helmet.itemMeta !is org.bukkit.inventory.meta.Damageable)) {
@@ -116,9 +125,11 @@ object ZombieKing : Ability(
                         }
                     }
                 }
-            }
-        }.runTaskTimer(plugin, 0L, 20L)
+        }
     }
+    override fun release(owner: java.util.UUID) { armorEffects.remove(owner)?.close() }
+    override fun stop() { armorEffects.values.toList().forEach { it.close() }; armorEffects.clear() }
+
 
 
     // 언데드 적대 제거는 FriendlyUndead에 구현되어 있음

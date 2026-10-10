@@ -183,6 +183,15 @@
 - **213개** 테스트 통과(실패/에러/스킵 0), test build 성공. 새 29개 저장/정책 시험이며 Paper 실제 실행은 하지 않았다. 자세한 계약/검증 경계는 [선택권·보상](ABILITY_SELECTION_AND_REWARDS.md).
 - 중간 기록에서 목표를 끝내지 않는다. 다음은 능력 세션/속성/단발·이동·42개 능력/전투·대상 메뉴, 주식 원장/운영 도구/CI/명령 정비다.
 
+### 2026-10-10 / 능력 runtime·자원·검 반환
+
+- UUID 상태와 start/stop/release 수명, EffectRegistry/AbilityRuntime/AbilityRunnable을 실제 능력 작업에 연결했다. 생성자 반복 작업 제거, 이탈/사망/월드/전환/종료와 예외 정리를 구현했다.
+- 웹슈터 laser, 검/통달 display, Muspell Marker, EntityThrower 붙잡기 상태를 소유 범위에 연결했다. 대상 world 검사와 0길이 이동, 폭풍 상태 정리·maxHeight, 엔더맨 텔레포트 성공 후 중단을 수정했다. LetsBoom 사망 후 실행은 명시적 별도 허용으로 보존한다.
+- baseValue 초기화/변경을 제거하고 임시 modifier에 연결했다. 레일건 중복 충전/발사 구현을 통합하고 0지연/소수 가속 및 잘못된 설정을 처리한다. ZombieKing 야간 break도 제거했다.
+- BladeLeaper 원본 1개 회수/내구도 적용 반환을 공통 원장/미수령으로 연결했다. 종료 시에만 돌려주던 자산 손실을 방지하고 creative/부서진 검/공간 부족/재시작 경계를 구분한다.
+- **228개** 테스트 통과(실패/에러/스킵 0), test build 성공. 실제 Paper 실행은 하지 않았다. 계약과 남은 범위는 [능력 runtime](ABILITY_RUNTIME.md).
+- 다음은 능력 전환 물리 checkpoint/profile 정산과 전투 규칙을 연결한다. 전체 목표는 계속 진행 중이다.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |
@@ -205,10 +214,10 @@
 | AB-07 | 부분 해결 | typed 획득 분류·후보/픽업 snapshot/소비 전 validation 구현. 뽑기 확정 원장/회수 연결 완료. 선택권 사용/PDC·legacy/guard 연결 완료. 서버 검증은 남음 |
 | GUI-04 | 구현 완료(페이지 단위 검증) | 주식·선택/도감의 실제 Holder/page/sort에 공유 Pagination 연결. 서버 화면 검증은 이후 |
 | QUEST-01 | 부분 해결 | 4개 완료/해금 원자 정산·legacy repair·조화 confirmed progress/threshold 연결. 특수 처치/전투 귀속·서버 검증은 남음 |
-| AB-08 | 부분 해결 | 레벨 감소/경험치 감소 보너스 제거·상한/재진입 보호 완료. ZombieKing 야간 처리는 다음 |
+| AB-08 | 부분 해결 | 레벨 감소/경험치 감소 보너스 제거·상한/재진입 보호, ZombieKing 야간 반복 수정 완료. 실제 서버 검증은 이후 |
 | AB-02 | 부분 해결 | same-code no-op·전체 슬롯 relocation/공간 부족 preflight·일반 물품 보존 구현. 전환의 전체 내구성/세션·서버 시험은 남음 |
-| AB-01 | 부분 해결 | 능력 관리자 단일화·ID map 완료. 능력 객체 init 작업 제거와 의존성 주입/수명 관리는 남음 |
-| AB-04 | 부분 해결 | 프로필 캐시 이탈/종료 정리 완료. 능력/GUI Player map, 작업·엔티티·속성 정리는 남음 |
+| AB-01 | 부분 해결 | 능력 관리자 단일화·ID map·객체 init 반복 작업 제거·start/stop/release 및 공통 runtime 구현. 설정/등록 결합 정비는 계속 |
+| AB-04 | 부분 해결 | UUID 능력 상태·작업/일시 엔티티/laser/속성 소유 범위와 이탈/사망/전환/종료 정리 구현. potion 중첩 정책·대상 메뉴와 실제 서버 검증은 남음 |
 | OPS-01 | 부분 해결 | System.out 교체 제거, 테스트 기반/schema/백업/저장소 복구 문서 구현. CI/복구 도구·시험 및 기타 결합 제거는 남음 |
 | 그 외 모든 항목 | 미해결 | [정비 계획](MAINTENANCE_PLAN.md)의 범위를 그대로 유지 |
 

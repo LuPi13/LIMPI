@@ -88,9 +88,9 @@ object KillingDice : Ability(
                     + target.boundingBox.height.pow(2)
                     ).pow(0.5)
 
-            object: BukkitRunnable() {
-                override fun run() {
-                    if (target.isDead) return
+            object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+                override fun tick() {
+                    if (target.isDead || !target.isValid || target.world.uid != player.world.uid) return
 
                     val center = target.boundingBox.center.toLocation(target.world)
 

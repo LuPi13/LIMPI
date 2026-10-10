@@ -63,7 +63,7 @@ object AbilityManager : Listener {
             }
         }
     }
-    private fun active(item: ItemStack?): Boolean = item != null && activeItems.any { it.isSimilar(item) }
+    private fun active(item: ItemStack?): Boolean = item != null && (activeItems.any { it.isSimilar(item) } || item.isSimilar(EntityThrower.getRestrictHand()))
 
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onClickInventory(event: InventoryClickEvent) {
@@ -104,6 +104,7 @@ object AbilityManager : Listener {
 
     fun restoreActiveItem(player: Player) {
         if (FileManager.delivery.blocked(player.uniqueId)) return
+        if (player.uniqueId !in EntityThrower.heldEntity) EntityThrower.clearRestrictHand(player)
         val ability = player.ability ?: return
         if (ability.restrictedSlot == null || ability.activeItem == null) return
         val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
@@ -120,7 +121,14 @@ object AbilityManager : Listener {
      */
     fun registerAbilities() {
         abilities.forEach { it.registerEvents() }
+        abilities.forEach { it.start() }
     }
+
+    fun releaseState(owner: java.util.UUID) = abilities.forEach { it.release(owner) }
+    fun shutdown() = abilities.forEach { it.stop() }
+    @EventHandler fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) = releaseState(event.player.uniqueId)
+    @EventHandler fun onDeath(event: org.bukkit.event.entity.PlayerDeathEvent) = releaseState(event.entity.uniqueId)
+    @EventHandler fun onWorldChange(event: org.bukkit.event.player.PlayerChangedWorldEvent) = releaseState(event.player.uniqueId)
 
     /**
      * 능력 파일을 설정합니다.
@@ -198,7 +206,7 @@ object AbilityManager : Listener {
         player.inventory.setItemInOffHand(items.last())
     }
 
-    fun applyAbility(player: Player, ability: Ability?) {
+    fun applyAbility(player: Player, ability: Ability?, preserveEffect: java.util.UUID? = null) {
         if (FileManager.delivery.blocked(player.uniqueId)) error("Ability application is blocked during item recovery")
         if (getPlayerAbilityCodeName(player).orEmpty() == ability?.codeName.orEmpty()) return
         val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
@@ -211,6 +219,8 @@ object AbilityManager : Listener {
             replaceInventory(player, before)
             throw failure
         }
+        com.github.lupi13.limpi.platform.AbilityRuntime.closeOwner(player.uniqueId, preserveEffect)
+        releaseState(player.uniqueId)
         Functions.resetPlayerAttributes(player)
         player.sendMessage(if (ability == null) Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE)
             else Component.text("능력 ", NamedTextColor.WHITE).append(ability.displayName)

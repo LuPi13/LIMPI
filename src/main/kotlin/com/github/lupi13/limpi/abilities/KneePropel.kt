@@ -40,7 +40,7 @@ object KneePropel : Ability(
     }
 
 
-    val timer = mutableMapOf<Player, Int>()
+    val timer = mutableMapOf<java.util.UUID, Int>()
     @EventHandler
     fun onSneak(event: PlayerToggleSneakEvent) {
         val player = event.player
@@ -48,16 +48,16 @@ object KneePropel : Ability(
 
         // 지면에서 웅크리기
         if (event.isSneaking && (player as LivingEntity).isOnGround) {
-            timer[player] = 1
+            timer[player.uniqueId] = 1
 
-            object: BukkitRunnable() {
+            object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
                 val baseLevel = config!!.getInt("baseLevel")
                 val increment = config!!.getInt("increment")
                 val increaseTick = config!!.getInt("increaseTick")
                 val maxStrength = config!!.getInt("maxStrength")
                 val maxTick = maxStrength * increaseTick / increment
-                override fun run() {
-                    val strength = min(baseLevel + increment * (timer[player]!! / increaseTick), maxStrength)
+                override fun tick() {
+                    val strength = min(baseLevel + increment * (timer[player.uniqueId]!! / increaseTick), maxStrength)
 
                     if (strength > 0) {
                         player.addPotionEffect(PotionEffect(PotionEffectType.JUMP_BOOST, 2, strength - 1, true, false, false))
@@ -77,11 +77,11 @@ object KneePropel : Ability(
                         else -> NamedTextColor.DARK_RED
                     }
 //                    [||||||····] 60칸 분할
-                    var message = Component.text("Jump Boost ${min(timer[player]!! / increaseTick, maxStrength / increment)} [", color)
-                    val gaugeTimer = if (timer[player]!! >= maxTick) {
+                    var message = Component.text("Jump Boost ${min(timer[player.uniqueId]!! / increaseTick, maxStrength / increment)} [", color)
+                    val gaugeTimer = if (timer[player.uniqueId]!! >= maxTick) {
                         60
                     } else {
-                        timer[player]!! % increaseTick
+                        timer[player.uniqueId]!! % increaseTick
                     }
 
                     for (i in 0 until 60) {
@@ -94,11 +94,11 @@ object KneePropel : Ability(
                     message = message.append(Component.text("]", color))
                     player.sendActionBar(message)
 
-                    if (timer[player] != -1) {
-                        player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, min(timer[player]!! / (maxTick * 2.0) + 0.3, 0.8).toFloat(), min(timer[player]!! / (maxTick / 1.5) + 0.5, 2.0).toFloat())
+                    if (timer[player.uniqueId] != -1) {
+                        player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, min(timer[player.uniqueId]!! / (maxTick * 2.0) + 0.3, 0.8).toFloat(), min(timer[player.uniqueId]!! / (maxTick / 1.5) + 0.5, 2.0).toFloat())
                     }
 
-                    if (timer[player] == -1) {
+                    if (timer[player.uniqueId] == -1) {
                         player.getPotionEffect(PotionEffectType.JUMP_BOOST)?.let {
                             if (!(player as LivingEntity).isOnGround && (it.amplifier >= 0)) {
                                 player.playSound(player.location, Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 0.8F, 2F)
@@ -110,19 +110,19 @@ object KneePropel : Ability(
                                 player.sendActionBar(Component.text("CANCELLED", NamedTextColor.GRAY, TextDecoration.BOLD))
                             }
                         }
-                        timer[player] = -1
+                        timer[player.uniqueId] = -1
                         cancel()
                     }
                     if (player.isDead) {
-                        timer[player] = -1
+                        timer[player.uniqueId] = -1
                         cancel()
                     }
-                    timer[player] = timer[player]!! + 1
+                    timer[player.uniqueId] = timer[player.uniqueId]!! + 1
                 }
             }.runTaskTimer(plugin, 0L, 1L)
         }
         else {
-            timer[player] = -1
+            timer[player.uniqueId] = -1
         }
     }
 
@@ -133,7 +133,10 @@ object KneePropel : Ability(
         if (player.ability != this) return
 
         if (!(player as LivingEntity).isOnGround) {
-            timer[player] = -1
+            timer[player.uniqueId] = -1
         }
     }
+    override fun release(owner: java.util.UUID) { timer.remove(owner) }
+    override fun stop() { timer.clear() }
+
 }

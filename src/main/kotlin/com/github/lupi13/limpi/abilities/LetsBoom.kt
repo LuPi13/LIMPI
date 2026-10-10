@@ -29,9 +29,9 @@ object LetsBoom : Ability(
 
         // 3초 후에 6번의 큰 폭발을 일으킴
         val location = player.location.clone().add(0.0, 0.5, 0.0)
-        object: BukkitRunnable() {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName, allowDead = true) {
             var timer = 0
-            override fun run() {
+            override fun tick() {
                 if ((timer >= 0) && (timer < 40)) {
                     // 1초 후에 폭발 시작
                     if (timer <= 20) {

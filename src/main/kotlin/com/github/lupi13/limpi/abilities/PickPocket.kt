@@ -25,7 +25,7 @@ object PickPocket : Ability(
 ){
 
 
-    val playerFishHookMap = mutableMapOf<Player, FishHook>()
+    val playerFishHookMap = mutableMapOf<java.util.UUID, FishHook>()
 
     @EventHandler
     fun onThrowFishHook(event: ProjectileLaunchEvent) {
@@ -37,7 +37,7 @@ object PickPocket : Ability(
         if (player.ability != this) return
 
         // 플레이어가 낚싯대를 던졌을 때, 플레이어와 낚싯대의 매핑을 저장
-        playerFishHookMap[player] = entity
+        playerFishHookMap[player.uniqueId] = entity
     }
 
 
@@ -50,8 +50,8 @@ object PickPocket : Ability(
         if (event.item == null || event.item!!.type != Material.FISHING_ROD) return
 
         // 낚싯대 회수
-        if (playerFishHookMap.containsKey(player)) {
-            val fishHook = playerFishHookMap[player]!!
+        if (playerFishHookMap.containsKey(player.uniqueId)) {
+            val fishHook = playerFishHookMap[player.uniqueId]!!
             if (fishHook.state == FishHook.HookState.HOOKED_ENTITY) {
                 val entity = fishHook.hookedEntity
 
@@ -76,7 +76,7 @@ object PickPocket : Ability(
                 // inventory 속성이 있는 엔티티
                 else if (entity is Player || entity is Villager || entity is AbstractHorse) {
                     if (entity is Player && entity.gameMode == GameMode.CREATIVE) {
-                        playerFishHookMap.remove(player)
+                        playerFishHookMap.remove(player.uniqueId)
                         return
                     }
                     val inventory = when (entity) {
@@ -128,7 +128,10 @@ object PickPocket : Ability(
                     }
                 }
             }
-            playerFishHookMap.remove(player)
+            playerFishHookMap.remove(player.uniqueId)
         }
     }
+    override fun release(owner: java.util.UUID) { playerFishHookMap.remove(owner) }
+    override fun stop() { playerFishHookMap.clear() }
+
 }

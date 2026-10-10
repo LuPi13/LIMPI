@@ -58,7 +58,7 @@ object HarmonySword : Ability(
         Material.DIAMOND_SWORD,
         Material.NETHERITE_SWORD
     )
-    var amplified: MutableMap<Player, Double> = mutableMapOf()
+    var amplified: MutableMap<java.util.UUID, Double> = mutableMapOf()
 
 
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
@@ -75,16 +75,16 @@ object HarmonySword : Ability(
             if (!sword.contains(player.inventory.itemInMainHand.type)) return
 
 
-            val showToast: Boolean = ((amplified[player] ?: 0.0) < config!!.getDouble("required_damage"))
-            amplified[player] = (amplified[player] ?: 0.0) + event.finalDamage
+            val showToast: Boolean = ((amplified[player.uniqueId] ?: 0.0) < config!!.getDouble("required_damage"))
+            amplified[player.uniqueId] = (amplified[player.uniqueId] ?: 0.0) + event.finalDamage
             if (!showToast) return
-            if (amplified[player]!! < config!!.getDouble("required_damage")) {
+            if (amplified[player.uniqueId]!! < config!!.getDouble("required_damage")) {
                 var actionBar = Component.text("HARMONY ", NamedTextColor.RED, TextDecoration.BOLD)
 
-                for (i in 0 until (amplified[player]!! / config!!.getDouble("required_damage") * 40.0).toInt()) {
+                for (i in 0 until (amplified[player.uniqueId]!! / config!!.getDouble("required_damage") * 40.0).toInt()) {
                     actionBar = actionBar.append(Component.text("|", NamedTextColor.RED).decoration(TextDecoration.BOLD, false))
                 }
-                for (i in 0 until (40 - amplified[player]!! / config!!.getDouble("required_damage") * 40.0).toInt()) {
+                for (i in 0 until (40 - amplified[player.uniqueId]!! / config!!.getDouble("required_damage") * 40.0).toInt()) {
                     actionBar = actionBar.append(Component.text("·", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
                 }
 
@@ -108,7 +108,7 @@ object HarmonySword : Ability(
             if (arrow.shooter !is Player) return
 
             val player = arrow.shooter as Player
-            if (player.ability != this || !amplified.contains(player) || amplified[player]!! < config!!.getDouble("required_damage")) return
+            if (player.ability != this || !amplified.contains(player.uniqueId) || amplified[player.uniqueId]!! < config!!.getDouble("required_damage")) return
 
             // 화살 피해량 증가
             val amplifier = config!!.getDouble("damage_amplifier")
@@ -123,7 +123,7 @@ object HarmonySword : Ability(
                 arrow.location,
                 30, 0.1, 0.1, 0.1, 0.2
             )
-            amplified[player] = 0.0 // 강화된 화살 사용 후 제거
+            amplified[player.uniqueId] = 0.0 // 강화된 화살 사용 후 제거
 
             confirmedHits[event] = player.uniqueId
         }
@@ -136,7 +136,7 @@ object HarmonySword : Ability(
         if (arrow.shooter !is Player) return
 
         val player = arrow.shooter as Player
-        if (player.ability != this || !amplified.contains(player) || amplified[player]!! < config!!.getDouble("required_damage")) return
+        if (player.ability != this || !amplified.contains(player.uniqueId) || amplified[player.uniqueId]!! < config!!.getDouble("required_damage")) return
 
         if ((event.hitBlock != null) && (event.hitEntity == null)) {
             player.world.playSound(
@@ -149,7 +149,7 @@ object HarmonySword : Ability(
                 arrow.location,
                 30, 0.1, 0.1, 0.1, 0.2
             )
-            amplified[player] = 0.0 // 강화된 화살 사용 후 제거
+            amplified[player.uniqueId] = 0.0 // 강화된 화살 사용 후 제거
         }
     }
     private val confirmedHits = java.util.WeakHashMap<org.bukkit.event.entity.EntityDamageByEntityEvent, java.util.UUID>()
@@ -160,5 +160,8 @@ object HarmonySword : Ability(
         val player = plugin.server.getPlayer(owner) ?: return
         QuestManager.harmonyHit(player, "harmony_sword")
     }
+
+    override fun release(owner: java.util.UUID) { amplified.remove(owner) }
+    override fun stop() { amplified.clear() }
 
 }

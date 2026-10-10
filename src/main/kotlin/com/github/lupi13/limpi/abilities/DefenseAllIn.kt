@@ -43,20 +43,20 @@ object DefenseAllIn : Ability(
     }
 
 
-    val lastDamageTime = mutableMapOf<Player, Long>()
+    val lastDamageTime = mutableMapOf<java.util.UUID, Long>()
     @EventHandler
     fun onDamage(event: EntityDamageEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
         if (player.ability != this) return
         player.noDamageTicks = config!!.getInt("noDamageMilliseconds") / 50 // Convert milliseconds to ticks (20 ticks = 1 second)
-        if (lastDamageTime.containsKey(player) && (System.currentTimeMillis() - lastDamageTime[player]!! <= config!!.getInt("noDamageMilliseconds"))) {
+        if (lastDamageTime.containsKey(player.uniqueId) && (System.currentTimeMillis() - lastDamageTime[player.uniqueId]!! <= config!!.getInt("noDamageMilliseconds"))) {
             event.isCancelled = true
             return
         }
 
         event.setDamage(1.0)
-        lastDamageTime[player] = System.currentTimeMillis()
+        lastDamageTime[player.uniqueId] = System.currentTimeMillis()
     }
 
 
@@ -79,4 +79,7 @@ object DefenseAllIn : Ability(
             event.setDamage(1.0)
         }
     }
+    override fun release(owner: java.util.UUID) { lastDamageTime.remove(owner) }
+    override fun stop() { lastDamageTime.clear() }
+
 }

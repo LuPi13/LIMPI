@@ -40,6 +40,9 @@ abstract class Ability(
     open var config: YamlConfiguration? = null,
 ) : Listener {
     protected open val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
+    open fun start() {}
+    open fun stop() {}
+    open fun release(owner: java.util.UUID) {}
 
     open fun setUpFile() {
         if (!needFile) return

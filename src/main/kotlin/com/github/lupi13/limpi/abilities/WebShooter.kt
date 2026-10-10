@@ -87,7 +87,7 @@ object WebShooter : Ability(
     }
 
 
-    var isMoving = mutableListOf<Player>()
+    var isMoving = mutableSetOf<java.util.UUID>()
     @EventHandler
     fun onSwapHand(event: PlayerSwapHandItemsEvent) {
         val player = event.player
@@ -95,8 +95,8 @@ object WebShooter : Ability(
 
         event.isCancelled = true
 
-        if (isMoving.contains(player)) {
-            isMoving.remove(player)
+        if (isMoving.contains(player.uniqueId)) {
+            isMoving.remove(player.uniqueId)
             return
         }
 
@@ -111,7 +111,7 @@ object WebShooter : Ability(
             return
         }
         else {
-            isMoving += player
+            isMoving += player.uniqueId
 
             // 벽에 맞았을 때
             if (rayTraceResult.hitBlock != null) {
@@ -121,18 +121,22 @@ object WebShooter : Ability(
 
                 //줄 이펙트
                 val laser = Laser.GuardianLaser(hitLocation, player, -1, -1)
-                laser.start(plugin)
 
-                object: BukkitRunnable() {
-                    override fun run() {
+                object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+                    init { setup {
+                        own { isMoving.remove(player.uniqueId) }
+                        own(laser::stop)
+                        laser.start(plugin)
+                    } }
+                    override fun tick() {
                         if (player.isDead || !player.isOnline) {
-                            isMoving.remove(player)
+                            isMoving.remove(player.uniqueId)
                             laser.stop()
                             cancel()
                             return
                         }
 
-                        if (!isMoving.contains(player)) {
+                        if (!isMoving.contains(player.uniqueId)) {
                             laser.stop()
                             cancel()
                             return
@@ -140,7 +144,9 @@ object WebShooter : Ability(
 
 
                         // 가속 이동
-                        val movingVector = hitLocation.clone().subtract(player.location).toVector().normalize()
+                        val delta = hitLocation.clone().subtract(player.location).toVector()
+                        if (delta.lengthSquared() < 1.0e-8) { cancel(); return }
+                        val movingVector = delta.normalize()
                         if (movingVector.y > 0) movingVector.setY(movingVector.y * 2.0)
                         movingVector.multiply(config!!.getDouble("velocityAmplifier"))
 
@@ -200,20 +206,25 @@ object WebShooter : Ability(
 
                 //줄 이펙트
                 val laser = Laser.GuardianLaser(hitEnemy.location, player, -1, -1)
-                laser.start(plugin)
 
-                object: BukkitRunnable() {
-                    override fun run() {
+                object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+                    init { setup {
+                        own { isMoving.remove(player.uniqueId) }
+                        own(laser::stop)
+                        laser.start(plugin)
+                    } }
+                    override fun tick() {
+                        if (!hitEnemy.isValid || hitEnemy.isDead || hitEnemy.world.uid != world.uid) { cancel(); return }
                         val hitLocation = hitEnemy.location
                         laser.moveStart(hitLocation.toLocation(world))
                         if (player.isDead || !player.isOnline || !hitEnemy.isValid || hitEnemy.isDead) {
-                            isMoving.remove(player)
+                            isMoving.remove(player.uniqueId)
                             laser.stop()
                             cancel()
                             return
                         }
 
-                        if (!isMoving.contains(player)) {
+                        if (!isMoving.contains(player.uniqueId)) {
                             laser.stop()
                             cancel()
                             return
@@ -221,7 +232,9 @@ object WebShooter : Ability(
 
 
                         // 가속 이동
-                        var movingVector = hitLocation.clone().subtract(player.location.toVector()).toVector().normalize()
+                        val delta = hitLocation.clone().subtract(player.location.toVector()).toVector()
+                        if (delta.lengthSquared() < 1.0e-8) { cancel(); return }
+                        var movingVector = delta.normalize()
                         var entityVector = movingVector.clone().multiply(-1.0)
                         val playerVelRatio = 2 * hitEnemy.boundingBox.volume / (hitEnemy.boundingBox.volume + player.boundingBox.volume)
                         val entityVelRatio = 2.0 - playerVelRatio
@@ -279,8 +292,8 @@ object WebShooter : Ability(
                                     val playerRatio = entity.boundingBox.volume / (entity.boundingBox.volume + player.boundingBox.volume)
                                     val entityRatio = 1.0 - playerRatio
 
-                                    player.velocity = player.velocity.clone().subtract(knockbackVector.multiply(playerRatio))
-                                    entity.velocity = entity.velocity.clone().add(knockbackVector.multiply(entityRatio))
+                                    player.velocity = player.velocity.clone().subtract(knockbackVector.clone().multiply(playerRatio))
+                                    entity.velocity = entity.velocity.clone().add(knockbackVector.clone().multiply(entityRatio))
 
 
                                     player.playSound(player.location, Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1f)
@@ -289,7 +302,7 @@ object WebShooter : Ability(
 
                             }
                             if (entity == hitEnemy) {
-                                isMoving.remove(player)
+                                isMoving.remove(player.uniqueId)
                                 laser.stop()
                                 cancel()
                                 return
@@ -300,4 +313,7 @@ object WebShooter : Ability(
             }
         }
     }
+    override fun release(owner: java.util.UUID) { isMoving.remove(owner) }
+    override fun stop() { isMoving.clear() }
+
 }

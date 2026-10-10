@@ -56,11 +56,11 @@ object ShieldStrike : Ability(
         saveConfig()
     }
 
-    val lastSneakTime: MutableMap<Player, Long> = mutableMapOf()
-    val lastStrikeTime: MutableMap<Player, Long> = mutableMapOf()
-    val vector : MutableMap<Player, Vector> = mutableMapOf()
+    val lastSneakTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
+    val lastStrikeTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
+    val vector : MutableMap<java.util.UUID, Vector> = mutableMapOf()
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     fun onSneak(event: PlayerToggleSneakEvent) {
         val player = event.player
         val cooldown = config!!.getInt("cooldown")
@@ -68,20 +68,19 @@ object ShieldStrike : Ability(
         if (!(player as Entity).isOnGround || !event.isSneaking) return
         if ((player.inventory.itemInMainHand.type != Material.SHIELD) && player.inventory.itemInOffHand.type != Material.SHIELD) return
 
-        if ((lastSneakTime[player] != null) && (System.currentTimeMillis() - lastSneakTime[player]!! <= 300)) { // 300ms 이내에 두 번 웅크리면
-            if ((lastStrikeTime[player] == null) || (System.currentTimeMillis() - lastStrikeTime[player]!! > config!!.getInt("cooldown"))) { // 쿨타임이 지나면
-                lastStrikeTime[player] = System.currentTimeMillis()
-                if (!config!!.getBoolean("allowJump")) {
-                    player.getAttribute(org.bukkit.attribute.Attribute.JUMP_STRENGTH)!!.baseValue = 0.0
-                }
+        if ((lastSneakTime[player.uniqueId] != null) && (System.currentTimeMillis() - lastSneakTime[player.uniqueId]!! <= 300)) { // 300ms 이내에 두 번 웅크리면
+            if ((lastStrikeTime[player.uniqueId] == null) || (System.currentTimeMillis() - lastStrikeTime[player.uniqueId]!! > config!!.getInt("cooldown"))) { // 쿨타임이 지나면
+                lastStrikeTime[player.uniqueId] = System.currentTimeMillis()
+                val effect = com.github.lupi13.limpi.platform.AbilityRuntime.begin(player, codeName)
+                if (!config!!.getBoolean("allowJump")) effect.attribute(org.bukkit.attribute.Attribute.JUMP_STRENGTH, -1.0,
+                    org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1)
 
-                object: BukkitRunnable() {
                     val velocity = config!!.getDouble("velocity")
                     val damage = config!!.getDouble("damage")
                     val knockbackAmplifier = config!!.getDouble("knockbackAmplifier")
                     val maxKnockback = config!!.getDouble("maxKnockback")
                     var timer = 1
-                    override fun run() {
+                effect.repeat { session ->
                         if (timer in 1..5) {
                             player.world.playSound(player.location, Sound.BLOCK_BUBBLE_COLUMN_WHIRLPOOL_INSIDE, 1f, 0.5f)
                         }
@@ -89,11 +88,11 @@ object ShieldStrike : Ability(
                             player.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 2, 7, true, false, false))
                         }
                         if (timer == 15) {
-                            vector[player] = player.location.direction.setY(0).normalize().multiply(velocity)
+                            vector[player.uniqueId] = player.location.direction.setY(0).normalize().multiply(velocity)
                         }
                         if (timer in 16..20) {
                             try {
-                                player.velocity = vector[player]!!
+                                player.velocity = vector[player.uniqueId]!!
                                 player.world.playSound(player.location, Sound.ITEM_TRIDENT_RIPTIDE_3, 0.6f, 2f)
                             }
                             catch (ignored: Exception) {
@@ -109,8 +108,8 @@ object ShieldStrike : Ability(
                                 if (!AbilityManager.isEnemy(player, entity)) continue
 
                                 entity.damage(damage, player)
-                                entity.velocity = vector[player]!!.multiply(min(knockbackAmplifier / entity.boundingBox.volume, maxKnockback)).setY(0.3)
-                                player.velocity = vector[player]!!.multiply(-0.1).setY(0.2)
+                                entity.velocity = vector[player.uniqueId]!!.clone().multiply(min(knockbackAmplifier / entity.boundingBox.volume, maxKnockback)).setY(0.3)
+                                player.velocity = vector[player.uniqueId]!!.clone().multiply(-0.1).setY(0.2)
                                 val centerPosition = player.boundingBox.center.getMidpoint(entity.boundingBox.center).toLocation(player.world)
                                 player.world.playSound(centerPosition, Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK, 1f, 1.5f)
                                 player.world.spawnParticle(Particle.CRIT, centerPosition, 30, 0.2, 0.2, 0.2, 1.0)
@@ -120,19 +119,18 @@ object ShieldStrike : Ability(
                             }
                         }
                         if (timer >= 25) {
-                            if (!config!!.getBoolean("allowJump")) {
-                                player.getAttribute(org.bukkit.attribute.Attribute.JUMP_STRENGTH)!!.baseValue = player.getAttribute(org.bukkit.attribute.Attribute.JUMP_STRENGTH)!!.defaultValue
-                            }
-                            cancel()
+                            session.close()
                         }
                         timer += 1
-                    }
-                }.runTaskTimer(plugin, 0L, 1L)
+                }
             }
             else {
-                AbilityManager.showCooldown(player, cooldown, lastStrikeTime[player]!!)
+                AbilityManager.showCooldown(player, cooldown, lastStrikeTime[player.uniqueId]!!)
             }
         }
-        lastSneakTime[player] = System.currentTimeMillis()
+        lastSneakTime[player.uniqueId] = System.currentTimeMillis()
     }
+    override fun release(owner: java.util.UUID) { lastSneakTime.remove(owner); lastStrikeTime.remove(owner); vector.remove(owner) }
+    override fun stop() { lastSneakTime.clear(); lastStrikeTime.clear(); vector.clear() }
+
 }

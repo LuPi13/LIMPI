@@ -44,17 +44,18 @@ object Dodge : Ability(
         saveConfig()
     }
 
-    val velocityMap: MutableMap<Player, Vector> = mutableMapOf()
+    val velocityMap: MutableMap<java.util.UUID, Vector> = mutableMapOf()
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
         val player = event.player
+        if (player.ability != this) return
         val from = event.from.toVector()
         val to: Vector = try {
             event.to.toVector()
         } catch (e: Exception) {
             from
         }
-        velocityMap[player] = to.subtract(from)
+        velocityMap[player.uniqueId] = to.subtract(from)
     }
 
     /**
@@ -63,15 +64,13 @@ object Dodge : Ability(
      * @param amplifier 회피 속도 (기본값: 3.0)
      */
     fun dodge(player: Player, amplifier: Double, allowJump: Boolean) {
-        val velocity = velocityMap[player]!!
-        val moveVector = try {
-            if (velocity.length() >= 2) {
-                velocity.multiply(amplifier)
-            } else {
-                velocity.normalize().multiply(amplifier)
-            }
-        } catch (e: Exception) {
-            player.location.direction.setY(0.0).normalize().multiply(amplifier)
+        require(amplifier.isFinite() && amplifier >= 0)
+        val velocity = velocityMap[player.uniqueId]?.clone() ?: Vector()
+        val moveVector = if (velocity.lengthSquared() > 0.000001) {
+            if (velocity.length() >= 2) velocity.multiply(amplifier) else velocity.normalize().multiply(amplifier)
+        } else {
+            val yaw = Math.toRadians(player.yaw.toDouble())
+            Vector(-kotlin.math.sin(yaw), 0.0, kotlin.math.cos(yaw)).multiply(amplifier)
         }
 
         try {
@@ -82,19 +81,15 @@ object Dodge : Ability(
 
 
         if (!allowJump) {
-            player.getAttribute(org.bukkit.attribute.Attribute.JUMP_STRENGTH)!!.baseValue = 0.0
-            // 5 ticks 후에 점프력 복원
-            object: BukkitRunnable() {
-                override fun run() {
-                    player.getAttribute(org.bukkit.attribute.Attribute.JUMP_STRENGTH)!!.baseValue = player.getAttribute(org.bukkit.attribute.Attribute.JUMP_STRENGTH)!!.defaultValue
-                }
-            }.runTaskLater(plugin, 5L)
+            val effect = com.github.lupi13.limpi.platform.AbilityRuntime.begin(player, codeName)
+            effect.attribute(org.bukkit.attribute.Attribute.JUMP_STRENGTH, -1.0, org.bukkit.attribute.AttributeModifier.Operation.MULTIPLY_SCALAR_1)
+            effect.repeat(delay = 5) { it.close() }
         }
     }
 
 
-    val lastSneakTime: MutableMap<Player, Long> = mutableMapOf()
-    val lastDodgeTime: MutableMap<Player, Long> = mutableMapOf()
+    val lastSneakTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
+    val lastDodgeTime: MutableMap<java.util.UUID, Long> = mutableMapOf()
 
     @EventHandler
     fun onSneak(event: PlayerToggleSneakEvent) {
@@ -103,15 +98,18 @@ object Dodge : Ability(
         if (player.ability != this) return
         if (!(player as Entity).isOnGround || !event.isSneaking) return
 
-        if ((lastSneakTime[player] != null) && (System.currentTimeMillis() - lastSneakTime[player]!! <= 300)) { // 300ms 이내에 두 번 웅크리면
-            if ((lastDodgeTime[player] == null) || (System.currentTimeMillis() - lastDodgeTime[player]!! > config!!.getInt("cooldown"))) { // 쿨타임이 지나면
+        if ((lastSneakTime[player.uniqueId] != null) && (System.currentTimeMillis() - lastSneakTime[player.uniqueId]!! <= 300)) { // 300ms 이내에 두 번 웅크리면
+            if ((lastDodgeTime[player.uniqueId] == null) || (System.currentTimeMillis() - lastDodgeTime[player.uniqueId]!! > config!!.getInt("cooldown"))) { // 쿨타임이 지나면
                 dodge(player, config!!.getDouble("velocity"), config!!.getBoolean("allowJump"))
-                lastDodgeTime[player] = System.currentTimeMillis()
+                lastDodgeTime[player.uniqueId] = System.currentTimeMillis()
             }
             else {
-                AbilityManager.showCooldown(player, cooldown, lastDodgeTime[player]!!)
+                AbilityManager.showCooldown(player, cooldown, lastDodgeTime[player.uniqueId]!!)
             }
         }
-        lastSneakTime[player] = System.currentTimeMillis()
+        lastSneakTime[player.uniqueId] = System.currentTimeMillis()
     }
+    override fun release(owner: java.util.UUID) { velocityMap.remove(owner); lastSneakTime.remove(owner); lastDodgeTime.remove(owner) }
+    override fun stop() { velocityMap.clear(); lastSneakTime.clear(); lastDodgeTime.clear() }
+
 }

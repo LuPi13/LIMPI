@@ -86,15 +86,6 @@ object Muspell : Ability(
             0.2, 0.2, 0.2, 0.1
         )
 
-        // 불덩이 소환
-        val fireball = world.spawn(player.eyeLocation, Marker::class.java)
-        with (fireball) {
-            isPersistent = true
-            setGravity(false)
-            isInvulnerable = true
-            location.direction = player.location.direction
-        }
-
         val damage = config!!.getDouble("damage")
         val damageRange = config!!.getDouble("damage_range")
         val lifetime = config!!.getInt("lifetime_ticks")
@@ -104,11 +95,17 @@ object Muspell : Ability(
         val trackSearchAngle = config!!.getDouble("track_search_angle")
         val trackingCoefficient = config!!.getDouble("tracking_coefficient")
 
-        object: BukkitRunnable() {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+            val fireball = spawn(player.eyeLocation, Marker::class.java) { marker ->
+                marker.setGravity(false)
+                marker.isInvulnerable = true
+            }
             var tick = 0
             var trackTarget: Damageable? = null
             var movingVector = player.location.direction.multiply(velocity)
-            override fun run() {
+            override fun tick() {
+                if (!fireball.isValid || fireball.world.uid != world.uid) { cancel(); return }
+                if (trackTarget?.let { !it.isValid || it.isDead || it.world.uid != world.uid } == true) trackTarget = null
                 // 추적 목표 탐색
                 // 5틱마다 탐색
                 /*
@@ -134,7 +131,7 @@ object Muspell : Ability(
 
                     for (entity in entities) {
                         val entityVector = entity.location.toVector().subtract(fireball.location.toVector())
-                        val angle = acos(movingVector.clone().normalize().dot(entityVector.clone().normalize()))
+                        val angle = acos(movingVector.clone().normalize().dot(entityVector.clone().normalize()).coerceIn(-1.0, 1.0))
                         if (angle > Math.toRadians(trackSearchAngle)) continue
 
                         // rayTrace를 통해 벽 등에 가려지지 않는지 확인

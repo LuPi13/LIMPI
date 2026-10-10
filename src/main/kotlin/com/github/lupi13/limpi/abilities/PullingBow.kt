@@ -56,8 +56,9 @@ object PullingBow : Ability(
         val hitEntity = event.hitEntity ?: return
 
         val amp = config!!.getDouble("knockBackAmplifier")
-        object: BukkitRunnable() {
-            override fun run() {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+            override fun tick() {
+                if (!hitEntity.isValid || hitEntity.isDead || hitEntity.world.uid != player.world.uid) return
                 hitEntity.velocity = Vector(
                     hitEntity.velocity.x * -amp,
                     hitEntity.velocity.y * amp,

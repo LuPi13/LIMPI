@@ -111,9 +111,9 @@ object BlunderBooster : Ability(
         player.velocity = moveVector
         player.world.playSound(player.location, Sound.ENTITY_BREEZE_SLIDE, 1f, 1.5f)
 
-        object: BukkitRunnable() {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
             var ticks = 0
-            override fun run() {
+            override fun tick() {
                 val location = player.location
 
                 if (location.block.type == Material.AIR) {
@@ -128,7 +128,7 @@ object BlunderBooster : Ability(
         }.runTaskTimer(plugin, 0L, 1L)
     }
 
-    val energyMap = mutableMapOf<Player, Int>()
+    val energyMap = mutableMapOf<java.util.UUID, Int>()
 
     /**
      * 블런더 에너지를 회복하는 함수
@@ -136,15 +136,15 @@ object BlunderBooster : Ability(
     fun energyRecovery(player: Player) {
         if (player.ability != this) return
 
-        val currentEnergy = energyMap.getOrDefault(player, 0)
+        val currentEnergy = energyMap.getOrDefault(player.uniqueId, 0)
         if (currentEnergy < config!!.getInt("energy_max")) {
             val newEnergy = currentEnergy + config!!.getInt("energy_per_tick")
-            energyMap[player] = newEnergy.coerceAtMost(config!!.getInt("energy_max"))
+            energyMap[player.uniqueId] = newEnergy.coerceAtMost(config!!.getInt("energy_max"))
         }
 
         // 블런더 에너지를 표시하는 액션바 메시지: 게이지 효과
         var message = Component.text("BLUNDER ENERGY: ", NamedTextColor.DARK_RED, TextDecoration.BOLD)
-        val energy = energyMap[player] ?: 0
+        val energy = energyMap[player.uniqueId] ?: 0
         val maxEnergy = config!!.getInt("energy_max")
         val gauge = energy * 30 / maxEnergy
         for (i in 0 until 30) {
@@ -159,23 +159,23 @@ object BlunderBooster : Ability(
     }
 
     // 블런더 에너지 회복 및 회피 기능, 불피해 면역을 주기적으로 실행하는 스케줄러
-    init {
-        object: BukkitRunnable() {
-            override fun run() {
+    override fun start() {
+        com.github.lupi13.limpi.platform.AbilityRuntime.global(1) {
                 for (player in plugin.server.onlinePlayers) {
-                    if (player.ability == this@BlunderBooster) {
-                        energyMap.putIfAbsent(player, 0)
+                    if (player.ability == this@BlunderBooster && !player.isDead && !com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) {
+                        energyMap.putIfAbsent(player.uniqueId, 0)
                     }
                     else {
-                        energyMap.remove(player)
+                        energyMap.remove(player.uniqueId)
                     }
                 }
-                for (player in energyMap.keys) {
+                for (owner in energyMap.keys.toList()) {
+                    val player = plugin.server.getPlayer(owner)
+                    if (player == null) { energyMap.remove(owner); continue }
                     energyRecovery(player)
                     player.fireTicks = 0
                 }
-            }
-        }.runTaskTimer(plugin, 0L, 1L)
+        }
     }
 
     // 손 스왑 시 회피 기능 실행
@@ -186,9 +186,9 @@ object BlunderBooster : Ability(
 
         event.isCancelled = true
 
-        if (energyMap.getOrDefault(player, 0) < config!!.getInt("dodge_energy")) return
+        if (energyMap.getOrDefault(player.uniqueId, 0) < config!!.getInt("dodge_energy")) return
 
-        energyMap[player] = energyMap[player]!! - config!!.getInt("dodge_energy")
+        energyMap[player.uniqueId] = energyMap[player.uniqueId]!! - config!!.getInt("dodge_energy")
         dodgeWithFire(player)
     }
 
@@ -207,10 +207,10 @@ object BlunderBooster : Ability(
         }
 
         // 블런더 에너지가 충분하지 않으면 아무것도 하지 않음
-        if (energyMap.getOrDefault(player, 0) < config!!.getInt("ignore_damage_energy")) return
+        if (energyMap.getOrDefault(player.uniqueId, 0) < config!!.getInt("ignore_damage_energy")) return
 
         // 블런더 에너지를 소모하고 피해를 무효화
-        energyMap[player] = energyMap[player]!! - config!!.getInt("ignore_damage_energy")
+        energyMap[player.uniqueId] = energyMap[player.uniqueId]!! - config!!.getInt("ignore_damage_energy")
         event.damage = 0.0 // 피해를 무효화
         event.isCancelled = true
 
@@ -232,6 +232,9 @@ object BlunderBooster : Ability(
 
         // 블런더 부스터 효과 제거
         AbilityManager.applyAbility(player, null)
-        energyMap.remove(player)
+        energyMap.remove(player.uniqueId)
     }
+    override fun release(owner: java.util.UUID) { energyMap.remove(owner) }
+    override fun stop() { energyMap.clear() }
+
 }

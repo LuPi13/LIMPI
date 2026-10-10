@@ -93,7 +93,7 @@ object GatheringStorm : Ability(
 
 
     // 폭풍 생성
-    val stormCooldown = mutableMapOf<Player, Long>()
+    val stormCooldown = mutableMapOf<java.util.UUID, Long>()
     val stormDuration = mutableMapOf<Location, Int>()
     @EventHandler
     fun onTridentHit(event: ProjectileHitEvent) {
@@ -111,8 +111,8 @@ object GatheringStorm : Ability(
         // 폭풍 생성 쿨타임 확인
         val currentTime = System.currentTimeMillis()
         val cooldown = config!!.getInt("storm_cooldown_milliseconds")
-        if (stormCooldown.containsKey(player) && currentTime - stormCooldown[player]!! < cooldown) {
-            AbilityManager.showCooldown(player, cooldown, stormCooldown[player]!!)
+        if (stormCooldown.containsKey(player.uniqueId) && currentTime - stormCooldown[player.uniqueId]!! < cooldown) {
+            AbilityManager.showCooldown(player, cooldown, stormCooldown[player.uniqueId]!!)
             return
         }
 
@@ -128,17 +128,19 @@ object GatheringStorm : Ability(
         val probability = config!!.getDouble("damage_probability")
         val duration = config!!.getInt("storm_duration_tick")
         val location = trident.location
-        stormCooldown[player] = currentTime
+        stormCooldown[player.uniqueId] = currentTime
         stormDuration[location] = 0
 
 
         world.playSound(location, Sound.ITEM_ELYTRA_FLYING, 1f, 0.5f)
 
 
-        object: BukkitRunnable() {
-            override fun run() {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+            init { own { stormDuration.remove(location) } }
+            override fun tick() {
                 if (!stormDuration.containsKey(location)) {
                     cancel()
+                    return
                 }
 
                 if (stormDuration[location]!! == 20) {
@@ -156,7 +158,7 @@ object GatheringStorm : Ability(
                     }
                 }
 
-                for (y in location.y.toInt()..320 step 8) {
+                for (y in location.y.toInt() until world.maxHeight step 8) {
                     world.spawnParticle(
                         Particle.END_ROD,
                         location.x,
@@ -298,10 +300,13 @@ object GatheringStorm : Ability(
 
         val currentTime = System.currentTimeMillis()
         val cooldown = config!!.getInt("storm_cooldown_milliseconds")
-        if (stormCooldown.containsKey(player) && currentTime - stormCooldown[player]!! < cooldown) {
+        if (stormCooldown.containsKey(player.uniqueId) && currentTime - stormCooldown[player.uniqueId]!! < cooldown) {
             return
         }
 
         event.isCancelled = true
     }
+    override fun release(owner: java.util.UUID) { stormCooldown.remove(owner) }
+    override fun stop() { stormCooldown.clear(); stormDuration.clear() }
+
 }

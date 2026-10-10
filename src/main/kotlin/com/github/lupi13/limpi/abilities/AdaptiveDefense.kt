@@ -39,8 +39,8 @@ object AdaptiveDefense : Ability(
     }
 
 
-    val damageHistory = mutableMapOf<Player, EntityDamageEvent.DamageCause>()
-    val damageStack = mutableMapOf<Player, Int>()
+    val damageHistory = mutableMapOf<java.util.UUID, EntityDamageEvent.DamageCause>()
+    val damageStack = mutableMapOf<java.util.UUID, Int>()
     @EventHandler
     fun onDamage(event: EntityDamageEvent) {
         if (event.entity !is Player) return
@@ -51,19 +51,22 @@ object AdaptiveDefense : Ability(
 
         if (player.noDamageTicks > 10) return
 
-        if (!damageHistory.containsKey(player) || damageHistory[player] != event.cause) {
-            damageHistory[player] = event.cause
-            damageStack[player] = 0
+        if (!damageHistory.containsKey(player.uniqueId) || damageHistory[player.uniqueId] != event.cause) {
+            damageHistory[player.uniqueId] = event.cause
+            damageStack[player.uniqueId] = 0
         }
         else {
-            damageStack[player] = (damageStack[player] ?: 0) + 1
+            damageStack[player.uniqueId] = (damageStack[player.uniqueId] ?: 0) + 1
             val reduction = config!!.getDouble("damage_reduction")
-            if (damageStack[player]!! > 0) {
-                val factor = reduction.pow(damageStack[player]!!)
+            if (damageStack[player.uniqueId]!! > 0) {
+                val factor = reduction.pow(damageStack[player.uniqueId]!!)
                 event.damage *= factor
                 player.sendActionBar(Component.text("피해 감쇠: ", NamedTextColor.YELLOW)
                     .append(Component.text(String.format("%.1f", factor * 100) + "%", NamedTextColor.GREEN)))
             }
         }
     }
+    override fun release(owner: java.util.UUID) { damageHistory.remove(owner); damageStack.remove(owner) }
+    override fun stop() { damageHistory.clear(); damageStack.clear() }
+
 }

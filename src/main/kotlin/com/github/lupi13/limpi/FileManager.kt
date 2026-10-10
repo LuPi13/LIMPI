@@ -9,6 +9,7 @@ import com.github.lupi13.limpi.economy.SaleSettlement
 import com.github.lupi13.limpi.economy.ItemExchange
 import com.github.lupi13.limpi.gacha.GachaSettlement
 import com.github.lupi13.limpi.ability.AbilitySelection
+import com.github.lupi13.limpi.ability.AbilityItemUse
 import com.github.lupi13.limpi.ability.InitialRewards
 import com.github.lupi13.limpi.ability.InitialTicketCounts
 import com.github.lupi13.limpi.quest.QuestRewards
@@ -96,7 +97,7 @@ class FileManager {
             itemExchange = ItemExchange(state, deliveryJournal)
             gachaSettlement = GachaSettlement(state)
             abilitySelection = AbilitySelection(state)
-            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange, GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection))
+            removalJournal = RemovalJournal(state, repository, mapOf(SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange, GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection, AbilityItemUse.KIND to AbilityItemUse(deliveryJournal)))
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal)
             financial.clear()
         }

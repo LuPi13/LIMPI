@@ -11,9 +11,6 @@ object StealthSpecs {
 
     val all: Map<String, AbilitySpec> = linkedMapOf(
         "back_stab" to AbilitySpec(backStabFields()),
-        "stealth_back_stab" to AbilitySpec(backStabFields() + listOf(
-            number("detect_range", 3.0, 0.0, 128.0),
-        )),
         "berserker" to AbilitySpec(listOf(
             number("max_multiplier", 2.5, 1.0, 64.0),
         )),

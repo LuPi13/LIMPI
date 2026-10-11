@@ -1,15 +1,11 @@
 package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.combat.DamageContext
-import com.github.lupi13.limpi.quests.GhostStab
-import com.github.lupi13.limpi.quests.Quest
-import com.github.lupi13.limpi.quests.QuestManager
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.SoundCategory
-import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -111,14 +107,5 @@ object BackStab : BackStabVariant(
         Component.text("더 큰 피해를 줍니다.", NamedTextColor.WHITE)
     )
 ) {
-    override val relatedQuest: List<Quest> by lazy { listOf(GhostStab) }
-
     override val details: List<Component> by lazy { backStabLines() }
-
-    /** 고스트 스탭: 백스탭으로 100킬. 갑옷 거치대는 세지 않습니다. */
-    override fun onBackStabKill(player: Player, target: LivingEntity) {
-        if (target is ArmorStand || !AbilityManager.isEnemy(player, target)) return
-        if (QuestManager.isClearedQuest(player, GhostStab)) return
-        QuestManager.progress(player, GhostStab, GhostStab.COUNTER, GhostStab.TARGET)
-    }
 }

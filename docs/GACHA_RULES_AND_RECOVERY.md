@@ -40,7 +40,7 @@ TROLL 강제 적용은 해금 commit에서 gacha_apply_pending/{owner}/{id}를 �
 
 같은 능력 재적용 검사를 속성 초기화보다 앞으로 옮겨 ack 재시도가 속성을 다시 초기화하지 않게 했다. 기존 능력 제한 슬롯을 비울 때는 그 능력의 activeItem과 일치할 때만 제거한다. 새 제한 슬롯 보존·속성 modifier 소유·전환 checkpoint는 이후 [능력 전환](ABILITY_TRANSITIONS.md)/[runtime](ABILITY_RUNTIME.md)에서 연결했다. 현재 TROLL 3개에는 제한 슬롯이 없으며 복구 adapter도 이 조건을 검사한다.
 
-GachaAnimation은 결과 표현만 담당한다. 해금/카운터/능력 적용/저장을 호출하지 않는다. 뽑기마다 별도 세션(task·display 목록)을 추적하며 한 플레이어가 여러 세션을 동시에 가질 수 있다. 연출(소리·파티클·타이밍·글씨)은 main과 같다. 결과 글씨 TextDisplay는 **수직(pitch 0, FIXED billboard)으로 플레이어 쪽을 향한다**(시야 방향으로 기울이지 않는다). 원래처럼 사망·월드 이동 중에도 제자리에서 끝까지 재생하고, quit·disable·spawn/실행 예외에서만 정리한다. 표시 엔티티는 persistent=false이며 연출이 실패하거나 중단돼도 확정 결과는 유지한다.
+GachaAnimation은 결과 표현만 담당한다. 해금/카운터/능력 적용/저장을 호출하지 않는다. 뽑기마다 별도 세션(task·display 목록)을 추적하며 한 플레이어가 여러 세션을 동시에 가질 수 있다. 연출(소리·파티클·타이밍·글씨)은 main과 같다. 결과 글씨 TextDisplay는 **수직(pitch 0, FIXED billboard)으로 플레이어 쪽을 향한다**(시야 방향으로 기울이지 않는다). 해금은 클릭 때 원자 commit하지만(천장 카운트는 main도 클릭 때 저장), 새로 해금된 능력은 연출이 끝날 때까지 선택 화면에 보이지 않고 선택도 거부해 main처럼 연출 끝에 해금되는 것으로 보인다. 원래처럼 사망·월드 이동 중에도 제자리에서 끝까지 재생하고, quit·disable·spawn/실행 예외에서만 정리한다. 표시 엔티티는 persistent=false이며 연출이 실패하거나 중단돼도 확정 결과는 유지한다.
 
 ## 검증과 남은 작업
 

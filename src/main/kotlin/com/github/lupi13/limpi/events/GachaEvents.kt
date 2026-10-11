@@ -62,6 +62,14 @@ class GachaEvents(private val owner: Plugin) : Listener {
     }
 
     companion object {
+        /** Newly unlocked abilities whose draw animation has not revealed them yet; menus show them as locked until then. */
+        private val concealed = mutableMapOf<java.util.UUID, MutableList<String>>()
+        fun concealed(player: java.util.UUID): Set<String> = concealed[player]?.toSet().orEmpty()
+        private fun reveal(player: java.util.UUID, code: String) {
+            val codes = concealed[player] ?: return
+            codes.remove(code); if (codes.isEmpty()) concealed.remove(player)
+        }
+
         val plugin: Plugin = JavaPlugin.getPlugin(LIMPI::class.java)
 
         /**
@@ -131,7 +139,13 @@ class GachaEvents(private val owner: Plugin) : Listener {
             requireNotNull(FileManager.gacha.find(player.uniqueId, id))
             owner.logger.info("Gacha draw $id for ${player.uniqueId}: ${outcome.grade} ${outcome.ability} pickup=${outcome.pickup}")
             // Result, unlock and counters are already committed; the animation only reveals them as before.
-            animation.start(player, ability, getGachaTicketItem()) { reveal(player, ability, newlyUnlocked, terms.forceTroll) }
+            if (newlyUnlocked) concealed.getOrPut(player.uniqueId) { mutableListOf() }.add(ability.codeName)
+            try {
+                animation.start(player, ability, getGachaTicketItem()) { reveal(player, ability, newlyUnlocked, terms.forceTroll) }
+            } catch (failure: Exception) {
+                if (newlyUnlocked) reveal(player.uniqueId, ability.codeName)
+                throw failure
+            }
         } catch (failure: Exception) {
             owner.logger.log(java.util.logging.Level.WARNING, "Gacha request failed for ${player.uniqueId}", failure)
             player.sendMessage(Component.text("뽑기를 진행하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
@@ -140,6 +154,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
 
     /** Original end-of-draw messages. A forced TROLL is applied through the recoverable pending-application path. */
     private fun reveal(player: Player, ability: com.github.lupi13.limpi.abilities.Ability, newlyUnlocked: Boolean, forceTroll: Boolean) {
+        if (newlyUnlocked) reveal(player.uniqueId, ability.codeName)
         if (!player.isOnline) return
         if (newlyUnlocked) player.sendMessage(Component.text("능력 ", NamedTextColor.WHITE)
             .append(ability.displayName)
@@ -151,5 +166,8 @@ class GachaEvents(private val owner: Plugin) : Listener {
     }
 
     /** Animations follow the original fixed location through death/world change; only a quit removes them. */
-    @EventHandler fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) = animation.close(event.player.uniqueId)
+    @EventHandler fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) {
+        animation.close(event.player.uniqueId)
+        concealed.remove(event.player.uniqueId)
+    }
 }

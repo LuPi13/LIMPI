@@ -8,6 +8,7 @@ import com.github.lupi13.limpi.ability.AbilitySelection
 import com.github.lupi13.limpi.ability.SelectionTerms
 import com.github.lupi13.limpi.events.AbilityDictionary
 import com.github.lupi13.limpi.events.AbilitySelectEvent
+import com.github.lupi13.limpi.events.GachaEvents
 import com.github.lupi13.limpi.events.SortOption
 import com.github.lupi13.limpi.platform.AbilityTickets
 import com.github.lupi13.limpi.platform.PaperItemCodec
@@ -30,7 +31,8 @@ object AbilityMenus {
         if (FileManager.delivery.blocked(player.uniqueId)) return
         val dictionary = kind == MenuKind.ABILITY_DICTIONARY
         val entries = if (dictionary) AbilityManager.abilities.toList() else
-            FileManager.getPlayerData(player).getStringList("unlockedAbilities").distinct().mapNotNull(AbilityManager::getAbilityByCodeName)
+            (FileManager.getPlayerData(player).getStringList("unlockedAbilities").distinct() - GachaEvents.concealed(player.uniqueId))
+                .mapNotNull(AbilityManager::getAbilityByCodeName)
         val sorted = when (sort) {
             SortOption.UNLOCKED -> entries
             SortOption.GANADA -> entries.sortedBy { PlainTextComponentSerializer.plainText().serialize(it.displayName) }
@@ -104,7 +106,8 @@ object AbilityMenus {
         require(player.hasPermission("limpi.ability.select")) { "권한이 부족합니다." }
         if (!FileManager.delivery.claim(player)) return
         val previous = AbilityManager.getPlayerAbilityCodeName(player).orEmpty()
-        require(ability.codeName in FileManager.getPlayerData(player).getStringList("unlockedAbilities")) { "해금되지 않은 능력입니다." }
+        require(ability.codeName in FileManager.getPlayerData(player).getStringList("unlockedAbilities") &&
+            ability.codeName !in GachaEvents.concealed(player.uniqueId)) { "해금되지 않은 능력입니다." }
         val before = PaperItemCodec.snapshot(player, includeOffHand = true)
         val slot = before.indexOfFirst { stack ->
             stack != null && AbilityTickets.identify(PaperItemCodec.item(stack.payload, stack.count)) == ability.grade.name

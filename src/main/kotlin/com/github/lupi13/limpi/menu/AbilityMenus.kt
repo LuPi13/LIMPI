@@ -99,7 +99,6 @@ object AbilityMenus {
             player.playSound(player.location, Sound.BLOCK_ANVIL_LAND, 0.3f, 1.0f)
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Ability menu request failed for ${player.name} (${player.uniqueId})", failure)
-            player.sendMessage(Component.text("능력을 적용하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
     private fun select(player: Player, ability: Ability) {

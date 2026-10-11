@@ -69,7 +69,7 @@ class CheckCommands(private val plugin: Plugin, private val checks: Check) {
             sender.sendMessage(Component.text(failure.message ?: "잘못된 형식입니다. /financial check <금액>", NamedTextColor.RED))
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Check command $request failed", failure)
-            sender.sendMessage(Component.text("수표 처리 결과를 확인하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
+            throw failure // As before: Bukkit reports an internal command error to the sender.
         }
         return true
     }

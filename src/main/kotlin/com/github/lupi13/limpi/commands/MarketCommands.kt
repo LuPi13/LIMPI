@@ -91,7 +91,7 @@ class MarketCommands(private val plugin: Plugin) {
             }, NamedTextColor.RED))
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Market command $request failed", failure)
-            sender.sendMessage(Component.text("거래 결과를 확인하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
+            throw failure // As before: Bukkit reports an internal command error to the sender.
         }
         return true
     }

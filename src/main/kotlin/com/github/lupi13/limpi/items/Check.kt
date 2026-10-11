@@ -87,7 +87,6 @@ class Check(private val plugin: Plugin) : Listener {
             EconomyText.bankFailure(player, failure)
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Check redemption $request (check $checkId) failed for ${player.uniqueId}", failure)
-            player.sendMessage(Component.text("수표 처리 결과를 확인하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
         return false
     }

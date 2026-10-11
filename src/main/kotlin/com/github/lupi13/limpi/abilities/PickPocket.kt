@@ -55,7 +55,6 @@ object PickPocket : Ability(
                     else stealEntity(player, victim, position)
                 } catch (failure: Exception) {
                     plugin.logger.log(Level.WARNING, "Pick pocket $hook from $targetId failed", failure)
-                    player.sendMessage(Component.text("물품 회수를 완료하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
                 }
             }
         }.runTask(plugin)

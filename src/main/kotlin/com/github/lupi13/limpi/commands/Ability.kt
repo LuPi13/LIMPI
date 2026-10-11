@@ -34,8 +34,7 @@ class Ability(private val plugin: Plugin, private val enabled: Boolean) : Comman
                     val ability = AbilityManager.getAbilityByCodeName(code)
                     if (ability == null) {
                         plugin.logger.warning("Player ${player.name} (${player.uniqueId}) has unregistered ability id $code")
-                        player.sendMessage(Component.text("현재 능력 정보를 불러올 수 없습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
-                        return true
+                        throw IllegalStateException("Unregistered ability id $code")
                     }
                     player.sendMessage(Component.text("\n", NamedTextColor.WHITE)
                         .append(playerDisplay(player))
@@ -74,7 +73,7 @@ class Ability(private val plugin: Plugin, private val enabled: Boolean) : Comman
             sender.sendMessage(Component.text(failure.message ?: "입력을 확인하세요.", NamedTextColor.RED))
         } catch (failure: Exception) {
             plugin.logger.log(Level.WARNING, "Ability command ${route.id} from ${sender.name} failed", failure)
-            sender.sendMessage(Component.text("명령을 처리하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
+            throw failure // As before: Bukkit reports an internal command error to the sender.
         }
         return true
     }

@@ -269,7 +269,7 @@ class GachaInformation(private val plugin: Plugin) {
             val value = plugin.config.get(key); require(value is Int || value is Long) { "$key must be integral" }; return (value as Number).toLong()
         }
         val minutes = integer("PickUpChange"); val previews = integer("PickUpSpoiler")
-        require(minutes > 0 && previews in 1..32) { "픽업 설정이 올바르지 않습니다. 관리자에게 문의하세요." }
+        check(minutes > 0 && previews in 1..32) { "픽업 설정이 올바르지 않습니다. 관리자에게 문의하세요." }
         val interval = Math.multiplyExact(minutes, 60_000L)
         val rounded = AbilityPickUp.getRoundedTime()
         for (i in 1..previews.toInt()) {

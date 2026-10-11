@@ -177,7 +177,6 @@ class AbilityEnemySelect: Listener {
             openEnemySelectGUI(player, event.view.topInventory)
         } catch (failure: Exception) {
             plugin.logger.log(java.util.logging.Level.WARNING, "Unable to change ability target settings for ${player.uniqueId}", failure)
-            player.sendMessage(Component.text("대상 설정을 저장하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
 }

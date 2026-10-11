@@ -98,7 +98,6 @@ object JudgementRay : Ability(
             com.github.lupi13.limpi.platform.RailgunEffect.start(player, this, settings, consumed = false)
         } catch (failure: Exception) {
             plugin.logger.log(java.util.logging.Level.WARNING, "Unable to start railgun $codeName for ${player.uniqueId}", failure)
-            player.sendMessage(Component.text("레일건 설정/장착 상태를 확인하세요.", NamedTextColor.RED))
         }
     }
 }

@@ -162,7 +162,6 @@ class MarketEvents : Listener {
             EconomyText.deny(player)
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Market transaction $transaction failed for ${player.uniqueId}", failure)
-            player.sendMessage(Component.text("거래 결과를 확인하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
 }

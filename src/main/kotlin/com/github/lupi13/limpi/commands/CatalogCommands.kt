@@ -64,7 +64,7 @@ class CatalogCommands(private val plugin: Plugin) {
             sender.sendMessage(Component.text(failure.message ?: "잘못된 형식입니다.", NamedTextColor.RED))
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Catalog $kind command failed", failure)
-            sender.sendMessage(Component.text("처리 결과를 확인하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
+            throw failure // As before: Bukkit reports an internal command error to the sender.
         }
         return true
     }

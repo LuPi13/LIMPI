@@ -120,7 +120,7 @@ class AccountCommands(
             error(sender, "이 거래 ID는 다른 요청에 사용되었습니다.")
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Account command $command failed for transaction $id", failure)
-            error(sender, "거래 결과를 확인하지 못했습니다. 관리자에게 문의하세요.")
+            throw failure // As before: Bukkit reports an internal command error to the sender.
         }
         return true
     }

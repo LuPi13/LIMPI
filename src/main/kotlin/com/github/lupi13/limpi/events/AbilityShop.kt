@@ -163,7 +163,6 @@ class AbilityShop : Listener {
             player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Ability shop exchange $request failed for ${player.uniqueId}", failure)
-            player.sendMessage(Component.text("구매를 완료하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
 

@@ -43,7 +43,6 @@ class GachaEvents(private val owner: Plugin) : Listener {
             // for an administrator (/ability set to the selected ID, then claim acknowledges) instead of kicking every login.
             if (current.isNotEmpty() && current != result.terms.previous && current != result.terms.ability) {
                 plugin.logger.warning("Selection ${result.id} for ${player.uniqueId} held: current ability $current is neither ${result.terms.previous} nor ${result.terms.ability}")
-                player.sendMessage(Component.text("선택한 능력 적용이 보류되었습니다. 관리자에게 문의하세요.", NamedTextColor.YELLOW))
                 continue
             }
             try {
@@ -148,7 +147,6 @@ class GachaEvents(private val owner: Plugin) : Listener {
             }
         } catch (failure: Exception) {
             owner.logger.log(java.util.logging.Level.WARNING, "Gacha request failed for ${player.uniqueId}", failure)
-            player.sendMessage(Component.text("뽑기를 진행하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
 

@@ -108,7 +108,6 @@ class ShopEvents : Listener {
             openShopGUI(player, holder.page, top)
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Shop transaction $request failed", failure)
-            player.sendMessage(Component.text("구매 결과를 확인하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
 }

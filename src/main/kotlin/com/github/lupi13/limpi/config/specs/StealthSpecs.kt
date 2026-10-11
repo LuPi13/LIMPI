@@ -23,7 +23,7 @@ object StealthSpecs {
             integer("cooldown_ticks", 100, 0, 72_000),
             integer("stance_ticks", 40, 1, 1200),
             integer("window_ms", 500, 0, 60_000),
-            integer("counter_delay_ticks", 10, 0, 1200),
+            integer("counter_delay_ticks", 2, 0, 1200),
             number("damage_multiplier", 2.0, 0.0, 64.0),
             integer("slowness_level", 8, 1, 256),
         )) { settings ->

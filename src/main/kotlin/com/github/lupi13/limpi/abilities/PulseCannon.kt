@@ -85,7 +85,7 @@ object PulseCannon : Ability(
             val owner = scope.player() ?: return@repeat scope.close()
             if (fired++ >= count) return@repeat scope.close()
             HandCannon.shoot(owner, codeName, velocity, lifetime) { shooter, target ->
-                if (AbilityDamage.hit(shooter, target, codeName, damage) && target is LivingEntity && Random.nextDouble() < chance) {
+                if (AbilityDamage.hit(shooter, target, codeName, damage, knockback = false) && target is LivingEntity && Random.nextDouble() < chance) {
                     target.noDamageTicks = 0
                 }
             }

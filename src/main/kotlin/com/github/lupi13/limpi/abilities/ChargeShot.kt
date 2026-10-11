@@ -66,7 +66,9 @@ object ChargeShot : Ability(
                 .append(Component.text("의 피해를 줍니다.", NamedTextColor.WHITE)),
             Component.text("충전 중에는 이동 속도가 ", NamedTextColor.WHITE)
                 .append(Component.text("${Math.round(config!!.getDouble("charging_slowness") * 100)}%", NamedTextColor.GREEN))
-                .append(Component.text(" 느려집니다.", NamedTextColor.WHITE))
+                .append(Component.text(" 느려집니다.", NamedTextColor.WHITE)),
+            Component.text("발사 후 쿨타임: ", NamedTextColor.WHITE)
+                .append(Component.text("${config!!.getInt("cooldown_ticks") / 20.0}초", NamedTextColor.GREEN))
         )
     }
 
@@ -90,6 +92,8 @@ object ChargeShot : Ability(
     /** 충전 중인 플레이어: 효과와 충전 틱. 효과가 닫히면(사망, 능력 변경 등) 발사하지 않고 충전이 취소됩니다. */
     private class Charge(val effect: AbilityEffect, var ticks: Int = 0)
     private val charging: MutableMap<UUID, Charge> = mutableMapOf()
+    /** 마지막 발사 시각(ms). 쿨타임 동안에는 새 충전을 시작하지 않아, 키를 누르고 있어도 연사되지 않습니다. */
+    private val lastShot: MutableMap<UUID, Long> = mutableMapOf()
 
     /** 충전 효과음(틱 → 음높이). 원작의 상승 아르페지오입니다. */
     private val melody = mapOf(
@@ -116,7 +120,14 @@ object ChargeShot : Ability(
         if (player.ability != this || FileManager.delivery.blocked(player.uniqueId)) return
         event.isCancelled = true
         val current = charging[player.uniqueId]
-        if (current != null && !current.effect.scope.closed) fire(player, current) else startCharge(player)
+        if (current != null && !current.effect.scope.closed) { fire(player, current); return }
+        val cooldown = config!!.getInt("cooldown_ticks") * 50
+        val last = lastShot[player.uniqueId]
+        if (last != null && System.currentTimeMillis() - last < cooldown) {
+            AbilityManager.showCooldown(player, cooldown, last)
+            return
+        }
+        startCharge(player)
     }
 
     private fun startCharge(player: Player) {
@@ -170,6 +181,7 @@ object ChargeShot : Ability(
     private fun fire(player: Player, charge: Charge) {
         val ticks = charge.ticks
         charge.effect.close() // 충전 종료(감속 해제)
+        lastShot[player.uniqueId] = System.currentTimeMillis()
         val damage = minOf(config!!.getDouble("max_damage"), (ticks / config!!.getInt("charge_ticks_per_damage")).toDouble())
         val lifetime = config!!.getInt("lifetime_ticks")
         val size = damage / 20.0 + 0.5
@@ -206,9 +218,13 @@ object ChargeShot : Ability(
         }
     }
 
-    override fun release(owner: UUID) { charging.remove(owner)?.effect?.close() }
+    override fun release(owner: UUID) {
+        lastShot.remove(owner)
+        charging.remove(owner)?.effect?.close()
+    }
 
     override fun stop() {
+        lastShot.clear()
         charging.values.toList().forEach { it.effect.close() }
         charging.clear()
     }

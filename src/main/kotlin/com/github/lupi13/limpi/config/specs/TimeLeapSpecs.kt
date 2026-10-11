@@ -7,7 +7,8 @@ object TimeLeapSpecs {
     private fun rewind(cooldown: Int, healMultiplier: Double) = listOf(
         integer("cooldown_ticks", cooldown, 1, 72000),
         integer("rewind_ticks", 60, 1, 600),
-        integer("rewind_step", 2, 1, 600),
+        integer("rewind_visual_ticks", 4, 0, 20),
+        number("rewind_max_speed", 3.0, 0.1, 10.0),
         number("heal_multiplier", healMultiplier, 0.0, 64.0)
     )
 

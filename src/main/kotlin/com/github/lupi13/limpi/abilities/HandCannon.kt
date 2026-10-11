@@ -129,7 +129,7 @@ object HandCannon : Ability(
         if (player.ability != this || FileManager.delivery.blocked(player.uniqueId)) return
         event.isCancelled = true
         shoot(player, codeName, config!!.getDouble("velocity"), config!!.getInt("lifetime_ticks")) { owner, target ->
-            if (!AbilityDamage.hit(owner, target, codeName, config!!.getDouble("damage")) || !target.isDead) return@shoot
+            if (!AbilityDamage.hit(owner, target, codeName, config!!.getDouble("damage"), knockback = false) || !target.isDead) return@shoot
             if (owner.ability != this) return@shoot
             if (target is Creeper && target.isPowered) QuestManager.clearQuests(owner, BoldForBoom)
             QuestManager.progress(owner, NogadaKing, "hand_cannon_kills", 100)

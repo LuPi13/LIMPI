@@ -3,6 +3,7 @@ package com.github.lupi13.limpi.abilities
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.platform.AbilityEffect
 import com.github.lupi13.limpi.platform.AbilityRuntime
+import com.github.lupi13.limpi.platform.normalizeSafely
 import com.github.lupi13.limpi.quests.DarkTime
 import com.github.lupi13.limpi.quests.LightTime
 import com.github.lupi13.limpi.quests.Quest
@@ -16,6 +17,7 @@ import org.bukkit.Material
 import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
+import org.bukkit.attribute.AttributeModifier
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -32,8 +34,9 @@ import java.util.logging.Level
  *
  * While the player holds the ability, a scoped recorder keeps the last `rewind_ticks` locations and health values.
  * The recorder (and its buffer) ends on death, quit, world change, ability change, delivery block or plugin disable,
- * and restarts on the next tick once the player is eligible again. Rewinding replays the recorded path backwards
- * (`rewind_step` frames per tick) with damage immunity, then restores the oldest recorded health.
+ * and restarts on the next tick once the player is eligible again. Rewinding pulls the player backwards along the recorded
+ * path by velocity for `rewind_visual_ticks` ticks, then teleports to the oldest frame and restores its health; damage
+ * is cancelled for the whole rewind.
  * Only location and health are rewound; inventory and items are never touched.
  */
 abstract class TimeLeapAbility(
@@ -155,28 +158,58 @@ abstract class TimeLeapAbility(
         }
     }
 
+    /**
+     * Fast rewind: for `rewind_visual_ticks` ticks the player is pulled backwards along the recorded path by velocity
+     * (gravity removed, fall distance cleared, speed capped by `rewind_max_speed`) while the reversed trail is drawn,
+     * then the player is teleported exactly to the oldest frame (position, yaw and pitch) and health is restored.
+     */
     private fun rewind(player: Player, frames: List<Frame>) {
         val id = player.uniqueId
         val effect = AbilityRuntime.begin(player, codeName)
         rewinding[id] = effect
         effect.own { if (rewinding[id] === effect) rewinding.remove(id) }
-        val step = config!!.getInt("rewind_step")
-        var index = frames.lastIndex
+        val visualTicks = config!!.getInt("rewind_visual_ticks")
+        val maxSpeed = config!!.getDouble("rewind_max_speed")
+        if (visualTicks > 0) effect.attribute(Attribute.GRAVITY, -1.0, AttributeModifier.Operation.MULTIPLY_SCALAR_1)
+        player.playSound(player.location, Sound.BLOCK_BEACON_DEACTIVATE, 0.6f, 2f)
+        var tick = 0
+        var drawn = frames.lastIndex + 1
         effect.repeat { scope ->
             val owner = scope.player() ?: return@repeat scope.close()
-            owner.playSound(owner.location, Sound.ENTITY_PLAYER_SWIM, 0.2f, 2f)
+            tick++
+            owner.fallDistance = 0f
+            if (tick <= visualTicks) {
+                // Frame reached at the end of this tick, evenly spread so the last velocity tick ends near the oldest frame.
+                val target = (frames.lastIndex.toLong() * (visualTicks - tick) / (visualTicks + 1)).toInt()
+                drawTrail(owner, frames, target, drawn)
+                drawn = target
+                val goal = frames[target].location
+                val pull = if (goal.world?.uid == owner.world.uid) goal.toVector().subtract(owner.location.toVector()) else Vector()
+                val length = pull.length()
+                owner.velocity = if (!length.isFinite() || length <= 0.0) Vector()
+                    else if (length > maxSpeed) pull.normalizeSafely().multiply(maxSpeed) else pull
+                owner.playSound(owner.location, Sound.ENTITY_PLAYER_SWIM, 0.2f, 2f)
+                return@repeat
+            }
+            drawTrail(owner, frames, 0, drawn)
             owner.velocity = Vector()
-            val frame = frames[index.coerceAtLeast(0)]
-            if (!moveTo(owner, frame.location)) {
+            if (!moveTo(owner, frames.first().location)) {
                 owner.sendActionBar(Component.text("시간 역행이 중단되었습니다.", NamedTextColor.RED))
                 return@repeat scope.close()
             }
-            if (index <= 0) {
-                finish(owner, frames.first())
-                scope.close()
-                return@repeat
-            }
-            index -= step
+            owner.velocity = Vector()
+            finish(owner, frames.first())
+            scope.close()
+        }
+    }
+
+    /** Draws the reversed path segment covered this tick (frames from [to] up to, excluding, [from]). */
+    private fun drawTrail(owner: Player, frames: List<Frame>, to: Int, from: Int) {
+        val world = owner.world
+        for (index in (from - 1).coerceAtMost(frames.lastIndex) downTo to.coerceAtLeast(0)) {
+            val location = frames[index].location
+            if (location.world?.uid != world.uid) continue
+            world.spawnParticle(Particle.DUST, location.clone().add(0.0, 0.9, 0.0), 2, 0.1, 0.2, 0.1, 0.0, trail)
         }
     }
 

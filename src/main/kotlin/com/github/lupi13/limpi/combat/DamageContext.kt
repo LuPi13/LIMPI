@@ -5,7 +5,7 @@ import java.util.UUID
 enum class HitKind { ABILITY, CHAIN, MAGIC_CONVERSION, EXECUTION }
 class HitReceipt { var accepted = false }
 data class AbilityHit(val owner: UUID, val ability: String, val kind: HitKind, val chain: ChainBudget? = null,
-                      val target: UUID? = null, val receipt: HitReceipt? = null)
+                      val target: UUID? = null, val receipt: HitReceipt? = null, val knockback: Boolean = true)
 
 /** Context exists only during the synchronous server damage call, never in retained event/player maps. */
 object DamageContext {

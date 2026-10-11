@@ -20,8 +20,29 @@ object AbilityDamage : Listener {
         val context = DamageContext.current ?: return
         if (context.target == event.entity.uniqueId) context.receipt?.accepted = !event.isCancelled && event.finalDamage > 0
     }
+    /** 넉백 없는 능력 피해: Paper/Bukkit 넉백 이벤트를 모두 취소합니다. 진행 중인 피해 호출의 대상에게만 적용됩니다. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun suppressKnockback(event: io.papermc.paper.event.entity.EntityKnockbackEvent) {
+        if (suppressesKnockback(event.entity.uniqueId)) event.isCancelled = true
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun suppressBukkitKnockback(event: org.bukkit.event.entity.EntityKnockbackEvent) {
+        if (suppressesKnockback(event.entity.uniqueId)) event.isCancelled = true
+    }
+
+    private fun suppressesKnockback(entity: java.util.UUID): Boolean {
+        val context = DamageContext.current ?: return false
+        return !context.knockback && context.target == entity
+    }
+
+    /**
+     * 능력 피해를 줍니다. [knockback]이 false면 이 피해 호출 안에서 대상에게 생기는 넉백 이벤트를 모두 취소해
+     * 대상을 밀지 않습니다 (속도를 덮어쓰지 않으므로 대상의 원래 움직임은 유지됩니다).
+     */
     fun hit(player: Player, target: Damageable, ability: String, amount: Double,
-            kind: HitKind = HitKind.ABILITY, chain: ChainBudget? = null, self: Boolean = false, respectTargets: Boolean = true): Boolean {
+            kind: HitKind = HitKind.ABILITY, chain: ChainBudget? = null, self: Boolean = false, respectTargets: Boolean = true,
+            knockback: Boolean = true): Boolean {
         check(Bukkit.isPrimaryThread())
         val damage = DamageNumbers.bounded(amount)
         if (damage == 0.0 || !player.isOnline || player.isDead || FileManager.delivery.blocked(player.uniqueId) ||
@@ -31,7 +52,7 @@ object AbilityDamage : Listener {
         val type = if (kind == HitKind.MAGIC_CONVERSION || kind == HitKind.EXECUTION) DamageType.MAGIC else DamageType.PLAYER_ATTACK
         val source = DamageSource.builder(type).withCausingEntity(player).withDirectEntity(player).build()
         val receipt = HitReceipt()
-        DamageContext.with(AbilityHit(player.uniqueId, ability, kind, chain, target.uniqueId, receipt)) { target.damage(damage, source) }
+        DamageContext.with(AbilityHit(player.uniqueId, ability, kind, chain, target.uniqueId, receipt, knockback)) { target.damage(damage, source) }
         return receipt.accepted
     }
 

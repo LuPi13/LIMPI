@@ -108,11 +108,12 @@ object BlightRanger : DodgeVariant(
             val dust = Particle.DustOptions(Color.fromRGB(Random.nextInt(0, 11), Random.nextInt(0, 11), Random.nextInt(0, 11)), 4f)
             world.spawnParticle(Particle.DUST, center, 100, 3.0, 0.6, 3.0, 0.0, dust, true)
 
-            // 회피한 자리를 중심으로 45도씩 돌린 위치에 분신(연기)
+            // 회피한 자리를 중심으로 45도씩 돌린 위치에 분신(연기). 원본처럼 0도(플레이어 자신의 위치)에도 같은 연기를 뿌려
+            // 진짜 플레이어가 분신과 구별되지 않게 합니다.
             val offset = owner.location.toVector().subtract(center.toVector())
             val ground = owner.location.clone().subtract(0.0, 0.1, 0.0).block
             val moving = (com.github.lupi13.limpi.abilities.Dodge.velocityMap[owner.uniqueId]?.length() ?: 0.0) >= 0.1
-            for (i in 1..7) {
+            for (i in 0..7) {
                 val angle = Math.toRadians(45.0 * i)
                 val x = offset.z * sin(angle) + offset.x * cos(angle)
                 val z = offset.z * cos(angle) - offset.x * sin(angle)

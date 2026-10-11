@@ -1,6 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.FileManager
+import com.github.lupi13.limpi.combat.DamageContext
 import com.github.lupi13.limpi.platform.AbilityDamage
 import com.github.lupi13.limpi.platform.AbilityEffect
 import com.github.lupi13.limpi.platform.AbilityRuntime
@@ -16,8 +17,10 @@ import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
+import org.bukkit.event.player.PlayerAnimationEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -43,7 +46,7 @@ object Counter : Ability(
             Component.text("검을 들고 우클릭하면 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("stance_ticks") / 20.0}", NamedTextColor.GREEN))
                 .append(Component.text("초간 반격 태세에 들어가며,", NamedTextColor.WHITE)),
-            Component.text("그동안 거의 움직일 수 없습니다.", NamedTextColor.WHITE),
+            Component.text("반격하기 전까지 거의 움직일 수 없고 공격할 수 없습니다.", NamedTextColor.WHITE),
             Component.text("시전 후 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("window_ms") / 1000.0}", NamedTextColor.GREEN))
                 .append(Component.text("초 안에 받는 피해를 모두 무시하고,", NamedTextColor.WHITE)),
@@ -64,7 +67,11 @@ object Counter : Ability(
     /** 반격으로 막지 않는 피해(즉사/월드 경계 등). */
     private val unblockable = setOf(DamageCause.VOID, DamageCause.KILL, DamageCause.WORLD_BORDER, DamageCause.SUICIDE)
 
-    private class Stance(val effect: AbilityEffect, val castAt: Long) { var countered = false }
+    /**
+     * 반격 태세. [hold]는 태세 중 감속을 소유하며 반격하는 순간 닫혀 감속이 풀립니다.
+     * [effect]는 피해 무시 창과 반격 타격을 소유하고 [hold]도 함께 정리합니다.
+     */
+    private class Stance(val effect: AbilityEffect, val hold: AbilityEffect, val castAt: Long) { var countered = false }
     private val stances: MutableMap<UUID, Stance> = mutableMapOf()
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -84,10 +91,12 @@ object Counter : Ability(
         val id = player.uniqueId
         stances.remove(id)?.effect?.close()
         val effect = AbilityRuntime.begin(player, codeName)
-        val stance = Stance(effect, System.currentTimeMillis())
+        val hold = try { AbilityRuntime.begin(player, codeName) } catch (failure: Exception) { effect.close(); throw failure }
+        val stance = Stance(effect, hold, System.currentTimeMillis())
         stances[id] = stance
         effect.own { if (stances[id] === stance) stances.remove(id) }
-        effect.potion(player, PotionEffect(PotionEffectType.SLOWNESS, stanceTicks, config!!.getInt("slowness_level") - 1, true, false, false))
+        effect.own(hold::close)
+        hold.potion(player, PotionEffect(PotionEffectType.SLOWNESS, stanceTicks, config!!.getInt("slowness_level") - 1, true, false, false))
         effect.repeat(delay = stanceTicks.toLong()) { it.close() }
         player.world.playSound(player.location, Sound.ENTITY_ZOMBIE_CONVERTED_TO_DROWNED, SoundCategory.PLAYERS, 0.7f, 2f)
     }
@@ -101,6 +110,7 @@ object Counter : Ability(
         event.isCancelled = true
         if (stance.countered) return
         stance.countered = true
+        stance.hold.close() // 반격하는 순간 태세의 감속을 풉니다.
 
         val damage = event.damage * config!!.getDouble("damage_multiplier")
         if (!damage.isFinite() || damage < 0) return
@@ -123,6 +133,26 @@ object Counter : Ability(
             owner.world.playSound(owner.location, Sound.ENTITY_PLAYER_ATTACK_SWEEP, SoundCategory.PLAYERS, 1f, 1f)
             scope.close()
         }
+    }
+
+    /** 반격 전 태세 중인지. 반격한 뒤에는 다시 공격할 수 있습니다. */
+    private fun inStance(player: Player): Boolean {
+        val stance = stances[player.uniqueId] ?: return false
+        return !stance.countered && !stance.effect.scope.closed && player.ability == this
+    }
+
+    /** 태세 중에는 무기로 직접 공격할 수 없습니다. 능력 피해(반격 등)는 막지 않습니다. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onAttack(event: EntityDamageByEntityEvent) {
+        val player = event.damager as? Player ?: return
+        if (DamageContext.current != null || !inStance(player)) return
+        event.isCancelled = true
+    }
+
+    /** 태세 중에는 팔 휘두르기 동작도 다른 플레이어에게 보이지 않게 취소합니다. */
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+    fun onSwing(event: PlayerAnimationEvent) {
+        if (inStance(event.player)) event.isCancelled = true
     }
 
     override fun release(owner: UUID) {

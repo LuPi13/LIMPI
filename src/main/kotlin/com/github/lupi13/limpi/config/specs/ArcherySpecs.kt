@@ -29,7 +29,7 @@ object ArcherySpecs {
             integer("extra_items", 2, 0, 64)
         )),
         "lava_jump" to AbilitySpec(listOf(
-            number("launch_speed", 1.5, 0.0, 10.0),
+            number("launch_speed", 0.75, 0.0, 10.0),
             number("horizontal_spread", 0.25, 0.0, 2.0)
         ))
     )

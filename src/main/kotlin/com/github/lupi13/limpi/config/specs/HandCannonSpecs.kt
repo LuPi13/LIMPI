@@ -22,7 +22,8 @@ object HandCannonSpecs {
             integer("charge_ticks_per_damage", 4, 1, 1200),
             integer("max_charge_ticks", 40, 1, 1200),
             integer("lifetime_ticks", 127, 1, 1200),
-            number("charging_slowness", 0.45, 0.0, 1.0)
+            number("charging_slowness", 0.45, 0.0, 1.0),
+            integer("cooldown_ticks", 10, 0, 72000)
         )),
         "explosion_move" to AbilitySpec(listOf(
             number("damage", 6.0),

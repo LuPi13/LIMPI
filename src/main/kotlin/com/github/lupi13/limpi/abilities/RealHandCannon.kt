@@ -13,6 +13,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
@@ -118,6 +119,13 @@ object RealHandCannon : Ability(
             cannons[cannonId] = effect
             effect.own { cannons.remove(cannonId) }
             effect.repeat(delay = config!!.getInt("lifetime_ticks").toLong()) { it.close() }
+            // 날아가는 동안 연기 꼬리. 포탄 효과가 소유하므로 포탄이 사라지면 함께 멈춥니다.
+            effect.repeat(delay = 1) { scope ->
+                if (!cannon.isValid) return@repeat scope.close()
+                val at = cannon.location
+                at.world.spawnParticle(Particle.LARGE_SMOKE, at, 2, 0.05, 0.05, 0.05, 0.01, null, true)
+                at.world.spawnParticle(Particle.SMOKE, at, 4, 0.1, 0.1, 0.1, 0.01, null, true)
+            }
             player.world.playSound(cannon.location, Sound.ENTITY_CREEPER_PRIMED, 1f, 1f)
             player.world.playSound(cannon.location, Sound.ITEM_TRIDENT_THROW, 1f, 0.5f)
         } catch (failure: Exception) { effect.close(); throw failure }

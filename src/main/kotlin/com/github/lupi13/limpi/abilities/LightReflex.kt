@@ -25,7 +25,7 @@ object LightReflex : DodgeVariant(
 ) {
     override val unlockQuest: Quest get() = EnoughDodge
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             inheritLine(),
             Component.text("회피 후 ", NamedTextColor.WHITE)

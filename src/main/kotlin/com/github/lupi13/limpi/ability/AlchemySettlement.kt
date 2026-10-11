@@ -5,11 +5,12 @@ import com.github.lupi13.limpi.economy.Accounts
 import com.github.lupi13.limpi.storage.*
 import org.bukkit.configuration.file.YamlConfiguration
 
-data class AlchemyTerms(val slot: Int, val copper: String, val outcome: String, val result: ItemGrant) {
+data class AlchemyTerms(val slot: Int, val copper: String, val outcome: String, val result: ItemGrant, val lottoEligible: Boolean = false) {
     init { require(slot in 0..36 && copper.isNotBlank() && outcome in AlchemyPolicy.OUTPUTS && result.count == 1L) }
     fun encode() = YamlConfiguration().apply {
         set("schemaVersion", 1); set("slot", slot); set("copper", copper); set("outcome", outcome)
         set("result.payload", result.payload); set("result.count", result.count); set("result.limit", result.limit)
+        set("lottoEligible", lottoEligible)
     }.saveToString()
     companion object {
         fun decode(payload: String): AlchemyTerms {
@@ -20,7 +21,8 @@ data class AlchemyTerms(val slot: Int, val copper: String, val outcome: String, 
             val slot = integer("slot"); val limit = integer("result.limit")
             require(slot in 0..36 && limit in 1..Int.MAX_VALUE.toLong())
             return AlchemyTerms(slot.toInt(), requireNotNull(data.getString("copper")), requireNotNull(data.getString("outcome")),
-                ItemGrant(requireNotNull(data.getString("result.payload")), integer("result.count"), limit.toInt()))
+                ItemGrant(requireNotNull(data.getString("result.payload")), integer("result.count"), limit.toInt()),
+                (data.get("lottoEligible") ?: false).also { require(it is Boolean) } as Boolean)
         }
     }
 }
@@ -38,6 +40,10 @@ class AlchemySettlement(private val deliveries: DeliveryJournal) : RemovalEffect
         validate(tx, record)
         val terms = AlchemyTerms.decode(record.terms)
         deliveries.stage(tx, record.evidence.id, record.evidence.owner, "alchemy ${terms.outcome}", listOf(terms.result))
+        if (terms.lottoEligible && terms.outcome == "netherite_ingot") {
+            val key = "quest_trigger/${record.evidence.owner}/lotto"
+            if (tx.get(key) == null) tx.put(key, record.evidence.id.toString())
+        }
         return terms.encode()
     }
     companion object { const val KIND = "ALCHEMY" }

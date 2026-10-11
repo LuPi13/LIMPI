@@ -36,7 +36,7 @@ object SuperCloak : CloakAbility(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("", NamedTextColor.WHITE)
                 .append(Component.text("은폐", NamedTextColor.DARK_GREEN))
@@ -67,13 +67,13 @@ object SuperCloak : CloakAbility(
     fun onDamaged(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
         if (player.ability !== this || !isCloaked(player.uniqueId)) return
-        event.damage *= (1.0 - config!!.getDouble("damage_reduction"))
+        event.damage *= (1.0 - sessionSettings(player.uniqueId).getDouble("damage_reduction"))
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onKill(event: EntityDeathEvent) {
         val player = event.entity.killer ?: return
         if (player.uniqueId == event.entity.uniqueId || player.ability !== this) return
-        addGauge(player.uniqueId, points("kill_gauge"))
+        addGauge(player.uniqueId, Math.round(sessionSettings(player.uniqueId).getDouble("kill_gauge") * 1000.0))
     }
 }

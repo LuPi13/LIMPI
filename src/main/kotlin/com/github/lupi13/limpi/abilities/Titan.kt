@@ -35,7 +35,7 @@ object Titan : Ability(
     ),
     needFile = false
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("타이탄은 수호자 군대에서 무지막지한 외상을 입 는 직업으로, 그 가 폭발 합니다.", NamedTextColor.WHITE),
             Component.text("공격 을 후려 쳐서 자신과 화력팀을 바닥에, 타이탄은 속 았습니다.", NamedTextColor.WHITE),

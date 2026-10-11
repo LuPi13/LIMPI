@@ -373,6 +373,23 @@
 
 ## 항목별 진행 상태
 
+### 2026-10-11 / NEXT_TASKS 1~7 구현·검증 (`refactor/ops-and-quests`)
+
+main `89d481b`에서 작업 브랜치를 만들었다. main 병합·서버 자동 실행·복사는 하지 않았다. 다음 7개 작업의 구현·단위/저장소 시험·정적 검토를 마쳤다. 실제 Paper 효과·저장·화면 시험은 사용자가 수행할 [서버 시험 계획](SERVER_TEST_PLAN.md)의 NEXT 항목에 남긴다.
+
+| 작업 ID / 관련 계획 | 구현·검증 결과 | 실제 서버 확인 |
+| --- | --- | --- |
+| NEXT-01 / OPS-01 | 자동 백업 설정·단일 비동기 worker·read-only backup API·성공 후 최근 파일 보관. WAL/원장·보관 개수·실패/동일 초 보존 및 동시 writer의 미커밋 쓰기 제외 시험 | 시작/주기/0 비활성·권한 실패 로그·운영 복사본 복구 |
+| NEXT-02 / CMD-01 | `/financial review`, 전체 5종 pending·손상 YAML/식별자도 표시, 해결 명령·권한·탭/책 연결. 조회 무변경·잘못된 owner의 강제 해결 안내 방지 시험 | 실제 pending과 콘솔/권한·책 페이지 |
+| NEXT-03 / CFG-01 | `/ability reload`, 모든 파일 검증 후 설정 교체. details snapshot별 cache와 실제 능력 갱신 시험. Runnable·충전/반격/은폐/표식/포탄/통달/역행의 기존 설정 보관 경로 정적 검토·수정 | 진행 중 효과와 다음 시전의 값·아이템 보호 |
+| NEXT-04 / CFG-01 | `_defaults` 이전 기본값 기록·사용자 값 유지·조건부 로그. 변경/사용자 수정/반복 안내 억제 시험 | 시작 로그·파일 값 보존 |
+| NEXT-05 / DATA-01 | `DebugTransactionTiming`, execute/atomic 계측·50ms warning. replay/rollback/로그 실패 독립성 시험. 퀘스트는 완료·해금과 같은 원자 결과를 사용하므로 측정 전 동기 유지 | 실제 부하 시간 수집 후 비동기/배치 도입 판단 |
+| NEXT-06 / AB-07·QUEST-01 | AlchemyPlus(EPIC 임시)·Lotto 등록, 원본 확률·소리·회수/지급 저널, 네더라이트 정산 증거와 claim 후 해금 재시도. 능력 72개. 재시작/비대상·retained/removed 판단과 한번 해금 시험 | 실제 양손·공간 부족·재접속·완료/해금·소리 |
+| NEXT-07 / QUEST-01·CMD-01 | `/ability quest`, 7개 누적형 퀘스트 공통 정의, 체력 단위·조화 2종·숨김 정책. 타입/단위와 실제 숨김 조건/진행도 공개 규칙 시험 | 채팅·기존 메뉴/연출 UX |
+
+- 검증: **348개 시험 통과(실패/오류/스킵 0)**, `gradlew build` 성공, `git diff --check` 통과. 기존 Paper deprecated API와 SQLite native-access 경고는 남아 있다. 실제 Paper save/표시/능력 효과 검증은 하지 않았다. 산출물은 `build/libs`에만 만든다. `docs/고칠것들.md`는 로컬 전용으로 유지한다.
+- 변경 후보: 자동 백업 0은 시작 백업도 비활성; 기본값 이력은 `_defaults`(첫 도입 이전의 기본값은 추측하지 않음); 일반 지급 PENDING도 통합 조회; 퀘스트 동기 쓰기 유지(새 큐·크래시 유실 구간·순서 변경 없음); 연금술+ 등급 EPIC; 퀘스트 GUI 대신 채팅 명령; activeItem 로어는 보호 판정 보존을 위해 재시작 후 반영. 시간 역행 기록 버퍼 길이는 다음 기록 시작부터 변경한다. [설정 계약](ABILITY_SETTINGS.md)의 적용 시점을 따른다.
+
 | 계획 ID | 구현 상태 | 남은 내용 |
 | --- | --- | --- |
 | DATA-01 | 완료(단위 검증) | 캐시·단일 저장소·능력 hot path 구현. 실제 서버 성능 측정은 최종 서버 시험 때 수행 |

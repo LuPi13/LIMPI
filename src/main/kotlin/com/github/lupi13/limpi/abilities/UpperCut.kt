@@ -22,7 +22,7 @@ object UpperCut : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("근접 공격의 넉백이 ", NamedTextColor.WHITE)
                 .append(Component.text(config!!.getDouble("knockBackAmplifier"), NamedTextColor.GREEN))

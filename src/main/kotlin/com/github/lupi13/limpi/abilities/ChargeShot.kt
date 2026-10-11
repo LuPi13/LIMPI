@@ -51,7 +51,7 @@ object ChargeShot : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("왼손이 ", NamedTextColor.WHITE)
                 .append(Component.text("록 버스터", NamedTextColor.YELLOW))
@@ -94,7 +94,7 @@ object ChargeShot : Ability(
         minOf(config!!.getDouble("max_damage"), (config!!.getInt("max_charge_ticks") / config!!.getInt("charge_ticks_per_damage")).toDouble())
 
     /** 충전 중인 플레이어: 효과와 충전 틱. 효과가 닫히면(사망, 능력 변경 등) 발사하지 않고 충전이 취소됩니다. */
-    private class Charge(val effect: AbilityEffect, var ticks: Int = 0)
+    private class Charge(val effect: AbilityEffect, val settings: com.github.lupi13.limpi.config.AbilitySettings, var ticks: Int = 0)
     private val charging: MutableMap<UUID, Charge> = mutableMapOf()
     /** 마지막 발사 시각(ms). 쿨타임 동안에는 새 충전을 시작하지 않아, 키를 누르고 있어도 연사되지 않습니다. */
     private val lastShot: MutableMap<UUID, Long> = mutableMapOf()
@@ -135,13 +135,14 @@ object ChargeShot : Ability(
     }
 
     private fun startCharge(player: Player) {
+        val config = requireNotNull(config)
         val id = player.uniqueId
-        val maxCharge = config!!.getInt("max_charge_ticks")
+        val maxCharge = config.getInt("max_charge_ticks")
         val effect = AbilityRuntime.begin(player, codeName)
-        val charge = Charge(effect)
+        val charge = Charge(effect, config)
         charging[id] = charge
         effect.own { if (charging[id] === charge) charging.remove(id) }
-        val slowness = config!!.getDouble("charging_slowness")
+        val slowness = config.getDouble("charging_slowness")
         if (slowness > 0) effect.attribute(Attribute.MOVEMENT_SPEED, -slowness, AttributeModifier.Operation.MULTIPLY_SCALAR_1)
         effect.repeat { scope ->
             val owner = scope.player() ?: return@repeat scope.close()
@@ -183,11 +184,12 @@ object ChargeShot : Ability(
     }
 
     private fun fire(player: Player, charge: Charge) {
+        val config = charge.settings
         val ticks = charge.ticks
         charge.effect.close() // 충전 종료(감속 해제)
         lastShot[player.uniqueId] = System.currentTimeMillis()
-        val damage = minOf(config!!.getDouble("max_damage"), (ticks / config!!.getInt("charge_ticks_per_damage")).toDouble())
-        val lifetime = config!!.getInt("lifetime_ticks")
+        val damage = minOf(config.getDouble("max_damage"), (ticks / config.getInt("charge_ticks_per_damage")).toDouble())
+        val lifetime = config.getInt("lifetime_ticks")
         val size = damage / 20.0 + 0.5
         val step = player.location.direction.multiply(size)
         val world = player.world

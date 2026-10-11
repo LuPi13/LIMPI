@@ -41,12 +41,23 @@ class AbilitySpec(val fields: List<AbilityField>, private val check: (AbilitySet
         check(result)
         return result to copy
     }
-    fun load(path: Path): AbilitySettings {
+    fun defaultChanges(source: YamlConfiguration): List<String> = fields.mapNotNull { field ->
+        val previous = source.get("_defaults.${field.key}") ?: return@mapNotNull null
+        val current = source.get(field.key) ?: return@mapNotNull null
+        fun same(a: Any, b: Any) = if (a is Number && b is Number) a.toDouble() == b.toDouble() else a == b
+        if (same(current, previous) && !same(current, field.default))
+            "${field.key} 현재 $current → 새 기본값 ${field.default}" else null
+    }
+
+    fun load(path: Path, notice: (String) -> Unit = {}): AbilitySettings {
         try {
             val source = YamlFiles.read(path)
             val (settings, normalized) = prepare(source)
+            val changes = defaultChanges(source)
+            fields.forEach { normalized.set("_defaults.${it.key}", it.default) }
             // A malformed present value is never replaced, and validation finishes before any write.
-            if (!Files.exists(path) || !source.isSet("schemaVersion") || fields.any { !source.isSet(it.key) }) YamlFiles.write(path, normalized)
+            if (source.saveToString() != normalized.saveToString()) YamlFiles.write(path, normalized)
+            changes.forEach { notice("기본값이 바뀌었습니다: ${path.fileName} $it") }
             return settings
         } catch (failure: Exception) {
             throw IllegalArgumentException("Invalid ability settings ${path.toAbsolutePath()}: ${failure.message}", failure)

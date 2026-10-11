@@ -42,7 +42,7 @@ object OverBalance : Ability(
     restrictedSlot = 40
 ){
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))

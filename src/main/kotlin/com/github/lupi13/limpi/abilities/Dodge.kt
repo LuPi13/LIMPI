@@ -42,7 +42,7 @@ object Dodge : Ability(
         listOf(DodgeMaster, YourDodge, EnoughDodge, ShouldDodge, DodgeCliche, ColdDodge)
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("지상에서 빠르게 두 번 웅크려", NamedTextColor.WHITE),
             Component.text("이동 방향으로 회피합니다.", NamedTextColor.WHITE),
@@ -122,7 +122,7 @@ object Dodge : Ability(
     }
     /** 회피 직후 확인하는 퀘스트: 회피의 달인, 바람처럼 차갑게, 너의 회피는, 굳이 회피해야해? */
     private fun checkDodgeQuests(player: Player, horizontalSpeed: Double) {
-        QuestManager.progress(player, DodgeMaster, "dodge_count", 100)
+        QuestManager.progress(player, DodgeMaster)
         if (horizontalSpeed >= COLD_DODGE_SPEED) QuestManager.clearQuests(player, ColdDodge)
         if (player.getNearbyEntities(5.0, 5.0, 5.0).count { it.type == EntityType.ENDERMAN } >= 10) QuestManager.clearQuests(player, YourDodge)
         if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) QuestManager.clearQuests(player, ShouldDodge)

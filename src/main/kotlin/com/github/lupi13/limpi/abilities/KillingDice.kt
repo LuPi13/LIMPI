@@ -34,7 +34,7 @@ object KillingDice : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("가하는 모든 피해가 ", NamedTextColor.WHITE)
                 .append(Component.text(config!!.getDouble("damageReduction"), NamedTextColor.GREEN))

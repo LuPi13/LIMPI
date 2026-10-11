@@ -41,7 +41,7 @@ object BladeLeaper : Ability(
     needFile = true
 ){
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("오른손으로 ", NamedTextColor.WHITE)
                 .append(Component.text("검", NamedTextColor.YELLOW))

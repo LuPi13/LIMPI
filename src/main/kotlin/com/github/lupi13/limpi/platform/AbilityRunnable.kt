@@ -9,7 +9,9 @@ import org.bukkit.scheduler.BukkitTask
 import java.util.logging.Level
 
 /** Adapter for existing effect bodies. Every scheduled run has a scope, lifecycle guard and cleanup. */
-abstract class AbilityRunnable(player: Player, private val ability: String, allowDead: Boolean = false) : BukkitRunnable() {
+abstract class AbilityRunnable(player: Player, private val ability: String, allowDead: Boolean = false,
+    protected val config: com.github.lupi13.limpi.config.AbilitySettings? = com.github.lupi13.limpi.abilities.AbilityManager.getAbilityByCodeName(ability)?.config
+) : BukkitRunnable() {
     protected val effect = AbilityRuntime.begin(player, ability, allowDead = allowDead)
     private val logger = player.server.logger
     private var once = false

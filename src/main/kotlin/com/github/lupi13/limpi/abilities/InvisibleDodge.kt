@@ -38,7 +38,7 @@ object InvisibleDodge : DodgeVariant(
     override val unlockQuest: Quest get() = ShouldDodge
     override val relatedQuest: List<Quest> by lazy { listOf(com.github.lupi13.limpi.quests.IntoTheDark) }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             inheritLine(),
             Component.text("회피 후 ", NamedTextColor.WHITE)

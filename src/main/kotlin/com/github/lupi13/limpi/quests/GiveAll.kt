@@ -10,5 +10,6 @@ object GiveAll : Quest(
     isHidden = false,
     howToGet = Component.text("매의 눈", NamedTextColor.YELLOW)
         .append(Component.text(" 능력으로 100개의 추가 아이템을 획득하세요.", NamedTextColor.WHITE)),
-    rewardAbility = HawkEyePlus
+    rewardAbility = HawkEyePlus,
+    progress = QuestProgressDefinitions.HAWK_EYE
 )

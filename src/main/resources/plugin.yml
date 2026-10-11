@@ -17,6 +17,12 @@ commands:
     aliases: [ab]
 
 permissions:
+  limpi.ability.quest:
+    description: Inspect your quest completion rewards and progress
+    default: true
+  limpi.ability.admin.reload:
+    description: Validate and reload every ability settings file
+    default: op
   limpi.ability.me:
     description: Inspect your active ability
     default: true
@@ -90,7 +96,7 @@ permissions:
     description: Claim pending items
     default: true
   limpi.financial.admin.delivery:
-    description: Inspect and resolve interrupted deliveries
+    description: Inspect and resolve interrupted deliveries and list all pending recovery records
     default: op
   limpi.financial.send:
     description: Send money to an existing account

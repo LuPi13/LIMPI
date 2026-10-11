@@ -10,5 +10,6 @@ object NoHurt : Quest(
     isHidden = false,
     howToGet = Component.text("핸드캐논", NamedTextColor.GRAY)
         .append(Component.text("을 총 3000회 사격하세요.", NamedTextColor.WHITE)),
-    rewardAbility = ChargeShot
+    rewardAbility = ChargeShot,
+    progress = QuestProgressDefinitions.CANNON_SHOTS
 )

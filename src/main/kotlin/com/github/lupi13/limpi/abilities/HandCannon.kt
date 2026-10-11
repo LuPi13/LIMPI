@@ -45,7 +45,7 @@ object HandCannon : Ability(
 ) {
     override val relatedQuest: List<Quest> by lazy { listOf(NogadaKing, TriggerFinger, NoHurt, BoldForBoom) }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("왼손이 ", NamedTextColor.WHITE)
                 .append(Component.text("핸드캐논", NamedTextColor.YELLOW))
@@ -130,11 +130,12 @@ object HandCannon : Ability(
         val player = event.player
         if (player.ability != this || FileManager.delivery.blocked(player.uniqueId)) return
         event.isCancelled = true
-        shoot(player, codeName, config!!.getDouble("velocity"), config!!.getInt("lifetime_ticks")) { owner, target ->
-            if (!AbilityDamage.hit(owner, target, codeName, config!!.getDouble("damage"), knockback = false) || !target.isDead) return@shoot
+        val config = requireNotNull(config)
+        shoot(player, codeName, config.getDouble("velocity"), config.getInt("lifetime_ticks")) { owner, target ->
+            if (!AbilityDamage.hit(owner, target, codeName, config.getDouble("damage"), knockback = false) || !target.isDead) return@shoot
             if (owner.ability != this) return@shoot
             if (target is Creeper && target.isPowered) QuestManager.clearQuests(owner, BoldForBoom)
-            QuestManager.progress(owner, NogadaKing, "hand_cannon_kills", 100)
+            QuestManager.progress(owner, NogadaKing)
         }
         checkShotQuests(player)
     }
@@ -145,7 +146,7 @@ object HandCannon : Ability(
         if (bullets.values.count { it.effect.owner == id } >= 20) QuestManager.clearQuests(player, TriggerFinger)
 
         if (id in shotQuestDone) return
-        QuestManager.progress(player, NoHurt, "hand_cannon_shots", 3000)
+        QuestManager.progress(player, NoHurt)
         if (QuestManager.isClearedQuest(player, NoHurt)) shotQuestDone += id
     }
 

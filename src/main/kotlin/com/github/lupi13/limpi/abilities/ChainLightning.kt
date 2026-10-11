@@ -26,7 +26,7 @@ object ChainLightning : Ability(
     needFile = true
 ){
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("가한 피해의 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getDouble("damageRatio") * 100}", NamedTextColor.GREEN))

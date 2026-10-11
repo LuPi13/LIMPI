@@ -54,7 +54,7 @@ abstract class HawkEyeAbility(
         Material.IRON_SWORD, Material.DIAMOND_SWORD, Material.NETHERITE_SWORD
     )
 
-    private class Mark(val target: UUID, val effect: AbilityEffect)
+    private class Mark(val target: UUID, val effect: AbilityEffect, val settings: com.github.lupi13.limpi.config.AbilitySettings)
 
     /** 플레이어 → 현재 표식. 발광 효과가 끝나면(시간 만료, 사망, 퇴장 등) 표식도 사라집니다. */
     private val marks: MutableMap<UUID, Mark> = mutableMapOf()
@@ -132,7 +132,7 @@ abstract class HawkEyeAbility(
     private fun mark(player: Player, target: LivingEntity, glowTicks: Int) {
         marks.remove(player.uniqueId)?.effect?.close()
         val effect = AbilityRuntime.begin(player, codeName)
-        val mark = Mark(target.uniqueId, effect)
+        val mark = Mark(target.uniqueId, effect, requireNotNull(config))
         val owner = player.uniqueId
         marks[owner] = mark
         effect.own { if (marks[owner] === mark) marks.remove(owner) }
@@ -152,13 +152,14 @@ abstract class HawkEyeAbility(
         val killer = entity.killer ?: return
         val mark = marks[killer.uniqueId] ?: return
         if (mark.target != entity.uniqueId) return
+        val config = mark.settings
         marks.remove(killer.uniqueId)
         mark.effect.close()
         if (killer.ability != this || FileManager.delivery.blocked(killer.uniqueId)) return
 
-        val dropMultiplier = config!!.getInt("drop_multiplier")
-        val expMultiplier = config!!.getInt("exp_multiplier")
-        val extraCount = config!!.getInt("extra_items")
+        val dropMultiplier = config.getInt("drop_multiplier")
+        val expMultiplier = config.getInt("exp_multiplier")
+        val extraCount = config.getInt("extra_items")
         event.droppedExp = (event.droppedExp.toLong() * expMultiplier).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
         // 플레이어의 소지품은 복제하지 않습니다. 최대 겹침 수를 넘지 않도록 수량 대신 복사본을 추가합니다.
         if (entity !is Player && dropMultiplier > 1) {
@@ -181,7 +182,7 @@ abstract class HawkEyeAbility(
         val player = plugin.server.getPlayer(owner) ?: return
         try {
             // 퀘스트 카운터는 호출마다 1씩 늘어나므로 추가 아이템 수만큼만 호출합니다.
-            repeat(count) { QuestManager.progress(player, quest, GIVE_ALL_COUNTER, GIVE_ALL_TARGET) }
+            repeat(count) { QuestManager.progress(player, quest) }
         } catch (failure: Exception) {
             plugin.logger.log(Level.WARNING, "Unable to record $codeName quest progress for ${player.name}", failure)
         }
@@ -206,8 +207,8 @@ abstract class HawkEyeAbility(
     }
 
     companion object {
-        const val GIVE_ALL_COUNTER = "hawk_eye_extra_items"
-        const val GIVE_ALL_TARGET = 100L
+        val GIVE_ALL_COUNTER get() = com.github.lupi13.limpi.quests.QuestProgressDefinitions.HAWK_EYE.counter
+        val GIVE_ALL_TARGET get() = com.github.lupi13.limpi.quests.QuestProgressDefinitions.HAWK_EYE.target
 
         /** 원본의 제한 목록에 대응하는 관리자 전용/획득 불가 아이템 ID입니다. */
         /** 스폰 알과 좀벌레 블록(infested_*)도 생존에서 얻을 수 없습니다. */
@@ -245,5 +246,5 @@ object HawkEye : HawkEyeAbility(
 
     override val relatedQuest: List<Quest> by lazy { listOf(GiveAll) }
 
-    override val details: List<Component> by lazy { effectLines() }
+    override val details: List<Component> by settingsCached { effectLines() }
 }

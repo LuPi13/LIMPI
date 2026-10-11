@@ -21,7 +21,7 @@ object AdaptiveDefense : Ability(
     needFile = true
 ){
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("같은 유형의 피해를 연속해서 받을 때마다", NamedTextColor.WHITE),
             Component.text("피해량이 ", NamedTextColor.WHITE)

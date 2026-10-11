@@ -46,7 +46,7 @@ object BlockThrower : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("손에 든 단단한 블록을 허공에 우클릭하면 던지고,", NamedTextColor.WHITE),
             Component.text("떨어진 자리에 설치합니다.", NamedTextColor.WHITE),

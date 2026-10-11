@@ -17,6 +17,8 @@ object CommandDefinitions {
         route("pity", "limpi.ability.pity", true, 1, 1, "ceiling (pity)", "천장과 다음 실제 확률을 확인합니다.", id = "ceiling"),
         route("set", "limpi.ability.admin.set", false, 3, 3, "set <접속 플레이어> <능력 ID|none>", "티켓 없이 능력을 적용하거나 제거합니다.", suggestions = mapOf(1 to "online", 2 to "abilities")),
         route("result", "limpi.ability.result", true, 2, 2, "result <거래 UUID>", "확정된 자신의 뽑기/선택 결과를 확인합니다.", true),
+        route("reload", "limpi.ability.admin.reload", false, 1, 1, "reload", "모든 능력 설정을 검증한 뒤 함께 다시 불러옵니다."),
+        route("quest", "limpi.ability.quest", true, 1, 1, "quest", "퀘스트 달성 여부와 보상·누적 진행도를 확인합니다."),
     ))
     val financial = CommandIndex(listOf(
         route("help", null, false, 1, 1, "help", "사용 가능한 금융 명령을 확인합니다.", true),
@@ -55,5 +57,6 @@ object CommandDefinitions {
         route("transition resolve", "limpi.financial.admin.transition", false, 6, Int.MAX_VALUE, "transition resolve <owner UUID> <전환 UUID> applied|retained <근거>", "오프라인 전환 판단을 기록합니다.", true, mapOf(4 to "transitionDecision")),
         route("sugar", "limpi.financial.admin.sugar", false, 2, 2, "sugar <owner UUID>", "적용 대기 중인 설탕 결과를 조회합니다.", true),
         route("sugar void", "limpi.financial.admin.sugar", false, 5, Int.MAX_VALUE, "sugar void <owner UUID> <결과 UUID> <근거>", "적용할 수 없는 설탕 결과를 환불 없이 종료하고 원장을 남깁니다.", true),
+        route("review", "limpi.financial.admin.delivery", false, 1, 1, "review", "모든 소유자의 확인 대기 기록과 해결 명령을 조회합니다.", true),
     ))
 }

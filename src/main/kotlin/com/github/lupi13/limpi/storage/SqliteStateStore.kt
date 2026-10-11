@@ -12,6 +12,7 @@ class SqliteStateStore(
     path: Path,
     private val clock: Clock = Clock.systemUTC(),
     private val beforeCommit: () -> Unit = {},
+    private val transactionTiming: ((operation: String, elapsedNanos: Long) -> Unit)? = null,
 ) : StateStore {
     private val connection: Connection
     private var inTransaction = false
@@ -63,32 +64,44 @@ class SqliteStateStore(
 
     @Synchronized override fun atomic(action: (StateTransaction) -> Unit) {
         checkAvailable()
-        transaction { tx -> action(tx) }
+        measured("atomic") { transaction { tx -> action(tx) } }
     }
 
     @Synchronized override fun execute(id: UUID, fingerprint: String, action: (StateTransaction) -> String): CommittedTransaction {
         checkAvailable()
         require(fingerprint.isNotBlank())
-        try {
-            return transaction { tx ->
-                readEntry(id)?.let { existing ->
-                    if (existing.fingerprint != fingerprint) throw TransactionIdentityConflict(id)
-                    return@transaction CommittedTransaction(existing, true)
+        return measured("execute:$id") {
+            try {
+                transaction { tx ->
+                    readEntry(id)?.let { existing ->
+                        if (existing.fingerprint != fingerprint) throw TransactionIdentityConflict(id)
+                        return@transaction CommittedTransaction(existing, true)
+                    }
+                    val receipt = action(tx)
+                    val entry = LedgerEntry(id, fingerprint, receipt, tx.changed.toSet(), clock.millis())
+                    connection.prepareStatement("INSERT INTO transactions(id,fingerprint,receipt,changed_keys,created_at) VALUES(?,?,?,?,?)").use {
+                        it.setString(1, id.toString()); it.setString(2, fingerprint); it.setString(3, receipt)
+                        it.setString(4, entry.changedKeys.joinToString("\n")); it.setLong(5, entry.createdAt)
+                        it.executeUpdate()
+                    }
+                    CommittedTransaction(entry, false)
                 }
-                val receipt = action(tx)
-                val entry = LedgerEntry(id, fingerprint, receipt, tx.changed.toSet(), clock.millis())
-                connection.prepareStatement("INSERT INTO transactions(id,fingerprint,receipt,changed_keys,created_at) VALUES(?,?,?,?,?)").use {
-                    it.setString(1, id.toString()); it.setString(2, fingerprint); it.setString(3, receipt)
-                    it.setString(4, entry.changedKeys.joinToString("\n")); it.setLong(5, entry.createdAt)
-                    it.executeUpdate()
-                }
-                CommittedTransaction(entry, false)
+            } catch (failure: Exception) {
+                // If commit returned an ambiguous error, the durable receipt resolves whether it happened.
+                val committed = runCatching { readEntry(id) }.getOrNull()
+                if (committed != null && committed.fingerprint == fingerprint) return@measured CommittedTransaction(committed, true)
+                throw failure
             }
-        } catch (failure: Exception) {
-            // If commit returned an ambiguous error, the durable receipt resolves whether it happened.
-            val committed = runCatching { readEntry(id) }.getOrNull()
-            if (committed != null && committed.fingerprint == fingerprint) return CommittedTransaction(committed, true)
-            throw failure
+        }
+    }
+
+    private inline fun <T> measured(operation: String, action: () -> T): T {
+        val observer = transactionTiming ?: return action()
+        val started = System.nanoTime()
+        try { return action() }
+        finally {
+            // Diagnostics must never change settlement or obscure a storage failure.
+            runCatching { observer(operation, System.nanoTime() - started) }
         }
     }
 

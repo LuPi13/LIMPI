@@ -9,6 +9,9 @@ StockStandardDeviation: 0.1  # 주식 변동 표준 편차(추천: (최대배율
 StockPriceDrag: 0.1  # 주식의 가격 회귀율, 반드시 1 이하로 할 것, 0으로 두면 중앙복귀 조정이 없으며 가격이 0으로 수렴 또는 무한대로 발산할 수 있음
 StockInterval: 10  # 주식 변동 주기(분), 양수. 재시작 후 누락 구간은 현재 시간 경계에서 1회 갱신
 RecordRetentionDays: 7  # 서버 시작 시 이 일수가 지난 완료된 지급/회수/능력 전환/장터 등록 기록과 거래 장부를 정리 (0 이하면 정리 안 함)
+BackupIntervalMinutes: 60  # 서버 시작 시와 이 주기(분)마다 DB 비동기 백업. 0이면 시작 백업도 끔
+BackupKeep: 24  # 성공한 자동 백업 중 최근 보관 개수(양수)
+DebugTransactionTiming: false  # execute/atomic 전체 수행 시간 로그. 켜면 50ms 이상은 경고, 나머지는 정보 로그
 #=== Financial System Configuration End ===#
 
 #=== Ability System Configuration ===#

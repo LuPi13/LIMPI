@@ -24,6 +24,7 @@ import java.io.PrintStream
 
 class LIMPI : JavaPlugin() {
     private var gacha: GachaEvents? = null
+    private var backups: com.github.lupi13.limpi.platform.BackupScheduler? = null
     override fun onEnable() {
         // Plugin startup logic
         System.setOut(PrintStream(System.out, true, "UTF-8"))
@@ -35,6 +36,7 @@ class LIMPI : JavaPlugin() {
         saveDefaultConfig()
         AbilityManager.initialize(this)
         FileManager.initialize(this)
+        backups = com.github.lupi13.limpi.platform.BackupScheduler(this)
         AbilityRuntime.initialize(this)
         server.onlinePlayers.forEach { player ->
             // One malformed profile blocks only that player; it must not abort enable for everyone else.
@@ -78,7 +80,10 @@ class LIMPI : JavaPlugin() {
             server.pluginManager.registerEvents(AbilitySelectEvent(), this)
             server.pluginManager.registerEvents(AbilityDictionary(), this)
             AbilityManager.registerAbilities()
-            FileManager.delivery.afterClaim = gachaEvents::recoverApplications
+            FileManager.delivery.afterClaim = { player ->
+                gachaEvents.recoverApplications(player)
+                com.github.lupi13.limpi.quests.Lotto.check(player)
+            }
             server.onlinePlayers.forEach { FileManager.delivery.claim(it) }
         }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
@@ -107,6 +112,8 @@ class LIMPI : JavaPlugin() {
 
     override fun onDisable() {
         // Plugin shutdown logic
+        backups?.close()
+        backups = null
         StockEvents.stop()
         SellEvents.closeAll()
         AbilityRuntime.closeAll()

@@ -117,7 +117,7 @@ object DodgePlus : DodgeVariant(
 ) {
     override val unlockQuest: Quest get() = DodgeMaster
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             inheritLine(),
             Component.text("지상에서 빠르게 두 번 웅크려", NamedTextColor.WHITE),

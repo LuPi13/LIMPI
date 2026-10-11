@@ -16,7 +16,7 @@ object QuestManager {
         ExpAbsorber, DoEndermansDreamOfFreeingEnd, UndeadCooperation, LineBetweenSwordAndArrow,
         DodgeMaster, YourDodge, EnoughDodge, ShouldDodge, DodgeCliche, ColdDodge,
         PerfectDistance, FireStrike, MasterSmith, MoebiusReactor, IntoTheDark,
-        GiveAll, NogadaKing, TriggerFinger, NoHurt, BoldForBoom, LightTime, DarkTime
+        GiveAll, NogadaKing, TriggerFinger, NoHurt, BoldForBoom, LightTime, DarkTime, Lotto
     )
 
 
@@ -56,6 +56,25 @@ object QuestManager {
     fun progress(player: Player, quest: Quest, counter: String, target: Long) {
         notify(player, quest, FileManager.quest.progress(java.util.UUID.randomUUID(), player.uniqueId, counter, target,
             quest.codeName, quest.rewardAbility.codeName))
+    }
+
+    fun progress(player: Player, quest: Quest, amount: Long = 1) {
+        val definition = requireNotNull(quest.progress)
+        progress(player, quest, definition.counter, amount, definition.target)
+    }
+
+    fun showProgress(player: Player) {
+        val profile = FileManager.getPlayerData(player)
+        val cleared = profile.getStringList("clearedQuests")
+        quests.forEach { quest ->
+            val done = quest.codeName in cleared
+            player.sendMessage(quest.displayText.append(Component.text(if (done) " [달성]" else " [미달성]", if (done) NamedTextColor.GREEN else NamedTextColor.GRAY))
+                .append(Component.text(" / 보상: ", NamedTextColor.WHITE)).append(quest.rewardAbility.displayName))
+            player.sendMessage(quest.visibleCondition(done))
+            quest.visibleProgress(profile, done).forEach { text ->
+                player.sendMessage(Component.text(text, NamedTextColor.WHITE))
+            }
+        }
     }
 
     /** Add [amount] (non-negative) to an accumulated quest counter; completes it when [target] is reached. */

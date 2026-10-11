@@ -38,7 +38,7 @@ object PulseCannon : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("핸드캐논", NamedTextColor.GRAY)
                 .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),

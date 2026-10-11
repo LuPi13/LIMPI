@@ -23,7 +23,7 @@ object Berserker : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("잃은 체력에 비례하여 근접 공격이 강해집니다.", NamedTextColor.WHITE),
             Component.text("체력이 1 남았을 때 최대 ", NamedTextColor.WHITE)

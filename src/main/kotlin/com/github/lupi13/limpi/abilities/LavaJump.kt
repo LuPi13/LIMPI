@@ -23,7 +23,7 @@ object LavaJump : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("용암에 닿으면 피해를 받지 않고", NamedTextColor.WHITE),
             Component.text("위로 강하게 튀어오릅니다. (속도 ", NamedTextColor.WHITE)

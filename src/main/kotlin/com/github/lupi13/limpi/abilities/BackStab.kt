@@ -108,5 +108,5 @@ object BackStab : BackStabVariant(
         Component.text("더 큰 피해를 줍니다.", NamedTextColor.WHITE)
     )
 ) {
-    override val details: List<Component> by lazy { backStabLines() }
+    override val details: List<Component> by settingsCached { backStabLines() }
 }

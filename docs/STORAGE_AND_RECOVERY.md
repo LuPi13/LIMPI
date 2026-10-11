@@ -42,6 +42,10 @@ ID를 생략하면 새 UUID를 생성해 메시지로 안내한다. 결과가 �
 
 ## 백업과 복구
 
+- 자동 DB 백업: `BackupIntervalMinutes`(기본 60)마다, 그리고 서버 시작 시 `plugins/LIMPI/backups/limpi-yyyyMMdd-HHmmss.sqlite3`를 만든다. 0이면 시작 백업도 끈다. `BackupKeep`(기본 24, 양수)개의 최근 자동 백업을 보관한다. 파일명 시각은 서버 시간대다.
+- 단일 백그라운드 작업이 별도 read-only 연결과 SQLite backup API로 commit된 WAL까지 보존·검증한다. live 저장소 연결을 공유하지 않고 메인 스레드에서 파일을 쓰지 않는다. 실패는 경고 로그만 남긴다. 성공한 백업 뒤에만 해당 자동 백업 파일명에 맞는 오래된 일반 파일을 삭제하고 수동 백업은 남긴다. 같은 초의 파일은 덮어쓰지 않는다.
+- 자동 백업도 DB만 보존한다. 인벤토리까지 복구할 백업은 아래의 정상 종료 절차를 따른다.
+
 - 일반 백업은 서버 정상 종료 후 **LIMPI 데이터 폴더 전체 + 월드/playerdata**를 같은 시점에 복사한다. DB와 인벤토리는 별도 저장소이므로 시점을 맞춰야 한다.
 - WAL 모드에서는 실행 중 `limpi.sqlite3` 하나만 복사하면 최신 commit이 빠질 수 있다. 남아 있는 `-wal`을 수동 삭제하지 않는다. 실행 중 DB 백업은 아래 `backup`(SQLite backup API)을 사용한다. 이것은 DB만 보존하며 인벤토리와 같은 시점 스냅샷이 아니다. [SQLite WAL 설명](https://www.sqlite.org/wal.html)
 - 복구 전에 서버를 종료하고 현재 손상 상태를 별도 보존한다. 백업을 새 복사본에 복원해 DB 무결성/프로필 수/잔액/원장을 확인한 뒤 교체한다.
@@ -71,6 +75,9 @@ java -jar LIMPI-operations-1.0.0.jar restore-copy backups/limpi-2026-10-10.yml r
 - 구조 검사다. 아이템 NBT 유효성, live 인벤토리와 pending/REVIEW의 실제 일치는 판정하지 않는다.
 
 ## 남은 검증
+
+- `DebugTransactionTiming: true`로 `execute`/`atomic`의 트랜잭션 시작부터 commit/rollback 정리와 ambiguous-commit 확인까지 시간을 기록한다. 50ms 이상은 WARNING, 그 미만은 INFO다. 저장소 monitor를 획득하기 전 대기 시간은 포함하지 않으며 읽기·prune은 대상이 아니다. 기본 false이고 설정 변경은 재시작 후 적용한다. 진단 로그 실패는 정산 결과에 영향을 주지 않는다.
+- 현재 퀘스트 카운터도 완료·해금과 같은 원자 정산 결과를 기다리고 곧바로 화면에 알린다. 실제 서버 측정 전에는 이 경로를 비동기로 옮기거나 여러 카운터를 모아 쓰지 않는다. 새 크래시 유실 구간·큐 순서 변경은 도입하지 않았다. 계측 로그와 서버 부하를 확인한 뒤 독립 카운터의 큐·배치 도입 여부를 판단한다.
 
 - Minecraft 인벤토리와 SQLite는 원자적으로 함께 저장되지 않는다. 지급/회수의 pending·checkpoint·REVIEW 계약은 [지급 복구](DELIVERY_RECOVERY.md)를 따른다.
 - 실제 재시작/강제 종료 복구, backup→restore-copy→교체 절차, JVM native access(`--enable-native-access=ALL-UNNAMED` 경고) 점검은 서버 시험에서 확인한다.

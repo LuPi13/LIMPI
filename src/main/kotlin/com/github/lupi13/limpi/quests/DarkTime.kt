@@ -10,5 +10,6 @@ object DarkTime : Quest(
     isHidden = true,
     howToGet = Component.text("시간 역행", NamedTextColor.AQUA)
         .append(Component.text(" 능력으로 총 50의 체력을 잃으세요.", NamedTextColor.WHITE)),
-    rewardAbility = Chronobreak
+    rewardAbility = Chronobreak,
+    progress = QuestProgressDefinitions.TIME_LOST
 )

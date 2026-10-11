@@ -32,7 +32,7 @@ object GatheringStorm : Ability(
     needFile = true
 ){
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("집전", NamedTextColor.AQUA)
                 .append(Component.text(" ", NamedTextColor.WHITE))

@@ -21,7 +21,7 @@ object CookieRun : Ability(
     needFile = true
 ) {
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("쿠키", NamedTextColor.YELLOW)
                 .append(Component.text("를 먹으면 ", NamedTextColor.WHITE))

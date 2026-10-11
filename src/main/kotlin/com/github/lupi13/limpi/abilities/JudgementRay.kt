@@ -50,7 +50,7 @@ object JudgementRay : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("")
                 .append(Component.text("밸런스 붕괴", NamedTextColor.YELLOW))

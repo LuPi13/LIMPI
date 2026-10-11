@@ -46,7 +46,7 @@ object Transcendence : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("검", NamedTextColor.YELLOW).append(Component.text("으로 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("sword_required_damage")}", NamedTextColor.GREEN))
@@ -94,6 +94,7 @@ object Transcendence : Ability(
     var arrowGauge: MutableMap<java.util.UUID, Double> = mutableMapOf()
 
     var transcending: MutableMap<java.util.UUID, Boolean> = mutableMapOf()
+    private val activeSettings = mutableMapOf<java.util.UUID, com.github.lupi13.limpi.config.AbilitySettings>()
 
 
     private val enhancedHits = java.util.WeakHashMap<EntityDamageByEntityEvent, java.util.UUID>()
@@ -107,7 +108,8 @@ object Transcendence : Ability(
         } ?: return
         val target = event.entity as? Damageable ?: return
         if (player.ability != this || !AbilityManager.isEnemy(player, target) || transcending[player.uniqueId] != true) return
-        event.damage *= config!!.getDouble(if (event.damager is Player) "sword_damage_amplifier" else "arrow_damage_amplifier")
+        val config = activeSettings[player.uniqueId] ?: requireNotNull(config)
+        event.damage *= config.getDouble(if (event.damager is Player) "sword_damage_amplifier" else "arrow_damage_amplifier")
         enhancedHits[event] = player.uniqueId
     }
 
@@ -122,16 +124,17 @@ object Transcendence : Ability(
         } ?: return
         val target = event.entity as? Damageable ?: return
         if (player.ability != this || !AbilityManager.isEnemy(player, target)) return
+        val config = activeSettings[player.uniqueId] ?: requireNotNull(config)
         if (boosted == player.uniqueId && transcending[player.uniqueId] == true) {
             player.playSound(player.location, Sound.ENTITY_WARDEN_DEATH, 0.7f, 2.0f)
             if (event.damager is Player) target.world.spawnParticle(Particle.DRAGON_BREATH, target.boundingBox.center.toLocation(target.world), 30, 0.1, 0.1, 0.1, 0.2, 1.0f)
             else event.damager.world.spawnParticle(Particle.DRAGON_BREATH, event.damager.location, 30, 0.1, 0.1, 0.1, 0.2, 1.0f)
-            if (event.damager is Player && player.getCooldown(player.inventory.itemInMainHand.type) == 0) shootArrow(player, config!!.getInt("additional_arrow_count"))
+            if (event.damager is Player && player.getCooldown(player.inventory.itemInMainHand.type) == 0) shootArrow(player, config.getInt("additional_arrow_count"))
         } else if (transcending[player.uniqueId] == null) {
             if (event.damager is Player) swordGauge[player.uniqueId] = com.github.lupi13.limpi.combat.ChargeGauge.gain(
-                swordGauge[player.uniqueId] ?: 0.0, event.finalDamage, config!!.getDouble("sword_required_damage"))
+                swordGauge[player.uniqueId] ?: 0.0, event.finalDamage, config.getDouble("sword_required_damage"))
             else arrowGauge[player.uniqueId] = com.github.lupi13.limpi.combat.ChargeGauge.gain(
-                arrowGauge[player.uniqueId] ?: 0.0, event.finalDamage, config!!.getDouble("arrow_required_damage"))
+                arrowGauge[player.uniqueId] ?: 0.0, event.finalDamage, config.getDouble("arrow_required_damage"))
             showGauge(player)
         }
     }
@@ -179,7 +182,10 @@ object Transcendence : Ability(
 
         object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
             var ticks = 0
-            init { own { transcending.remove(player.uniqueId) } }
+            init {
+                activeSettings[player.uniqueId] = requireNotNull(config)
+                own { transcending.remove(player.uniqueId); activeSettings.remove(player.uniqueId) }
+            }
             val itemDisplay = spawn(
                 player.eyeLocation
                     .add(player.location.direction.rotateAroundY(-90.0).multiply(0.15))
@@ -199,6 +205,7 @@ object Transcendence : Ability(
                 itemDisplay.interpolationDuration = 0
             } }
             override fun tick() {
+                val config = requireNotNull(config)
                 // 선딜레이 모션
                 if (ticks <= 20) {
                     val angle = (Math.PI * (ticks * 4.0 / 20.0)).toFloat()
@@ -229,16 +236,16 @@ object Transcendence : Ability(
 
                 if (ticks == 20) {
                     transcending[player.uniqueId] = true
-                    if (config!!.getInt("resistance_level") > 0 && config!!.getInt("duration_ticks") > 0) effect.potion(player, PotionEffect(
+                    if (config.getInt("resistance_level") > 0 && config.getInt("duration_ticks") > 0) effect.potion(player, PotionEffect(
                         PotionEffectType.RESISTANCE,
-                        config!!.getInt("duration_ticks"),
-                        config!!.getInt("resistance_level") - 1,
+                        config.getInt("duration_ticks"),
+                        config.getInt("resistance_level") - 1,
                         true, true, true)
                     )
-                    if (config!!.getInt("speed_level") > 0 && config!!.getInt("duration_ticks") > 0) effect.potion(player, PotionEffect(
+                    if (config.getInt("speed_level") > 0 && config.getInt("duration_ticks") > 0) effect.potion(player, PotionEffect(
                         PotionEffectType.SPEED,
-                        config!!.getInt("duration_ticks"),
-                        config!!.getInt("speed_level") - 1,
+                        config.getInt("duration_ticks"),
+                        config.getInt("speed_level") - 1,
                         true, true, true)
                     )
 
@@ -272,19 +279,19 @@ object Transcendence : Ability(
                 }
 
                 ticks++
-                if ((ticks >= 21) && (ticks <= (config!!.getInt("duration_ticks") + 21))) {
+                if ((ticks >= 21) && (ticks <= (config.getInt("duration_ticks") + 21))) {
                     // 게이지 감소
                     val color = TextColor.color(255, (120L - ticks.toLong() * 3).coerceAtLeast(0).toInt(), 255)
                     var actionBar = Component.text("TRANSCENDENCE ", color, TextDecoration.BOLD)
-                    for (i in 0 until (61 - ((ticks - 21.0) * (61.0 / config!!.getInt("duration_ticks")))).toInt()) {
+                    for (i in 0 until (61 - ((ticks - 21.0) * (61.0 / config.getInt("duration_ticks")))).toInt()) {
                         actionBar = actionBar.append(Component.text("|", color).decoration(TextDecoration.BOLD, false))
                     }
-                    for (i in 0 until ((ticks - 21.0) * (61.0 / config!!.getInt("duration_ticks"))).toInt()) {
+                    for (i in 0 until ((ticks - 21.0) * (61.0 / config.getInt("duration_ticks"))).toInt()) {
                         actionBar = actionBar.append(Component.text("|", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
                     }
                     player.sendActionBar(actionBar)
                 }
-                if (ticks >= config!!.getInt("duration_ticks") + 21) {
+                if (ticks >= config.getInt("duration_ticks") + 21) {
                     transcending.remove(player.uniqueId)
                     swordGauge[player.uniqueId] = 0.0
                     arrowGauge[player.uniqueId] = 0.0
@@ -297,12 +304,13 @@ object Transcendence : Ability(
 
 
     fun shootArrow(player: Player, count: Int = 1) {
+        val config = activeSettings[player.uniqueId] ?: requireNotNull(config)
         for (i in 0 until count) {
             val arrow = player.world.spawnArrow(
                 player.eyeLocation.add(player.location.direction.multiply(0.5)),
                 player.location.direction,
-                config!!.getDouble("additional_arrow_velocity").toFloat(),
-                config!!.getDouble("additional_arrow_spread").toFloat()
+                config.getDouble("additional_arrow_velocity").toFloat(),
+                config.getDouble("additional_arrow_spread").toFloat()
             )
             arrow.pickupStatus = AbstractArrow.PickupStatus.CREATIVE_ONLY
             arrow.shooter = player
@@ -314,7 +322,7 @@ object Transcendence : Ability(
             )
         }
         for (s in sword) {
-            player.setCooldown(s, config!!.getInt("additional_arrow_cooldown"))
+            player.setCooldown(s, config.getInt("additional_arrow_cooldown"))
         }
     }
 
@@ -326,13 +334,14 @@ object Transcendence : Ability(
         if ((event.action != Action.LEFT_CLICK_AIR) && (event.action != Action.LEFT_CLICK_BLOCK)) return
         if (player.ability != this) return
         if (transcending[player.uniqueId] != true) return
+        val config = activeSettings[player.uniqueId] ?: requireNotNull(config)
 
         // 검을 들고 있지 않으면 리턴
         if (!sword.contains(player.inventory.itemInMainHand.type)) return
         if (player.getCooldown(player.inventory.itemInMainHand.type) != 0) return
 
 
-        shootArrow(player, config!!.getInt("additional_arrow_count"))
+        shootArrow(player, config.getInt("additional_arrow_count"))
     }
 
 
@@ -347,12 +356,13 @@ object Transcendence : Ability(
 
         arrow.pierceLevel = 126
 
-        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName, config = activeSettings[player.uniqueId] ?: config) {
             var ticks = 0
             override fun tick() {
-                if (ticks % config!!.getInt("additional_sword_ticks") == 0) {
-                    val damage = config!!.getDouble("additional_sword_damage")
-                    val range = config!!.getDouble("additional_sword_range")
+                val config = requireNotNull(config)
+                if (ticks % config.getInt("additional_sword_ticks") == 0) {
+                    val damage = config.getDouble("additional_sword_damage")
+                    val range = config.getDouble("additional_sword_range")
 
                     val entities = arrow.world.getNearbyEntities(arrow.location, range, range, range)
                         .filterIsInstance<Damageable>()
@@ -380,7 +390,7 @@ object Transcendence : Ability(
             }
         }.runTaskTimer(plugin, 0L, 1L)
     }
-    override fun release(owner: java.util.UUID) { swordGauge.remove(owner); arrowGauge.remove(owner); transcending.remove(owner); enhancedHits.entries.removeIf { it.value == owner } }
-    override fun stop() { swordGauge.clear(); arrowGauge.clear(); transcending.clear(); enhancedHits.clear() }
+    override fun release(owner: java.util.UUID) { swordGauge.remove(owner); arrowGauge.remove(owner); transcending.remove(owner); activeSettings.remove(owner); enhancedHits.entries.removeIf { it.value == owner } }
+    override fun stop() { swordGauge.clear(); arrowGauge.clear(); transcending.clear(); activeSettings.clear(); enhancedHits.clear() }
 
 }

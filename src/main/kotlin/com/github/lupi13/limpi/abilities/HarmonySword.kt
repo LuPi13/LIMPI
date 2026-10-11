@@ -30,7 +30,7 @@ object HarmonySword : Ability(
     relatedQuest = listOf(LineBetweenSwordAndArrow)
 ) {
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("검", NamedTextColor.YELLOW)
                 .append(Component.text("으로 ", NamedTextColor.WHITE))

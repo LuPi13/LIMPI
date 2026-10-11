@@ -18,7 +18,7 @@ object WaterMeleeBoost : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("물에서 근접공격 시 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getDouble("damageBoost")}", NamedTextColor.GREEN))

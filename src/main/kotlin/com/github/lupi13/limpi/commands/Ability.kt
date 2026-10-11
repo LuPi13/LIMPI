@@ -62,6 +62,16 @@ class Ability(private val plugin: Plugin, private val enabled: Boolean) : Comman
                 "dictionary" -> AbilityDictionary.openAbilityDictionaryGUI(sender as Player, 1, SortOption.UNLOCKED)
                 "ceiling" -> information.pity(sender as Player)
                 "pickup" -> information.pickup(sender)
+                "quest" -> com.github.lupi13.limpi.quests.QuestManager.showProgress(sender as Player)
+                "reload" -> {
+                    val candidates = com.github.lupi13.limpi.config.AbilityReload.prepare(
+                        plugin.dataFolder.toPath().resolve("ability"), com.github.lupi13.limpi.config.AbilitySpecs.all)
+                    val abilities = candidates.map { (code, settings) ->
+                        requireNotNull(AbilityManager.getAbilityByCodeName(code)) to settings
+                    }
+                    abilities.forEach { (ability, settings) -> ability.config = settings }
+                    sender.sendMessage(Component.text("능력 설정을 다시 불러왔습니다.", NamedTextColor.GREEN))
+                }
                 "result" -> {
                     val id = runCatching { UUID.fromString(args[1]) }.getOrNull()
                     if (id == null) sender.sendMessage(Component.text("확인된 결과가 없습니다.", NamedTextColor.RED))

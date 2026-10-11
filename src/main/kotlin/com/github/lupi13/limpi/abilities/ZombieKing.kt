@@ -42,7 +42,7 @@ object ZombieKing : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("언데드 몹이 나를 적대하지 않습니다.", NamedTextColor.WHITE),
             Component.text("낮 시간에 모자 슬롯에 장착된 아이템이 없고 머리 위로 블럭이 없다면 불에 탑니다.", NamedTextColor.WHITE),

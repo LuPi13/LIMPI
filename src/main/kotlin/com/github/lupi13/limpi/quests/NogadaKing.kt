@@ -10,5 +10,6 @@ object NogadaKing : Quest(
     isHidden = false,
     howToGet = Component.text("핸드캐논", NamedTextColor.GRAY)
         .append(Component.text("으로 100킬 하세요.", NamedTextColor.WHITE)),
-    rewardAbility = ExplosionMove
+    rewardAbility = ExplosionMove,
+    progress = QuestProgressDefinitions.CANNON_KILLS
 )

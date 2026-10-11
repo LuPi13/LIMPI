@@ -18,3 +18,13 @@
 `stock restore <코드|all>`은 보존한 정의/현재가와 기준가를 모두 검증해 재상장한다(손상된 기준가 하나가 전체 가격 갱신을 멈추지 않게 한다). `stock holdings`는 상장 중지 종목까지 자기 보유/원가/손익을 표시한다. 사용한 코드/이름을 새 종목에 재사용할 수 없다. `stock refix`는 선택된 가격 전부를 검증한 뒤 현재 가격을 기준가로 저장한다. 종목 변경 시각도 같은 stock.yml snapshot에 저장하며 실패하면 runtime 설정을 바꾸지 않는다. profile을 직접 삭제하는 관리 기능은 제공하지 않는다. stock add 입력 오류는 이름/코드/material/가격별 메시지를 보인다.
 
 전체 325개 시험과 test build가 통과했다. 새 15개 시험은 alias/최장 경로·권한/콘솔/비활성 help/tab·dynamic provider 접근 제한·잘못된 인자·packaged permission 선언·실제 console adapter·상장 중지/복구/재사용 금지·snapshot/typed 검증을 확인한다. 실제 Paper 도움말 책·클릭/권한 변경·콘솔 관리자 저장은 최종 서버 시험에서 확인한다.
+## 확인 대기 통합 조회
+
+`/financial review`는 `limpi.financial.admin.delivery` 권한(default op)으로 콘솔에서도 사용한다. 금융 시스템이 꺼져 있어도 복구 조회는 가능하다. 모든 소유자의 지급·회수·능력 전환·장터 등록·설탕 pending 문서를 읽어 이름, 소유자 UUID, 종류, 기록 UUID, 상태와 사유, 해결 명령 예시를 표시한다. 관리자 도움말 책과 탭 완성에도 추가했다.
+
+일반 미수령 지급(PENDING)도 함께 표시하며 소유자의 `/financial claim`을 안내한다. APPLYING은 아직 실행 중일 수도 있으므로 목록만으로 강제 해결하지 않는다. resolve/void는 기존대로 소유자가 오프라인일 때 저장된 인벤토리와 근거를 확인하고 사용한다. 문서 YAML이 손상되어도 해당 키를 목록에 남기며 조회가 상태를 변경하거나 복구하지 않는다.
+
+## 능력 설정·퀘스트 조회
+
+- `/ability reload`: `limpi.ability.admin.reload`(default op), 콘솔 가능. [설정 계약](ABILITY_SETTINGS.md)을 따른다.
+- `/ability quest`: `limpi.ability.quest`(default true), 플레이어 전용. 모든 퀘스트의 이름·달성 여부·보상과 누적 카운터의 현재/목표를 표시한다. 체력 누적은 내부 1/10 단위를 실제 체력으로 변환한다. 숨김 퀘스트는 달성 전까지 조건과 누적값을 `???`로 감춘다. 두 조화 카운터는 각각 표시한다. 잘못된 카운터는 "퀘스트 진행도 확인 필요"로 표시하며 덮어쓰지 않는다.

@@ -35,7 +35,7 @@ object CometStrike : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("지상에서 빠르게 두 번 웅크려 공중으로 도약합니다.", NamedTextColor.WHITE),
             Component.text("잠시 후, 바라보는 지면 방향으로 빠르게 돌진합니다.", NamedTextColor.WHITE),

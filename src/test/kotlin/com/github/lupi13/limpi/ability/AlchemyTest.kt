@@ -89,4 +89,51 @@ class AlchemyTest {
             assertEquals(1, DeliveryJournal(store).pending(owner).size)
         }
     }
+    @Test fun `lotto evidence commits with netherite delivery and survives restart and replay`() {
+        val eligible = terms.copy(outcome = "netherite_ingot", result = ItemGrant("frozen netherite", 1, 64), lottoEligible = true)
+        val path = directory.resolve("state.db")
+        SqliteStateStore(path).use { store ->
+            setup(store)
+            val record = prepare(store, eligible)
+            assertNull(store.get("quest_trigger/$owner/lotto"))
+            journal(store).apply(record, Inventory(before))
+            assertEquals(id.toString(), store.get("quest_trigger/$owner/lotto"))
+            assertEquals(eligible.result, DeliveryJournal(store).pending(owner).single().items.single())
+        }
+        SqliteStateStore(path).use { store ->
+            assertEquals(id.toString(), store.get("quest_trigger/$owner/lotto"))
+            assertEquals(RemovalState.DONE, journal(store).find(owner, id)?.state)
+        }
+    }
+    @Test fun `noneligible netherite does not grant lotto evidence`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store)
+            val frozen = terms.copy(outcome = "netherite_ingot")
+            journal(store).apply(prepare(store, frozen), Inventory(before))
+            assertNull(store.get("quest_trigger/$owner/lotto"))
+        }
+    }
+    @Test fun `lotto retained judgment gives no evidence and removed judgment unlocks once`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store)
+            val eligible = terms.copy(outcome = "netherite_ingot", lottoEligible = true)
+            prepare(store, eligible)
+            journal(store).resolve(UUID.randomUUID(), "admin", owner, id, false, "retained")
+            assertNull(store.get("quest_trigger/$owner/lotto"))
+            val second = UUID.randomUUID()
+            journal(store).prepare(second, owner, AlchemySettlement.KIND, eligible.encode(), before, after)
+            val request = UUID.randomUUID()
+            journal(store).resolve(request, "admin", owner, second, true, "removed")
+            journal(store).resolve(request, "admin", owner, second, true, "removed")
+            assertEquals(second.toString(), store.get("quest_trigger/$owner/lotto"))
+            val players = CachedPlayerRepository(SqliteProfilePersistence(store))
+            val rewards = com.github.lupi13.limpi.quest.QuestRewards(store, players)
+            assertTrue(rewards.complete(owner, "lotto", "alchemy_plus").newUnlock)
+            assertTrue(rewards.complete(owner, "lotto", "alchemy_plus").replayed)
+            val profile = players.snapshot(owner)
+            assertEquals(listOf("lotto"), profile.getStringList("clearedQuests"))
+            assertEquals(listOf("alchemy_plus"), profile.getStringList("unlockedAbilities"))
+            assertEquals(1, DeliveryJournal(store).pending(owner).size)
+        }
+    }
 }

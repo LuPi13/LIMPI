@@ -22,7 +22,7 @@ object HeavyEnchant : Ability(
             .append(Component.text("에서 강제로 붙입니다.", NamedTextColor.WHITE))
     )
 ){
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         description + listOf(Component.text("주의! 모루 합성이 완벽히 작동하지 않을 수 있습니다.", NamedTextColor.YELLOW))
     }
 

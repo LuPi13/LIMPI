@@ -10,5 +10,6 @@ object LightTime : Quest(
     isHidden = false,
     howToGet = Component.text("시간 역행", NamedTextColor.AQUA)
         .append(Component.text(" 능력으로 총 200의 체력을 회복하세요.", NamedTextColor.WHITE)),
-    rewardAbility = TimeLeaperPlus
+    rewardAbility = TimeLeaperPlus,
+    progress = QuestProgressDefinitions.TIME_HEALED
 )

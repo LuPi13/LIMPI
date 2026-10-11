@@ -30,7 +30,7 @@ object WinterShroud : DodgeVariant(
 ) {
     override val unlockQuest: Quest get() = ColdDodge
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             inheritLine(),
             Component.text("회피 시 수평 ", NamedTextColor.WHITE)

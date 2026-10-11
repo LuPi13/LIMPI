@@ -29,7 +29,7 @@ object HarmonyArrow : Ability(
     relatedQuest = listOf(LineBetweenSwordAndArrow)
 ) {
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("화살", NamedTextColor.YELLOW)
                 .append(Component.text("로 ", NamedTextColor.WHITE))

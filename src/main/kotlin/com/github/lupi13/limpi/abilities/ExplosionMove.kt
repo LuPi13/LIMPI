@@ -42,7 +42,7 @@ object ExplosionMove : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("왼손이 ", NamedTextColor.WHITE)
                 .append(Component.text("리볼버 캐논", NamedTextColor.YELLOW))

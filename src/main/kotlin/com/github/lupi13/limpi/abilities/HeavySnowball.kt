@@ -21,7 +21,7 @@ object HeavySnowball : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("던진 ", NamedTextColor.WHITE)
                 .append(Component.text("눈덩이", NamedTextColor.YELLOW))

@@ -27,7 +27,7 @@ object SuspiciousSugar : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("설탕", NamedTextColor.YELLOW).append(Component.text("을 우클릭하면 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getInt("duration") / 20}", NamedTextColor.GREEN))

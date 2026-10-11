@@ -77,6 +77,15 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
                 "transition" -> transitionCommands.execute(sender, args)
                 "stock" -> stocks.execute(sender, args)
                 "sugar" -> sugar(sender, args)
+                "review" -> {
+                    val records = com.github.lupi13.limpi.recovery.PendingReviews.list(FileManager.transactions)
+                    if (records.isEmpty()) sender.sendMessage(Component.text("확인 대기 기록이 없습니다.", NamedTextColor.GRAY))
+                    records.forEach { record ->
+                        sender.sendMessage(Component.text("${record.name} / ${record.owner} / ${record.kind} / ${record.id} / ${record.state}", NamedTextColor.WHITE))
+                        sender.sendMessage(Component.text(record.reason, NamedTextColor.YELLOW))
+                        sender.sendMessage(Component.text(record.command, NamedTextColor.GRAY))
+                    }
+                }
                 "me" -> {
                     val player = sender as Player
                     player.sendMessage(playerDisplay(player)

@@ -42,7 +42,7 @@ object EntityThrower : Ability(
 ) {
 
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("양손을 비우고 엔티티를 우클릭하여 해당 엔티티를 머리 위에 붙잡습니다.", NamedTextColor.WHITE),
             Component.text("다시 우클릭하여 바라보는 방향으로 집어던집니다.", NamedTextColor.WHITE),
@@ -132,6 +132,7 @@ object EntityThrower : Ability(
                     }
                 }
                 override fun tick() {
+                val config = requireNotNull(config)
                     if (targetEntity.world.uid != player.world.uid) { cancel(); return }
                     // 플레이어가 죽었거나 엔티티를 놓았을 때 반복문 종료
                     if (!heldEntity.containsKey(player.uniqueId) || heldEntity[player.uniqueId] != targetEntity || player.isDead || !player.isOnline) {
@@ -147,7 +148,7 @@ object EntityThrower : Ability(
                         return
                     }
                     // 플레이어가 너무 멀리 떨어지면 엔티티를 놓아줌
-                    if (targetEntity.location.distance(Location(player.world, player.boundingBox.centerX, player.boundingBox.maxY + config!!.getDouble("heldHeight"), player.boundingBox.centerZ))> config!!.getDouble("forceDropDistance")) {
+                    if (targetEntity.location.distance(Location(player.world, player.boundingBox.centerX, player.boundingBox.maxY + config.getDouble("heldHeight"), player.boundingBox.centerZ))> config.getDouble("forceDropDistance")) {
                         heldEntity.remove(player.uniqueId)
                         clearRestrictHand(player)
                         cancel()
@@ -165,11 +166,11 @@ object EntityThrower : Ability(
 
                     // 엔더드래곤, 가스트의 경우, 플레이어가 매달리기
                     if (targetEntity is EnderDragon || targetEntity is Ghast) {
-                        val followingLocation = Location(player.world, targetEntity.boundingBox.center.x, targetEntity.boundingBox.minY - player.boundingBox.height - config!!.getDouble("heldHeight"), targetEntity.boundingBox.center.z)
+                        val followingLocation = Location(player.world, targetEntity.boundingBox.center.x, targetEntity.boundingBox.minY - player.boundingBox.height - config.getDouble("heldHeight"), targetEntity.boundingBox.center.z)
                         player.velocity = followingLocation.subtract(player.location).toVector().multiply(0.5)
                     }
                     else {
-                        val heldLocation = Location(player.world, player.boundingBox.centerX, player.boundingBox.maxY + config!!.getDouble("heldHeight"), player.boundingBox.centerZ)
+                        val heldLocation = Location(player.world, player.boundingBox.centerX, player.boundingBox.maxY + config.getDouble("heldHeight"), player.boundingBox.centerZ)
                         targetEntity.velocity = heldLocation.subtract(targetEntity.location).toVector().multiply(0.5)
 
                         // 닭을 붙잡고 있을 경우, 느린낙하 효과 적용
@@ -180,7 +181,7 @@ object EntityThrower : Ability(
                         // 팬텀을 붙잡고 있을 경우, 느린낙하와 무작위 이동 적용
                         if (targetEntity is Phantom) {
                             effect.potion(player, PotionEffect(PotionEffectType.SLOW_FALLING, 2, 0, true, false, false))
-                            val randomVector = Vector(Random.nextDouble() - 0.5, Random.nextDouble() - 0.5, Random.nextDouble() - 0.5).multiply(config!!.getDouble("phantomRandomMovementIntensity"))
+                            val randomVector = Vector(Random.nextDouble() - 0.5, Random.nextDouble() - 0.5, Random.nextDouble() - 0.5).multiply(config.getDouble("phantomRandomMovementIntensity"))
                             player.velocity = player.velocity.add(randomVector)
                         }
 
@@ -191,7 +192,7 @@ object EntityThrower : Ability(
 
                         // 엔더맨을 붙잡을 경우, 확률적으로 텔레포트
                         if (targetEntity is Enderman) {
-                            if (Random.nextDouble() < config!!.getDouble("enderManTeleportProbability")) {
+                            if (Random.nextDouble() < config.getDouble("enderManTeleportProbability")) {
                                 for (i in 0 until 100) { // 최대 100번 시도
                                     val teleportDelta = Location(
                                         player.world,
@@ -254,6 +255,7 @@ object EntityThrower : Ability(
             object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
                 var timer = 0.0
                 override fun tick() {
+                val config = requireNotNull(config)
                     if (!targetEntity.isValid || targetEntity.isDead || targetEntity.world.uid != player.world.uid) { cancel(); return }
                     if (timer++ >= 20) { // 1초 후에 반복문 종료
                         cancel()
@@ -274,6 +276,7 @@ object EntityThrower : Ability(
         object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
             var timer = 0
             override fun tick() {
+                val config = requireNotNull(config)
                 if (targetEntity.world.uid != player.world.uid) { cancel(); return }
                 if (timer++ >= 60 && targetEntity.velocity.length() <= 0.7) { // 60틱(3초) 후에 엔티티가 빠르지 않다면 종료
                     cancel()
@@ -289,11 +292,11 @@ object EntityThrower : Ability(
                 for (entity in nearbyEntities) {
                     if (entity !is Damageable || entity == player || entity == targetEntity) continue
                     if (!entity.boundingBox.overlaps(targetEntity.boundingBox)) continue
-                    val damage = config!!.getDouble("collisionDamage")
+                    val damage = config.getDouble("collisionDamage")
                     if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
                     // TNT, 크리퍼의 경우, 즉시 폭발
-                    if (config!!.getBoolean("tntAndCreeperExplodeImmediately")) {
+                    if (config.getBoolean("tntAndCreeperExplodeImmediately")) {
                         if (targetEntity is TNTPrimed) {
                             targetEntity.fuseTicks = 0
                         }
@@ -304,9 +307,10 @@ object EntityThrower : Ability(
 
                     // 팬텀의 경우, 1초간 부딪힌 적을 붙잡고 하늘로 솟아오름
                     if (targetEntity is Phantom) {
-                        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
+                        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName, config = config) {
                             var timer1 = 0.0
                             override fun tick() {
+                val config = requireNotNull(config)
                                 if (!targetEntity.isValid || !entity.isValid || targetEntity.isDead || entity.isDead || targetEntity.world.uid != player.world.uid || entity.world.uid != player.world.uid) { cancel(); return }
                                 if (timer1++ >= 20) {
                                     cancel() // 1초 후에 반복문 종료
@@ -317,7 +321,7 @@ object EntityThrower : Ability(
                                 val hangingPoint = Location(
                                     targetEntity.world,
                                     targetEntity.boundingBox.centerX,
-                                    targetEntity.boundingBox.minY - entity.boundingBox.height - config!!.getDouble("heldHeight"),
+                                    targetEntity.boundingBox.minY - entity.boundingBox.height - config.getDouble("heldHeight"),
                                     targetEntity.boundingBox.centerZ
                                 )
                                 entity.velocity = hangingPoint.subtract(entity.location).toVector().multiply(0.5)

@@ -30,7 +30,7 @@ object FocusBow : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("공중에서 ", NamedTextColor.WHITE)
                 .append(Component.text("활", NamedTextColor.YELLOW))

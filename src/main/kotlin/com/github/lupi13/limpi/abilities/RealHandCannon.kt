@@ -50,7 +50,7 @@ object RealHandCannon : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("왼손이 ", NamedTextColor.WHITE).append(Component.text("핸드'캐논'", NamedTextColor.YELLOW)).append(Component.text("으로 고정됩니다.", NamedTextColor.WHITE)),
             Component.text("")
@@ -88,6 +88,7 @@ object RealHandCannon : Ability(
     private val lastShot: MutableMap<UUID, Long> = mutableMapOf()
     /** 폭발 중인 소유자. 이 동안의 피해는 적에게만 허용합니다 (LetsBoom과 같은 방식). */
     private var exploding: UUID? = null
+    private val cannonSettings = mutableMapOf<UUID, com.github.lupi13.limpi.config.AbilitySettings>()
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onSwapHand(event: PlayerSwapHandItemsEvent) {
@@ -117,7 +118,8 @@ object RealHandCannon : Ability(
             }
             val cannonId = cannon.uniqueId
             cannons[cannonId] = effect
-            effect.own { cannons.remove(cannonId) }
+            cannonSettings[cannonId] = requireNotNull(config)
+            effect.own { cannons.remove(cannonId); cannonSettings.remove(cannonId) }
             effect.repeat(delay = config!!.getInt("lifetime_ticks").toLong()) { it.close() }
             // 날아가는 동안 연기 꼬리. 포탄 효과가 소유하므로 포탄이 사라지면 함께 멈춥니다.
             effect.repeat(delay = 1) { scope ->
@@ -153,15 +155,16 @@ object RealHandCannon : Ability(
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onCannonHit(event: ProjectileHitEvent) {
         val effect = cannons[event.entity.uniqueId] ?: return
+        val config = cannonSettings[event.entity.uniqueId] ?: return
         val player = effect.player()
         val live = effect.live()
         val location = event.entity.location
         effect.close() // 포탄 제거
         if (player == null || !live) return
-        val power = config!!.getDouble("explosion_power").toFloat()
+        val power = config.getDouble("explosion_power").toFloat()
         exploding = player.uniqueId
         try {
-            location.world.createExplosion(player, location, power, false, config!!.getBoolean("break_blocks"), true)
+            location.world.createExplosion(player, location, power, false, config.getBoolean("break_blocks"), true)
         } finally { exploding = null }
     }
 

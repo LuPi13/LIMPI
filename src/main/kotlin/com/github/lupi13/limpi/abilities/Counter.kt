@@ -41,7 +41,7 @@ object Counter : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("검", NamedTextColor.YELLOW)
                 .append(Component.text("을 들고 우클릭하면 ", NamedTextColor.WHITE))
@@ -74,7 +74,8 @@ object Counter : Ability(
      * 반격 태세. [hold]는 태세 중 감속을 소유하며 반격하는 순간 닫혀 감속이 풀립니다.
      * [effect]는 피해 무시 창과 반격 타격을 소유하고 [hold]도 함께 정리합니다.
      */
-    private class Stance(val effect: AbilityEffect, val hold: AbilityEffect, val castAt: Long) { var countered = false }
+    private class Stance(val effect: AbilityEffect, val hold: AbilityEffect, val castAt: Long,
+        val settings: com.github.lupi13.limpi.config.AbilitySettings) { var countered = false }
     private val stances: MutableMap<UUID, Stance> = mutableMapOf()
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -95,7 +96,7 @@ object Counter : Ability(
         stances.remove(id)?.effect?.close()
         val effect = AbilityRuntime.begin(player, codeName)
         val hold = try { AbilityRuntime.begin(player, codeName) } catch (failure: Exception) { effect.close(); throw failure }
-        val stance = Stance(effect, hold, System.currentTimeMillis())
+        val stance = Stance(effect, hold, System.currentTimeMillis(), requireNotNull(config))
         stances[id] = stance
         effect.own { if (stances[id] === stance) stances.remove(id) }
         effect.own(hold::close)
@@ -108,21 +109,22 @@ object Counter : Ability(
     fun onDamage(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
         val stance = stances[player.uniqueId] ?: return
+        val config = stance.settings
         if (player.ability != this || event.cause in unblockable) return
-        if (System.currentTimeMillis() - stance.castAt > config!!.getInt("window_ms")) return
+        if (System.currentTimeMillis() - stance.castAt > config.getInt("window_ms")) return
         event.isCancelled = true
         if (stance.countered) return
         stance.countered = true
         stance.hold.close() // 반격하는 순간 태세의 감속을 풉니다.
 
-        val damage = event.damage * config!!.getDouble("damage_multiplier")
+        val damage = event.damage * config.getDouble("damage_multiplier")
         if (!damage.isFinite() || damage < 0) return
         // 반격 범위: 눈앞 2블록, 폭 3블록, 높이 1블록 (원본의 Interaction 판정과 같음)
         val center = player.eyeLocation.add(player.location.direction.multiply(2.0)).subtract(0.0, 0.5, 0.0)
         val box = BoundingBox(center.x - 1.5, center.y, center.z - 1.5, center.x + 1.5, center.y + 1.0, center.z + 1.5)
         player.world.playSound(player.location, Sound.ITEM_TRIDENT_HIT_GROUND, SoundCategory.PLAYERS, 1f, 2f)
 
-        stance.effect.repeat(delay = config!!.getInt("counter_delay_ticks").toLong()) { scope ->
+        stance.effect.repeat(delay = config.getInt("counter_delay_ticks").toLong()) { scope ->
             val owner = scope.player() ?: return@repeat scope.close()
             val push = owner.location.direction.setY(0)
             val knockback = if (push.lengthSquared() > 1e-6) push.normalize().multiply(0.5).setY(0.1) else Vector(0.0, 0.1, 0.0)

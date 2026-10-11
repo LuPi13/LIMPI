@@ -33,7 +33,7 @@ object Muspell : Ability(
     needFile = true
 ) {
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("최대로 당겨 쏜 일반 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("이 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN))

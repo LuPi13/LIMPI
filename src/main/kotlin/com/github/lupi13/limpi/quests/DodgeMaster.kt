@@ -10,5 +10,6 @@ object DodgeMaster : Quest(
     isHidden = false,
     howToGet = Component.text("회피", NamedTextColor.GRAY)
         .append(Component.text(" 능력으로 회피를 100번 사용하세요.", NamedTextColor.WHITE)),
-    rewardAbility = DodgePlus
+    rewardAbility = DodgePlus,
+    progress = QuestProgressDefinitions.DODGE
 )

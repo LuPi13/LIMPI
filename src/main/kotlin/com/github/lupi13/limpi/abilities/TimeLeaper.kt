@@ -111,6 +111,7 @@ abstract class TimeLeapAbility(
     }
 
     private fun record(player: Player) {
+        val config = requireNotNull(config)
         val id = player.uniqueId
         val effect = AbilityRuntime.begin(player, codeName)
         val recorder = Recorder(effect)
@@ -123,7 +124,7 @@ abstract class TimeLeapAbility(
             val owner = scope.player() ?: return@repeat scope.close()
             val frames = recorder.frames
             frames.addLast(Frame(owner.location, owner.health))
-            val limit = config!!.getInt("rewind_ticks")
+            val limit = config.getInt("rewind_ticks")
             while (frames.size > limit) frames.removeFirst()
             if (owner.getCooldown(material) <= 0) showTrail(owner, frames)
         }
@@ -164,12 +165,13 @@ abstract class TimeLeapAbility(
      * then the player is teleported exactly to the oldest frame (position, yaw and pitch) and health is restored.
      */
     private fun rewind(player: Player, frames: List<Frame>) {
+        val config = requireNotNull(config)
         val id = player.uniqueId
         val effect = AbilityRuntime.begin(player, codeName)
         rewinding[id] = effect
         effect.own { if (rewinding[id] === effect) rewinding.remove(id) }
-        val visualTicks = config!!.getInt("rewind_visual_ticks")
-        val maxSpeed = config!!.getDouble("rewind_max_speed")
+        val visualTicks = config.getInt("rewind_visual_ticks")
+        val maxSpeed = config.getDouble("rewind_max_speed")
         if (visualTicks > 0) effect.attribute(Attribute.GRAVITY, -1.0, AttributeModifier.Operation.MULTIPLY_SCALAR_1)
         player.playSound(player.location, Sound.BLOCK_BEACON_DEACTIVATE, 0.6f, 2f)
         var tick = 0
@@ -198,7 +200,7 @@ abstract class TimeLeapAbility(
                 return@repeat scope.close()
             }
             owner.velocity = Vector()
-            finish(owner, frames.first())
+            finish(owner, frames.first(), config)
             scope.close()
         }
     }
@@ -224,14 +226,14 @@ abstract class TimeLeapAbility(
         return player.teleport(destination, PlayerTeleportEvent.TeleportCause.PLUGIN)
     }
 
-    private fun finish(player: Player, origin: Frame) {
-        player.setCooldown(material, config!!.getInt("cooldown_ticks"))
+    private fun finish(player: Player, origin: Frame, config: com.github.lupi13.limpi.config.AbilitySettings) {
+        player.setCooldown(material, config.getInt("cooldown_ticks"))
         player.fallDistance = 0f
         val max = player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
         val before = player.health
         val past = origin.health.coerceIn(0.0, max)
         // Healing is scaled by heal_multiplier; health that the rewind takes away is only restored, never scaled.
-        val restored = if (past > before) (before + (past - before) * config!!.getDouble("heal_multiplier")).coerceIn(0.0, max) else past
+        val restored = if (past > before) (before + (past - before) * config.getDouble("heal_multiplier")).coerceIn(0.0, max) else past
         if (restored > 0.0 && restored.isFinite()) player.health = restored
         player.playSound(player.location, Sound.ENTITY_DOLPHIN_JUMP, 1f, 2f)
         afterRewind(player, before, player.health)
@@ -271,27 +273,23 @@ object TimeLeaper : TimeLeapAbility(
         Component.text("3초 전의 위치와 체력으로 돌아갑니다.", NamedTextColor.WHITE)
     )
 ) {
-    /** Quest health unit: tenths of a health point (1 heart = 2 HP = 20 units). */
-    private const val UNITS_PER_HEALTH = 10.0
-    private const val HEALED_TARGET = 200L * 10L
-    private const val LOST_TARGET = 50L * 10L
 
     override val activeName: Component = Component.text("시간여행장치", NamedTextColor.AQUA)
 
     override val relatedQuest: List<Quest> by lazy { listOf(LightTime, DarkTime) }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         rewindLines() + listOf(
             cooldownLine()
         )
     }
 
     override fun afterRewind(player: Player, before: Double, after: Double) {
-        val healed = Math.round((after - before) * UNITS_PER_HEALTH)
-        val lost = Math.round((before - after) * UNITS_PER_HEALTH)
+        val healed = Math.round((after - before) * LightTime.progress!!.counters.single().unitsPerDisplay)
+        val lost = Math.round((before - after) * DarkTime.progress!!.counters.single().unitsPerDisplay)
         try {
-            if (healed > 0) QuestManager.progress(player, LightTime, "time_leaper_healed", healed, HEALED_TARGET)
-            if (lost > 0) QuestManager.progress(player, DarkTime, "time_leaper_lost", lost, LOST_TARGET)
+            if (healed > 0) QuestManager.progress(player, LightTime, healed)
+            if (lost > 0) QuestManager.progress(player, DarkTime, lost)
         } catch (failure: Exception) {
             plugin.logger.log(Level.WARNING, "Unable to record $codeName quest progress for ${player.uniqueId}", failure)
         }

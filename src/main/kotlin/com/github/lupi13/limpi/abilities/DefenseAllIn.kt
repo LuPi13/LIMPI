@@ -24,7 +24,7 @@ object DefenseAllIn : Ability(
     ),
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("피격 후 무적시간이 ", NamedTextColor.WHITE)
                 .append(Component.text(config!!.getInt("noDamageMilliseconds") / 1000.0, NamedTextColor.GREEN))

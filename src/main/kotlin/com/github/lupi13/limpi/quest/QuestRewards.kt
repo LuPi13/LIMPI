@@ -20,7 +20,9 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
         })
     }
     fun harmony(request: UUID, owner: UUID, branch: String): QuestRewardResult {
-        require(branch in setOf("harmony_sword", "harmony_arrow"))
+        val counters = com.github.lupi13.limpi.quests.QuestProgressDefinitions.HARMONY.counters
+        require(branch in counters.map { it.counter })
+        val swordTarget = counters[0].target; val arrowTarget = counters[1].target
         return result(store.execute(request, BankService.fingerprint("HARMONY_PROGRESS", owner.toString(), branch)) { tx ->
             val profile = Accounts.read(tx, owner)
             fun count(path: String): Long {
@@ -28,12 +30,13 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
                 require(raw is Int || raw is Long) { "Non-integral quest progress" }
                 return (raw as Number).toLong().also { require(it >= 0) }
             }
-            val sword = count("quest.harmony_sword"); val arrow = count("quest.harmony_arrow")
-            val old = if (branch == "harmony_sword") sword else arrow
-            val updated = if (old >= 10) old else old + 1
+            val sword = count("quest.${counters[0].counter}"); val arrow = count("quest.${counters[1].counter}")
+            val old = if (branch == counters[0].counter) sword else arrow
+            val target = counters.single { it.counter == branch }.target
+            val updated = if (old >= target) old else old + 1
             profile.set("quest.$branch", updated)
             tx.put(SqliteProfilePersistence.key(owner), profile.saveToString())
-            val finished = if (branch == "harmony_sword") updated >= 10 && arrow >= 10 else sword >= 10 && updated >= 10
+            val finished = if (branch == counters[0].counter) updated >= swordTarget && arrow >= arrowTarget else sword >= swordTarget && updated >= arrowTarget
             val flags = if (finished) reward(tx, owner, HARMONY_QUEST, HARMONY_REWARD) else false to false
             YamlFiles.parse(receipt(owner, HARMONY_QUEST, HARMONY_REWARD, flags.first, flags.second)).apply {
                 set("branch", branch); set("previous", old); set("current", updated)

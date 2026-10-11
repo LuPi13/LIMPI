@@ -20,10 +20,10 @@ object Alchemy : Ability(
         Component.text("구리 주괴를 손에 들고 우클릭하면", NamedTextColor.WHITE),
         Component.text("10개를 소모하여 다른 광물로 변환합니다.", NamedTextColor.WHITE)
     ),
-    needFile = true,
-    relatedQuest = listOf(com.github.lupi13.limpi.quests.MasterSmith)
+    needFile = true
 ){
-    override val details: List<Component> by lazy {
+    override val relatedQuest by lazy { listOf(com.github.lupi13.limpi.quests.MasterSmith, com.github.lupi13.limpi.quests.Lotto) }
+    override val details: List<Component> by settingsCached {
         // 광물 이름은 YELLOW, 확률 수치는 GREEN, 단위(%)는 WHITE
         fun chance(name: String, key: String): Component =
             Component.text(name, NamedTextColor.YELLOW)
@@ -69,10 +69,11 @@ object Alchemy : Ability(
         val outcome = policy.choose(Random.nextDouble())
         val result = ItemStack(Material.valueOf(outcome.uppercase(java.util.Locale.ROOT)))
         val terms = com.github.lupi13.limpi.ability.AlchemyTerms(slot, source.payload, outcome,
-            com.github.lupi13.limpi.platform.PaperItemCodec.grant(result))
+            com.github.lupi13.limpi.platform.PaperItemCodec.grant(result), lottoEligible = true)
         val after = before.toMutableList().apply { this[slot] = if (source.count == 10) null else source.copy(count = source.count - 10) }
         if (!com.github.lupi13.limpi.FileManager.delivery.remove(player, java.util.UUID.randomUUID(),
                 com.github.lupi13.limpi.ability.AlchemySettlement.KIND, terms.encode(), before, after)) return
+        if (outcome == "netherite_ingot") com.github.lupi13.limpi.quests.QuestManager.clearQuests(player, com.github.lupi13.limpi.quests.Lotto)
         when (outcome) {
             "coal" -> player.playSound(player.location, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.5f, 1.7f)
             "netherite_ingot" -> player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_NETHERITE, 0.5f, 2.0f)

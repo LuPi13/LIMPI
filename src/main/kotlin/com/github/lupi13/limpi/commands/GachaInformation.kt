@@ -210,6 +210,10 @@ class GachaInformation(private val plugin: Plugin) {
             .append(Component.text(" 등급의 능력이 등장합니다.", NamedTextColor.BLACK))
         meta.addPages(page)
 
+        if (player.hasPermission("limpi.ability.quest")) meta.addPages(Component.text("/ability quest", NamedTextColor.GREEN)
+            .append(Component.text(": 퀘스트 달성 여부, 보상과 누적 진행도를 확인합니다.", NamedTextColor.BLACK)))
+        if (player.hasPermission("limpi.ability.admin.reload")) meta.addPages(Component.text("/ability reload", NamedTextColor.GREEN)
+            .append(Component.text(": 모든 능력 설정을 검증한 뒤 함께 다시 불러옵니다.", NamedTextColor.BLACK)))
         book.itemMeta = meta
         player.openBook(book)
     }

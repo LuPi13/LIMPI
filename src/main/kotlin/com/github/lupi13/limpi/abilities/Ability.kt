@@ -42,11 +42,27 @@ abstract class Ability(
     open fun stop() {}
     open fun release(owner: java.util.UUID) {}
 
+    /** Metadata is cached for the lifetime of one immutable settings snapshot. */
+    protected fun <T> settingsCached(build: () -> T): kotlin.properties.ReadOnlyProperty<Any?, T> =
+        object : kotlin.properties.ReadOnlyProperty<Any?, T> {
+            private var initialized = false
+            private var snapshot: com.github.lupi13.limpi.config.AbilitySettings? = null
+            private var value: Any? = null
+            @Suppress("UNCHECKED_CAST")
+            override fun getValue(thisRef: Any?, property: kotlin.reflect.KProperty<*>): T {
+                if (!initialized || snapshot !== config) {
+                    val next = build()
+                    value = next; snapshot = config; initialized = true
+                }
+                return value as T
+            }
+        }
+
     open fun setUpFile() {
         if (!needFile) return
 
         file = File(plugin.dataFolder.toString() + File.separator + "ability", "${codeName}.yml")
-        config = com.github.lupi13.limpi.config.AbilitySpecs.all.getValue(codeName).load(file!!.toPath())
+        config = com.github.lupi13.limpi.config.AbilitySpecs.all.getValue(codeName).load(file!!.toPath(), plugin.logger::info)
     }
 
     fun registerEvents() {

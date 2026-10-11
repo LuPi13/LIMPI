@@ -29,7 +29,7 @@ object ImpactLanding : Ability(
     needFile = true
 ){
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("낙하 피해를 무효화하고, 주변 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))

@@ -22,7 +22,7 @@ object HotPickaxe : Ability(
     relatedQuest = listOf(com.github.lupi13.limpi.quests.MasterSmith)
 ) {
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("곡괭이", NamedTextColor.YELLOW)
                 .append(Component.text("로 광물을 캐면 익혀서 나옵니다.", NamedTextColor.WHITE)),

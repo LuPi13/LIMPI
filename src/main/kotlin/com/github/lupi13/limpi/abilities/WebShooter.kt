@@ -35,7 +35,7 @@ object WebShooter : Ability(
     restrictedSlot = 40,
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
@@ -143,10 +143,10 @@ object WebShooter : Ability(
                         }
                         player.velocity = player.velocity.clone().add(movingVector)
                         // 속도 제한
-                        if (player.velocity.length() > config!!.getDouble("maxVelocity")
-                            * (if (player.isInWater || player.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0)) {
-                            player.velocity = player.velocity.clone().normalizeSafely().multiply(config!!.getDouble("maxVelocity")
-                            * (if (player.isInWater || player.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0))
+                        if (player.velocity.length() > config.getDouble("maxVelocity")
+                            * (if (player.isInWater || player.isInLava) config.getDouble("liquidDragCoefficient") else 1.0)) {
+                            player.velocity = player.velocity.clone().normalizeSafely().multiply(config.getDouble("maxVelocity")
+                            * (if (player.isInWater || player.isInLava) config.getDouble("liquidDragCoefficient") else 1.0))
                         }
 
                         // 효과음: 속도에 비례
@@ -163,13 +163,13 @@ object WebShooter : Ability(
                             if ((entity as? LivingEntity)?.let { it.noDamageTicks > 10 } == true || !AbilityManager.isEnemy(player, entity)) continue
 
                             // 피해량: 상대속도에 비례
-                            val damage = (config!!.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length().pow(2.0)))
+                            val damage = (config.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length().pow(2.0)))
 //                            player.sendActionBar(Component.text("피해량: ${damage}", NamedTextColor.RED))
                             if (damage >= 1.0) {
                                 if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
                                 val knockbackVector = entity.boundingBox.center.subtract(player.boundingBox.center).normalizeSafely()
-                                    .multiply(config!!.getDouble("knockbackAmplifier")).multiply(player.velocity.length())
+                                    .multiply(config.getDouble("knockbackAmplifier")).multiply(player.velocity.length())
                                 val playerRatio = entity.boundingBox.volume / (entity.boundingBox.volume + player.boundingBox.volume).coerceAtLeast(1e-9)
                                 val entityRatio = 1.0 - playerRatio
 
@@ -231,7 +231,7 @@ object WebShooter : Ability(
                         movingVector = movingVector.clone().multiply(config!!.getDouble("velocityAmplifier"))
 
                         if (entityVector.y > 0) entityVector.setY(entityVector.y * 2.0)
-                        entityVector = entityVector.clone().multiply(config!!.getDouble("velocityAmplifier"))
+                        entityVector = entityVector.clone().multiply(config.getDouble("velocityAmplifier"))
 
 
                         if ((player as LivingEntity).isOnGround) {
@@ -239,10 +239,10 @@ object WebShooter : Ability(
                         }
                         player.velocity = player.velocity.clone().add(movingVector.multiply(playerVelRatio))
                         // 속도 제한
-                        if (player.velocity.length() > config!!.getDouble("maxVelocity")
-                            * (if (player.isInWater || player.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0)) {
-                            player.velocity = player.velocity.clone().normalizeSafely().multiply(config!!.getDouble("maxVelocity")
-                                    * (if (player.isInWater || player.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0))
+                        if (player.velocity.length() > config.getDouble("maxVelocity")
+                            * (if (player.isInWater || player.isInLava) config.getDouble("liquidDragCoefficient") else 1.0)) {
+                            player.velocity = player.velocity.clone().normalizeSafely().multiply(config.getDouble("maxVelocity")
+                                    * (if (player.isInWater || player.isInLava) config.getDouble("liquidDragCoefficient") else 1.0))
                         }
 
                         if ((hitEnemy is LivingEntity) && hitEnemy.isOnGround) {
@@ -250,10 +250,10 @@ object WebShooter : Ability(
                         }
                         hitEnemy.velocity = hitEnemy.velocity.clone().add(entityVector.multiply(entityVelRatio))
                         // 속도 제한
-                        if (hitEnemy.velocity.length() > config!!.getDouble("maxVelocity")
-                            * (if (hitEnemy.isInWater || hitEnemy.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0)) {
-                            hitEnemy.velocity = hitEnemy.velocity.clone().normalizeSafely().multiply(config!!.getDouble("maxVelocity")
-                            * (if (hitEnemy.isInWater || hitEnemy.isInLava) config!!.getDouble("liquidDragCoefficient") else 1.0))
+                        if (hitEnemy.velocity.length() > config.getDouble("maxVelocity")
+                            * (if (hitEnemy.isInWater || hitEnemy.isInLava) config.getDouble("liquidDragCoefficient") else 1.0)) {
+                            hitEnemy.velocity = hitEnemy.velocity.clone().normalizeSafely().multiply(config.getDouble("maxVelocity")
+                            * (if (hitEnemy.isInWater || hitEnemy.isInLava) config.getDouble("liquidDragCoefficient") else 1.0))
                         }
 
                         // 효과음: 속도에 비례
@@ -271,12 +271,12 @@ object WebShooter : Ability(
 
                             if (AbilityManager.isEnemy(player, entity)) {
                                 // 피해량: 상대속도에 비례
-                                val damage = (config!!.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length()).pow(2.0)) / 2.0
+                                val damage = (config.getDouble("damageAmplifier") * (player.velocity.clone().subtract(entity.velocity).length()).pow(2.0)) / 2.0
                                 if (damage >= 1.0) {
                                     if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
 
                                     val knockbackVector = entity.boundingBox.center.subtract(player.boundingBox.center).normalizeSafely()
-                                        .multiply(config!!.getDouble("knockbackAmplifier")).multiply(player.velocity.length())
+                                        .multiply(config.getDouble("knockbackAmplifier")).multiply(player.velocity.length())
                                     val playerRatio = entity.boundingBox.volume / (entity.boundingBox.volume + player.boundingBox.volume).coerceAtLeast(1e-9)
                                     val entityRatio = 1.0 - playerRatio
 

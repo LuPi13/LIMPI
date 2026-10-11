@@ -46,7 +46,7 @@ abstract class CloakAbility(
     grade = grade, element = element, displayName = displayName, codeName = codeName, material = material,
     description = description, acquisition = acquisition, relatedQuest = relatedQuest, needFile = true
 ) {
-    protected class Session(val effect: AbilityEffect) {
+    protected class Session(val effect: AbilityEffect, val settings: com.github.lupi13.limpi.config.AbilitySettings) {
         var consumed = 0L
         var ticks = 0L
         var last: Location? = null
@@ -69,10 +69,11 @@ abstract class CloakAbility(
     protected fun format(value: Double): String = if (value == Math.floor(value)) value.toLong().toString() else value.toString()
 
     fun isCloaked(owner: UUID): Boolean = sessions[owner]?.effect?.scope?.closed == false
+    protected fun sessionSettings(owner: UUID) = sessions[owner]?.settings ?: requireNotNull(config)
 
     protected fun addGauge(owner: UUID, amount: Long) {
         val current = gauge[owner] ?: return
-        gauge[owner] = (current + amount).coerceAtMost(points("max_gauge"))
+        gauge[owner] = (current + amount).coerceAtMost(Math.round(sessionSettings(owner).getDouble("max_gauge") * 1000.0))
     }
 
     /** Hook called every cloaked tick after the drain was applied. */
@@ -133,7 +134,7 @@ abstract class CloakAbility(
         val value = gauge.getOrPut(owner) { points("initial_gauge") }
         if (value < cost) return
         val effect = AbilityRuntime.begin(player, codeName)
-        val session = Session(effect)
+        val session = Session(effect, requireNotNull(config))
         try {
             sessions[owner] = session
             effect.own { if (sessions[owner] === session) sessions.remove(owner); restoreArmor(owner) }
@@ -153,15 +154,16 @@ abstract class CloakAbility(
     }
 
     private fun tick(effect: AbilityEffect, session: Session) {
+        val config = session.settings
         val player = effect.player() ?: return effect.close()
         val owner = player.uniqueId
         val location = player.location
         val previous = session.last
         session.last = location
         session.still = stillSaves && previous != null && previous.world == location.world &&
-            previous.distanceSquared(location) < config!!.getDouble("still_distance").let { it * it }
+            previous.distanceSquared(location) < config.getDouble("still_distance").let { it * it }
         if (!session.still) {
-            val drain = perTick("drain_per_second")
+            val drain = Math.round(config.getDouble("drain_per_second") * 1000.0 / 20.0)
             val value = gauge[owner] ?: 0L
             if (drain > 0 && value < drain) {
                 effect.close()
@@ -173,10 +175,10 @@ abstract class CloakAbility(
         }
 
         effect.potion(player, PotionEffect(PotionEffectType.INVISIBILITY, 2, 0, true, false, true))
-        if (config!!.getBoolean("hide_armor")) hideArmor(player)
+        if (config.getBoolean("hide_armor")) hideArmor(player)
         if (session.ticks % 20 == 0L) {
-            val horizontal = config!!.getDouble("mob_reset_horizontal")
-            val vertical = config!!.getDouble("mob_reset_vertical")
+            val horizontal = config.getDouble("mob_reset_horizontal")
+            val vertical = config.getDouble("mob_reset_vertical")
             player.getNearbyEntities(horizontal, vertical, horizontal)
                 .filterIsInstance<Mob>()
                 .filter { it.target?.uniqueId == owner }
@@ -205,7 +207,7 @@ abstract class CloakAbility(
         val target = event.target as? Player ?: return
         if (event.reason != EntityTargetEvent.TargetReason.CLOSEST_PLAYER || !isCloaked(target.uniqueId)) return
         if (target.ability !== this) return
-        val range = config!!.getDouble("mob_detect_range")
+        val range = (sessions[target.uniqueId]?.settings ?: config)!!.getDouble("mob_detect_range")
         val from = event.entity.location
         if (from.world != target.world || from.distanceSquared(target.location) > range * range) event.isCancelled = true
     }
@@ -240,7 +242,7 @@ object Cloak : CloakAbility(
     override val stillSaves = false
     override val label = "Cloak"
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("빠르게 두 번 웅크리면 ", NamedTextColor.WHITE)
                 .append(Component.text("투명화", NamedTextColor.BLUE))

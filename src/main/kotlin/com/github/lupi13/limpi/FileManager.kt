@@ -90,7 +90,14 @@ class FileManager {
 
         fun initialize(owner: Plugin) {
             plugin = owner
-            state = SqliteStateStore(owner.dataFolder.toPath().resolve("limpi.sqlite3"))
+            val timing: ((String, Long) -> Unit)? = if (owner.config.getBoolean("DebugTransactionTiming", false)) {
+                { operation, nanos ->
+                    val millis = nanos / 1_000_000.0
+                    if (nanos >= 50_000_000L) owner.logger.warning("Slow SQLite transaction $operation: $millis ms")
+                    else owner.logger.info("SQLite transaction $operation: $millis ms")
+                }
+            } else null
+            state = SqliteStateStore(owner.dataFolder.toPath().resolve("limpi.sqlite3"), transactionTiming = timing)
             pruneRecords(owner)
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)

@@ -46,7 +46,7 @@ object BlightRanger : DodgeVariant(
 ) {
     override val unlockQuest: Quest get() = IntoTheDark
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("소멸의 걸음", NamedTextColor.DARK_GRAY)
                 .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),

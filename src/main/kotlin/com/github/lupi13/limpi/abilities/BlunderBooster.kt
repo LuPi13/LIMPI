@@ -34,7 +34,7 @@ object BlunderBooster : Ability(
     restrictedSlot = 40,
     needFile = true
 ) {
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("화상 피해에 면역이 됩니다."),
             Component.text("블런더 에너지", NamedTextColor.DARK_RED)

@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test
 
 class CommandIndexTest {
     private fun allow(vararg permissions: String): (String) -> Boolean = { it in permissions }
-    @Test fun `case insensitive aliases resolve to the same handler and missing reload stays unknown`() {
+    @Test fun `case insensitive aliases resolve to the same handler and reload is registered`() {
         assertEquals("dictionary", CommandDefinitions.ability.resolve(listOf("DICT"))!!.id)
         assertEquals("ceiling", CommandDefinitions.ability.resolve(listOf("PITY"))!!.id)
-        assertNull(CommandDefinitions.ability.resolve(listOf("reload")))
+        assertEquals("reload", CommandDefinitions.ability.resolve(listOf("reload"))!!.id)
         assertEquals("stock restore", CommandDefinitions.financial.resolve(listOf("STOCK", "ReStoRe", "ABCD"))!!.id)
     }
     @Test fun `longest known subcommand wins over root and argument bounds remain exact`() {

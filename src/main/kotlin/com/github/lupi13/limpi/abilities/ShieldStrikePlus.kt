@@ -40,7 +40,7 @@ object ShieldStrikePlus : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    override val details: List<Component> by lazy {
+    override val details: List<Component> by settingsCached {
         listOf(
             Component.text("방패강타", NamedTextColor.GRAY)
                 .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),

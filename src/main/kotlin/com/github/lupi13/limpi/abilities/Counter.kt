@@ -44,9 +44,13 @@ object Counter : Ability(
     override val details: List<Component> by settingsCached {
         listOf(
             Component.text("검", NamedTextColor.YELLOW)
-                .append(Component.text("을 들고 우클릭하면 잠시 반격 태세를 잡습니다.", NamedTextColor.WHITE)),
-            Component.text("태세 중에는 거의 움직일 수 없고 공격할 수 없습니다.", NamedTextColor.WHITE),
-            Component.text("그 동안 피해를 받으면 피해를 무시하고 즉시", NamedTextColor.WHITE),
+                .append(Component.text("을 들고 우클릭하면 ", NamedTextColor.WHITE))
+                .append(Component.text("${config!!.getInt("stance_ticks") / 20.0}", NamedTextColor.GREEN))
+                .append(Component.text("초간 반격 태세에 들어가며,", NamedTextColor.WHITE)),
+            Component.text("반격하기 전까지 거의 움직일 수 없고 공격할 수 없습니다.", NamedTextColor.WHITE),
+            Component.text("시전 후 ", NamedTextColor.WHITE)
+                .append(Component.text("${config!!.getInt("window_ms") / 1000.0}", NamedTextColor.GREEN))
+                .append(Component.text("초 안에 받는 피해를 모두 무시하고,", NamedTextColor.WHITE)),
             Component.text("전방의 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게 받은 피해의 ", NamedTextColor.WHITE))

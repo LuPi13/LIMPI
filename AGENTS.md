@@ -1,7 +1,7 @@
 # LIMPI 작업 지침
 
 - 작업 전에 [정비 계획](docs/MAINTENANCE_PLAN.md), [Paper 26.3 기록](docs/PAPER_26_3_UPGRADE.md), [구현 기록](docs/IMPLEMENTATION_LOG.md)을 읽고 항목 ID로 진행 상태를 관리한다.
-- 사용자 승인 범위: refactor/maintenance-paper26.3에서 전체 문제 수정·구조 개선·문서·커밋·가능한 push. **main 변경/병합 금지. 실제 서버 시험은 전체 구현 이후([서버 시험 계획](docs/SERVER_TEST_PLAN.md)).** 사용자가 전체 작업이 끝날 때까지 계속 진행하라고 명시했다. 중간 커밋을 전체 목표 완료로 취급하거나 서버 미검증 때문에 구현을 중단하지 않는다.
+- 2026-10-11 사용자 지시로 refactor/maintenance-paper26.3을 main에 병합했다(사용자 인게임 시험 후). 이후 main 병합·force push 등 main 변경은 사용자가 명시적으로 지시할 때만 한다. 실제 서버 시험 절차는 [서버 시험 계획](docs/SERVER_TEST_PLAN.md)을 따른다.
 - **새 서버에서 처음부터 사용한다(2026-10-10 사용자 결정).** 이전 버전 데이터(playerData YAML, market.yml, 옛 수표·티켓·주식 평균가) 가져오기/호환 코드를 다시 추가하지 않는다.
 - **내부 동작만 고친다(2026-10-11 사용자 지시).** 플레이어가 보고 듣고 조작하는 것(메시지 문구·색, 소리, 파티클, 뽑기 연출·TextDisplay 수직 방향, 여러 번 눌러 동시 뽑기, GUI 제목·배치·로어, 판매창 조작, 탭 완성 순서)은 `main`과 같게 유지한다. 플레이어 채팅에 거래/요청 UUID를 보내지 않는다(로그·관리자 복구 명령만). 새 실패 경로 안내만 원래 톤·색으로 짧게 추가한다.
 - 정본은 limpi.sqlite3다. UUID/능력 ID/잔액/해금/퀘스트/알 수 없는 사용자 필드를 보존하고, 손상 데이터를 schema/복구 없이 초기화·덮어쓰지 않는다. [저장소·복구](docs/STORAGE_AND_RECOVERY.md)를 따른다.

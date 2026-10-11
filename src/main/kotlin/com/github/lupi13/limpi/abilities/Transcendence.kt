@@ -124,7 +124,8 @@ object Transcendence : Ability(
         if (player.ability != this || !AbilityManager.isEnemy(player, target)) return
         if (boosted == player.uniqueId && transcending[player.uniqueId] == true) {
             player.playSound(player.location, Sound.ENTITY_WARDEN_DEATH, 0.7f, 2.0f)
-            target.world.spawnParticle(Particle.DRAGON_BREATH, target.boundingBox.center.toLocation(target.world), 30, 0.1, 0.1, 0.1, 0.2)
+            if (event.damager is Player) target.world.spawnParticle(Particle.DRAGON_BREATH, target.boundingBox.center.toLocation(target.world), 30, 0.1, 0.1, 0.1, 0.2)
+            else event.damager.world.spawnParticle(Particle.DRAGON_BREATH, event.damager.location, 30, 0.1, 0.1, 0.1, 0.2)
             if (event.damager is Player && player.getCooldown(player.inventory.itemInMainHand.type) == 0) shootArrow(player, config!!.getInt("additional_arrow_count"))
         } else if (transcending[player.uniqueId] == null) {
             if (event.damager is Player) swordGauge[player.uniqueId] = com.github.lupi13.limpi.combat.ChargeGauge.gain(

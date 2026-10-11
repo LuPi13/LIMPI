@@ -23,7 +23,7 @@ object SuspiciousSugar : Ability(
     description = listOf(
         Component.text("설탕을 우클릭하면 무작위 상태 효과를 얻습니다.", NamedTextColor.WHITE),
         Component.text("확률적으로 해당 상태 효과를", NamedTextColor.WHITE),
-        Component.text("주변 적에게도 적용시킵니다.", NamedTextColor.WHITE)
+        Component.text("주변 엔티티에게도 적용시킵니다.", NamedTextColor.WHITE)
     ),
     needFile = true
 ) {
@@ -34,9 +34,9 @@ object SuspiciousSugar : Ability(
                 .append(Component.text("초의 무작위 상태 효과를 얻습니다.", NamedTextColor.WHITE)),
             Component.text("${config!!.getDouble("areaChance") * 100}%", NamedTextColor.GREEN)
                 .append(Component.text(" 확률로 해당 상태 효과를 주변 ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getDouble("range")}", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getDouble("range") / 2.0}", NamedTextColor.GREEN))
                 .append(Component.text("블록 내의", NamedTextColor.WHITE)),
-            Component.text("적에게도 적용시킵니다.", NamedTextColor.WHITE),
+            Component.text("모든 엔티티에게도 적용시킵니다.", NamedTextColor.WHITE),
             Component.text("분명히 사탕수수로 만든 정직한 설탕일텐데...", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH)
         )
     }

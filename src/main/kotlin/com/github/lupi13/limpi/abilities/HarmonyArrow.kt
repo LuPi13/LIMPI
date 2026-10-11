@@ -83,10 +83,11 @@ object HarmonyArrow : Ability(
             player.sendActionBar(Component.text("HARMONY: 검 강화됨.", NamedTextColor.BLUE, TextDecoration.BOLD))
             player.playSound(player.location, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.5f, 2.0f)
         } else {
-            val filled = (next / required * 40).toInt().coerceIn(0, 40)
+            val filled = (next / required * 40.0).toInt().coerceIn(0, 40)
+            val empty = (40 - next / required * 40.0).toInt().coerceIn(0, 40)
             player.sendActionBar(Component.text("HARMONY ", NamedTextColor.BLUE, TextDecoration.BOLD)
                 .append(Component.text("|".repeat(filled), NamedTextColor.BLUE).decoration(TextDecoration.BOLD, false))
-                .append(Component.text("·".repeat(40 - filled), NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false)))
+                .append(Component.text("·".repeat(empty), NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false)))
         }
     }
 

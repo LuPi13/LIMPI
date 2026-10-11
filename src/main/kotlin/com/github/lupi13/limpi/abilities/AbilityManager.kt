@@ -78,6 +78,12 @@ object AbilityManager : Listener {
         val restricted = player.ability?.restrictedSlot
         val clickedRestricted = event.clickedInventory === player.inventory && event.slot == restricted
         if (active(event.cursor) || active(event.currentItem) || active(swapped) || clickedRestricted) event.isCancelled = true
+        if (event.click == org.bukkit.event.inventory.ClickType.SWAP_OFFHAND && player.ability?.activeItem != null && restricted != null) {
+            player.sendMessage(Component.text("인벤토리 내에서 ", NamedTextColor.RED)
+                .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.RED))
+                .append(Component.text("키를 이용한 아이템 이동을 자제해 주세요! 고스트 아이템 현상 등의 문제가 발생할 수 있습니다.", NamedTextColor.RED)))
+            player.sendMessage(Component.text("문제가 발생했다면, 인벤토리 내에서 아무렇게 클릭 몇 번 하면 복구될 수 있습니다.", NamedTextColor.RED))
+        }
     }
     /** Allays, item frames and armor stands take the interacting hand's item; never let an ability item leave that way. */
     @EventHandler(priority = org.bukkit.event.EventPriority.LOW, ignoreCancelled = true)
@@ -122,7 +128,7 @@ object AbilityManager : Listener {
             val terms = transitionTerms(player, ability)
             if (terms.plan(before) != before) FileManager.delivery.transition(player, terms, before)
         } catch (_: com.github.lupi13.limpi.delivery.InventoryFull) {
-            player.sendMessage(Component.text("능력 아이템을 장착하려면 인벤토리 공간을 확보하세요.", NamedTextColor.YELLOW))
+            player.sendMessage(Component.text("능력 아이템을 장착하려면 인벤토리 공간을 확보하세요.", NamedTextColor.RED))
         }
     }
 
@@ -220,10 +226,14 @@ object AbilityManager : Listener {
         com.github.lupi13.limpi.platform.AbilityRuntime.closeOwner(player.uniqueId, preserveEffect)
         releaseState(player.uniqueId)
         Functions.resetPlayerAttributes(player)
-        player.sendMessage(if (ability == null) Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE)
-            else Component.text("능력 ", NamedTextColor.WHITE).append(ability.displayName)
-                .append(Component.text("이(가) 적용되었습니다!", NamedTextColor.WHITE)))
-        player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2f)
+        if (ability == null) {
+            player.sendMessage(Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE))
+            return
+        }
+        player.sendMessage(Component.text("능력 ", NamedTextColor.WHITE)
+            .append(ability.displayName)
+            .append(Component.text("이(가) 적용되었습니다!", NamedTextColor.WHITE)))
+        player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 2F)
     }
 
     /**

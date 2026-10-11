@@ -99,8 +99,9 @@ object HarmonySword : Ability(
             val player = plugin.server.getPlayer(boosted) ?: return
             if (player.ability != this) return
             amplified[boosted] = com.github.lupi13.limpi.combat.ChargeGauge.consume(amplified[boosted] ?: 0.0, true)
-            player.playSound(player.location, Sound.ENTITY_WARDEN_DEATH, 0.7f, 2.0f)
-            event.entity.world.spawnParticle(Particle.DRAGON_BREATH, event.entity.boundingBox.center.toLocation(event.entity.world), 30, 0.1, 0.1, 0.1, 0.2)
+            val arrow = event.damager
+            player.world.playSound(arrow.location, Sound.ENTITY_WARDEN_DEATH, 0.7f, 2.0f)
+            arrow.world.spawnParticle(Particle.DRAGON_BREATH, arrow.location, 30, 0.1, 0.1, 0.1, 0.2)
             QuestManager.harmonyHit(player, "harmony_sword")
             return
         }
@@ -117,10 +118,11 @@ object HarmonySword : Ability(
             player.sendActionBar(Component.text("HARMONY: 화살 강화됨.", NamedTextColor.RED, TextDecoration.BOLD))
             player.playSound(player.location, Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, 0.5f, 2.0f)
         } else {
-            val filled = (next / required * 40).toInt().coerceIn(0, 40)
+            val filled = (next / required * 40.0).toInt().coerceIn(0, 40)
+            val empty = (40 - next / required * 40.0).toInt().coerceIn(0, 40)
             player.sendActionBar(Component.text("HARMONY ", NamedTextColor.RED, TextDecoration.BOLD)
                 .append(Component.text("|".repeat(filled), NamedTextColor.RED).decoration(TextDecoration.BOLD, false))
-                .append(Component.text("·".repeat(40 - filled), NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false)))
+                .append(Component.text("·".repeat(empty), NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false)))
         }
     }
 

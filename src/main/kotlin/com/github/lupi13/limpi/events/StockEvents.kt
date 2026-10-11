@@ -22,6 +22,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.ClickType
 import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BookMeta
 import org.bukkit.plugin.Plugin
@@ -31,7 +32,9 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
 import java.time.Clock
-import java.util.Locale
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Random
 import java.util.logging.Level
 
@@ -63,9 +66,9 @@ class StockEvents : Listener {
             val schedule = StockSchedule(Math.multiplyExact(plugin.config.getLong("StockInterval"), 60_000L))
             val data = FileManager.getStockConfig()
             for (code in codes(data)) {
-                val current = price(data, code).units
+                price(data, code)
                 price(data, code, "initialPrice")
-                beforePrice[code] = data.getLong("$code.previousPrice", current).coerceAtLeast(1)
+                (data.get("$code.previousPrice") as? Number)?.toLong()?.takeIf { it > 0 }?.let { beforePrice[code] = it }
             }
             var warnedBoundary = Long.MIN_VALUE
             flowTask = plugin.server.scheduler.runTaskTimer(plugin, Runnable {
@@ -100,7 +103,7 @@ class StockEvents : Listener {
                 val next = schedule.nextBoundary(now)
                 if (next - now <= 60_000 && warnedBoundary != next) {
                     warnedBoundary = next
-                    plugin.server.broadcast(Component.text("주식이 1분 이내에 변동됩니다!", NamedTextColor.YELLOW))
+                    plugin.server.broadcast(Component.text("주식이 1분 후 변동됩니다!", NamedTextColor.YELLOW))
                 }
             }, 0L, 20L)
         }
@@ -120,49 +123,94 @@ class StockEvents : Listener {
             runCatching { Accounts.integralBalance(profile) }.getOrNull()?.takeIf { it >= 0 }?.let(::moneyDisplay)
                 ?: Component.text("계좌 복구 필요", NamedTextColor.RED)
 
-        private fun change(current: Long, previous: Long, color: NamedTextColor = NamedTextColor.WHITE): Component {
-            if (previous <= 0) return Component.text("확인 불가", color)
-            val percent = (current.toDouble() / previous - 1) * 100
-            val display = String.format(Locale.ROOT, "%.2f%%", kotlin.math.abs(percent))
+        /** Percent of the previous price, as in the original menu: ▲ red / plain blue / "-100%" unchanged. */
+        private fun change(current: Long, previous: Long?): Component {
+            if (previous == null || previous <= 0) return Component.text("-(확인 불가)", NamedTextColor.WHITE)
+            val percent = BigDecimal.valueOf(current).multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(previous), 0, RoundingMode.DOWN).toLong()
             return when {
-                current > previous -> Component.text("▲$display", NamedTextColor.RED)
-                current < previous -> Component.text("▼$display", NamedTextColor.BLUE)
-                else -> Component.text("0.00%", color)
+                percent == 100L -> Component.text("-100%", NamedTextColor.WHITE)
+                percent >= 100L -> Component.text("▲${percent}%", NamedTextColor.RED)
+                else -> Component.text("${percent}%", NamedTextColor.BLUE)
             }
         }
+
+        private fun previous(data: FileConfiguration, code: String): Long? =
+            (data.get("$code.previousPrice") as? Number)?.toLong() ?: beforePrice[code]
 
         fun writeStock(code: String): Component {
             val data = FileManager.getStockConfig()
-            val current = price(data, code).units
-            val previous = data.getLong("$code.previousPrice", beforePrice[code] ?: current)
-            return Component.text("${data.getString("$code.name")} ($code)\n", NamedTextColor.DARK_AQUA)
-                .append(moneyDisplay(previous)).append(Component.text(" → ", NamedTextColor.BLACK))
-                .append(moneyDisplay(current)).append(Component.text("\n", NamedTextColor.BLACK))
-                .append(change(current, previous, NamedTextColor.BLACK))
-                .append(Component.text("\n\n", NamedTextColor.BLACK))
+            val stockPrice = price(data, code).units
+            val stockBefore = previous(data, code)?.takeIf { it > 0 } ?: stockPrice
+            val stockChangePercent = BigDecimal.valueOf(stockPrice).multiply(BigDecimal.valueOf(100))
+                .divide(BigDecimal.valueOf(stockBefore), 0, RoundingMode.DOWN).toLong()
+            val disp = if (stockChangePercent == 100L) {
+                Component.text("-100%", NamedTextColor.BLACK)
+            } else if (stockChangePercent >= 100L) {
+                Component.text("▲${stockChangePercent}%", NamedTextColor.RED)
+            } else {
+                Component.text("▼${stockChangePercent}%", NamedTextColor.BLUE)
+            }
+            return Component.text("${data.getString("$code.name")} ($code)", NamedTextColor.DARK_AQUA)
+                .append(Component.text(":\n", NamedTextColor.BLACK))
+                .append(moneyDisplay(stockBefore))
+                .append(Component.text("->", NamedTextColor.BLACK))
+                .append(moneyDisplay(stockPrice))
+                .append(Component.text("\n(", NamedTextColor.BLACK))
+                .append(disp)
+                .append(Component.text(")\n\n", NamedTextColor.BLACK))
         }
 
         fun showBook(player: Player) {
-            val data = FileManager.getStockConfig()
-            val stocks = codes(data)
-            val initial = stocks.fold(BigDecimal.ZERO) { sum, code -> sum + BigDecimal.valueOf(price(data, code, "initialPrice").units) }
-            val current = stocks.fold(BigDecimal.ZERO) { sum, code -> sum + BigDecimal.valueOf(price(data, code).units) }
-            val index = if (initial.signum() == 0) "확인 불가" else current.multiply(BigDecimal.valueOf(100))
-                .divide(initial, 2, RoundingMode.HALF_UP).toPlainString()
-            val book = ItemStack(Material.WRITTEN_BOOK)
-            val meta = book.itemMeta as BookMeta
-            meta.title = "주식 가격 변동"
-            meta.author = "LIMPI"
-            meta.addPages(Component.text("주식 가격 변동\n\nLOSPI: $index\n(기준 100)\n\n기준 시점: " +
-                (data.getString("lastStockStand") ?: FileManager.getMiscConfig().getString("lastStockStand")
-                    ?: "기록 없음"), NamedTextColor.BLACK))
-            for (group in stocks.chunked(3)) {
-                var page = Component.empty()
-                group.forEach { page = page.append(writeStock(it)) }
+            try {
+                val data = FileManager.getStockConfig()
+                val stocks = codes(data)
+                val book = ItemStack(Material.WRITTEN_BOOK, 1)
+                val meta = book.itemMeta as BookMeta
+                val now = ZonedDateTime.now(ZoneId.systemDefault())
+                val date = now.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
+                val time = now.format(DateTimeFormatter.ofPattern("HH시 mm분"))
+
+                var page: Component = Component.text("\n${date}\n${time} 부\n\n", NamedTextColor.DARK_GREEN)
+                    .append(Component.text("주식 가격 변동\n\n\n\n", NamedTextColor.BLACK, TextDecoration.BOLD))
+
+                val initialSum = stocks.fold(BigDecimal.ZERO) { sum, code -> sum + BigDecimal.valueOf(price(data, code, "initialPrice").units) }
+                val currentSum = stocks.fold(BigDecimal.ZERO) { sum, code -> sum + BigDecimal.valueOf(price(data, code).units) }
+                val lospi = currentSum.multiply(BigDecimal.valueOf(100)).divide(initialSum, 2, RoundingMode.HALF_UP)
+                val stringLOSPI = if (lospi >= BigDecimal.valueOf(100)) {
+                    Component.text("▲${lospi.toPlainString()}%", NamedTextColor.RED)
+                } else {
+                    Component.text("▼${lospi.toPlainString()}%", NamedTextColor.BLUE)
+                }
+
+                val standDatetime = requireNotNull(data.getString("lastStockStand") ?: FileManager.getMiscConfig().getString("lastStockStand"))
+                val standYear = standDatetime.substring(0, standDatetime.indexOf("-"))
+                val standMonth = standDatetime.substring(standDatetime.indexOf("-") + 1, standDatetime.lastIndexOf("-"))
+                val standDay = standDatetime.substring(standDatetime.lastIndexOf("-") + 1, standDatetime.indexOf(" "))
+                val standHour = standDatetime.substring(standDatetime.indexOf(" ") + 1, standDatetime.indexOf(":"))
+                val standMinute = standDatetime.substring(standDatetime.indexOf(":") + 1, standDatetime.lastIndexOf(":"))
+                val standDate = "${standYear}년 ${standMonth}월 ${standDay}일"
+                val standTime = "${standHour}시 ${standMinute}분"
+
+                page = page.append(Component.text("LOSPI: ", NamedTextColor.BLACK)
+                    .append(stringLOSPI)
+                    .append(Component.text("\n(기준 시점: $standDate ${standTime})\n\n", NamedTextColor.BLACK)))
                 meta.addPages(page)
+                for (group in stocks.chunked(3)) {
+                    var stockPage: Component = Component.text("")
+                    group.forEach { stockPage = stockPage.append(writeStock(it)) }
+                    meta.addPages(stockPage)
+                }
+
+                meta.customName(Component.text("stockFluct"))
+                meta.author = "LIMPI"
+                meta.title = "주식 가격 변동"
+                meta.generation = BookMeta.Generation.ORIGINAL
+                book.itemMeta = meta
+                player.openBook(book)
+            } catch (e: Exception) {
+                player.sendMessage(Component.text("지금은 이용할 수 없습니다. (서버가 재시작 되고 주식이 변하지 않았을 경우, 조회할 수 없습니다.)", NamedTextColor.RED))
             }
-            book.itemMeta = meta
-            player.openBook(book)
         }
 
         fun openStockGUI(player: Player, requestedPage: Int = 0, expected: Inventory? = null) {
@@ -195,18 +243,26 @@ class StockEvents : Listener {
                     .takeIf { it.isItem && !it.isAir } ?: Material.PAPER
                 val item = ItemStack(material)
                 val meta = item.itemMeta
-                meta.customName(Component.text("${data.getString("$code.name")} ($code)", NamedTextColor.WHITE))
+                meta.customName(Component.text("${data.getString("$code.name")} (${code})", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                 meta.lore(listOf(
-                    Component.text("현재 가격: ", NamedTextColor.WHITE).append(moneyDisplay(current.units))
-                        .append(Component.text("원, 보유 금액: ")).append(balanceDisplay(profile)),
-                    Component.text("보유 주식: ${holding.count}주", NamedTextColor.WHITE),
-                    Component.text("취득 원가: ", NamedTextColor.WHITE).append(moneyDisplay(holding.costBasis.units))
-                        .append(Component.text("원, 현재 가치: ")).append(moneyDisplay(BigInteger.valueOf(current.units)
-                            .multiply(BigInteger.valueOf(holding.count)).toString())),
-                    Component.text("최근 변동: ", NamedTextColor.WHITE)
-                        .append(change(current.units, data.getLong("$code.previousPrice", current.units))),
-                    Component.text("좌클릭 매수 / 우클릭 매도, Shift: 최대 100주", NamedTextColor.WHITE),
-                ).map { it.decoration(TextDecoration.ITALIC, false) })
+                    Component.text("현재 가격: ", NamedTextColor.WHITE)
+                        .append(moneyDisplay(current.units))
+                        .append(Component.text("원, 현재 보유 금액: ", NamedTextColor.WHITE))
+                        .append(balanceDisplay(profile))
+                        .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false),
+                    Component.text("보유 주식: ", NamedTextColor.WHITE)
+                        .append(Component.text("${holding.count}", NamedTextColor.GREEN))
+                        .append(Component.text("주, 최근 변동: ", NamedTextColor.WHITE))
+                        .append(change(current.units, previous(data, code))).decoration(TextDecoration.ITALIC, false),
+                    Component.text("총투자금액: ", NamedTextColor.WHITE)
+                        .append(moneyDisplay(holding.costBasis.units))
+                        .append(Component.text("원, 현재가치: ", NamedTextColor.WHITE))
+                        .append(moneyDisplay(BigInteger.valueOf(current.units).multiply(BigInteger.valueOf(holding.count)).toString()))
+                        .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false),
+                    Component.text("좌클릭하여 매수, 우클릭하여 매도합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
+                    Component.text("Shift를 누르면 100주/전량 거래합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
+                ))
+                for (itemFlag in ItemFlag.entries) meta.addItemFlags(itemFlag)
                 item.itemMeta = meta
                 inventory.setItem(slot, item)
                 holder.actions[slot] = MenuAction.StockQuote(code, current.units)
@@ -214,7 +270,7 @@ class StockEvents : Listener {
             fun pageButton(slot: Int, target: Int, label: String) {
                 val item = ItemStack(Material.ARROW)
                 val meta = item.itemMeta
-                meta.customName(Component.text(label, NamedTextColor.WHITE))
+                meta.customName(Component.text(label, NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                 item.itemMeta = meta
                 inventory.setItem(slot, item)
                 holder.actions[slot] = MenuAction.Page(target)
@@ -244,7 +300,7 @@ class StockEvents : Listener {
         if (!event.isLeftClick && !event.isRightClick) return
         try {
             val data = FileManager.getStockConfig()
-            require(quote.code in codes(data)) { "이미 삭제된 종목입니다." }
+            require(quote.code in codes(data)) { "존재하지 않는 주식입니다." }
             val current = price(data, quote.code)
             require(current.units == quote.price) { "가격이 변경되었습니다. 새 가격을 확인해 주세요." }
             val trading = FileManager.stocks
@@ -256,16 +312,19 @@ class StockEvents : Listener {
             } else {
                 minOf(if (event.isShiftClick) 100L else 1L, trading.holding(profile, quote.code).count)
             }
-            require(count > 0) { if (event.isLeftClick) "돈이 부족합니다." else "보유 주식이 없습니다." }
-            val result = trading.trade(java.util.UUID.randomUUID(), player.uniqueId, quote.code, current, count,
+            require(count > 0) { if (event.isLeftClick) "돈이 부족합니다!" else "보유 주식이 없습니다!" }
+            trading.trade(java.util.UUID.randomUUID(), player.uniqueId, quote.code, current, count,
                 if (event.isLeftClick) StockTrade.BUY else StockTrade.SELL)
-            player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1f, 1f)
-            player.sendMessage(Component.text("${data.getString("${quote.code}.name")} (${quote.code}) $count" +
-                (if (event.isLeftClick) "주 매수 완료." else "주 매도 완료.") + " 거래: ${result.transaction}", NamedTextColor.WHITE))
+            player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
+            player.sendMessage(Component.text("${data.getString("${quote.code}.name")} (${quote.code})", NamedTextColor.AQUA)
+                .append(Component.text(" $count", NamedTextColor.GREEN))
+                .append(Component.text(if (event.isLeftClick) "주 매수 완료." else "주 매도 완료.", NamedTextColor.WHITE)))
         } catch (failure: IllegalArgumentException) {
             player.sendMessage(Component.text(failure.message ?: "거래 조건이 유효하지 않습니다.", NamedTextColor.RED))
+            player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
         } catch (failure: ArithmeticException) {
             player.sendMessage(Component.text("거래 금액 또는 보유 수량이 허용 범위를 초과합니다.", NamedTextColor.RED))
+            player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Stock trade failed for ${player.uniqueId}", failure)
             player.sendMessage(Component.text("거래를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.", NamedTextColor.RED))

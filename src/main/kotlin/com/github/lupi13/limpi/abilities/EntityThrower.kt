@@ -122,6 +122,8 @@ object EntityThrower : Ability(
                 init {
                     heldEffects[player.uniqueId] = effect
                     own {
+                        // 붙잡기가 어떤 이유로든 끝나면(던지기 포함) 한 번 재생한다.
+                        if (player.isOnline) player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         if (heldEffects[player.uniqueId] === effect) {
                             heldEffects.remove(player.uniqueId)
                             heldEntity.remove(player.uniqueId)
@@ -134,7 +136,6 @@ object EntityThrower : Ability(
                     // 플레이어가 죽었거나 엔티티를 놓았을 때 반복문 종료
                     if (!heldEntity.containsKey(player.uniqueId) || heldEntity[player.uniqueId] != targetEntity || player.isDead || !player.isOnline) {
                         clearRestrictHand(player)
-                        player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         cancel()
                         return
                     }
@@ -142,7 +143,6 @@ object EntityThrower : Ability(
                     if (targetEntity.isDead || !targetEntity.isValid) {
                         heldEntity.remove(player.uniqueId)
                         clearRestrictHand(player)
-                        player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         cancel()
                         return
                     }
@@ -150,7 +150,6 @@ object EntityThrower : Ability(
                     if (targetEntity.location.distance(Location(player.world, player.boundingBox.centerX, player.boundingBox.maxY + config!!.getDouble("heldHeight"), player.boundingBox.centerZ))> config!!.getDouble("forceDropDistance")) {
                         heldEntity.remove(player.uniqueId)
                         clearRestrictHand(player)
-                        player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         cancel()
                         return
                     }
@@ -159,7 +158,6 @@ object EntityThrower : Ability(
                         !player.inventory.itemInOffHand.isSimilar(getRestrictHand())) {
                         heldEntity.remove(player.uniqueId)
                         clearRestrictHand(player)
-                        player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT_FAIL, 0.7f, 0.5f)
                         cancel()
                         return
                     }

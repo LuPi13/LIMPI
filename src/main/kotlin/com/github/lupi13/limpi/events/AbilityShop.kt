@@ -71,9 +71,15 @@ class AbilityShop : Listener {
             }
 
             if (isShopDisplay) {
-                val code = grade?.name ?: "GACHA"
-                lore = lore + Component.text("가격: 에메랄드 ${price(code)}개", NamedTextColor.WHITE)
-                lore = lore + Component.text("좌클릭 1개 · Shift+좌클릭 최대 10개", NamedTextColor.WHITE)
+                val price = price(grade?.name ?: "GACHA")
+                val money = emeraldCount(player!!)
+                lore = lore + Component.text("가격: 에메랄드 ", NamedTextColor.WHITE)
+                    .append(moneyDisplay(price))
+                    .append(Component.text("개, 현재 보유 에메랄드: ", NamedTextColor.WHITE))
+                    .append(moneyDisplay(money))
+                    .append(Component.text("개", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false)
+                lore = lore + Component.text("좌클릭하여 구매합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
+                lore = lore + Component.text("Shift를 누르고 클릭하면 10개/최대한 많이 구매합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
             }
             meta!!.lore(lore)
             item.itemMeta = meta
@@ -85,23 +91,19 @@ class AbilityShop : Listener {
             return CatalogPrices.sell(requireNotNull(plugin.config.get(path)) { "Missing ability shop price $path" }).units
         }
 
+        private val emeraldPayload: String get() = PaperItemCodec.payload(ItemStack(Material.EMERALD))
+        private fun emeraldCount(player: Player): Long = InventoryPlan.count(PaperItemCodec.snapshot(player), emeraldPayload)
+
         fun openAbilityShopGUI(player: Player, expected: Inventory? = null) {
             if (!player.hasPermission("limpi.ability.shop") || !FileManager.delivery.claim(player)) return
-            val holder = MenuHolder(MenuKind.ABILITY_SHOP, 0, abilityShopGUIName)
+            val holder = MenuHolder(MenuKind.ABILITY_SHOP, 0, abilityShopGUIName, 9)
             val grades = listOf<Grade?>(null) + Grade.entries
             for ((index, grade) in grades.withIndex()) {
                 val code = grade?.name ?: "GACHA"
                 try {
                     val unit = price(code)
-                    val reward = getSelectTicketItem(grade, false, null)
-                    val grant = PaperItemCodec.grant(reward)
-                    val meta = reward.itemMeta
-                    meta.lore((meta.lore() ?: emptyList()) + listOf(
-                        Component.text("가격: 에메랄드 ${unit}개", NamedTextColor.WHITE),
-                        Component.text("좌클릭 1개 · Shift+좌클릭 최대 10개", NamedTextColor.YELLOW),
-                        Component.text("공간 부족 시 /financial claim으로 수령", NamedTextColor.GRAY)))
-                    reward.itemMeta = meta
-                    holder.inventory.setItem(index + 1, reward)
+                    val grant = PaperItemCodec.grant(getSelectTicketItem(grade, false, null))
+                    holder.inventory.setItem(index + 1, getSelectTicketItem(grade, true, player))
                     holder.actions[index + 1] = MenuAction.ItemExchangeQuote(code, unit, grant)
                 } catch (failure: Exception) {
                     plugin.logger.warning("Invalid ability shop product $code: ${failure.message}")
@@ -126,26 +128,42 @@ class AbilityShop : Listener {
             require(price(quote.product) == quote.price) { "가격이 변경되었습니다. 화면을 다시 열어주세요." }
             if (!FileManager.delivery.claim(player)) return
             val before = PaperItemCodec.snapshot(player)
-            val currency = PaperItemCodec.payload(ItemStack(Material.EMERALD))
+            val currency = emeraldPayload
             val available = InventoryPlan.count(before, currency)
             val maximum = if (event.click == ClickType.SHIFT_LEFT) 10L else 1L
             val count = if (quote.price == 0L) maximum else minOf(maximum, available / quote.price)
-            require(count > 0) { "일반 에메랄드가 부족합니다." }
+            if (count <= 0) {
+                player.sendMessage(Component.text("에메랄드가 부족합니다! ", NamedTextColor.RED))
+                player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
+                return
+            }
             val cost = Math.multiplyExact(quote.price, count)
+            val remaining = if (cost == 0L) before else InventoryPlan.remove(before, currency, cost)
+            try {
+                InventoryPlan.grant(remaining, listOf(quote.reward.copy(count = count)))
+            } catch (_: InventoryFull) {
+                player.sendMessage(Component.text("인벤토리가 가득 찼습니다.", NamedTextColor.RED))
+                player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
+                return
+            }
             val terms = ExchangeTerms(quote.product, currency, cost, quote.reward.copy(count = count))
             val completed = if (cost == 0L) {
                 FileManager.exchanges.free(request, player.uniqueId, terms); true
-            } else FileManager.delivery.remove(player, request, ItemExchange.KIND, terms.encode(), before,
-                InventoryPlan.remove(before, currency, cost))
+            } else FileManager.delivery.remove(player, request, ItemExchange.KIND, terms.encode(), before, remaining)
             if (completed) {
-                player.sendMessage(Component.text("${quote.product} ${count}개 구매를 확정했습니다. 거래: $request", NamedTextColor.GREEN))
+                val name = (event.currentItem ?: PaperItemCodec.item(quote.reward.payload, 1)).displayName()
+                player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
+                player.sendMessage(name
+                    .append(Component.text(" $count", NamedTextColor.GREEN))
+                    .append(Component.text("개 구매 완료.", NamedTextColor.WHITE)))
                 if (FileManager.delivery.claim(player)) openAbilityShopGUI(player, top)
             }
         } catch (failure: IllegalArgumentException) {
-            player.sendMessage(Component.text(failure.message ?: "상품/가격을 확인하세요.", NamedTextColor.RED))
+            player.sendMessage(Component.text(failure.message ?: "구매하지 못했습니다.", NamedTextColor.RED))
+            player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
         } catch (failure: Exception) {
-            plugin.logger.log(Level.SEVERE, "Ability shop exchange $request failed", failure)
-            player.sendMessage(Component.text("구매/회수 기록을 확인해야 합니다. 거래 UUID: $request", NamedTextColor.RED))
+            plugin.logger.log(Level.SEVERE, "Ability shop exchange $request failed for ${player.uniqueId}", failure)
+            player.sendMessage(Component.text("구매를 완료하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
 

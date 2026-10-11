@@ -26,8 +26,8 @@ object PickPocket : Ability(
     codeName = "pick_pocket",
     material = Material.FISHING_ROD,
     description = listOf(
-        Component.text("낚싯대로 적을 당길 때, 해당 대상의", NamedTextColor.WHITE),
-        Component.text("인벤토리에서 무작위 아이템 한 묶음을 낚아챕니다.", NamedTextColor.WHITE)
+        Component.text("낚싯대로 엔티티를 당길 때, 해당 대상의", NamedTextColor.WHITE),
+        Component.text("인벤토리에서 무작위 아이템을 하나 낚아챕니다.", NamedTextColor.WHITE)
     ),
 ) {
     private val processed = linkedSetOf<UUID>()
@@ -114,7 +114,7 @@ object PickPocket : Ability(
         var dropped: Item? = null
         remove()
         try {
-            dropped = position.world.dropItem(position, original.clone())
+            dropped = position.world.dropItemNaturally(position, original.clone())
             check(dropped.isValid) { "Item spawn was rejected" }
             dropped.velocity = player.eyeLocation.toVector().subtract(position.toVector()).multiply(0.125)
         } catch (failure: Exception) {

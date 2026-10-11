@@ -32,15 +32,15 @@
 3. GachaSettlement가 최신 DB 프로필의 before 카운터와 해금 목록 타입을 확인한 뒤 해금·after 카운터·gacha_result/{owner}/{id}·회수 DONE·정산 영수증을 한 commit에 저장한다. 기존 해금·퀘스트·잔액·알 수 없는 필드를 보존한다. 이미 해금한 결과는 목록에 중복 추가하지 않지만 정상 유료 추첨 결과와 카운터를 기록한다.
 4. 정산 실패는 회수 대기를 남긴다. fresh login 복구가 저장된 checkpoint/after를 확인하면 재소모/재추첨 없이 같은 결과를 정산한다. 불일치는 자동 추측하지 않고 REVIEW/관리자 절차를 사용한다.
 
-보호 플러그인의 useItemInHand DENY를 존중한다. 연출 중 새 입력은 무소모로 거부해 중첩/양손 중복 실행을 막는다. /ability result <거래 UUID>로 자신의 확정 결과를 조회한다. 아직 회수 대기 중이면 결과가 없으며 관리자는 /financial removal <owner UUID>와 기존 removed|retained 절차를 확인한다. retained는 해금/카운터/결과를 만들지 않고, removed는 frozen 결과를 원자 정산한다.
+보호 플러그인의 useItemInHand DENY를 존중한다. **원래 플레이 방식대로 여러 번 누르면 여러 뽑기가 동시에 진행된다**(양손 티켓 포함). 각 클릭은 자기 거래 UUID로 따로 회수·정산된다. 플레이어 채팅에는 거래 UUID를 보내지 않으며(로그에만 기록) `/ability result`는 마지막 확정 결과를 보여 준다. 아직 회수 대기 중이면 결과가 없으며 관리자는 /financial removal <owner UUID>와 기존 removed|retained 절차를 확인한다. retained는 해금/카운터/결과를 만들지 않고, removed는 frozen 결과를 원자 정산한다.
 
 ## ForceTroll과 연출 수명
 
-TROLL 강제 적용은 해금 commit에서 gacha_apply_pending/{owner}/{id}를 함께 저장한다. 프로필 ability는 정산 내부에서 미리 바꾸지 않는다. 능력 레지스트리를 등록한 후 claim/접속 복구에서 기존 applyAbility를 호출하고, 프로필에 해당 코드가 저장된 것을 확인한 뒤 멱등 ack한다. 적용 또는 ack 실패 시 대기 기록과 결과는 남는다. 미확인 강제 적용이 있으면 다음 추첨 준비를 거부한다. 능력 시스템이 꺼져 있으면 이 대기를 보존하며 다시 켠 뒤 처리한다.
+TROLL 강제 적용은 해금 commit에서 gacha_apply_pending/{owner}/{id}를 함께 저장한다. 프로필 ability는 정산 내부에서 미리 바꾸지 않는다. 능력 레지스트리를 등록한 후 claim/접속 복구에서 기존 applyAbility를 호출하고, 프로필에 해당 코드가 저장된 것을 확인한 뒤 멱등 ack한다. 적용 또는 ack 실패 시 대기 기록과 결과는 남는다. 다음 클릭의 claim이 이전 강제 적용을 먼저 처리한다. 강제 적용과 "(TROLL) 능력이 강제 적용됩니다!" 안내는 원래처럼 연출 끝(241틱)에 일어난다. 능력 시스템이 꺼져 있으면 이 대기를 보존하며 다시 켠 뒤 처리한다.
 
 같은 능력 재적용 검사를 속성 초기화보다 앞으로 옮겨 ack 재시도가 속성을 다시 초기화하지 않게 했다. 기존 능력 제한 슬롯을 비울 때는 그 능력의 activeItem과 일치할 때만 제거한다. 새 제한 슬롯 보존·속성 modifier 소유·전환 checkpoint는 이후 [능력 전환](ABILITY_TRANSITIONS.md)/[runtime](ABILITY_RUNTIME.md)에서 연결했다. 현재 TROLL 3개에는 제한 슬롯이 없으며 복구 adapter도 이 조건을 검사한다.
 
-GachaAnimation은 결과 표현만 담당한다. 해금/카운터/능력 적용/저장을 호출하지 않는다. owner UUID마다 하나의 반복 task와 display 목록을 추적하고 부분 spawn부터 소유권을 기록한다. 약 241틱 연출을 유지하되 중첩 지연 작업을 제거했다. 정상 종료·quit·world change·death·disable·spawn/실행 예외에서 task/display를 정리한다. 표시 엔티티는 persistent=false이며 연출이 실패하거나 중단돼도 확정 결과는 유지한다.
+GachaAnimation은 결과 표현만 담당한다. 해금/카운터/능력 적용/저장을 호출하지 않는다. 뽑기마다 별도 세션(task·display 목록)을 추적하며 한 플레이어가 여러 세션을 동시에 가질 수 있다. 연출(소리·파티클·타이밍·글씨)은 main과 같다. 결과 글씨 TextDisplay는 **수직(pitch 0, FIXED billboard)으로 플레이어 쪽을 향한다**(시야 방향으로 기울이지 않는다). 원래처럼 사망·월드 이동 중에도 제자리에서 끝까지 재생하고, quit·disable·spawn/실행 예외에서만 정리한다. 표시 엔티티는 persistent=false이며 연출이 실패하거나 중단돼도 확정 결과는 유지한다.
 
 ## 검증과 남은 작업
 

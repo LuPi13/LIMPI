@@ -20,11 +20,13 @@ import com.github.lupi13.limpi.platform.AbilityTicketGuard
 import com.github.lupi13.limpi.platform.AbilityRuntime
 import com.github.lupi13.limpi.platform.AbilityDamage
 import org.bukkit.plugin.java.JavaPlugin
+import java.io.PrintStream
 
 class LIMPI : JavaPlugin() {
     private var gacha: GachaEvents? = null
     override fun onEnable() {
         // Plugin startup logic
+        System.setOut(PrintStream(System.out, true, "UTF-8"))
 
         // File Setting
         var time = System.currentTimeMillis()
@@ -106,6 +108,7 @@ class LIMPI : JavaPlugin() {
     override fun onDisable() {
         // Plugin shutdown logic
         StockEvents.stop()
+        SellEvents.closeAll()
         AbilityRuntime.closeAll()
         if (config.getBoolean("EnableAbilitySystem")) AbilityManager.shutdown()
         server.onlinePlayers.forEach(AbilityRuntime::clearAttributes)

@@ -17,12 +17,13 @@ class DeliveryCommands(private val journal: DeliveryJournal, private val control
     fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (args[0].equals("claim", true)) {
             if (sender !is Player || !sender.hasPermission("limpi.financial.claim") || args.size != 1) {
-                error(sender, "플레이어만 /financial claim으로 미수령 물품을 받을 수 있습니다."); return true
+                error(sender, "플레이어만 사용할 수 있습니다."); return true
             }
-            controller.claim(sender)
+            val nothing = journal.pending(sender.uniqueId).isEmpty()
+            if (controller.claim(sender) && nothing) error(sender, "받을 아이템이 없습니다.")
             return true
         }
-        if (!sender.hasPermission("limpi.financial.admin.delivery")) { error(sender, "권한이 부족합니다."); return true }
+        if (!sender.hasPermission("limpi.financial.admin.delivery")) { error(sender, "권한이 부족합니다!"); return true }
         try {
             if (args.getOrNull(1)?.equals("resolve", true) == true) {
                 if (args.size < 6) { error(sender, "/financial delivery resolve <소유자 UUID> <지급 UUID> <delivered|retry> <확인 근거>"); return true }

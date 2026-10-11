@@ -55,12 +55,13 @@ object QuestManager {
 
     private fun notify(player: Player, quest: Quest, result: com.github.lupi13.limpi.quest.QuestRewardResult) {
         if (result.replayed) return
-        if (result.newCompletion) {
-            player.sendMessage(Component.text("퀘스트 ", NamedTextColor.WHITE).append(quest.displayName))
-            player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
-        }
+        if (!result.newCompletion && !result.newUnlock) return
+        if (result.newCompletion) player.sendMessage(Component.text("퀘스트 ", NamedTextColor.WHITE)
+            .append(quest.displayName))
         if (result.newUnlock) player.sendMessage(Component.text("능력 ", NamedTextColor.WHITE)
-            .append(quest.rewardAbility.displayName).append(Component.text("이(가) 해금되었습니다!", NamedTextColor.WHITE)))
+            .append(quest.rewardAbility.displayName)
+            .append(Component.text("이(가) 해금되었습니다!", NamedTextColor.WHITE)))
+        if (result.newCompletion) player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
     }
 
     /**

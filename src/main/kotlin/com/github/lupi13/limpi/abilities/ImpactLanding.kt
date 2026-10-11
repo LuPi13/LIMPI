@@ -52,7 +52,7 @@ object ImpactLanding : Ability(
         if (!damage.isFinite() || damage <= 0) return
 
         val policy = ShockwavePolicy(damage, config!!.getDouble("dampingRatio"))
-        player.world.playSound(player.location, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, (damage / 8.0).coerceIn(0.0, 4.0).toFloat(), (8.0 / damage).coerceIn(0.5, 2.0).toFloat())
+        player.world.playSound(player.location, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, (damage / 8.0).toFloat(), (8.0 / damage).toFloat())
 
         val entities = player.getNearbyEntities(policy.radius, policy.radius, policy.radius)
 
@@ -69,7 +69,7 @@ object ImpactLanding : Ability(
         }
 
         // 파티클 효과
-        for (r in 1..policy.rings) {
+        for (r in 1..(damage / 2).toInt()) {
             for (theta in 0 until 360 step 10) {
                 val angle = Math.toRadians(theta.toDouble() + Random.nextDouble(-5.0, 5.0))
                 val x = (r + Random.nextDouble(-0.5, 0.5)) * cos(angle)
@@ -82,7 +82,7 @@ object ImpactLanding : Ability(
                     player.location,
                     0,
                     x, 0.1, z,
-                    (shock / 10.0).coerceAtMost(4.0)
+                    shock / 10.0
                 )
                 repeat(policy.repeats((shock / damage / 1.1).coerceIn(0.0, 1.0), Random::nextDouble)) {
                     player.world.spawnParticle(

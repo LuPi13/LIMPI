@@ -11,6 +11,10 @@
 3. 별도 저장 환경이면 `config.yml`의 `PlayerDataDirectory`를 실제 playerdata 위치로 지정하고, 기본값이면 첫 접속 로그 `Delivery checkpoint directory confirmed`가 `world/players/data`인지 확인한다.
 4. 강제 종료·복구 시험(3·7단계) 전에는 서버를 정상 종료하고 `plugins/LIMPI`와 월드/`playerdata`를 같은 시점으로 백업해 두면 다시 시작하기 쉽다.
 
+## 0.5 표시·연출 (main과 비교)
+
+- [ ] 뽑기 연타 동시 진행, 결과 글씨 수직(하늘을 보고 뽑아도 보임), 소리·파티클. 각 메시지 문구·색이 main과 같고 플레이어 채팅에 UUID가 없다. 판매창에 물품을 넣고 판매/닫기 반환.
+
 ## 1. enable·disable
 
 - [ ] 첫 enable에서 빈 `limpi.sqlite3`가 생기고 예외가 없다. 재시작해도 데이터가 유지된다.

@@ -106,6 +106,7 @@ object BladeLeaper : Ability(
 
 
         val meta = item.itemMeta as org.bukkit.inventory.meta.Damageable
+        var broken = false
         if (!creative) {
             val unbreaking = meta.enchants[Enchantment.UNBREAKING] ?: 0
             if (!meta.isUnbreakable && Random.nextDouble() <= 1.0 / (unbreaking.toDouble() + 1.0)) {
@@ -120,6 +121,7 @@ object BladeLeaper : Ability(
             val after = before.toMutableList().apply { this[slot] = if (source.count == 1) null else source.copy(count = source.count - 1) }
             val maximumDamage = if (meta.hasMaxDamage()) meta.maxDamage else item.type.maxDurability.toInt()
             val returned = if (meta.isUnbreakable || meta.damage < maximumDamage) PaperItemCodec.grant(item) else null
+            broken = returned == null
             val terms = AbilityItemTerms(codeName, slot, source.payload, returned)
             if (!FileManager.delivery.remove(player, UUID.randomUUID(), AbilityItemUse.KIND, terms.encode(), before, after)) return
         }
@@ -333,7 +335,10 @@ object BladeLeaper : Ability(
                     }
                 }
 
-                if (ticks > 25 + lifeTime) cancel()
+                if (ticks > 25 + lifeTime) {
+                    if (broken) player.playSound(player.location, Sound.ENTITY_ITEM_BREAK, 1f, 1f)
+                    cancel()
+                }
             }
         }.runTaskTimer(plugin, 0L, 1L)
     }

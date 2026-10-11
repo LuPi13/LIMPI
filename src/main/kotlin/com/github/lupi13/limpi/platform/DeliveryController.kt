@@ -56,7 +56,8 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
 
     private val awaitingRespawn = mutableSetOf<UUID>()
 
-    fun claim(player: Player, freshLogin: Boolean = false): Boolean {
+    /** [quiet] suppresses the "delivered" notice right after a purchase that already has its own message. */
+    fun claim(player: Player, freshLogin: Boolean = false, quiet: Boolean = false): Boolean {
         if (blocked(player.uniqueId) && !freshLogin) return false
         if (player.isDead) {
             // A player rejoining on the death screen cannot receive or save inventory changes. Attempting recovery would
@@ -74,9 +75,9 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
             val removalInventory = pendingRemovals.singleOrNull()?.let { removalInventory(player, it.evidence.before.size) } ?: inventory
             removals.recover(player.uniqueId, removalInventory, freshLogin)
             val result = service.drain(player.uniqueId, inventory, freshLogin)
-            if (result.delivered > 0) player.sendMessage(Component.text("미수령 물품 ${result.delivered}건을 지급했습니다.", NamedTextColor.GREEN))
+            if (result.delivered > 0 && !quiet) player.sendMessage(Component.text("미수령 물품 ${result.delivered}건을 지급했습니다.", NamedTextColor.GREEN))
             if (result.waitingForSpace > 0) player.sendMessage(Component.text(
-                "미수령 물품 ${result.waitingForSpace}건이 남아 있습니다. 공간을 확보한 뒤 /financial claim을 사용하세요.", NamedTextColor.YELLOW))
+                "인벤토리가 가득 찼습니다! 받지 못한 아이템 ${result.waitingForSpace}건은 공간을 비운 뒤 /financial claim으로 받을 수 있습니다.", NamedTextColor.RED))
             afterClaim(player)
             return true
         } catch (failure: Exception) {
@@ -101,20 +102,17 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
             if (!prepared && failure is MarketException) throw failure // A code conflict has not touched an inventory.
             blocked.add(player.uniqueId)
             plugin.logger.log(Level.SEVERE, "Market escrow $id failed for ${player.uniqueId}", failure)
-            player.kick(Component.text("매물 회수 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
+            player.kick(Component.text("장터 등록 기록을 확인해야 합니다. 관리자에게 UUID ${player.uniqueId}를 알려주세요.", NamedTextColor.RED))
             return false
         }
     }
 
-    fun sell(player: Player, id: UUID, before: List<StoredStack?>, prices: Map<Int, Money>): Boolean {
+    /** Returns the settled sale total, or null when the sale did not complete (the caller shows the message). */
+    fun sell(player: Player, id: UUID, before: List<StoredStack?>, prices: Map<Int, Money>): Money? {
         require(prices.isNotEmpty() && prices.keys.all { it in before.indices && before[it] != null })
         val after = before.toMutableList().apply { prices.keys.forEach { this[it] = null } }.toList()
-        return remove(player, id, SaleSettlement.KIND, SaleSettlement.terms(prices), before, after).also { success ->
-            if (success) {
-                val record = requireNotNull(removals.find(player.uniqueId, id))
-                player.sendMessage(Component.text("${SaleSettlement.total(record).units}원 판매를 확정했습니다. 거래: $id", NamedTextColor.GREEN))
-            }
-        }
+        if (!remove(player, id, SaleSettlement.KIND, SaleSettlement.terms(prices), before, after)) return null
+        return SaleSettlement.total(requireNotNull(removals.find(player.uniqueId, id)))
     }
 
     fun remove(player: Player, id: UUID, kind: String, terms: String, before: List<StoredStack?>, after: List<StoredStack?>): Boolean {
@@ -131,7 +129,7 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
             if (!prepared && (failure is com.github.lupi13.limpi.economy.BankException || failure is IllegalArgumentException)) throw failure
             blocked.add(player.uniqueId)
             plugin.logger.log(Level.SEVERE, "Item removal $id ($kind) failed for ${player.uniqueId}", failure)
-            player.kick(Component.text("물품 회수 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
+            player.kick(Component.text("물품 회수 기록을 확인해야 합니다. 관리자에게 UUID ${player.uniqueId}를 알려주세요.", NamedTextColor.RED))
             return false
         }
     }
@@ -152,7 +150,7 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
             blocked.add(player.uniqueId)
             AbilityRuntime.closeOwner(player.uniqueId)
             plugin.logger.log(Level.SEVERE, "Ability transition $id failed for ${player.uniqueId}", failure)
-            player.kick(Component.text("능력 전환 기록을 복구해야 합니다. 거래 UUID: $id", NamedTextColor.RED))
+            player.kick(Component.text("능력 전환 기록을 확인해야 합니다. 관리자에게 UUID ${player.uniqueId}를 알려주세요.", NamedTextColor.RED))
             return false
         }
     }

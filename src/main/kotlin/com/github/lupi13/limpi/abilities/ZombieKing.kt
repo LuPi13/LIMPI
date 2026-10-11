@@ -52,7 +52,7 @@ object ZombieKing : Ability(
                 .append(Component.text("즉시 피해", NamedTextColor.DARK_BLUE))
                 .append(Component.text(" 효과가 서로 바뀌어 적용됩니다.", NamedTextColor.WHITE)),
             Component.text("방어력이 ", NamedTextColor.WHITE)
-                .append(Component.text(config!!.getDouble("armor_point"), NamedTextColor.GREEN))
+                .append(Component.text(config!!.getDouble("armor_point").let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() }, NamedTextColor.GREEN))
                 .append(Component.text("만큼 추가됩니다.", NamedTextColor.WHITE)),
             Component.text("모든 근접 공격이 ", NamedTextColor.WHITE)
                 .append(Component.text(config!!.getDouble("damage_addition"), NamedTextColor.GREEN))
@@ -207,6 +207,7 @@ object ZombieKing : Ability(
         if (Random.nextDouble() < config!!.getDouble("reinforcement_probability")) {
             // 50회 생성 시도
             for (i in 1..50) {
+                player.sendMessage("소환 시도 $i")
                 val location = player.location.clone().add(
                     Random.nextDouble(-40.0, 40.0),
                     Random.nextDouble(-5.0, 5.0),

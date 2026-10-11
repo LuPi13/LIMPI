@@ -43,7 +43,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
             // for an administrator (/ability set to the selected ID, then claim acknowledges) instead of kicking every login.
             if (current.isNotEmpty() && current != result.terms.previous && current != result.terms.ability) {
                 plugin.logger.warning("Selection ${result.id} for ${player.uniqueId} held: current ability $current is neither ${result.terms.previous} nor ${result.terms.ability}")
-                player.sendMessage(Component.text("선택한 능력 적용이 보류되었습니다. 관리자에게 거래 ${result.id}를 알려주세요.", NamedTextColor.YELLOW))
+                player.sendMessage(Component.text("선택한 능력 적용이 보류되었습니다. 관리자에게 문의하세요.", NamedTextColor.YELLOW))
                 continue
             }
             try {
@@ -103,7 +103,9 @@ class GachaEvents(private val owner: Plugin) : Listener {
         val item = player.inventory.getItem(hand)
         if (com.github.lupi13.limpi.platform.AbilityTickets.identify(item) != "GACHA") return
         event.isCancelled = true
-        if (!player.isOnline || player.isDead || animation.active(player.uniqueId)) return
+        if (!player.isOnline || player.isDead) return
+        // Each click is its own draw (own request id and removal transaction); earlier draws may still be animating.
+        // The claim applies any forced TROLL left by an earlier draw so the new draw starts from the latest counters.
         if (!FileManager.delivery.claim(player)) return
         try {
             val config = FileManager.getPlayerData(player)
@@ -116,6 +118,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
                 DrawGrade.EPIC to AbilityPickUp.getEpicPickUp(pickupTime).codeName)
             val outcome = GachaPolicy(settings).draw(state, candidates, pickups, Random::nextDouble)
             val ability = requireNotNull(AbilityManager.getAbilityByCodeName(outcome.ability))
+            val newlyUnlocked = ability.codeName !in config.getStringList("unlockedAbilities")
             val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, includeOffHand = true)
             val slot = if (hand == org.bukkit.inventory.EquipmentSlot.OFF_HAND) before.lastIndex else player.inventory.heldItemSlot
             val ticket = requireNotNull(before[slot])
@@ -125,18 +128,28 @@ class GachaEvents(private val owner: Plugin) : Listener {
             val terms = GachaTerms(ticket.payload, slot, state, outcome, pickupTime, owner.config.getBoolean("ForceTroll") && outcome.grade == DrawGrade.TROLL)
             val id = java.util.UUID.randomUUID()
             if (!FileManager.delivery.remove(player, id, GachaSettlement.KIND, terms.encode(), before, after)) return
-            val result = requireNotNull(FileManager.gacha.find(player.uniqueId, id))
-            player.sendMessage(Component.text("뽑기 결과를 저장했습니다. 조회: /ability result ${result.id}", NamedTextColor.GREEN))
-            if (!FileManager.delivery.claim(player)) return
-            animation.start(player, ability, getGachaTicketItem())
+            requireNotNull(FileManager.gacha.find(player.uniqueId, id))
+            owner.logger.info("Gacha draw $id for ${player.uniqueId}: ${outcome.grade} ${outcome.ability} pickup=${outcome.pickup}")
+            // Result, unlock and counters are already committed; the animation only reveals them as before.
+            animation.start(player, ability, getGachaTicketItem()) { reveal(player, ability, newlyUnlocked, terms.forceTroll) }
         } catch (failure: Exception) {
             owner.logger.log(java.util.logging.Level.WARNING, "Gacha request failed for ${player.uniqueId}", failure)
-            player.sendMessage(Component.text("뽑기를 완료하지 못했습니다. 저장된 거래 기록은 유지됩니다. 관리자에게 문의하세요.", NamedTextColor.RED))
+            player.sendMessage(Component.text("뽑기를 진행하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
         }
     }
 
+    /** Original end-of-draw messages. A forced TROLL is applied through the recoverable pending-application path. */
+    private fun reveal(player: Player, ability: com.github.lupi13.limpi.abilities.Ability, newlyUnlocked: Boolean, forceTroll: Boolean) {
+        if (!player.isOnline) return
+        if (newlyUnlocked) player.sendMessage(Component.text("능력 ", NamedTextColor.WHITE)
+            .append(ability.displayName)
+            .append(Component.text("이(가) 해금되었습니다!", NamedTextColor.WHITE)))
+        if (forceTroll) {
+            player.sendMessage(Grade.TROLL.displayGrade.append(Component.text(" 능력이 강제 적용됩니다!", NamedTextColor.RED)))
+            FileManager.delivery.claim(player)
+        }
+    }
+
+    /** Animations follow the original fixed location through death/world change; only a quit removes them. */
     @EventHandler fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) = animation.close(event.player.uniqueId)
-    @EventHandler fun onWorldChange(event: org.bukkit.event.player.PlayerChangedWorldEvent) = animation.close(event.player.uniqueId)
-    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
-    fun onDeath(event: org.bukkit.event.entity.PlayerDeathEvent) = animation.close(event.entity.uniqueId)
 }

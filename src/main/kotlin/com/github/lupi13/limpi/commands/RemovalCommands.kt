@@ -12,7 +12,7 @@ import java.util.logging.Level
 class RemovalCommands(private val plugin: Plugin) {
     fun execute(sender: CommandSender, args: Array<out String>): Boolean {
         if (!sender.hasPermission("limpi.financial.admin.removal")) {
-            sender.sendMessage(Component.text("권한이 부족합니다.", NamedTextColor.RED)); return true
+            sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED)); return true
         }
         val request = UUID.randomUUID()
         try {

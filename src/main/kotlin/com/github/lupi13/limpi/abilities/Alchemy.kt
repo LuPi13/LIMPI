@@ -64,12 +64,11 @@ object Alchemy : Ability(
         val after = before.toMutableList().apply { this[slot] = if (source.count == 10) null else source.copy(count = source.count - 10) }
         if (!com.github.lupi13.limpi.FileManager.delivery.remove(player, java.util.UUID.randomUUID(),
                 com.github.lupi13.limpi.ability.AlchemySettlement.KIND, terms.encode(), before, after)) return
-        val sound = when (outcome) {
-            "coal" -> Sound.ENTITY_ZOMBIE_VILLAGER_CURE
-            "netherite_ingot" -> Sound.ITEM_ARMOR_EQUIP_NETHERITE
-            else -> Sound.ENTITY_VILLAGER_WORK_TOOLSMITH
+        when (outcome) {
+            "coal" -> player.playSound(player.location, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.5f, 1.7f)
+            "netherite_ingot" -> player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_NETHERITE, 0.5f, 2.0f)
+            else -> player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
         }
-        player.playSound(player.location, sound, 0.5f, 1.7f)
         com.github.lupi13.limpi.FileManager.delivery.claim(player)
     }
 }

@@ -18,7 +18,7 @@ class PaperShopCatalog(private val plugin: Plugin) {
         val price = CatalogPrices.shop(CatalogPrices.sell(FileManager.getSellPriceConfig().get(name)), ratio)
         return ShopOffer(code, PaperItemCodec.grant(ItemStack(material)), price)
     }
-    fun available(): List<ShopOffer> = FileManager.getShopRatioConfig().getKeys(false).sorted().mapNotNull { code ->
+    fun available(): List<ShopOffer> = FileManager.getShopRatioConfig().getKeys(false).mapNotNull { code ->
         try { offer(code.uppercase(Locale.ROOT)) ?: run { plugin.logger.warning("Invalid shop material $code"); null } }
         catch (failure: Exception) { plugin.logger.warning("Invalid shop entry $code: ${failure.message}"); null }
     }

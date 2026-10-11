@@ -49,15 +49,11 @@ object KneePropel : Ability(
                 val increment = config!!.getInt("increment")
                 val increaseTick = config!!.getInt("increaseTick")
                 val maxStrength = config!!.getInt("maxStrength")
-                val maxTick = ((maxStrength.toLong() * increaseTick + increment - 1) / increment).toInt()
+                // 표시(게이지/소리)는 main과 같은 내림 기준, 타이머 상한은 최대 강도에 도달하는 올림 기준을 쓴다.
+                val maxTick = (maxStrength.toLong() * increaseTick / increment).toInt()
+                val timerCap = ((maxStrength.toLong() * increaseTick + increment - 1) / increment).toInt()
                 override fun tick() {
                     val current = timer[player.uniqueId] ?: -1
-                    if (current < 0) {
-                        val launched = !(player as LivingEntity).isOnGround && player.getPotionEffect(PotionEffectType.JUMP_BOOST) != null
-                        player.sendActionBar(Component.text(if (launched) "JUMP!!!" else "CANCELLED", if (launched) NamedTextColor.YELLOW else NamedTextColor.GRAY))
-                        cancel()
-                        return
-                    }
                     val strength = (baseLevel.toLong() + increment.toLong() * (current / increaseTick)).coerceAtMost(maxStrength.toLong()).toInt()
 
                     if (strength > 0) {
@@ -78,7 +74,7 @@ object KneePropel : Ability(
                         else -> NamedTextColor.DARK_RED
                     }
 //                    [||||||····] 60칸 분할
-                    var message = Component.text("Jump Boost ${min(timer[player.uniqueId]!! / increaseTick, maxStrength / increment)} [", color)
+                    var message = Component.text("Jump Boost ${min(current / increaseTick, maxStrength / increment)} [", color)
                     val filled = if (current >= maxTick) 60 else ((current % increaseTick).toLong() * 60 / increaseTick).toInt()
 
                     for (i in 0 until 60) {
@@ -91,11 +87,27 @@ object KneePropel : Ability(
                     message = message.append(Component.text("]", color))
                     player.sendActionBar(message)
 
-                    if (timer[player.uniqueId] != -1) {
-                        player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, min(timer[player.uniqueId]!! / (maxTick * 2.0) + 0.3, 0.8).toFloat(), min(timer[player.uniqueId]!! / (maxTick / 1.5) + 0.5, 2.0).toFloat())
+                    if (current != -1) {
+                        player.playSound(player.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, min(current / (maxTick * 2.0) + 0.3, 0.8).toFloat(), min(current / (maxTick / 1.5) + 0.5, 2.0).toFloat())
                     }
 
-                    timer[player.uniqueId] = (current.toLong() + 1).coerceAtMost(maxTick.toLong()).toInt()
+                    if (current < 0) {
+                        player.getPotionEffect(PotionEffectType.JUMP_BOOST)?.let {
+                            if (!(player as LivingEntity).isOnGround && (it.amplifier >= 0)) {
+                                player.playSound(player.location, Sound.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 0.8F, 2F)
+                                player.playSound(player.location, Sound.ITEM_TRIDENT_THROW, 0.8F, 0.7F)
+                                player.playSound(player.location, Sound.ITEM_TRIDENT_RIPTIDE_3, 0.8F, 2F)
+                                player.sendActionBar(Component.text("JUMP!!!", NamedTextColor.YELLOW, TextDecoration.BOLD))
+                            } else {
+                                player.playSound(player.location, Sound.ENTITY_VEX_HURT, 1f, 0.5f)
+                                player.sendActionBar(Component.text("CANCELLED", NamedTextColor.GRAY, TextDecoration.BOLD))
+                            }
+                        }
+                        cancel()
+                        return
+                    }
+
+                    timer[player.uniqueId] = (current.toLong() + 1).coerceAtMost(timerCap.toLong()).toInt()
                 }
             }.runTaskTimer(plugin, 0L, 1L)
         }

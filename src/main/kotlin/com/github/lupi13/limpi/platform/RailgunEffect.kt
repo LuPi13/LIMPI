@@ -17,6 +17,7 @@ import org.bukkit.entity.Interaction
 import org.bukkit.entity.Player
 import org.bukkit.util.Vector
 import kotlin.math.PI
+import kotlin.random.Random
 
 /** Shared railgun mechanics; one-shot consumption is distinct from the lifetime of its owned effect. */
 object RailgunEffect {
@@ -26,7 +27,7 @@ object RailgunEffect {
         val direction = fixed.direction.normalize()
         val world = player.world
         val horizontal = Vector(direction.x, 0.0, direction.z)
-        val perpendicular = if (horizontal.lengthSquared() <= 0.0001) Vector(1.0, 0.0, 0.0).multiply(settings.size / 2)
+        val perpendicular = if (horizontal.lengthSquared() <= 0.0001) Vector(1.0, 0.0, 0.0) // main: unscaled when aiming straight up/down
             else horizontal.normalize().crossProduct(direction).normalize().multiply(settings.size / 2)
         val expected = if (consumed) "" else ability.codeName
         val effect = AbilityRuntime.begin(player, ability.codeName, expected)
@@ -45,21 +46,31 @@ object RailgunEffect {
             val gravity = effect.attribute(Attribute.GRAVITY, -1.0, AttributeModifier.Operation.MULTIPLY_SCALAR_1)
             var ticks = 0
             var killedEnderman = false
-            val colors = listOf(Color.RED, Color.YELLOW, Color.LIME, Color.AQUA, Color.BLUE, Color.PURPLE)
+            // Same jittered palette as the original railgun: red, yellow, green, cyan, blue, purple.
+            val palettes: List<() -> Color> = listOf(
+                { Color.fromRGB(Random.nextInt(225, 255), Random.nextInt(50, 70), Random.nextInt(50, 70)) },
+                { Color.fromRGB(Random.nextInt(225, 255), Random.nextInt(225, 255), Random.nextInt(50, 70)) },
+                { Color.fromRGB(Random.nextInt(50, 70), Random.nextInt(225, 255), Random.nextInt(50, 70)) },
+                { Color.fromRGB(Random.nextInt(50, 70), Random.nextInt(225, 255), Random.nextInt(225, 255)) },
+                { Color.fromRGB(Random.nextInt(50, 70), Random.nextInt(50, 70), Random.nextInt(225, 255)) },
+                { Color.fromRGB(Random.nextInt(225, 255), Random.nextInt(50, 70), Random.nextInt(225, 255)) },
+            )
             effect.repeat { session ->
                 if (!rail.isValid) { session.close(); return@repeat }
-                if (ticks < settings.delay) {
+                if (ticks <= settings.delay) {
                     player.teleport(fixed)
                     if (ticks % 5 == 0) world.playSound(fixed, Sound.BLOCK_BUBBLE_COLUMN_WHIRLPOOL_INSIDE, 1f,
                         ticks / (settings.delay / 1.5f) + 0.5f)
                 }
                 perpendicular.rotateAroundAxis(direction, PI / 12)
-                for ((index, color) in colors.withIndex()) {
-                    val start = if (index == 0) 1 else (settings.delay * index / 8.0).toInt()
+                for ((index, palette) in palettes.withIndex()) {
+                    val start = if (index == 0) 1 else (settings.delay * (index / 8.0)).toInt()
                     if (ticks < start) continue
-                    val location = rail.boundingBox.center.toLocation(world).add(perpendicular.clone().rotateAroundAxis(direction, index * PI / 3))
+                    // As in the original, each later ring rotates the shared perpendicular in place (cumulative spin).
+                    if (index > 0) perpendicular.rotateAroundAxis(direction, PI / 3)
+                    val location = rail.boundingBox.center.toLocation(world).add(perpendicular)
                     world.spawnParticle(Particle.DUST, location, (ticks - start).coerceAtMost(10), 0.2, 0.2, 0.2, 0.1,
-                        Particle.DustOptions(color, 1f), true)
+                        Particle.DustOptions(palette(), 1f), true)
                 }
                 if (ticks == settings.delay) { speed.close(); gravity.close() }
                 if (ticks >= settings.delay) {
@@ -69,9 +80,9 @@ object RailgunEffect {
                     world.playSound(rail.location, Sound.ENTITY_HUSK_CONVERTED_TO_ZOMBIE, 0.8f, 0.5f)
                     val particles = ((ticks - settings.delay) / settings.acceleration).toInt()
                     world.spawnParticle(Particle.DUST, rail.boundingBox.center.toLocation(world), particles.coerceAtMost(50),
-                        settings.size / 6, settings.size / 6, settings.size / 6, 1.0, Particle.DustOptions(Color.WHITE, 4f), true)
+                        settings.size / 6, settings.size / 6, settings.size / 6, 1.0, Particle.DustOptions(Color.fromRGB(Random.nextInt(225, 255), Random.nextInt(225, 255), Random.nextInt(225, 255)), 4f), true)
                     world.spawnParticle(Particle.DUST, rail.boundingBox.center.toLocation(world), particles.coerceAtMost(20),
-                        settings.size / 6, settings.size / 6, settings.size / 6, 1.0, Particle.DustOptions(Color.BLACK, 2f), true)
+                        settings.size / 6, settings.size / 6, settings.size / 6, 1.0, Particle.DustOptions(Color.fromRGB(Random.nextInt(0, 30), Random.nextInt(0, 30), Random.nextInt(0, 30)), 2f), true)
                     for (entity in world.getNearbyEntities(rail.boundingBox.center.toLocation(world), settings.size * 2, settings.size * 2, settings.size * 2)) {
                         if (entity !is Damageable || entity == player || entity == rail || !entity.boundingBox.overlaps(rail.boundingBox)) continue
                         if (AbilityManager.isEnemy(player, entity)) {

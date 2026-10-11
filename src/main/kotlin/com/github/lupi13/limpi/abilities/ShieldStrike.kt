@@ -31,8 +31,11 @@ object ShieldStrike : Ability(
         Component.text("피해를 주고 넉백시킵니다.", NamedTextColor.WHITE)
     ),
     needFile = true
-//    relatedQuest =
 ) {
+    override val relatedQuest: List<com.github.lupi13.limpi.quests.Quest> by lazy {
+        listOf(com.github.lupi13.limpi.quests.PerfectDistance, com.github.lupi13.limpi.quests.FireStrike)
+    }
+
     override val details: List<Component> by lazy {
         listOf(
             Component.text("지상에서 방패를 든 상태로 빠르게 두 번 웅크려", NamedTextColor.WHITE),
@@ -96,7 +99,10 @@ object ShieldStrike : Ability(
                                 if (entity == player) continue
                                 if (!AbilityManager.isEnemy(player, entity)) continue
 
+                                val perfectDistance = timer == 25
+                                val burning = player.fireTicks > 0
                                 if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, damage)) continue
+                                questTriggers(player, entity, perfectDistance, burning)
                                 // The owner can die synchronously inside hit (e.g. guardian thorns), releasing this state.
                                 val dash = vector[player.uniqueId] ?: break
                                 entity.velocity = dash.clone().multiply(min(knockbackAmplifier / entity.boundingBox.volume.coerceAtLeast(1e-9), maxKnockback)).setY(0.3)
@@ -120,6 +126,18 @@ object ShieldStrike : Ability(
             }
         }
         lastSneakTime[player.uniqueId] = System.currentTimeMillis()
+    }
+    /** 완벽한 거리조절(돌진 마지막 틱 충돌)과 불타는 돌진(불타는 상태로 처치) 퀘스트를 확인합니다. */
+    private fun questTriggers(player: org.bukkit.entity.Player, target: Damageable, perfectDistance: Boolean, burning: Boolean) {
+        val quests = com.github.lupi13.limpi.quests.QuestManager
+        try {
+            if (perfectDistance && !quests.isClearedQuest(player, com.github.lupi13.limpi.quests.PerfectDistance))
+                quests.clearQuests(player, com.github.lupi13.limpi.quests.PerfectDistance)
+            if (burning && target.isDead && !quests.isClearedQuest(player, com.github.lupi13.limpi.quests.FireStrike))
+                quests.clearQuests(player, com.github.lupi13.limpi.quests.FireStrike)
+        } catch (failure: Exception) {
+            plugin.logger.log(java.util.logging.Level.WARNING, "Shield strike quest check failed for ${player.uniqueId}", failure)
+        }
     }
     override fun release(owner: java.util.UUID) { lastSneakTime.remove(owner); lastStrikeTime.remove(owner); vector.remove(owner) }
     override fun stop() { lastSneakTime.clear(); lastStrikeTime.clear(); vector.clear() }

@@ -18,7 +18,8 @@ object HotPickaxe : Ability(
         Component.text("곡괭이로 광물을 캐면 익혀서 나옵니다.", NamedTextColor.WHITE),
         Component.text("적을 곡괭이로 공격하면 불태웁니다.", NamedTextColor.WHITE)
     ),
-    needFile = true
+    needFile = true,
+    relatedQuest = listOf(com.github.lupi13.limpi.quests.MasterSmith)
 ) {
 
     override val details: List<Component> by lazy {

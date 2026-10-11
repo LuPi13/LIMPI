@@ -123,6 +123,7 @@ object AbilityMenus {
         // 적용 메시지/효과음은 선택 정산 후 AbilityManager.applyAbility가 표시합니다.
         if (FileManager.delivery.remove(player, id, AbilitySelection.KIND, terms.encode(), before, after)) {
             FileManager.delivery.claim(player, quiet = true)
+            com.github.lupi13.limpi.quests.MasterSmith.check(player)
         }
     }
 }

@@ -161,6 +161,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
             player.sendMessage(Grade.TROLL.displayGrade.append(Component.text(" 능력이 강제 적용됩니다!", NamedTextColor.RED)))
             FileManager.delivery.claim(player, quiet = true)
         }
+        if (newlyUnlocked) com.github.lupi13.limpi.quests.MasterSmith.check(player)
     }
 
     /** Animations follow the original fixed location through death/world change; only a quit removes them. */

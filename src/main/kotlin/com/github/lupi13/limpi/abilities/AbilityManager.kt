@@ -43,7 +43,9 @@ object AbilityManager : Listener {
         FriendlyUndead, FriendlyCreeper, WaterMeleeBoost, HeavySnowball, SuspiciousSugar, KneePropel,
         ShieldStrike, PullingBow, UpperCut, DefenseAllIn, KillingDice, GatheringStorm, ImpactLanding,
         BladeLeaper, ChainLightning, OverBalance, JudgementRay, Muspell, BlunderBooster, ZombieKing,
-        HarmonySword, HarmonyArrow, Transcendence, CometStrike, Titan
+        HarmonySword, HarmonyArrow, Transcendence, CometStrike, Titan,
+        DodgePlus, EndDodge, LightReflex, InvisibleDodge, CriticalDodge, WinterShroud,
+        ShieldStrikePlus, RoaringFlame, MetalSmith, LinearBow, Cloak, SuperCloak
         )
 
     /**

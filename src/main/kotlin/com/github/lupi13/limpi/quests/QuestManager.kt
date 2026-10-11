@@ -13,7 +13,9 @@ object QuestManager {
      * 퀘스트들의 리스트입니다.
      */
     val quests = listOf(
-        ExpAbsorber, DoEndermansDreamOfFreeingEnd, UndeadCooperation, LineBetweenSwordAndArrow
+        ExpAbsorber, DoEndermansDreamOfFreeingEnd, UndeadCooperation, LineBetweenSwordAndArrow,
+        DodgeMaster, YourDodge, EnoughDodge, ShouldDodge, DodgeCliche, ColdDodge,
+        PerfectDistance, FireStrike, MasterSmith, MoebiusReactor
     )
 
 
@@ -47,6 +49,12 @@ object QuestManager {
     fun clearQuests(player: Player, quest: Quest) {
         val result = FileManager.quest.complete(player.uniqueId, quest.codeName, quest.rewardAbility.codeName)
         notify(player, quest, result)
+    }
+
+    /** Count one step of a counted quest (e.g. "use dodge 100 times"); completes it when [target] is reached. */
+    fun progress(player: Player, quest: Quest, counter: String, target: Long) {
+        notify(player, quest, FileManager.quest.progress(java.util.UUID.randomUUID(), player.uniqueId, counter, target,
+            quest.codeName, quest.rewardAbility.codeName))
     }
 
     fun harmonyHit(player: Player, branch: String) {

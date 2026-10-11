@@ -1,16 +1,29 @@
 package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.platform.normalizeSafely
+import com.github.lupi13.limpi.quests.ColdDodge
+import com.github.lupi13.limpi.quests.DodgeCliche
+import com.github.lupi13.limpi.quests.DodgeMaster
+import com.github.lupi13.limpi.quests.EnoughDodge
+import com.github.lupi13.limpi.quests.QuestManager
+import com.github.lupi13.limpi.quests.ShouldDodge
+import com.github.lupi13.limpi.quests.YourDodge
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Entity
+import org.bukkit.entity.EntityType
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
 
 object Dodge : Ability(
@@ -24,8 +37,11 @@ object Dodge : Ability(
         Component.text("이동 방향으로 회피합니다.", NamedTextColor.WHITE)
     ),
     needFile = true
-//    relatedQuest =
 ) {
+    override val relatedQuest: List<com.github.lupi13.limpi.quests.Quest> by lazy {
+        listOf(DodgeMaster, YourDodge, EnoughDodge, ShouldDodge, DodgeCliche, ColdDodge)
+    }
+
     override val details: List<Component> by lazy {
         listOf(
             Component.text("지상에서 빠르게 두 번 웅크려", NamedTextColor.WHITE),
@@ -92,8 +108,10 @@ object Dodge : Ability(
 
         if ((lastSneakTime[player.uniqueId] != null) && (System.currentTimeMillis() - lastSneakTime[player.uniqueId]!! <= 300)) { // 300ms 이내에 두 번 웅크리면
             if ((lastDodgeTime[player.uniqueId] == null) || (System.currentTimeMillis() - lastDodgeTime[player.uniqueId]!! > config!!.getInt("cooldown"))) { // 쿨타임이 지나면
+                val horizontalSpeed = velocityMap[player.uniqueId]?.let { kotlin.math.hypot(it.x, it.z) } ?: 0.0
                 dodge(player, config!!.getDouble("velocity"), config!!.getBoolean("allowJump"))
                 lastDodgeTime[player.uniqueId] = System.currentTimeMillis()
+                checkDodgeQuests(player, horizontalSpeed)
             }
             else {
                 AbilityManager.showCooldown(player, cooldown, lastDodgeTime[player.uniqueId]!!)
@@ -101,6 +119,41 @@ object Dodge : Ability(
         }
         lastSneakTime[player.uniqueId] = System.currentTimeMillis()
     }
+    /** 회피 직후 확인하는 퀘스트: 회피의 달인, 바람처럼 차갑게, 너의 회피는, 굳이 회피해야해? */
+    private fun checkDodgeQuests(player: Player, horizontalSpeed: Double) {
+        QuestManager.progress(player, DodgeMaster, "dodge_count", 100)
+        if (horizontalSpeed >= COLD_DODGE_SPEED) QuestManager.clearQuests(player, ColdDodge)
+        if (player.getNearbyEntities(5.0, 5.0, 5.0).count { it.type == EntityType.ENDERMAN } >= 10) QuestManager.clearQuests(player, YourDodge)
+        if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) QuestManager.clearQuests(player, ShouldDodge)
+    }
+
+    /** 바람처럼 차갑게: 회피 직전 수평 이동속도(블록/틱). 원본 기준 2.65 / 10. */
+    private const val COLD_DODGE_SPEED = 0.265
+
+    /** 이거면 충분해: 회피 후 0.3초 내 폭발 피해를 받고 살아남기. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onExplosionDamage(event: EntityDamageEvent) {
+        val player = event.entity as? Player ?: return
+        if (event.cause != EntityDamageEvent.DamageCause.BLOCK_EXPLOSION && event.cause != EntityDamageEvent.DamageCause.ENTITY_EXPLOSION) return
+        if (player.ability != this) return
+        val last = lastDodgeTime[player.uniqueId] ?: return
+        if (System.currentTimeMillis() - last > 300) return
+        if (event.finalDamage >= player.health) return
+        QuestManager.clearQuests(player, EnoughDodge)
+    }
+
+    /** 전형적인 회피 클리셰: 회피 후 0.5초 내 근접 공격 한 번으로 적 처치. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onFinishingBlow(event: EntityDamageByEntityEvent) {
+        val player = event.damager as? Player ?: return
+        val target = event.entity as? LivingEntity ?: return
+        if (player.ability != this) return
+        val last = lastDodgeTime[player.uniqueId] ?: return
+        if (System.currentTimeMillis() - last > 500) return
+        if (event.finalDamage < target.health || !AbilityManager.isEnemy(player, target)) return
+        QuestManager.clearQuests(player, DodgeCliche)
+    }
+
     override fun release(owner: java.util.UUID) { velocityMap.remove(owner); lastSneakTime.remove(owner); lastDodgeTime.remove(owner) }
     override fun stop() { velocityMap.clear(); lastSneakTime.clear(); lastDodgeTime.clear() }
 

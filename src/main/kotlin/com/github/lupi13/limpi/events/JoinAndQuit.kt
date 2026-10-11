@@ -44,6 +44,7 @@ class JoinAndQuit: Listener {
             .append(Component.text("글씨를 눌러 바로 실행할 수도 있습니다!", NamedTextColor.WHITE)))
         // 환영 메시지 뒤에 미수령/전환 기록을 복구합니다. 복구 대기 여부와 관계없이 환영 메시지는 표시합니다.
         FileManager.delivery.claim(player, freshLogin = true)
+        com.github.lupi13.limpi.quests.MasterSmith.check(player)
     }
 
     @EventHandler

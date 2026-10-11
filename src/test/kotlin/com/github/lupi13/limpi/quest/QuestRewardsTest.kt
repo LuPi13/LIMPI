@@ -102,4 +102,17 @@ class QuestRewardsTest {
             assertTrue(YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getStringList("unlockedAbilities").isEmpty())
         }
     }
+
+    @Test fun `counted quest completes exactly at its target and replays never count twice`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\n") }
+            repeat(2) { assertFalse(service(store).progress(UUID.randomUUID(), owner, "dodge_count", 3, "dodge_master", "dodge_plus").newCompletion) }
+            val request = UUID.randomUUID()
+            assertEquals(QuestRewardResult(true, true, false), service(store).progress(request, owner, "dodge_count", 3, "dodge_master", "dodge_plus"))
+            assertTrue(service(store).progress(request, owner, "dodge_count", 3, "dodge_master", "dodge_plus").replayed)
+            assertFalse(service(store).progress(UUID.randomUUID(), owner, "dodge_count", 3, "dodge_master", "dodge_plus").newCompletion)
+            val data = YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner)))
+            assertEquals(3, data.getLong("quest.dodge_count")); assertEquals(listOf("dodge_plus"), data.getStringList("unlockedAbilities"))
+        }
+    }
 }

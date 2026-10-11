@@ -366,6 +366,11 @@
 - 사용자 요청: 서버 시작 시 7일 지난 기록 자동 정리. `RecordRetentionDays: 7`, `StateStore.prune`. 완료된 지급/회수/전환/장터 등록 문서와 오래된 장부 줄을 지우고 VACUUM한다. 초기 보상 장부(once-only)와 프로필·매물·수표·결과·퀘스트 보상 문서·진행 중 기록은 남긴다. [저장소·복구](STORAGE_AND_RECOVERY.md#기록-보관-기간)
 - 화음 검/초월에 구리 검 추가. 327개 시험 통과.
 
+### 2026-10-11 / GotchaAbility 능력 이식 (feature/port-gotcha-abilities)
+
+- 회피 상위 6개, 방패강타+·포효하는 불길·광석 세공사·직선 화살, 은폐·초은폐와 이를 잇는 퀘스트 10개를 이식했다. 능력 54개. 범용 퀘스트 진행도 `QuestRewards.progress`/`QuestManager.progress` 추가. 등급·문구는 임시값. 목록과 원본과의 차이는 [이식한 능력](PORTED_ABILITIES.md).
+- 328개 시험 통과. 서버 확인 전.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |

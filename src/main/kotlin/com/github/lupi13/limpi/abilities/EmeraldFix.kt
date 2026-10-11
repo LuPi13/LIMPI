@@ -19,7 +19,8 @@ object EmeraldFix : Ability(
     description = listOf(
         Component.text("에메랄드를 사용하여 아이템을 수리합니다.", NamedTextColor.WHITE)
     ),
-    needFile = true
+    needFile = true,
+    relatedQuest = listOf(com.github.lupi13.limpi.quests.MasterSmith)
 ){
     override val details: List<Component> get() = listOf(
             Component.text("인벤토리에서 커서에 에메랄드를 들고 ", NamedTextColor.WHITE),

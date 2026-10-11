@@ -172,11 +172,12 @@ abstract class HawkEyeAbility(
         }
     }
 
-    /** 관리자 전용 아이템을 제외하고, 이 월드에서 활성화된 아이템 중 무작위로 고릅니다(중복 가능). */
+    /** 관리자 전용·생존에서 얻을 수 없는 아이템을 제외하고, 이 월드에서 활성화된 아이템 중 무작위로 고릅니다(중복 가능). */
     private fun randomItems(world: World, count: Int): List<ItemStack> {
         if (count <= 0) return emptyList()
         val candidates = Registry.ITEM.filter { type ->
-            type.key.namespace == "minecraft" && type.key.key !in EXCLUDED_ITEMS && world.isEnabled(type)
+            type.key.namespace == "minecraft" && type.key.key !in EXCLUDED_ITEMS && EXCLUDED_PATTERNS.none { it.matches(type.key.key) } &&
+                world.isEnabled(type)
         }
         if (candidates.isEmpty()) return emptyList()
         return List(count) { candidates.random().createItemStack(1) }
@@ -194,10 +195,17 @@ abstract class HawkEyeAbility(
         const val GIVE_ALL_TARGET = 100L
 
         /** 원본의 제한 목록에 대응하는 관리자 전용/획득 불가 아이템 ID입니다. */
+        /** 스폰 알과 좀벌레 블록(infested_*)도 생존에서 얻을 수 없습니다. */
+        private val EXCLUDED_PATTERNS = listOf(Regex(".+_spawn_egg"), Regex("infested_.+"))
+
         private val EXCLUDED_ITEMS = setOf(
             "air", "spawner", "trial_spawner", "command_block", "chain_command_block", "repeating_command_block",
             "command_block_minecart", "structure_block", "structure_void", "jigsaw", "barrier", "debug_stick",
-            "light", "test_block", "test_instance_block", "knowledge_book"
+            "light", "test_block", "test_instance_block", "knowledge_book",
+            // 생존에서 얻을 수 없는 아이템 (사용자 확정 2026-10-11)
+            "bedrock", "end_portal_frame", "reinforced_deepslate", "budding_amethyst", "vault", "petrified_oak_slab",
+            "farmland", "dirt_path", "chorus_plant", "frogspawn", "player_head", "dragon_egg",
+            "suspicious_sand", "suspicious_gravel"
         )
     }
 }

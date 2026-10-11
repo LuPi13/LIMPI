@@ -51,18 +51,10 @@ object MetalSmith : Ability(
             .append(Component.text(", ", NamedTextColor.WHITE))
             .append(Component.text("에메랄드 수리", NamedTextColor.GREEN))
             .append(Component.text(" 능력을 모두 사용합니다.", NamedTextColor.WHITE)),
-        Component.text("구리 주괴", NamedTextColor.YELLOW).append(Component.text("를 손에 들고 우클릭하면", NamedTextColor.WHITE)),
-        Component.text("10개를 소모하여 다른 광물로 변환합니다:", NamedTextColor.WHITE),
-        Component.text("석탄", NamedTextColor.YELLOW).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("coal"))
-            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("철 조각", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("iron_nugget"))
-            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("철 주괴", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("iron_ingot"))
-            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("금 조각", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("gold_nugget")),
-        Component.text("금 주괴", NamedTextColor.YELLOW).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("gold_ingot"))
-            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("레드스톤", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("redstone"))
-            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("청금석", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("lapis_lazuli"))
-            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("에메랄드", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("emerald")),
-        Component.text("다이아몬드", NamedTextColor.YELLOW).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("diamond"))
-            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("네더라이트 주괴", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("netherite_ingot")),
+        Component.text("구리 주괴", NamedTextColor.YELLOW).append(Component.text("를 들고 우클릭하면 10개를 소모해 무작위 광물로 변환합니다.", NamedTextColor.WHITE)),
+        Component.text("(", NamedTextColor.WHITE).append(Component.text("다이아몬드", NamedTextColor.YELLOW)).append(Component.text(" ", NamedTextColor.WHITE)).append(percent("diamond"))
+            .append(Component.text(", ", NamedTextColor.WHITE)).append(Component.text("네더라이트 주괴", NamedTextColor.YELLOW)).append(Component.text(" ", NamedTextColor.WHITE)).append(percent("netherite_ingot"))
+            .append(Component.text(")", NamedTextColor.WHITE)),
         Component.text("광물을 캐면 익혀서 나오고, ", NamedTextColor.WHITE)
             .append(Component.text("적", NamedTextColor.RED))
             .append(Component.text("을 ", NamedTextColor.WHITE)).append(Component.text("곡괭이", NamedTextColor.YELLOW)).append(Component.text("로 공격하면 ", NamedTextColor.WHITE))

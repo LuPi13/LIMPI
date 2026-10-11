@@ -50,10 +50,7 @@ object PulseCannon : Ability(
                 .append(Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN))
                 .append(Component.text("의 피해를 주는 탄환을 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getInt("burst_count")}", NamedTextColor.GREEN))
-                .append(Component.text("점사합니다.", NamedTextColor.WHITE)),
-            Component.text("적중 시 ", NamedTextColor.WHITE)
-                .append(Component.text("${Math.round(config!!.getDouble("no_invulnerability_chance") * 100)}", NamedTextColor.GREEN).append(Component.text("%", NamedTextColor.WHITE)))
-                .append(Component.text(" 확률로 무적시간을 제공하지 않습니다.", NamedTextColor.WHITE))
+                .append(Component.text("점사합니다.", NamedTextColor.WHITE))
         )
     }
 

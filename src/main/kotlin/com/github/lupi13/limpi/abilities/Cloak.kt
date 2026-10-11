@@ -252,17 +252,9 @@ object Cloak : CloakAbility(
                 .append(Component.text("갑옷", NamedTextColor.YELLOW))
                 .append(Component.text("이 보이지 않고 방어력이 적용되지 않습니다.", NamedTextColor.WHITE)),
             Component.text("투명화", NamedTextColor.BLUE)
-                .append(Component.text(" 시작 시 은폐 게이지 ", NamedTextColor.WHITE))
-                .append(Component.text(format(config!!.getDouble("activation_cost")), NamedTextColor.GREEN))
-                .append(Component.text("을(를) 소모하며, 매 초 ", NamedTextColor.WHITE))
-                .append(Component.text(format(config!!.getDouble("drain_per_second")), NamedTextColor.GREEN))
-                .append(Component.text("씩 추가로 소모합니다.", NamedTextColor.WHITE)),
-            Component.text("투명화", NamedTextColor.BLUE)
-                .append(Component.text(" 중이 아닐 때 게이지가 매 초 ", NamedTextColor.WHITE))
-                .append(Component.text(format(config!!.getDouble("regen_per_second")), NamedTextColor.GREEN))
-                .append(Component.text("씩 회복됩니다. (최대 ", NamedTextColor.WHITE))
+                .append(Component.text(" 중에는 은폐 게이지(최대 ", NamedTextColor.WHITE))
                 .append(Component.text(format(config!!.getDouble("max_gauge")), NamedTextColor.GREEN))
-                .append(Component.text(")", NamedTextColor.WHITE)),
+                .append(Component.text(")가 줄고, 해제하면 다시 찹니다.", NamedTextColor.WHITE)),
             Component.text("투명화", NamedTextColor.BLUE)
                 .append(Component.text(" 중에는 주변 몹이 나를 노리지 못합니다.", NamedTextColor.WHITE))
         )

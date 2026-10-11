@@ -38,12 +38,9 @@ object EndDodge : DodgeVariant(
         listOf(
             inheritLine(),
             Component.text("지상에서 빠르게 두 번 웅크리면 잠시 후", NamedTextColor.WHITE),
-            Component.text("이동 방향으로 최대 ", NamedTextColor.WHITE)
+            Component.text("이동 방향으로 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getDouble("distance")}", NamedTextColor.GREEN))
-                .append(Component.text("블록 순간이동합니다.", NamedTextColor.WHITE)),
-            Component.text("빠르게 이동할수록 더 멀리 이동합니다. (최대 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getDouble("max_distance")}", NamedTextColor.GREEN))
-                .append(Component.text("블록)", NamedTextColor.WHITE)),
+                .append(Component.text("블록 순간이동하며, 빠르게 이동할수록 더 멀리 갑니다.", NamedTextColor.WHITE)),
             Component.text("발 밑이 끊기거나 벽에 막히면 그 앞에서 멈춥니다.", NamedTextColor.WHITE),
             Component.text("쿨타임이 아닐 때 도착 예정 위치가 자신에게만 표시됩니다.", NamedTextColor.WHITE),
             cooldownLine()

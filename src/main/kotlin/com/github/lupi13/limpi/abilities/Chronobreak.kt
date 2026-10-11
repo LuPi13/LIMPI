@@ -53,19 +53,12 @@ object Chronobreak : TimeLeapAbility(
                 .append(Component.text("${config!!.getDouble("radius")}", NamedTextColor.GREEN))
                 .append(Component.text("블록 안의 ", NamedTextColor.WHITE))
                 .append(Component.text("적", NamedTextColor.RED))
-                .append(Component.text("에게 최대 체력의 ", NamedTextColor.WHITE))
-                .append(Component.text("${Math.round(config!!.getDouble("max_health_damage_ratio") * 1000.0) / 10.0}", NamedTextColor.GREEN))
-                .append(Component.text("%", NamedTextColor.WHITE))
-                .append(Component.text(" 피해를 줍니다.", NamedTextColor.WHITE)),
-            Component.text("준 피해 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getDouble("damage_per_absorption_level")}", NamedTextColor.GREEN))
-                .append(Component.text("마다 ", NamedTextColor.WHITE))
-                .append(Component.text("흡수", NamedTextColor.BLUE))
-                .append(Component.text(" 효과가 1단계 오르며 (최대 ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getInt("max_absorption_level")}", NamedTextColor.GREEN))
-                .append(Component.text("단계), ", NamedTextColor.WHITE))
+                .append(Component.text("에게 피해를 주고,", NamedTextColor.WHITE)),
+            Component.text("준 피해에 비례해 ", NamedTextColor.WHITE)
                 .append(Component.text(seconds(config!!.getInt("absorption_ticks")), NamedTextColor.GREEN))
-                .append(Component.text("초 동안 유지됩니다.", NamedTextColor.WHITE)),
+                .append(Component.text("초 동안 ", NamedTextColor.WHITE))
+                .append(Component.text("흡수", NamedTextColor.BLUE))
+                .append(Component.text(" 효과를 얻습니다.", NamedTextColor.WHITE)),
             cooldownLine()
         )
     }

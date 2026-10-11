@@ -59,17 +59,12 @@ object ChargeShot : Ability(
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
                 .append(Component.text("키를 눌러 충전을 시작하고, 다시 눌러 발사합니다.", NamedTextColor.WHITE)),
-            Component.text("최대 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("max_charge_ticks") / 20.0}", NamedTextColor.GREEN))
-                .append(Component.text("초간 충전하여 ", NamedTextColor.WHITE))
+            Component.text("오래 충전할수록 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게 최대 ", NamedTextColor.WHITE))
                 .append(Component.text("${maxDamage()}", NamedTextColor.GREEN))
-                .append(Component.text("의 피해를 줍니다.", NamedTextColor.WHITE)),
-            Component.text("충전 중에는 이동 속도가 ", NamedTextColor.WHITE)
-                .append(Component.text("${Math.round(config!!.getDouble("charging_slowness") * 100)}", NamedTextColor.GREEN))
-                .append(Component.text("%", NamedTextColor.WHITE))
-                .append(Component.text(" 느려집니다.", NamedTextColor.WHITE)),
+                .append(Component.text("까지 큰 피해를 줍니다.", NamedTextColor.WHITE)),
+            Component.text("충전 중에는 느려집니다.", NamedTextColor.WHITE),
             Component.text("발사 후 쿨타임: ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("cooldown_ticks") / 20.0}", NamedTextColor.GREEN))
                 .append(Component.text("초", NamedTextColor.WHITE))

@@ -33,10 +33,8 @@ object WinterShroud : DodgeVariant(
     override val details: List<Component> by settingsCached {
         listOf(
             inheritLine(),
-            Component.text("회피 시 수평 ", NamedTextColor.WHITE)
+            Component.text("회피 시 주변 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getDouble("horizontal_range")}", NamedTextColor.GREEN))
-                .append(Component.text("블록, 수직 ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getDouble("vertical_range")}", NamedTextColor.GREEN))
                 .append(Component.text("블록 내의 ", NamedTextColor.WHITE))
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("들을", NamedTextColor.WHITE)),

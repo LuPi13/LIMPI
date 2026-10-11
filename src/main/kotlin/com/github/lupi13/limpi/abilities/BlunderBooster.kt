@@ -221,8 +221,12 @@ object BlunderBooster : Ability(
 
 
         // 블런더 부스터 효과 제거
-        AbilityManager.applyAbility(player, null)
+        // During EntityResurrectEvent the player is still dead (health 0) and the totem is not consumed yet, so the
+        // inventory transition cannot be saved now. Remove the ability on the next tick, once the player is alive.
         energyMap.remove(player.uniqueId)
+        plugin.server.scheduler.runTask(plugin, Runnable {
+            if (player.isOnline && !player.isDead && player.ability == this) AbilityManager.applyAbility(player, null)
+        })
     }
     override fun release(owner: java.util.UUID) { energyMap.remove(owner) }
     override fun stop() { energyMap.clear() }

@@ -52,7 +52,7 @@ class MarketEvents : Listener {
                 lore.add(Component.text("가격: ", NamedTextColor.WHITE)
                     .append(moneyDisplay(listing.price.units))
                     .append(Component.text("원, 판매자: ", NamedTextColor.WHITE))
-                    .append(playerDisplay(listing.sellerName).decoration(TextDecoration.ITALIC, false)))
+                    .append(playerDisplay(listing.sellerName)).decoration(TextDecoration.ITALIC, false))
                 lore.add(Component.text("좌클릭하여 구매, 우클릭하여 흥정을 요청합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                 meta.lore(lore); item.itemMeta = meta
                 holder.inventory.setItem(slot, item)

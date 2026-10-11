@@ -24,7 +24,7 @@ object CookieRun : Ability(
     override val details: List<Component> by lazy {
         listOf(
             Component.text("쿠키를 먹으면 신속 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("intensity") - 1}", NamedTextColor.GREEN)),
+                .append(Component.text("${config!!.getInt("intensity")}", NamedTextColor.GREEN)),
             Component.text(" 버프를 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("duration") / 20}", NamedTextColor.GREEN))
                 .append(Component.text("초 동안 얻습니다.", NamedTextColor.WHITE))

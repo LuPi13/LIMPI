@@ -136,6 +136,8 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
 
     fun transition(player: Player, terms: com.github.lupi13.limpi.ability.TransitionTerms, before: List<StoredStack?>): Boolean {
         if (blocked(player.uniqueId)) return false
+        // Never record a transition that cannot be saved (dead or resurrecting players); nothing is changed yet.
+        require(player.isOnline && !player.isDead && player.health > 0) { "Player is unavailable for an ability transition" }
         val id = UUID.randomUUID()
         val inventory = removalInventory(player, before.size)
         require(inventory.snapshot() == before) { "Inventory changed before ability transition" }

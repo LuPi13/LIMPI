@@ -43,7 +43,7 @@ class CommandIndexTest {
     }
     @Test fun `aliases appear in completion but only once in help and empty input is safe`() {
         val permission = allow("limpi.ability.dictionary")
-        assertEquals(listOf("dict", "dictionary"), CommandDefinitions.ability.complete(listOf("di"), true, true, permission) { emptyList() })
+        assertEquals(listOf("dictionary", "dict"), CommandDefinitions.ability.complete(listOf("di"), true, true, permission) { emptyList() })
         assertEquals(1, CommandDefinitions.ability.visible(true, true, permission).count { it.id == "dictionary" })
         assertTrue(CommandDefinitions.ability.complete(emptyList(), true, true, permission) { error("empty") }.isEmpty())
     }

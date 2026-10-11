@@ -26,6 +26,6 @@ class CommandIndex(val routes: List<CommandRoute>) {
             else if (prefix.size >= route.path.size && route.path.indices.all { prefix[it].equals(route.path[it], true) } && args.size <= route.maximum) {
                 route.suggestions[prefix.size]?.let(values).orEmpty()
             } else emptyList()
-        }.filter { it.lowercase(Locale.ROOT).startsWith(partial) }.distinct().sorted()
+        }.filter { it.lowercase(Locale.ROOT).startsWith(partial) }.distinct()
     }
 }

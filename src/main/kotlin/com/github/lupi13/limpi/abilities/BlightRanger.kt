@@ -120,9 +120,12 @@ object BlightRanger : DodgeVariant(
             val hidden = armorSlots.associateWith { ItemStack.empty() }
             owner.trackedBy.forEach { viewer -> viewer.sendEquipmentChange(owner, hidden) }
 
-            // 연막
-            val dust = Particle.DustOptions(Color.fromRGB(Random.nextInt(0, 11), Random.nextInt(0, 11), Random.nextInt(0, 11)), 4f)
-            world.spawnParticle(Particle.DUST, center, 100, 3.0, 0.6, 3.0, 0.0, dust, true)
+            // 연막: 렉을 줄이려고 2틱마다, 적은 수로, 강제 표시 없이(가까운 플레이어에게만) 뿌립니다.
+            val puff = ticks % 2 == 0
+            if (puff) {
+                val dust = Particle.DustOptions(Color.fromRGB(Random.nextInt(0, 11), Random.nextInt(0, 11), Random.nextInt(0, 11)), 4f)
+                world.spawnParticle(Particle.DUST, center, 25, 3.0, 0.6, 3.0, 0.0, dust, false)
+            }
 
             // 회피한 자리를 중심으로 45도씩 돌린 위치에 분신(연기). 원본처럼 0도(플레이어 자신의 위치)에도 같은 연기를 뿌려
             // 진짜 플레이어가 분신과 구별되지 않게 합니다.
@@ -134,7 +137,7 @@ object BlightRanger : DodgeVariant(
                 val x = offset.z * sin(angle) + offset.x * cos(angle)
                 val z = offset.z * cos(angle) - offset.x * sin(angle)
                 val clone = center.clone().add(x, offset.y + 0.9, z)
-                world.spawnParticle(Particle.LARGE_SMOKE, clone, 10, 0.2, 0.4, 0.2, 0.0, null, true)
+                if (puff) world.spawnParticle(Particle.LARGE_SMOKE, clone, 3, 0.2, 0.4, 0.2, 0.0, null, false)
                 if (!ground.type.isAir) {
                     if (owner.isSprinting) world.spawnParticle(Particle.BLOCK, clone.clone().subtract(0.0, 0.9, 0.0), 1, 0.1, 0.01, 0.1, ground.blockData)
                     if (!owner.isSneaking && moving && ticks % 10 == 0) {

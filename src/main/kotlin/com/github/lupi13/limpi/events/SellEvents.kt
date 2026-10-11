@@ -3,7 +3,6 @@ package com.github.lupi13.limpi.events
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.LIMPI
-import com.github.lupi13.limpi.abilities.AbilityManager
 import com.github.lupi13.limpi.commands.EconomyText
 import com.github.lupi13.limpi.economy.*
 import net.kyori.adventure.text.Component
@@ -38,6 +37,8 @@ class SellEvents : Listener {
         private val view = Bukkit.createInventory(this, 54, SellGUIName)
         /** Slots already paid for; they are never returned on close. */
         var sold: Set<Int>? = null
+        /** Credits the sale once; also run on plugin disable so a stopped animation still pays. */
+        var settle: (() -> Boolean)? = null
         override fun getInventory(): Inventory = view
     }
 
@@ -45,10 +46,10 @@ class SellEvents : Listener {
         private val plugin get() = JavaPlugin.getPlugin(LIMPI::class.java)
         val SellGUIName = Component.text("LIMPI: 판매창", NamedTextColor.YELLOW, TextDecoration.BOLD)
         private const val SELL_SLOT = 53
+        private val pending = mutableSetOf<SellHolder>()
 
-        /** Configured price per item, or 1 per item when unlisted (as before). Ability items are never sold. */
+        /** Configured price per item, or 1 per item when unlisted (as before). */
         private fun price(item: ItemStack): Money? {
-            if (AbilityManager.active(item)) return null
             return CatalogPrices.sell(FileManager.getSellPriceConfig().get(item.type.name.lowercase(Locale.ROOT))).times(item.amount.toLong())
         }
 
@@ -102,6 +103,7 @@ class SellEvents : Listener {
 
         /** Return everything still on an open sale window, e.g. on plugin disable. */
         fun closeAll() {
+            for (holder in pending.toList()) holder.settle?.invoke()
             for (player in Bukkit.getOnlinePlayers()) {
                 val holder = player.openInventory.topInventory.holder as? SellHolder ?: continue
                 returnItems(player, holder)
@@ -109,12 +111,35 @@ class SellEvents : Listener {
             }
         }
 
+        /** As before: the items break one by one and the money is credited when the animation ends (even if closed). */
         private fun animate(player: Player, holder: SellHolder, total: Money) {
             val inventory = holder.inventory
+            val request = UUID.randomUUID()
+            val owner = player.uniqueId
+            var credited = false
+            holder.settle = settle@{
+                if (credited) return@settle true
+                try {
+                    if (total.units > 0) FileManager.bank.adjust(request, "SELL_GUI", owner, total.units)
+                    credited = true; pending.remove(holder); true
+                } catch (failure: Exception) {
+                    plugin.logger.log(Level.SEVERE, "Sale $request of ${total.units} for $owner failed", failure)
+                    pending.remove(holder)
+                    if (player.isOnline && failure is BankException) EconomyText.bankFailure(player, failure)
+                    false
+                }
+            }
+            pending.add(holder)
             object : BukkitRunnable() {
                 var timer = 0
                 override fun run() {
-                    if (!player.isOnline) { cancel(); return }
+                    if (timer >= 52 || !player.isOnline) {
+                        if (holder.settle?.invoke() != true) {
+                            if (player.isOnline && player.openInventory.topInventory === inventory) player.closeInventory()
+                            cancel(); return
+                        }
+                        if (!player.isOnline) { cancel(); return }
+                    }
                     val open = player.openInventory.topInventory === inventory
                     if (open && timer < SELL_SLOT && inventory.getItem(timer) != null) {
                         inventory.setItem(timer, null)
@@ -159,26 +184,11 @@ class SellEvents : Listener {
             player.sendMessage(Component.text("아이템을 올려놓고 눌러주세요.", NamedTextColor.RED))
             return
         }
-        val total = prices.fold(Money(0)) { sum, (_, price) -> sum + price }
-        val request = UUID.randomUUID()
-        try {
-            if (total.units > 0) FileManager.bank.adjust(request, "SELL_GUI", player.uniqueId, total.units)
-        } catch (failure: BankException) {
-            EconomyText.bankFailure(player, failure)
-            return
-        } catch (failure: Exception) {
-            plugin.logger.log(Level.SEVERE, "Sale $request failed for ${player.uniqueId}", failure)
-            player.sendMessage(Component.text("판매 결과를 확인하지 못했습니다. 관리자에게 문의하세요.", NamedTextColor.RED))
-            return
+        val total = try { prices.fold(Money(0)) { sum, (_, price) -> sum + price } } catch (_: ArithmeticException) {
+            EconomyText.bankFailure(player, BankException(BankFailure.OVERFLOW)); return
         }
-        holder.sold = prices.map { it.first }.toSet()
-        // Unsold items (ability items) go straight back so the break animation only shows sold stacks.
-        for (slot in 0 until SELL_SLOT) {
-            if (slot in holder.sold!!) continue
-            val item = top.getItem(slot) ?: continue
-            top.setItem(slot, null)
-            player.inventory.addItem(item).values.forEach { player.world.dropItemNaturally(player.location, it) }
-        }
+        // From here the window's items belong to the sale, exactly as the original timer>=0 state.
+        holder.sold = (0 until SELL_SLOT).toSet()
         animate(player, holder, total)
     }
 

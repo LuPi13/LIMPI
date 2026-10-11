@@ -44,6 +44,7 @@ object HarmonySword : Ability(
     val sword = listOf(
         Material.WOODEN_SWORD,
         Material.STONE_SWORD,
+        Material.COPPER_SWORD,
         Material.IRON_SWORD,
         Material.GOLDEN_SWORD,
         Material.DIAMOND_SWORD,

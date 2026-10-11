@@ -73,7 +73,7 @@ class Check(private val plugin: Plugin) : Listener {
                 .append(Component.text("님의 계좌에 ", NamedTextColor.WHITE))
                 .append(moneyDisplay(result.amount))
                 .append(Component.text("원을 추가했습니다.", NamedTextColor.WHITE)))
-            if (forged) player.sendMessage(Component.text("이 수표는 위조되어있었습니다!", NamedTextColor.RED))
+            if (forged) player.sendMessage(Component.text("이 수표는 위조되어 있었습니다!", NamedTextColor.RED))
             player.playSound(player, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
             // The server record is already REDEEMED. Cleanup cannot create another spendable claim.
             val current = if (hand == EquipmentSlot.OFF_HAND) player.inventory.itemInOffHand else player.inventory.itemInMainHand

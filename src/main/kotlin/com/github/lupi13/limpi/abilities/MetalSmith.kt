@@ -40,7 +40,9 @@ object MetalSmith : Ability(
             .append(Component.text(" 달성", NamedTextColor.WHITE))
     }
 
-    private fun percent(key: String) = Component.text("${config!!.getDouble(key) * 100}%", NamedTextColor.GREEN)
+    /** Round away floating-point noise (0.009 * 100 = 0.8999999999...) before showing a percentage. */
+    private fun percent(key: String) = Component.text("${java.math.BigDecimal(config!!.getDouble(key) * 100)
+        .round(java.math.MathContext(10)).stripTrailingZeros().toPlainString()}%", NamedTextColor.GREEN)
 
     override val details: List<Component> get() = listOf(
         Component.text("연금술", NamedTextColor.GOLD)

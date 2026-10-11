@@ -15,7 +15,7 @@ object QuestManager {
     val quests = listOf(
         ExpAbsorber, DoEndermansDreamOfFreeingEnd, UndeadCooperation, LineBetweenSwordAndArrow,
         DodgeMaster, YourDodge, EnoughDodge, ShouldDodge, DodgeCliche, ColdDodge,
-        PerfectDistance, FireStrike, MasterSmith, MoebiusReactor
+        PerfectDistance, FireStrike, MasterSmith, MoebiusReactor, IntoTheDark
     )
 
 

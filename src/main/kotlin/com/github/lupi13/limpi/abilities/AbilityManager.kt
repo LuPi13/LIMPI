@@ -45,7 +45,7 @@ object AbilityManager : Listener {
         BladeLeaper, ChainLightning, OverBalance, JudgementRay, Muspell, BlunderBooster, ZombieKing,
         HarmonySword, HarmonyArrow, Transcendence, CometStrike, Titan,
         DodgePlus, EndDodge, LightReflex, InvisibleDodge, CriticalDodge, WinterShroud,
-        ShieldStrikePlus, RoaringFlame, MetalSmith, LinearBow, Cloak, SuperCloak
+        ShieldStrikePlus, RoaringFlame, MetalSmith, LinearBow, Cloak, SuperCloak, BlightRanger
         )
 
     /**

@@ -36,6 +36,7 @@ object InvisibleDodge : DodgeVariant(
     )
 ) {
     override val unlockQuest: Quest get() = ShouldDodge
+    override val relatedQuest: List<Quest> by lazy { listOf(com.github.lupi13.limpi.quests.IntoTheDark) }
 
     override val details: List<Component> by lazy {
         listOf(
@@ -57,6 +58,10 @@ object InvisibleDodge : DodgeVariant(
 
     override fun afterDodge(player: Player) {
         val id = player.uniqueId
+        // 어둠 속으로: 주변 5블록 안에 몬스터가 10마리 이상일 때 회피
+        if (player.getNearbyEntities(5.0, 5.0, 5.0).count { it is org.bukkit.entity.Monster } >= 10) {
+            com.github.lupi13.limpi.quests.QuestManager.clearQuests(player, com.github.lupi13.limpi.quests.IntoTheDark)
+        }
         active.remove(id)?.close()
         val duration = config!!.getInt("invisible_ticks")
         val range = config!!.getDouble("target_clear_range")

@@ -53,7 +53,7 @@ object LetsBoom : Ability(
                 }
                 if ((timer >= 20) && (timer < 60)) {
                     // 2초 후에 폭발 시작
-                    location.world.spawnParticle(Particle.FLASH, location, (timer / 3.0).toInt(), 0.1, 0.1, 0.1, 0.0)
+                    location.world.spawnParticle(Particle.FLASH, location, (timer / 3.0).toInt(), 0.1, 0.1, 0.1, 0.0, org.bukkit.Color.WHITE)
                 }
                 if ((timer % 10 == 0) && (timer >= 60)) {
                     // The owner is dead, so AbilityDamage.hit cannot be used. Filter the synchronous explosion instead:
@@ -61,7 +61,7 @@ object LetsBoom : Ability(
                     exploding = player.uniqueId
                     try { location.world.createExplosion(player, location, 4.0f, false, false, true) } finally { exploding = null }
                     location.world.spawnParticle(Particle.EXPLOSION, location, 30, 2.5, 2.5, 2.5, 2.0)
-                    location.world.spawnParticle(Particle.FLASH, location, 10, 2.0, 2.0, 2.0,2.0)
+                    location.world.spawnParticle(Particle.FLASH, location, 10, 2.0, 2.0, 2.0,2.0, org.bukkit.Color.WHITE)
                 }
                 if (timer++ >= 110) {
                     cancel() // 6번 폭발 후 작업 중지

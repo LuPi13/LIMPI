@@ -86,7 +86,7 @@ object PickPocket : Ability(
         val terms = PickPocketTerms(player.uniqueId, slot, requireNotNull(before[slot]))
         val after = before.toMutableList().apply { this[slot] = null }
         if (!FileManager.delivery.remove(victim, id, PickPocketSettlement.KIND, terms.encode(), before, after)) return
-        FileManager.delivery.claim(player)
+        FileManager.delivery.claim(player, quiet = true)
     }
 
     private fun stealEntity(player: Player, victim: LivingEntity, position: org.bukkit.Location) {

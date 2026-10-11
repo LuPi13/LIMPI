@@ -147,8 +147,8 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
 
         val covered = setOf("help", "me", "check", "send", "sell", "shop", "stock", "market", "market add", "market remove", "claim",
             "spy", "set", "add", "sell set", "sell remove", "shop set", "shop remove", "stock add", "stock refix", "stock remove")
-        fun extraPages(routes: List<CommandRoute>) {
-            for (group in routes.chunked(3)) {
+        fun extraPages(routes: List<CommandRoute>, perPage: Int = 3) {
+            for (group in routes.chunked(perPage)) {
                 var extra = Component.empty()
                 for (route in group) extra = extra.append(cmd("/financial ${route.usage}")).append(desc(": ${route.description}\n\n"))
                 meta.addPages(extra)
@@ -178,7 +178,11 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
             meta.addPages(page)
             page = cmd("/financial market remove <코드>").append(desc(": 다른 사람이 장터에 올린 아이템을 강제로 제거합니다.\n\n"))
             meta.addPages(page)
-            extraPages(extras.filter { it.permission?.contains(".admin.") == true })
+            // The long recovery commands (from "delivery resolve" on) do not fit three to a page; show two per page.
+            val adminExtras = extras.filter { it.permission?.contains(".admin.") == true }
+            val long = adminExtras.indexOfFirst { it.id == "delivery resolve" }.let { if (it < 0) adminExtras.size else it }
+            extraPages(adminExtras.take(long))
+            extraPages(adminExtras.drop(long), perPage = 2)
         }
 
         book.itemMeta = meta

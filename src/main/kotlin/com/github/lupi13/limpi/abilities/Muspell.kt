@@ -109,14 +109,14 @@ object Muspell : Ability(
                     val entities = trackSearchLocation.getNearbyEntities(trackSearchDistance, trackSearchDistance, trackSearchDistance)
 
                     entities.removeIf { it !is Damageable || !AbilityManager.isEnemy(player, it) }
-                    entities.removeIf { it.location.distance(fireball.location) > trackSearchDistance }
+                    entities.removeIf { it.boundingBox.center.distance(fireball.location.toVector()) > trackSearchDistance }
 
 
                     var best: Damageable? = null
                     var bestValue = Double.MAX_VALUE
 
                     for (entity in entities) {
-                        val entityVector = entity.location.toVector().subtract(fireball.location.toVector())
+                        val entityVector = entity.boundingBox.center.subtract(fireball.location.toVector())
                         if (entityVector.lengthSquared() == 0.0) { best = entity as Damageable; break }
                         val angle = acos(movingVector.clone().normalizeSafely().dot(entityVector.clone().normalizeSafely()).coerceIn(-1.0, 1.0))
                         if (angle > Math.toRadians(trackSearchAngle)) continue
@@ -145,7 +145,7 @@ object Muspell : Ability(
                 // 추적 대상과 각도가 90도 이상(dotProduct)이면 추적 대상 초기화
                 if (trackTarget != null && trackTarget!!.world != world) trackTarget = null
                 if (trackTarget != null) {
-                    val targetVector = trackTarget!!.location.toVector().subtract(fireball.location.toVector())
+                    val targetVector = trackTarget!!.boundingBox.center.subtract(fireball.location.toVector())
                     if (movingVector.clone().normalizeSafely().dot(targetVector.clone().normalizeSafely()) < 0) {
                         trackTarget = null
                     }

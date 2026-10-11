@@ -69,6 +69,6 @@ object Alchemy : Ability(
             "netherite_ingot" -> player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_NETHERITE, 0.5f, 2.0f)
             else -> player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
         }
-        com.github.lupi13.limpi.FileManager.delivery.claim(player)
+        com.github.lupi13.limpi.FileManager.delivery.claim(player, quiet = true)
     }
 }

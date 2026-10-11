@@ -156,7 +156,7 @@ class AbilityShop : Listener {
                 player.sendMessage(name
                     .append(Component.text(" $count", NamedTextColor.GREEN))
                     .append(Component.text("개 구매 완료.", NamedTextColor.WHITE)))
-                if (FileManager.delivery.claim(player)) openAbilityShopGUI(player, top)
+                if (FileManager.delivery.claim(player, quiet = true)) openAbilityShopGUI(player, top)
             }
         } catch (failure: IllegalArgumentException) {
             player.sendMessage(Component.text(failure.message ?: "구매하지 못했습니다.", NamedTextColor.RED))

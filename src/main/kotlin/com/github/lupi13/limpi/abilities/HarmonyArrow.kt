@@ -67,7 +67,7 @@ object HarmonyArrow : Ability(
             if (player.ability != this) return
             amplified[boosted] = com.github.lupi13.limpi.combat.ChargeGauge.consume(amplified[boosted] ?: 0.0, true)
             player.playSound(player.location, Sound.ENTITY_WARDEN_DEATH, 0.7f, 2.0f)
-            event.entity.world.spawnParticle(Particle.DRAGON_BREATH, event.entity.boundingBox.center.toLocation(event.entity.world), 30, 0.1, 0.1, 0.1, 0.2)
+            event.entity.world.spawnParticle(Particle.DRAGON_BREATH, event.entity.boundingBox.center.toLocation(event.entity.world), 30, 0.1, 0.1, 0.1, 0.2, 1.0f)
             QuestManager.harmonyHit(player, "harmony_arrow")
             return
         }

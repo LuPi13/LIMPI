@@ -159,7 +159,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
             .append(Component.text("이(가) 해금되었습니다!", NamedTextColor.WHITE)))
         if (forceTroll) {
             player.sendMessage(Grade.TROLL.displayGrade.append(Component.text(" 능력이 강제 적용됩니다!", NamedTextColor.RED)))
-            FileManager.delivery.claim(player)
+            FileManager.delivery.claim(player, quiet = true)
         }
     }
 

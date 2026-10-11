@@ -42,7 +42,7 @@ class Check(private val plugin: Plugin) : Listener {
         meta.lore(listOf(
             Component.text("우클릭하여 계좌에 해당 금액을 추가합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
             Component.text("발행인: ", NamedTextColor.WHITE).append(Component.text(issuerName, NamedTextColor.GREEN)).decoration(TextDecoration.ITALIC, false),
-            Component.text("발행일: ", NamedTextColor.WHITE).append(Component.text(Functions.getDateTime(), NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false),
+            Component.text("발행일: ", NamedTextColor.WHITE).append(Component.text("${Functions.getDateTime()} (${java.util.TimeZone.getDefault().getDisplayName(false, java.util.TimeZone.SHORT)})", NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false),
             Component.text("공개키: ", NamedTextColor.WHITE).append(Component.text(Math.random().toString().substring(2, 10), NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false),
             Component.text("시리얼: ", NamedTextColor.WHITE).append(Component.text(id.hashCode().toString(), NamedTextColor.GRAY, TextDecoration.UNDERLINED)).decoration(TextDecoration.ITALIC, false)))
         itemMeta = meta
@@ -65,12 +65,15 @@ class Check(private val plugin: Plugin) : Listener {
             return false
         }
         val request = UUID.randomUUID()
+        // A renamed (anvil) check is still paid by its server record, but the forgery is pointed out.
+        val forged = source.itemMeta?.hasCustomName() == true
         try {
             val result = FileManager.checks.redeem(request, checkId, player.uniqueId)
             player.sendMessage(playerDisplay(player)
                 .append(Component.text("님의 계좌에 ", NamedTextColor.WHITE))
                 .append(moneyDisplay(result.amount))
                 .append(Component.text("원을 추가했습니다.", NamedTextColor.WHITE)))
+            if (forged) player.sendMessage(Component.text("이 수표는 위조되어있었습니다!", NamedTextColor.RED))
             player.playSound(player, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
             // The server record is already REDEEMED. Cleanup cannot create another spendable claim.
             val current = if (hand == EquipmentSlot.OFF_HAND) player.inventory.itemInOffHand else player.inventory.itemInMainHand

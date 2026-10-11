@@ -64,6 +64,7 @@ object BladeLeaper : Ability(
     val swords = mutableListOf(
         Material.WOODEN_SWORD,
         Material.STONE_SWORD,
+        Material.COPPER_SWORD,
         Material.GOLDEN_SWORD,
         Material.IRON_SWORD,
         Material.DIAMOND_SWORD,
@@ -129,6 +130,7 @@ object BladeLeaper : Ability(
         val color = when (item.type) {
             Material.WOODEN_SWORD -> Color.fromRGB(0x856c3d)
             Material.STONE_SWORD -> Color.fromRGB(0xa19d9a)
+            Material.COPPER_SWORD -> Color.fromRGB(0xd8805e)
             Material.GOLDEN_SWORD -> Color.fromRGB(0xeaee6b)
             Material.IRON_SWORD -> Color.fromRGB(0xfcfcfc)
             Material.DIAMOND_SWORD -> Color.fromRGB(0x60eddb)
@@ -151,7 +153,7 @@ object BladeLeaper : Ability(
                 own {
                     if (!creative && plugin.isEnabled && player.isOnline && !player.isDead && !FileManager.delivery.blocked(player.uniqueId)) {
                         plugin.server.scheduler.runTask(plugin, Runnable {
-                            if (player.isOnline && !player.isDead) FileManager.delivery.claim(player)
+                            if (player.isOnline && !player.isDead) FileManager.delivery.claim(player, quiet = true)
                         })
                     }
                 }

@@ -113,19 +113,19 @@ object WebShooter : Ability(
                 object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
                     init { setup {
                         own { isMoving.remove(player.uniqueId) }
-                        own(laser::stop)
+                        own { if (laser.isStarted) laser.stop() }
                         laser.start(plugin)
                     } }
                     override fun tick() {
                         if (player.isDead || !player.isOnline) {
                             isMoving.remove(player.uniqueId)
-                            laser.stop()
+                            if (laser.isStarted) laser.stop()
                             cancel()
                             return
                         }
 
                         if (!isMoving.contains(player.uniqueId)) {
-                            laser.stop()
+                            if (laser.isStarted) laser.stop()
                             cancel()
                             return
                         }
@@ -193,27 +193,27 @@ object WebShooter : Ability(
                 world.playSound(hitEnemy.location, Sound.BLOCK_CAVE_VINES_FALL, 1f, 1f)
 
                 //줄 이펙트
-                val laser = Laser.GuardianLaser(hitEnemy.location, player, -1, -1)
+                val laser = Laser.GuardianLaser(hitEnemy.boundingBox.center.toLocation(world), player, -1, -1)
 
                 object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
                     init { setup {
                         own { isMoving.remove(player.uniqueId) }
-                        own(laser::stop)
+                        own { if (laser.isStarted) laser.stop() }
                         laser.start(plugin)
                     } }
                     override fun tick() {
                         if (!hitEnemy.isValid || hitEnemy.isDead || hitEnemy.world.uid != world.uid) { cancel(); return }
-                        val hitLocation = hitEnemy.location
+                        val hitLocation = hitEnemy.boundingBox.center.toLocation(world)
                         laser.moveStart(hitLocation.toLocation(world))
                         if (player.isDead || !player.isOnline || !hitEnemy.isValid || hitEnemy.isDead) {
                             isMoving.remove(player.uniqueId)
-                            laser.stop()
+                            if (laser.isStarted) laser.stop()
                             cancel()
                             return
                         }
 
                         if (!isMoving.contains(player.uniqueId)) {
-                            laser.stop()
+                            if (laser.isStarted) laser.stop()
                             cancel()
                             return
                         }
@@ -291,7 +291,7 @@ object WebShooter : Ability(
                             }
                             if (entity == hitEnemy) {
                                 isMoving.remove(player.uniqueId)
-                                laser.stop()
+                                if (laser.isStarted) laser.stop()
                                 cancel()
                                 return
                             }

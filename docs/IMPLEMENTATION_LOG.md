@@ -350,6 +350,17 @@
 - **수정:** BlunderBooster는 다음 틱(부활 후)에 능력을 제거한다(main과 같은 결과). `DeliveryController.transition`은 사망·체력 0 상태에서는 기록을 만들기 전에 거부한다.
 - **이미 막힌 기록:** 물품은 바뀌지 않았으므로 오프라인 상태에서 `/financial transition resolve <owner> <전환 UUID> retained <근거>`로 정리한다.
 
+### 2026-10-11 / 서버 시험 결과(docs/고칠것들.md) 반영
+
+- Paper 26.x에서 `DRAGON_BREATH`(Float)·`FLASH`(Color) 파티클이 데이터를 필수로 요구해 LetsBoom 폭발, HarmonySword/HarmonyArrow 강화 적중, Transcendence 통달 진입이 예외로 중단됐다. 바닐라 기본값(세기 1.0, 흰색)을 넘겨 연출은 그대로다.
+- WebShooter: 이미 멈춘 GuardianBeam 레이저를 정리 단계에서 다시 멈추던 `Task not started` 예외를 `isStarted` 확인으로 막았고, 몹에 거는 줄 위치를 발 위치 대신 bounding box 중심으로 했다.
+- Muspell: 추적 후보의 각도·거리·벽 가림 검사를 발 위치 대신 bounding box 중심으로 해 땅에 선 대상(플레이어)이 발밑 블록에 가려진 것으로 판정되지 않게 했다.
+- BladeLeaper에 구리 검(COPPER_SWORD)을 추가했다.
+- 능력 사용·구매·선택 직후의 내부 지급에는 "미수령 물품 N건을 지급했습니다." 안내를 보내지 않는다(연금술 등). 공간 부족으로 보관했던 물품을 나중에 받을 때만 안내한다.
+- 수표: 모루로 이름을 바꾼 수표도 서버 기록 금액을 입금하되 "이 수표는 위조되어있었습니다!"(빨강)를 추가로 보인다. 발행일 뒤에 서버 시간대를 표시한다.
+- `/financial help` 관리자 추가 명령은 `delivery resolve`부터 한 페이지에 2개씩 넣어 설명이 잘리지 않게 했다.
+- 326개 시험 통과. 서버 재확인 필요.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |

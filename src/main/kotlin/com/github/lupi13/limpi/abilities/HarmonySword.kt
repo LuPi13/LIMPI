@@ -84,7 +84,7 @@ object HarmonySword : Ability(
             arrow.world.spawnParticle(
                 Particle.DRAGON_BREATH,
                 arrow.location,
-                30, 0.1, 0.1, 0.1, 0.2
+                30, 0.1, 0.1, 0.1, 0.2, 1.0f
             )
             amplified[player.uniqueId] = 0.0 // 강화된 화살 사용 후 제거
         }
@@ -101,7 +101,7 @@ object HarmonySword : Ability(
             amplified[boosted] = com.github.lupi13.limpi.combat.ChargeGauge.consume(amplified[boosted] ?: 0.0, true)
             val arrow = event.damager
             player.world.playSound(arrow.location, Sound.ENTITY_WARDEN_DEATH, 0.7f, 2.0f)
-            arrow.world.spawnParticle(Particle.DRAGON_BREATH, arrow.location, 30, 0.1, 0.1, 0.1, 0.2)
+            arrow.world.spawnParticle(Particle.DRAGON_BREATH, arrow.location, 30, 0.1, 0.1, 0.1, 0.2, 1.0f)
             QuestManager.harmonyHit(player, "harmony_sword")
             return
         }

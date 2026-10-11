@@ -132,7 +132,7 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
         meta.addPages(page)
 
         page = cmd("/financial send <플레이어> <금액>").append(desc(": 입력한 금액을 대상 플레이어에게 송금합니다. 수수료 5%가 부과됩니다.\n\n"))
-            .append(cmd("/financial sell")).append(desc(": 아이템을 판매하는 창을 엽니다. 판매할 아이템을 클릭해 넣고 오른쪽 아래 금을 클릭하면 판매됩니다.\n\n"))
+            .append(cmd("/financial sell")).append(desc(": 아이템을 판매하는 창을 엽니다. 판매할 아이템을 넣고 오른쪽 아래 금을 클릭하면 판매됩니다.\n\n"))
             .append(cmd("/financial shop")).append(desc(": 아이템을 구매하는 창을 엽니다.\n\n"))
         meta.addPages(page)
 
@@ -173,8 +173,8 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
                 .append(cmd("/financial stock add <이름> <코드> <아이템> <가격>")).append(desc(": 주식을 추가합니다. 이름은 주식의 이름, 코드는 주식의 코드, 아이템은 주식의 아이템, 가격은 주식의 기준 가격입니다.\n\n"))
             meta.addPages(page)
 
-            page = cmd("/financial stock refix <코드>").append(desc(": 주식의 기준 가격을 현재 가격으로 재설정합니다. 주식의 가격은 기준 가격을 향하게 미세하게 조정됩니다.\n\n"))
-                .append(cmd("/financial stock remove <코드>")).append(desc(": 주식을 삭제합니다.\n\n"))
+            page = cmd("/financial stock refix <이름> <코드> <아이템> <가격>").append(desc(": 주식의 기준 가격을 현재 가격으로 재설정합니다. 주식의 가격은 기준 가격을 향하게 미세하게 조정됩니다.\n\n"))
+                .append(cmd("/financial stock remove <이름>")).append(desc(": 주식을 삭제합니다.\n\n"))
             meta.addPages(page)
             page = cmd("/financial market remove <코드>").append(desc(": 다른 사람이 장터에 올린 아이템을 강제로 제거합니다.\n\n"))
             meta.addPages(page)

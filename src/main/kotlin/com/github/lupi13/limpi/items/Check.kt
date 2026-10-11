@@ -43,7 +43,8 @@ class Check(private val plugin: Plugin) : Listener {
             Component.text("우클릭하여 계좌에 해당 금액을 추가합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
             Component.text("발행인: ", NamedTextColor.WHITE).append(Component.text(issuerName, NamedTextColor.GREEN)).decoration(TextDecoration.ITALIC, false),
             Component.text("발행일: ", NamedTextColor.WHITE).append(Component.text(Functions.getDateTime(), NamedTextColor.BLUE)).decoration(TextDecoration.ITALIC, false),
-            Component.text("시리얼: ", NamedTextColor.WHITE).append(Component.text(id.toString().substring(0, 8), NamedTextColor.GRAY, TextDecoration.UNDERLINED)).decoration(TextDecoration.ITALIC, false)))
+            Component.text("공개키: ", NamedTextColor.WHITE).append(Component.text(Math.random().toString().substring(2, 10), NamedTextColor.GRAY)).decoration(TextDecoration.ITALIC, false),
+            Component.text("시리얼: ", NamedTextColor.WHITE).append(Component.text(id.hashCode().toString(), NamedTextColor.GRAY, TextDecoration.UNDERLINED)).decoration(TextDecoration.ITALIC, false)))
         itemMeta = meta
     }
 

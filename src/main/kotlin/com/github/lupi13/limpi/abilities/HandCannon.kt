@@ -13,7 +13,6 @@ import com.github.lupi13.limpi.quests.TriggerFinger
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
-import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Sound
@@ -84,8 +83,6 @@ object HandCannon : Ability(
     private class Bullet(val effect: AbilityEffect, val onHit: (Player, Damageable) -> Unit)
     private val bullets: MutableMap<UUID, Bullet> = mutableMapOf()
 
-    /** 최근 1초(20틱) 안에 쏜 틱 기록 (TRIGGER FINGER!). */
-    private val recentShots: MutableMap<UUID, ArrayDeque<Int>> = mutableMapOf()
     /** 손가락 안아파요? 를 이미 달성한 플레이어 (더는 사격마다 DB에 기록하지 않음). */
     private val shotQuestDone: MutableSet<UUID> = mutableSetOf()
 
@@ -142,14 +139,8 @@ object HandCannon : Ability(
 
     private fun checkShotQuests(player: Player) {
         val id = player.uniqueId
-        val now = Bukkit.getCurrentTick()
-        val shots = recentShots.getOrPut(id) { ArrayDeque() }
-        shots.addLast(now)
-        while (shots.isNotEmpty() && now - shots.first() >= 20) shots.removeFirst()
-        if (shots.size >= 20) {
-            shots.clear()
-            QuestManager.clearQuests(player, TriggerFinger)
-        }
+        // TRIGGER FINGER!: 원본처럼 아직 날아가는 자기 탄환이 20발 이상이면 달성합니다.
+        if (bullets.values.count { it.effect.owner == id } >= 20) QuestManager.clearQuests(player, TriggerFinger)
 
         if (id in shotQuestDone) return
         QuestManager.progress(player, NoHurt, "hand_cannon_shots", 3000)
@@ -157,13 +148,11 @@ object HandCannon : Ability(
     }
 
     override fun release(owner: UUID) {
-        recentShots.remove(owner)
         shotQuestDone.remove(owner)
         bullets.values.filter { it.effect.owner == owner }.forEach { it.effect.close() }
     }
 
     override fun stop() {
-        recentShots.clear()
         shotQuestDone.clear()
         bullets.values.toList().forEach { it.effect.close() }
         bullets.clear()

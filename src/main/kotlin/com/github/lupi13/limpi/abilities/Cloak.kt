@@ -151,7 +151,11 @@ abstract class CloakAbility(
         gauge[owner] = value - cost
         session.consumed = cost
         player.playSound(player.location, Sound.ENTITY_ALLAY_AMBIENT_WITHOUT_ITEM, 1f, 2f)
+        afterActivate(player)
     }
+
+    /** Called once a cloak has started (gauge paid, effect running). */
+    protected open fun afterActivate(player: Player) {}
 
     private fun tick(effect: AbilityEffect, session: Session) {
         val config = session.settings
@@ -259,6 +263,8 @@ object Cloak : CloakAbility(
                 .append(Component.text(" 중에는 주변 몹이 나를 노리지 못합니다.", NamedTextColor.WHITE))
         )
     }
+
+    override fun afterActivate(player: Player) = QuestManager.recordUse(player, MoebiusReactor)
 
     override fun afterDrain(player: Player, consumed: Long, markChecked: () -> Boolean) {
         if (consumed < Math.round(MoebiusReactor.REQUIRED_GAUGE * 1000.0) || !markChecked()) return

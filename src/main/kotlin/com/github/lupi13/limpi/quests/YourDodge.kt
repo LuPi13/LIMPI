@@ -10,5 +10,6 @@ object YourDodge : Quest(
     isHidden = true,
     howToGet = Component.text("회피", NamedTextColor.GRAY)
         .append(Component.text(" 능력으로 주변에 10마리의 엔더맨을 두고 회피를 시전하세요.", NamedTextColor.WHITE)),
+    hint = QuestHint(Component.text("키 큰 방랑자들이 떼 지어 서성이는 곳, 그들의 시선 사이로 몸을 던져라…", NamedTextColor.GRAY), QuestProgressDefinitions.DODGE.counter, QuestHints.DODGE_THRESHOLD),
     rewardAbility = EndDodge
 )

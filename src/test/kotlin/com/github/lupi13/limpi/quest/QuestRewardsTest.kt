@@ -137,4 +137,38 @@ class QuestRewardsTest {
             assertEquals(Long.MAX_VALUE, YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getLong("quest.lost"))
         }
     }
+    @Test fun `usage counter counts once per request, caps and never completes a quest`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 5\nquest:\n  custom: 9\n") }
+            val request = UUID.randomUUID()
+            assertEquals(1, service(store).count(request, owner, "cloak_uses", 2))
+            assertEquals(1, service(store).count(request, owner, "cloak_uses", 2))
+            assertEquals(2, service(store).count(UUID.randomUUID(), owner, "cloak_uses", 2))
+            assertEquals(2, service(store).count(UUID.randomUUID(), owner, "cloak_uses", 2))
+            val data = YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner)))
+            assertEquals(2, data.getLong("quest.cloak_uses")); assertEquals(9, data.getLong("quest.custom")); assertEquals(5, data.getLong("money"))
+            assertTrue(data.getStringList("clearedQuests").isEmpty()); assertTrue(data.getStringList("unlockedAbilities").isEmpty())
+        }
+    }
+    @Test fun `usage counter keeps values above its cap and refuses malformed values without overwriting`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  time_leaper_uses: 9223372036854775807\n") }
+            assertEquals(Long.MAX_VALUE, service(store).count(UUID.randomUUID(), owner, "time_leaper_uses", 5))
+            for (raw in listOf("1.5", "-1", "'3'")) {
+                val payload = "money: 0\nquest:\n  time_leaper_uses: $raw\n"
+                store.atomic { it.put(SqliteProfilePersistence.key(owner), payload) }
+                assertThrows(IllegalArgumentException::class.java) { service(store).count(UUID.randomUUID(), owner, "time_leaper_uses", 5) }
+                assertEquals(payload, store.get(SqliteProfilePersistence.key(owner)))
+            }
+        }
+    }
+    @Test fun `stored progress above a lowered target completes on the next counted action`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  hand_cannon_shots: 2500\n  hawk_eye_extra_items: 80\n") }
+            assertEquals(QuestRewardResult(true, true, false), service(store).progress(UUID.randomUUID(), owner, "hand_cannon_shots", 1000, "no_hurt", "charge_shot"))
+            assertEquals(QuestRewardResult(true, true, false), service(store).progress(UUID.randomUUID(), owner, "hawk_eye_extra_items", 1, 50, "give_all", "hawk_eye_plus"))
+            val data = YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner)))
+            assertEquals(2500, data.getLong("quest.hand_cannon_shots")); assertEquals(80, data.getLong("quest.hawk_eye_extra_items"))
+        }
+    }
 }

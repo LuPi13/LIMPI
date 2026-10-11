@@ -10,5 +10,6 @@ object ShouldDodge : Quest(
     isHidden = true,
     howToGet = Component.text("회피", NamedTextColor.GRAY)
         .append(Component.text(" 능력으로 투명 상태에서 회피를 시전하세요.", NamedTextColor.WHITE)),
+    hint = QuestHint(Component.text("아무도 볼 수 없는 몸이라면, 그래도 피해야 할까…", NamedTextColor.GRAY), QuestProgressDefinitions.DODGE.counter, QuestHints.DODGE_THRESHOLD),
     rewardAbility = InvisibleDodge
 )

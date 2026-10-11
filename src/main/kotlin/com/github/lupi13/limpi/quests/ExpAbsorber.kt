@@ -9,6 +9,6 @@ object ExpAbsorber : Quest(
     codeName = "exp_absorber",
     isHidden = false,
     howToGet = Component.text("테라버닝", NamedTextColor.YELLOW)
-    .append(Component.text(" 능력을 적용중인 상태로 100레벨에 도달하세요.", NamedTextColor.WHITE)),
+    .append(Component.text(" 능력을 적용중인 상태로 ${QuestConditions.EXP_ABSORBER_LEVEL}레벨에 도달하세요.", NamedTextColor.WHITE)),
     rewardAbility = ExpRich
 )

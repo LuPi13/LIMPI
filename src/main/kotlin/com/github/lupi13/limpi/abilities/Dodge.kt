@@ -5,6 +5,7 @@ import com.github.lupi13.limpi.quests.ColdDodge
 import com.github.lupi13.limpi.quests.DodgeCliche
 import com.github.lupi13.limpi.quests.DodgeMaster
 import com.github.lupi13.limpi.quests.EnoughDodge
+import com.github.lupi13.limpi.quests.QuestConditions
 import com.github.lupi13.limpi.quests.QuestManager
 import com.github.lupi13.limpi.quests.ShouldDodge
 import com.github.lupi13.limpi.quests.YourDodge
@@ -123,13 +124,10 @@ object Dodge : Ability(
     /** 회피 직후 확인하는 퀘스트: 회피의 달인, 바람처럼 차갑게, 너의 회피는, 굳이 회피해야해? */
     private fun checkDodgeQuests(player: Player, horizontalSpeed: Double) {
         QuestManager.progress(player, DodgeMaster)
-        if (horizontalSpeed >= COLD_DODGE_SPEED) QuestManager.clearQuests(player, ColdDodge)
+        if (QuestConditions.coldDodge(horizontalSpeed, player.getPotionEffect(PotionEffectType.SPEED)?.amplifier)) QuestManager.clearQuests(player, ColdDodge)
         if (player.getNearbyEntities(5.0, 5.0, 5.0).count { it.type == EntityType.ENDERMAN } >= 10) QuestManager.clearQuests(player, YourDodge)
         if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) QuestManager.clearQuests(player, ShouldDodge)
     }
-
-    /** 바람처럼 차갑게: 회피 직전 수평 이동속도(블록/틱). 원본 기준 2.65 / 10. */
-    private const val COLD_DODGE_SPEED = 0.265
 
     /** 이거면 충분해: 회피 후 0.3초 내 폭발 피해를 받고 살아남기. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

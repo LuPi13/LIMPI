@@ -11,7 +11,7 @@
 | 번개와 같은 반사신경 | `light_reflex` | EPIC | 퀘스트 이거면 충분해 (회피 직후 폭발에서 생존) |
 | 소멸의 걸음 | `invisible_dodge` | LEGENDARY | 퀘스트 굳이 회피해야해? (투명 상태에서 회피) |
 | 치명적인 회피 | `critical_dodge` | LEGENDARY | 퀘스트 전형적인 회피 클리셰 (회피 직후 적 일격 처치) |
-| 겨울의 장막 | `winter_shroud` | LEGENDARY | 퀘스트 바람처럼 차갑게 (빠른 속도로 회피) |
+| 겨울의 장막 | `winter_shroud` | LEGENDARY | 퀘스트 바람처럼 차갑게 (신속 II 이상 상태에서 빠른 속도로 회피) |
 | 어둠그림자 돌격대 | `blight_ranger` | MYTHIC | 퀘스트 어둠 속으로 (소멸의 걸음으로 주변 5블록 몬스터 10마리 이상에서 회피) |
 | 방패강타+ | `shield_strike_plus` | EPIC | 퀘스트 완벽한 거리조절 (방패강타 돌진 끝에 적과 충돌) |
 | 포효하는 불길 | `roaring_flame` | EPIC | 퀘스트 불타는 돌진 (불타는 상태로 방패강타 처치) |
@@ -25,18 +25,22 @@
 | 카운터 | `counter` | RARE | 뽑기 |
 | 집중의 활시위 | `focus_bow` | EPIC | 뽑기 |
 | 매의 눈 | `hawk_eye` | RARE | 뽑기 |
-| 매의 눈+ | `hawk_eye_plus` | RARE | 퀘스트 주머니에 있는 거 다 꺼내! (매의 눈으로 추가 아이템 100개) |
+| 매의 눈+ | `hawk_eye_plus` | RARE | 퀘스트 주머니에 있는 거 다 꺼내! (매의 눈으로 추가 아이템 50개) |
 | 용암수제비 | `lava_jump` | COMMON | 뽑기 |
 | 핸드캐논 | `hand_cannon` | COMMON | 뽑기 |
 | 펄스캐논 | `pulse_cannon` | COMMON | 퀘스트 TRIGGER FINGER! (핸드캐논 1초에 20발) |
-| 차지샷 | `charge_shot` | RARE | 퀘스트 손가락 안아파요? (핸드캐논 3000발) |
-| 익스플로전 무브 | `explosion_move` | RARE | 퀘스트 노가다의 왕 (핸드캐논으로 100킬) |
+| 차지샷 | `charge_shot` | RARE | 퀘스트 손가락 안아파요? (핸드캐논 1000발) |
+| 익스플로전 무브 | `explosion_move` | RARE | 퀘스트 노가다의 왕 (핸드캐논으로 50킬) |
 | 진짜 핸드'캐논' | `real_hand_cannon` | EPIC | 퀘스트 폭파를 위한 대담함 (핸드캐논으로 충전된 크리퍼 처치, 숨김) |
 | 시간 역행 | `time_leaper` | EPIC | 뽑기 |
 | 시간 역행+ | `time_leaper_plus` | EPIC | 퀘스트 빛의 시간 (시간 역행으로 체력 200 회복) |
 | 시공간 붕괴 | `chronobreak` | LEGENDARY | 퀘스트 어둠의 시간 (시간 역행으로 체력 50 잃기, 숨김) |
 
 회피 계열 퀘스트는 회피(`dodge`) 능력, 방패 퀘스트는 방패강타(`shield_strike`), 뫼비우스 반응로는 은폐(`cloak`) 사용 중에만 달성한다. 회피 횟수는 프로필 `quest.dodge_count`에 원자적으로 누적한다(`QuestManager.progress`). 마스터 대장장이는 접속·뽑기 해금·능력 선택 직후 해금 목록을 확인한다. 어둠 속으로는 소멸의 걸음 사용 중에만 달성한다. 어둠그림자 돌격대의 연막 약화(구속·채굴 피로·실명·나약함·멀미·어둠)는 적에게만 걸리고, 은신이 끝나면 함께 풀린다.
+
+반복 퀘스트 목표는 `QuestProgressDefinitions`에 모여 있다(손가락 안아파요? 1000발, 노가다의 왕 50킬, 주머니에 있는 거 다 꺼내! 50개). 경험치 흡수기 레벨(50)과 바람처럼 차갑게 조건(수평 속도 0.265 이상 + 신속 II 이상, 즉 SPEED amplifier 1 이상)은 `QuestConditions`에 있다. 카운터는 목표에서 멈추며, 목표를 낮추기 전에 이미 더 높은 값이 저장된 플레이어는 다음 집계 행동에서 완료된다.
+
+**숨김 퀘스트 힌트:** 숨김 퀘스트 10개는 `Quest.hint`(문구·카운터·기준)를 가진다. `/ability quest`에서 미달성 숨김 퀘스트는 프로필 `quest.<counter>`가 기준 이상이면 `???` 대신 `힌트: <문구>`를 보인다. 회피 계열 5개(너의 회피는, 이거면 충분해, 굳이 회피해야해?, 전형적인 회피 클리셰, 바람처럼 차갑게)는 기존 `dodge_count` 30, 폭파를 위한 대담함은 기존 `hand_cannon_shots` 200을 쓴다. 새 사용 카운터는 `over_balance_uses`(밸런스 붕괴 사격, 1 → 엔더맨은 엔드 해방의 꿈을 꾸는가?), `cloak_uses`(은폐 발동, 10 → 뫼비우스 반응로), `invisible_dodge_uses`(소멸의 걸음 회피, 10 → 어둠 속으로), `time_leaper_uses`(시간 역행 되감기, 5 → 어둠의 시간)이다. 사용 카운터는 `QuestManager.recordUse` → `QuestRewards.count`의 원자 transaction 하나로 1씩 올리고 기준에서 멈추며, 퀘스트를 완료하거나 해금하지 않는다. 캐시된 프로필 값이 이미 기준 이상이면 DB에 쓰지 않는다. 기록 실패는 로그만 남기고 능력 동작을 막지 않는다.
 
 ## 원본과 다른 점
 

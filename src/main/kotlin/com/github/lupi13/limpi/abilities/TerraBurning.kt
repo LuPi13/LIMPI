@@ -36,7 +36,7 @@ object TerraBurning : Ability(
         player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 0.7f, 1f)
 
         // 퀘스트 ExpMaster 완료
-        if (player.level >= 100) {
+        if (player.level >= com.github.lupi13.limpi.quests.QuestConditions.EXP_ABSORBER_LEVEL) {
             QuestManager.clearQuests(player, ExpAbsorber)
         }
     }

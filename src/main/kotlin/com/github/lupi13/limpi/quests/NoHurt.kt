@@ -9,7 +9,7 @@ object NoHurt : Quest(
     codeName = "no_hurt",
     isHidden = false,
     howToGet = Component.text("핸드캐논", NamedTextColor.GRAY)
-        .append(Component.text("을 총 3000회 사격하세요.", NamedTextColor.WHITE)),
+        .append(Component.text("을 총 ${QuestProgressDefinitions.CANNON_SHOTS.target}회 사격하세요.", NamedTextColor.WHITE)),
     rewardAbility = ChargeShot,
     progress = QuestProgressDefinitions.CANNON_SHOTS
 )

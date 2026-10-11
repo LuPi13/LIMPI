@@ -10,5 +10,6 @@ object DoEndermansDreamOfFreeingEnd : Quest(
     isHidden = true,
     howToGet = Component.text("밸런스 붕괴", NamedTextColor.YELLOW)
     .append(Component.text(" 능력을 이용하여\n엔더맨을 해치지 않고 엔더 드래곤을 처치하세요.", NamedTextColor.WHITE)),
+    hint = QuestHint(Component.text("끝의 차원의 지배자를 꿰뚫되, 그 땅의 주민들은 해치지 말 것…", NamedTextColor.GRAY), QuestHints.OVER_BALANCE_USES, 1),
     rewardAbility = JudgementRay
 )

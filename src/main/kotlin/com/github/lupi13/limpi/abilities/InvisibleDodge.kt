@@ -67,6 +67,7 @@ object InvisibleDodge : DodgeVariant(
         if (player.getNearbyEntities(5.0, 5.0, 5.0).count { it is org.bukkit.entity.Monster } >= 10) {
             com.github.lupi13.limpi.quests.QuestManager.clearQuests(player, com.github.lupi13.limpi.quests.IntoTheDark)
         }
+        com.github.lupi13.limpi.quests.QuestManager.recordUse(player, com.github.lupi13.limpi.quests.IntoTheDark)
         active.remove(id)?.close()
         val duration = config!!.getInt("invisible_ticks")
         val range = config!!.getDouble("target_clear_range")

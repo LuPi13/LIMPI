@@ -287,6 +287,7 @@ object TimeLeaper : TimeLeapAbility(
     override fun afterRewind(player: Player, before: Double, after: Double) {
         val healed = Math.round((after - before) * LightTime.progress!!.counters.single().unitsPerDisplay)
         val lost = Math.round((before - after) * DarkTime.progress!!.counters.single().unitsPerDisplay)
+        QuestManager.recordUse(player, DarkTime)
         try {
             if (healed > 0) QuestManager.progress(player, LightTime, healed)
             if (lost > 0) QuestManager.progress(player, DarkTime, lost)

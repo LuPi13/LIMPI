@@ -89,6 +89,7 @@ object OverBalance : Ability(
         try {
             val settings = com.github.lupi13.limpi.ability.RailgunSettings.read(requireNotNull(config).asConfiguration(), healing = false)
             com.github.lupi13.limpi.platform.RailgunEffect.start(player, this, settings, consumed = true)
+            QuestManager.recordUse(player, DoEndermansDreamOfFreeingEnd)
         } catch (failure: Exception) {
             plugin.logger.log(java.util.logging.Level.WARNING, "Unable to start railgun $codeName for ${player.uniqueId}", failure)
         }

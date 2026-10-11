@@ -10,6 +10,7 @@ object MoebiusReactor : Quest(
     isHidden = true,
     howToGet = Component.text("은폐", NamedTextColor.WHITE)
         .append(Component.text(" 능력으로 게이지 200을 끊지 않고 모두 사용하세요.", NamedTextColor.WHITE)),
+    hint = QuestHint(Component.text("한 번 숨은 그림자는 다 타버릴 때까지 모습을 드러내지 않는다…", NamedTextColor.GRAY), QuestHints.CLOAK_USES, 10),
     rewardAbility = SuperCloak
 ) {
     /** Gauge points one uninterrupted cloak must consume (activation cost included), as in the source quest text. */

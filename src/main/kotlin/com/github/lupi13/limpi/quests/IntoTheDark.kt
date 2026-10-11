@@ -10,5 +10,6 @@ object IntoTheDark : Quest(
     isHidden = true,
     howToGet = Component.text("소멸의 걸음", NamedTextColor.DARK_GRAY)
         .append(Component.text(" 능력으로 주변 5블록 안에 몬스터가 10마리 이상일 때 회피하세요.", NamedTextColor.WHITE)),
+    hint = QuestHint(Component.text("괴물들이 우글거리는 한가운데서, 소멸의 걸음을 내디뎌라…", NamedTextColor.GRAY), QuestHints.INVISIBLE_DODGE_USES, 10),
     rewardAbility = BlightRanger
 )

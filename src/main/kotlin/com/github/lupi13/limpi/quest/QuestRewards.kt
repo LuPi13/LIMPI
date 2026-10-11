@@ -88,6 +88,33 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
         })
     }
 
+    /**
+     * Add one to the durable usage counter `quest.<counter>`, capped at [cap]; never completes a quest or unlocks
+     * anything. Returns the stored value after the transaction (an existing value above [cap] is kept as is).
+     * Replaying [request] never counts twice.
+     */
+    fun count(request: UUID, owner: UUID, counter: String, cap: Long): Long {
+        require(counter.matches(Regex("[a-z0-9_]+")) && cap > 0)
+        val committed = store.execute(request, BankService.fingerprint("QUEST_COUNT", owner.toString(), counter, cap.toString())) { tx ->
+            val profile = Accounts.read(tx, owner)
+            val raw = profile.get("quest.$counter")
+            require(raw == null || raw is Int || raw is Long) { "Non-integral quest counter" }
+            val old = (raw as Number?)?.toLong() ?: 0L
+            require(old >= 0)
+            val updated = if (old >= cap) old else Math.addExact(old, 1L)
+            if (updated != old) {
+                profile.set("quest.$counter", updated)
+                tx.put(SqliteProfilePersistence.key(owner), profile.saveToString())
+            }
+            YamlConfiguration().apply {
+                set("schemaVersion", 1); set("owner", owner.toString()); set("counter", counter)
+                set("previous", old); set("current", updated)
+            }.saveToString()
+        }
+        players.invalidate(committed.entry.changedKeys.filter { it.startsWith("player/") }.map { UUID.fromString(it.removePrefix("player/")) })
+        return YamlFiles.parse(committed.entry.receipt).getLong("current")
+    }
+
     private fun reward(tx: StateTransaction, owner: UUID, quest: String, ability: String): Pair<Boolean, Boolean> {
         val key = "quest_reward/$owner/$quest"
         tx.get(key)?.let {

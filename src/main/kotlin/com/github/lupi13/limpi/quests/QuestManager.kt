@@ -70,7 +70,7 @@ object QuestManager {
             val done = quest.codeName in cleared
             player.sendMessage(quest.displayText.append(Component.text(if (done) " [달성]" else " [미달성]", if (done) NamedTextColor.GREEN else NamedTextColor.GRAY))
                 .append(Component.text(" / 보상: ", NamedTextColor.WHITE)).append(quest.rewardAbility.displayName))
-            player.sendMessage(quest.visibleCondition(done))
+            player.sendMessage(quest.visibleCondition(profile, done))
             quest.visibleProgress(profile, done).forEach { text ->
                 player.sendMessage(Component.text(text, NamedTextColor.WHITE))
             }
@@ -82,6 +82,27 @@ object QuestManager {
         if (amount <= 0) return
         notify(player, quest, FileManager.quest.progress(java.util.UUID.randomUUID(), player.uniqueId, counter, amount, target,
             quest.codeName, quest.rewardAbility.codeName))
+    }
+
+    /**
+     * Count one use of a base ability in the durable counter `quest.<counter>` (capped at [cap]) for hidden-quest
+     * hints. Skips the DB write once the cached profile already reached [cap]; a failure is logged, never thrown.
+     */
+    fun recordUse(player: Player, counter: String, cap: Long) {
+        try {
+            val raw = FileManager.getPlayerData(player).get("quest.$counter")
+            if ((raw is Int || raw is Long) && (raw as Number).toLong() >= cap) return
+            FileManager.quest.count(java.util.UUID.randomUUID(), player.uniqueId, counter, cap)
+        } catch (failure: Exception) {
+            org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(QuestManager::class.java).logger.log(java.util.logging.Level.WARNING,
+                "Unable to record quest counter $counter for ${player.uniqueId}", failure)
+        }
+    }
+
+    /** [recordUse] for the counter and threshold of [quest]'s hint. */
+    fun recordUse(player: Player, quest: Quest) {
+        val hint = quest.hint ?: return
+        recordUse(player, hint.counter, hint.threshold)
     }
 
     fun harmonyHit(player: Player, branch: String) {

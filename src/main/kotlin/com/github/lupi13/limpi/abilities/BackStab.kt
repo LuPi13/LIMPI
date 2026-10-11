@@ -71,7 +71,7 @@ abstract class BackStabVariant(
         if (player.ability != this || target.world.uid != player.world.uid) return
         if (!behind(player, target)) return
         event.damage *= config!!.getDouble("damage_multiplier")
-        player.world.playSound(player.location, Sound.ENTITY_DOLPHIN_ATTACK, SoundCategory.PLAYERS, 1f, 2f)
+        player.world.playSound(player.location, Sound.ENTITY_BREEZE_HURT, SoundCategory.PLAYERS, 1f, 2f)
         pending.add(event)
     }
 

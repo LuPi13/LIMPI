@@ -173,7 +173,6 @@ abstract class TimeLeapAbility(
         val visualTicks = config.getInt("rewind_visual_ticks")
         val maxSpeed = config.getDouble("rewind_max_speed")
         if (visualTicks > 0) effect.attribute(Attribute.GRAVITY, -1.0, AttributeModifier.Operation.MULTIPLY_SCALAR_1)
-        player.playSound(player.location, Sound.BLOCK_BEACON_DEACTIVATE, 0.6f, 2f)
         var tick = 0
         var drawn = frames.lastIndex + 1
         effect.repeat { scope ->
@@ -190,7 +189,7 @@ abstract class TimeLeapAbility(
                 val length = pull.length()
                 owner.velocity = if (!length.isFinite() || length <= 0.0) Vector()
                     else if (length > maxSpeed) pull.normalizeSafely().multiply(maxSpeed) else pull
-                owner.playSound(owner.location, Sound.ENTITY_PLAYER_SWIM, 0.2f, 2f)
+                owner.playSound(owner.location, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1f, 2f)
                 return@repeat
             }
             drawTrail(owner, frames, 0, drawn)
@@ -235,7 +234,7 @@ abstract class TimeLeapAbility(
         // Healing is scaled by heal_multiplier; health that the rewind takes away is only restored, never scaled.
         val restored = if (past > before) (before + (past - before) * config.getDouble("heal_multiplier")).coerceIn(0.0, max) else past
         if (restored > 0.0 && restored.isFinite()) player.health = restored
-        player.playSound(player.location, Sound.ENTITY_DOLPHIN_JUMP, 1f, 2f)
+        player.playSound(player.location, Sound.BLOCK_CONDUIT_ACTIVATE, 1f, 2f)
         afterRewind(player, before, player.health)
     }
 

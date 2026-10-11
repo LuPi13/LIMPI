@@ -125,7 +125,7 @@ object Dodge : Ability(
     private fun checkDodgeQuests(player: Player, horizontalSpeed: Double) {
         QuestManager.progress(player, DodgeMaster)
         if (QuestConditions.coldDodge(horizontalSpeed, player.getPotionEffect(PotionEffectType.SPEED)?.amplifier)) QuestManager.clearQuests(player, ColdDodge)
-        if (player.getNearbyEntities(5.0, 5.0, 5.0).count { it.type == EntityType.ENDERMAN } >= 10) QuestManager.clearQuests(player, YourDodge)
+        if (player.getNearbyEntities(5.0, 5.0, 5.0).count { it.type == EntityType.ENDERMAN } >= 5) QuestManager.clearQuests(player, YourDodge)
         if (player.hasPotionEffect(PotionEffectType.INVISIBILITY)) QuestManager.clearQuests(player, ShouldDodge)
     }
 

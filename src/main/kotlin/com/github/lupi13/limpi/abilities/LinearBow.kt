@@ -57,7 +57,11 @@ object LinearBow : Ability(
         val lifetime = config!!.getInt("lifeTicks")
         val multiplier = config!!.getDouble("speedMultiplier")
         // 화살을 제자리에 멈춰 두었다가 같은 엔티티를 발사하므로 피해/관통/효과/회수 상태가 그대로 유지됩니다.
-        arrow.velocity = Vector()
+        // Hold the arrow with a negligible velocity along its flight direction instead of zero: arrows derive (and
+        // smoothly interpolate) their facing from their velocity every tick, so a zero velocity turned them sideways.
+        val hold = original.clone().normalize().multiply(HOLD_SPEED)
+        arrow.velocity = hold
+        face(arrow, original)
         arrow.setGravity(false)
         linear[arrow.uniqueId] = player.uniqueId to original
         object : com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
@@ -71,11 +75,22 @@ object LinearBow : Ability(
             }
             override fun tick() {
                 if (!arrow.isValid) { cancel(); return }
-                if (timer == delay) arrow.velocity = original.clone().multiply(multiplier)
+                if (timer < delay) { arrow.velocity = hold; face(arrow, original) }
+                if (timer == delay) { arrow.velocity = original.clone().multiply(multiplier); face(arrow, original) }
                 if (timer >= delay + lifetime) { cancel(); return }
                 timer++
             }
         }.runTaskTimer(plugin, 0L, 1L)
+    }
+
+    private const val HOLD_SPEED = 1.0e-3
+
+    /** Vanilla projectile facing: yaw = atan2(x, z), pitch = atan2(y, horizontal), in degrees. */
+    private fun face(arrow: AbstractArrow, direction: Vector) {
+        if (direction.lengthSquared() == 0.0) return
+        val horizontal = kotlin.math.sqrt(direction.x * direction.x + direction.z * direction.z)
+        arrow.setRotation(Math.toDegrees(kotlin.math.atan2(direction.x, direction.z)).toFloat(),
+            Math.toDegrees(kotlin.math.atan2(direction.y, horizontal)).toFloat())
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

@@ -59,9 +59,7 @@ object SuperCloak : CloakAbility(
             Component.text("개체를 처치하면 게이지 ", NamedTextColor.WHITE)
                 .append(Component.text(format(config!!.getDouble("kill_gauge")), NamedTextColor.GREEN))
                 .append(Component.text("을(를) 회복합니다.", NamedTextColor.WHITE)),
-            Component.text("투명화 중에는 주변 몹이 나를 노리지 못합니다.", NamedTextColor.WHITE),
-            Component.text("from. ", NamedTextColor.WHITE).decorate(TextDecoration.ITALIC)
-                .append(Component.text("StarCraft", NamedTextColor.WHITE, TextDecoration.BOLD)),
+            Component.text("투명화 중에는 주변 몹이 나를 노리지 못합니다.", NamedTextColor.WHITE)
         )
     }
 

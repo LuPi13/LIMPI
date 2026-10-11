@@ -53,7 +53,9 @@ object RoaringFlame : Ability(
                 .append(Component.text("간 불태웁니다.", NamedTextColor.WHITE)),
             Component.text("부딪힌 뒤 전방 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("fireRange")}칸", NamedTextColor.GREEN))
-                .append(Component.text("에 불을 지핍니다.", NamedTextColor.WHITE))
+                .append(Component.text("에 불을 지핍니다.", NamedTextColor.WHITE)),
+            Component.text("쿨타임: ", NamedTextColor.WHITE)
+                .append(Component.text("${config!!.getInt("cooldown") / 1000.0}초", NamedTextColor.GREEN))
         )
     }
 

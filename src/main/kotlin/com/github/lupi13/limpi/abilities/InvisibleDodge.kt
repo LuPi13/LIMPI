@@ -32,9 +32,7 @@ object InvisibleDodge : DodgeVariant(
         Component.text("회피", NamedTextColor.GRAY)
             .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),
         Component.text("회피 후 잠시 은신합니다.", NamedTextColor.WHITE),
-        Component.text("공격하거나 피해를 입으면 은신이 풀립니다.", NamedTextColor.WHITE),
-        Component.text("from. ", NamedTextColor.WHITE).decorate(TextDecoration.ITALIC)
-            .append(Component.text("DESTINY 2", NamedTextColor.WHITE).decorate(TextDecoration.BOLD))
+        Component.text("공격하거나 피해를 입으면 은신이 풀립니다.", NamedTextColor.WHITE)
     )
 ) {
     override val unlockQuest: Quest get() = ShouldDodge

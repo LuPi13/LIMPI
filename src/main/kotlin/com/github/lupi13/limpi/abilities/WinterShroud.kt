@@ -25,9 +25,7 @@ object WinterShroud : DodgeVariant(
             .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),
         Component.text("회피 시 주변 ", NamedTextColor.WHITE)
             .append(Component.text("적", NamedTextColor.RED))
-            .append(Component.text("들을 얼립니다.", NamedTextColor.WHITE)),
-        Component.text("from. ", NamedTextColor.WHITE).decorate(TextDecoration.ITALIC)
-            .append(Component.text("DESTINY 2", NamedTextColor.WHITE).decorate(TextDecoration.BOLD))
+            .append(Component.text("들을 얼립니다.", NamedTextColor.WHITE))
     )
 ) {
     override val unlockQuest: Quest get() = ColdDodge
@@ -44,7 +42,7 @@ object WinterShroud : DodgeVariant(
                 .append(Component.text("들을", NamedTextColor.WHITE)),
             Component.text("", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("freeze_ticks") / 20.0}", NamedTextColor.GREEN))
-                .append(Component.text("초 분량만큼 얼립니다.", NamedTextColor.WHITE)),
+                .append(Component.text("초 동안 얼립니다.", NamedTextColor.WHITE)),
             cooldownLine()
         )
     }
@@ -63,7 +61,10 @@ object WinterShroud : DodgeVariant(
         }
         for (entity in player.getNearbyEntities(horizontal, vertical, horizontal)) {
             if (entity !is Damageable || !AbilityManager.isEnemy(player, entity)) continue
-            entity.freezeTicks = maxOf(entity.freezeTicks, freezeTicks)
+            // Outside powder snow the freeze value drops by 2 per tick, and the entity is fully frozen only at or above
+            // maxFreezeTicks; start high enough that it stays fully frozen for exactly freeze_ticks.
+            val frozen = Math.addExact(entity.maxFreezeTicks, Math.multiplyExact(2, freezeTicks))
+            entity.freezeTicks = maxOf(entity.freezeTicks, frozen)
         }
         world.playSound(center, Sound.ENTITY_ALLAY_DEATH, 1f, 1f)
     }

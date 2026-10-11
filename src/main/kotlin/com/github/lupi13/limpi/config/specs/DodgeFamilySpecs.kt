@@ -11,7 +11,7 @@ object DodgeFamilySpecs {
             flag("allowJump", false)
         )),
         "end_dodge" to AbilitySpec(listOf(
-            integer("cooldown", 1000),
+            integer("cooldown", 10000),
             number("velocity", 2.0, 0.000001, 64.0),
             flag("allowJump", false),
             number("distance", 20.0, 0.0, 128.0),
@@ -42,12 +42,12 @@ object DodgeFamilySpecs {
             integer("kill_cooldown_reduction", 2500)
         )),
         "winter_shroud" to AbilitySpec(listOf(
-            integer("cooldown", 5000),
+            integer("cooldown", 10000),
             number("velocity", 2.0, 0.000001, 64.0),
             flag("allowJump", false),
             number("horizontal_range", 8.0, 0.0, 64.0),
             number("vertical_range", 4.0, 0.0, 64.0),
-            integer("freeze_ticks", 1000, 0, 72000)
+            integer("freeze_ticks", 200, 0, 72000)
         ))
     )
 }

@@ -233,9 +233,7 @@ object Cloak : CloakAbility(
     description = listOf(
         Component.text("빠르게 두 번 웅크리면 투명화를 시작/해제합니다.", NamedTextColor.WHITE),
         Component.text("투명화 중에는 갑옷이 보이지 않으며,", NamedTextColor.WHITE),
-        Component.text("은폐 게이지를 소모합니다.", NamedTextColor.WHITE),
-        Component.text("from. ", NamedTextColor.WHITE).decorate(TextDecoration.ITALIC)
-            .append(Component.text("StarCraft", NamedTextColor.WHITE, TextDecoration.BOLD)),
+        Component.text("은폐 게이지를 소모합니다.", NamedTextColor.WHITE)
     ),
     relatedQuest = listOf(MoebiusReactor)
 ) {
@@ -256,9 +254,7 @@ object Cloak : CloakAbility(
                 .append(Component.text("씩 회복됩니다. (최대 ", NamedTextColor.WHITE))
                 .append(Component.text(format(config!!.getDouble("max_gauge")), NamedTextColor.GREEN))
                 .append(Component.text(")", NamedTextColor.WHITE)),
-            Component.text("투명화 중에는 주변 몹이 나를 노리지 못합니다.", NamedTextColor.WHITE),
-            Component.text("from. ", NamedTextColor.WHITE).decorate(TextDecoration.ITALIC)
-                .append(Component.text("StarCraft", NamedTextColor.WHITE, TextDecoration.BOLD)),
+            Component.text("투명화 중에는 주변 몹이 나를 노리지 못합니다.", NamedTextColor.WHITE)
         )
     }
 

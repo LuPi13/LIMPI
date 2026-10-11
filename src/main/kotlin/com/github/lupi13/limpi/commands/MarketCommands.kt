@@ -54,6 +54,9 @@ class MarketCommands(private val plugin: Plugin) {
                     }
                     val item = sender.inventory.itemInMainHand
                     require(!item.type.isAir) { "손에 아이템을 들고 있어야 합니다." }
+                    // The original single-page market held at most 54 listings.
+                    require(FileManager.market.available().count { it.state == com.github.lupi13.limpi.market.ListingState.ACTIVE ||
+                        it.state == com.github.lupi13.limpi.market.ListingState.ESCROW } < 54) { "장터에 아이템이 가득 찼습니다. (54개 이상은 업데이트 예정)" }
                     val name = MarketEvents.itemName(item, item.type.name)
                     if (!FileManager.delivery.register(sender, request, code, name, Money(units))) return true
                     sender.sendMessage(Component.text(name, NamedTextColor.GREEN)

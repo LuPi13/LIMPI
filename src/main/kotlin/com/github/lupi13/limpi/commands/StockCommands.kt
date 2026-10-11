@@ -41,6 +41,7 @@ class StockCommands {
                     EconomyText.error(sender, "코드는 대문자 알파벳과 숫자로만 이루어진 4글자로 입력해주세요."); return
                 }
                 val stocks = FileManager.getStockConfig()
+                if (StockCatalog.allCodes(stocks).size >= 54) { EconomyText.error(sender, "주식은 최대 54개까지 생성 가능합니다."); return }
                 if (stocks.isSet(code)) { EconomyText.error(sender, "이미 존재하는 코드입니다."); return }
                 if (StockCatalog.allCodes(stocks).any { stocks.getString("$it.name") == name }) {
                     EconomyText.error(sender, "이미 존재하는 주식입니다."); return

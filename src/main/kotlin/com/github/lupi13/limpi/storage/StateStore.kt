@@ -17,6 +17,8 @@ data class LedgerEntry(
 )
 data class CommittedTransaction(val entry: LedgerEntry, val replayed: Boolean)
 
+data class PruneResult(val documents: Int, val transactions: Int)
+
 class TransactionIdentityConflict(id: UUID) :
     IllegalArgumentException("Transaction $id was already used for another request")
 
@@ -27,4 +29,10 @@ interface StateStore : AutoCloseable {
     fun atomic(action: (StateTransaction) -> Unit)
     fun execute(id: UUID, fingerprint: String, action: (StateTransaction) -> String): CommittedTransaction
     fun entry(id: UUID): LedgerEntry?
+    /**
+     * Delete finished-record documents under [documentPrefixes] and ledger rows last written before [cutoffMillis].
+     * A document is only removed when no newer ledger row touched it; rows whose fingerprint starts with one of
+     * [keepFingerprintPrefixes] (once-only identities) are kept.
+     */
+    fun prune(cutoffMillis: Long, documentPrefixes: Set<String>, keepFingerprintPrefixes: Set<String>): PruneResult
 }

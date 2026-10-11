@@ -143,4 +143,32 @@ class SqliteStateStoreTest {
         }
         assertThrows(IllegalStateException::class.java) { SqliteStateStore(file()) }
     }
+
+    @Test fun `prune removes old finished records and ledger rows but keeps live state and once-only identities`() {
+        var now = 1_000L
+        val clock = object : java.time.Clock() {
+            override fun getZone() = java.time.ZoneOffset.UTC
+            override fun withZone(zone: java.time.ZoneId?) = this
+            override fun instant() = java.time.Instant.ofEpochMilli(now)
+        }
+        val old = UUID.randomUUID(); val initial = UUID.randomUUID(); val recent = UUID.randomUUID(); val touched = UUID.randomUUID()
+        SqliteStateStore(file(), clock).use { store ->
+            store.execute(old, "purchase") { it.put("delivery_done/a/1", "done"); it.put("player/a", "money: 1"); "r" }
+            store.execute(initial, "initial-grant:a") { it.put("delivery_done/a/2", "done"); "r" }
+            store.execute(touched, "settle") { it.put("removal_done/a/3", "done"); "r" }
+            now = 10_000L
+            store.execute(UUID.randomUUID(), "resolve") { it.put("removal_done/a/3", "resolved again"); "r" }
+            store.execute(recent, "recent") { it.put("delivery_done/a/4", "done"); "r" }
+            store.atomic { it.put("delivery_pending/a/5", "pending") }
+
+            val result = store.prune(5_000L, setOf("delivery_done/", "removal_done/"), setOf("initial-"))
+            assertNull(store.get("delivery_done/a/1")); assertNull(store.entry(old))
+            assertNull(store.get("delivery_done/a/2")); assertNotNull(store.entry(initial))
+            assertEquals("resolved again", store.get("removal_done/a/3"))
+            assertEquals("done", store.get("delivery_done/a/4")); assertNotNull(store.entry(recent))
+            assertEquals("money: 1", store.get("player/a")); assertEquals("pending", store.get("delivery_pending/a/5"))
+            assertEquals(PruneResult(2, 2), result)
+            assertFalse(store.execute(old, "purchase") { "again" }.replayed)
+        }
+    }
 }

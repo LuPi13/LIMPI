@@ -76,9 +76,22 @@ class FileManager {
         val sugar: com.github.lupi13.limpi.ability.SugarSettlement get() = sugarSettlement
         val quest: QuestRewards get() = questRewards
 
+        /** Finished delivery/removal/transition/escrow records and their ledger rows are only kept for RecordRetentionDays. */
+        private fun pruneRecords(owner: Plugin) {
+            val days = owner.config.getInt("RecordRetentionDays", 7)
+            if (days <= 0) return
+            val cutoff = System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(days.toLong())
+            val pruned = state.prune(cutoff,
+                setOf("delivery_done/", "removal_done/", "ability_transition_done/", "market_escrow_done/"),
+                // Initial rewards rely on their once-only ledger identities; never forget them.
+                setOf("initial-register:", "initial-grant:"))
+            owner.logger.info("Pruned ${pruned.documents} finished records and ${pruned.transactions} ledger rows older than $days days")
+        }
+
         fun initialize(owner: Plugin) {
             plugin = owner
             state = SqliteStateStore(owner.dataFolder.toPath().resolve("limpi.sqlite3"))
+            pruneRecords(owner)
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)
             stockTrading = com.github.lupi13.limpi.stock.StockTradingService(state, repository) { code ->

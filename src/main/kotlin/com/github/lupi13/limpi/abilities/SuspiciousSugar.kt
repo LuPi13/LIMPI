@@ -29,10 +29,10 @@ object SuspiciousSugar : Ability(
 ) {
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("설탕을 우클릭하면 ", NamedTextColor.WHITE)
+            Component.text("설탕", NamedTextColor.YELLOW).append(Component.text("을 우클릭하면 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getInt("duration") / 20}", NamedTextColor.GREEN))
                 .append(Component.text("초의 무작위 상태 효과를 얻습니다.", NamedTextColor.WHITE)),
-            Component.text("${config!!.getDouble("areaChance") * 100}%", NamedTextColor.GREEN)
+            Component.text("${config!!.getDouble("areaChance") * 100}", NamedTextColor.GREEN).append(Component.text("%", NamedTextColor.WHITE))
                 .append(Component.text(" 확률로 해당 상태 효과를 주변 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("range") / 2.0}", NamedTextColor.GREEN))
                 .append(Component.text("블록 내의", NamedTextColor.WHITE)),

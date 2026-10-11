@@ -38,7 +38,7 @@ object ShieldStrike : Ability(
 
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("지상에서 방패를 든 상태로 빠르게 두 번 웅크려", NamedTextColor.WHITE),
+            Component.text("지상에서 ", NamedTextColor.WHITE).append(Component.text("방패", NamedTextColor.YELLOW)).append(Component.text("를 든 상태로 빠르게 두 번 웅크려", NamedTextColor.WHITE)),
             Component.text("전방으로 돌진합니다. 부딪힌 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게", NamedTextColor.WHITE)),

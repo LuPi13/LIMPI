@@ -52,7 +52,10 @@ object BlightRanger : DodgeVariant(
                 .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),
             Component.text("회피 후 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("invisible_ticks") / 20.0}", NamedTextColor.GREEN))
-                .append(Component.text("초 동안 은신하고 신속 ", NamedTextColor.WHITE))
+                .append(Component.text("초 동안 ", NamedTextColor.WHITE))
+                .append(Component.text("은신", NamedTextColor.BLUE))
+                .append(Component.text("하고 ", NamedTextColor.WHITE))
+                .append(Component.text("신속 ", NamedTextColor.BLUE))
                 .append(Component.text("${config!!.getInt("speed_level")}", NamedTextColor.GREEN))
                 .append(Component.text("을 얻습니다.", NamedTextColor.WHITE)),
             Component.text("회피한 자리에 반경 ", NamedTextColor.WHITE)
@@ -60,10 +63,23 @@ object BlightRanger : DodgeVariant(
                 .append(Component.text("블록의 연막을 뿌립니다.", NamedTextColor.WHITE)),
             Component.text("연막 안의 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
-                .append(Component.text("은 구속, 채굴 피로, 실명, 나약함,", NamedTextColor.WHITE)),
-            Component.text("멀미, 어둠에 걸립니다.", NamedTextColor.WHITE),
+                .append(Component.text("은 ", NamedTextColor.WHITE))
+                .append(Component.text("구속", NamedTextColor.DARK_RED))
+                .append(Component.text(", ", NamedTextColor.WHITE))
+                .append(Component.text("채굴 피로", NamedTextColor.DARK_RED))
+                .append(Component.text(", ", NamedTextColor.WHITE))
+                .append(Component.text("실명", NamedTextColor.DARK_RED))
+                .append(Component.text(", ", NamedTextColor.WHITE))
+                .append(Component.text("나약함", NamedTextColor.DARK_RED))
+                .append(Component.text(",", NamedTextColor.WHITE)),
+            Component.text("멀미", NamedTextColor.DARK_RED)
+                .append(Component.text(", ", NamedTextColor.WHITE))
+                .append(Component.text("어둠", NamedTextColor.DARK_RED))
+                .append(Component.text("에 걸립니다.", NamedTextColor.WHITE)),
             Component.text("어둠 속에서 7명의 분신이 함께 움직입니다.", NamedTextColor.WHITE),
-            Component.text("공격하거나 피해를 입으면 은신이 풀립니다.", NamedTextColor.WHITE),
+            Component.text("공격하거나 피해를 입으면 ", NamedTextColor.WHITE)
+                .append(Component.text("은신", NamedTextColor.BLUE))
+                .append(Component.text("이 풀립니다.", NamedTextColor.WHITE)),
             cooldownLine()
         )
     }

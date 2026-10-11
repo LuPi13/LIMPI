@@ -35,7 +35,7 @@ object Muspell : Ability(
 
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("최대로 당겨 쏜 일반 화살이 ", NamedTextColor.WHITE)
+            Component.text("최대로 당겨 쏜 일반 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("이 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN))
                 .append(Component.text("의 범위 피해를 주는 불덩이로 변환됩니다.", NamedTextColor.WHITE)),
             Component.text("불덩이는 이동 경로의 ", NamedTextColor.WHITE)

@@ -47,7 +47,9 @@ object HandCannon : Ability(
 
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("왼손이 핸드캐논으로 고정됩니다.", NamedTextColor.WHITE),
+            Component.text("왼손이 ", NamedTextColor.WHITE)
+                .append(Component.text("핸드캐논", NamedTextColor.YELLOW))
+                .append(Component.text("으로 고정됩니다.", NamedTextColor.WHITE)),
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
                 .append(Component.text("키를 누르면 ", NamedTextColor.WHITE))

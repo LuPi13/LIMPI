@@ -43,7 +43,8 @@ object Counter : Ability(
 ) {
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("검을 들고 우클릭하면 ", NamedTextColor.WHITE)
+            Component.text("검", NamedTextColor.YELLOW)
+                .append(Component.text("을 들고 우클릭하면 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getInt("stance_ticks") / 20.0}", NamedTextColor.GREEN))
                 .append(Component.text("초간 반격 태세에 들어가며,", NamedTextColor.WHITE)),
             Component.text("반격하기 전까지 거의 움직일 수 없고 공격할 수 없습니다.", NamedTextColor.WHITE),
@@ -57,7 +58,9 @@ object Counter : Ability(
                 .append(Component.text("배로 한 번 반격합니다.", NamedTextColor.WHITE)),
             Component.text("쿨타임: ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("cooldown_ticks") / 20.0}", NamedTextColor.GREEN))
-                .append(Component.text("초 (모든 검 공통)", NamedTextColor.WHITE))
+                .append(Component.text("초 (모든 ", NamedTextColor.WHITE))
+                .append(Component.text("검", NamedTextColor.YELLOW))
+                .append(Component.text(" 공통)", NamedTextColor.WHITE))
         )
     }
 

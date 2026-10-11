@@ -23,7 +23,9 @@ object HeavySnowball : Ability(
 ) {
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("던진 눈덩이가 ", NamedTextColor.WHITE)
+            Component.text("던진 ", NamedTextColor.WHITE)
+                .append(Component.text("눈덩이", NamedTextColor.YELLOW))
+                .append(Component.text("가 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN))
                 .append(Component.text("의 피해를 줍니다.", NamedTextColor.WHITE)),
             Component.text("눈에 돌을 넣었나봐요", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH)

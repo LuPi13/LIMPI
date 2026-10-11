@@ -37,7 +37,8 @@ abstract class BackStabVariant(
     protected fun backStabLines(): List<Component> = listOf(
         Component.text("적", NamedTextColor.RED)
             .append(Component.text("의 등 뒤 ", NamedTextColor.WHITE))
-            .append(Component.text("${config!!.getDouble("back_angle")}°", NamedTextColor.GREEN))
+            .append(Component.text("${config!!.getDouble("back_angle")}", NamedTextColor.GREEN))
+            .append(Component.text("°", NamedTextColor.WHITE))
             .append(Component.text(" 범위에서 근접 공격하면", NamedTextColor.WHITE)),
         Component.text("${config!!.getDouble("damage_multiplier")}", NamedTextColor.GREEN)
             .append(Component.text("배의 피해를 줍니다.", NamedTextColor.WHITE))

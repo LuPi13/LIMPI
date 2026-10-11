@@ -19,7 +19,7 @@ object LongThrow : Ability(
     codeName = "long_throw",
     material = Material.RABBIT_HIDE,
     description = listOf(
-        Component.text("아이템, 투척용 물약, 잔류형 물약을", NamedTextColor.WHITE),
+        Component.text("아이템, ", NamedTextColor.WHITE).append(Component.text("투척용 물약", NamedTextColor.YELLOW)).append(Component.text(", ", NamedTextColor.WHITE)).append(Component.text("잔류형 물약", NamedTextColor.YELLOW)).append(Component.text("을", NamedTextColor.WHITE)),
         Component.text("매우 멀리 던집니다.", NamedTextColor.WHITE)),
     needFile = true
 ){

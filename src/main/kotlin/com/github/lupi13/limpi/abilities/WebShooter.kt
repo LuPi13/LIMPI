@@ -39,7 +39,7 @@ object WebShooter : Ability(
         listOf(
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
-                .append(Component.text("키를 눌러 웹슈터를 사격합니다.", NamedTextColor.WHITE)),
+                .append(Component.text("키를 눌러 ", NamedTextColor.WHITE).append(Component.text("웹슈터", NamedTextColor.YELLOW)).append(Component.text("를 사격합니다.", NamedTextColor.WHITE))),
             Component.text("${config!!.getDouble("range")}", NamedTextColor.GREEN)
                 .append(Component.text("블럭의 사거리 내에 있는 블럭을 맞히면, 해당 방향으로 끌려갑니다.", NamedTextColor.WHITE)),
             Component.text("엔티티를 맞히면, 크기에 비례하여 서로 끌어당겨집니다.", NamedTextColor.WHITE),

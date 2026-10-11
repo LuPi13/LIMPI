@@ -91,7 +91,8 @@ abstract class DodgeVariant(
         .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE))
 
     protected fun cooldownLine(): Component = Component.text("쿨타임: ", NamedTextColor.WHITE)
-        .append(Component.text("${config!!.getInt("cooldown") / 1000.0}초", NamedTextColor.GREEN))
+        .append(Component.text("${config!!.getInt("cooldown") / 1000.0}", NamedTextColor.GREEN))
+        .append(Component.text("초", NamedTextColor.WHITE))
 
     override fun release(owner: UUID) {
         lastSneakTime.remove(owner); lastDodgeTime.remove(owner); Dodge.velocityMap.remove(owner)

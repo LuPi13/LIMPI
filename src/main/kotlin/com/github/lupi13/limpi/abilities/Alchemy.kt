@@ -24,20 +24,28 @@ object Alchemy : Ability(
     relatedQuest = listOf(com.github.lupi13.limpi.quests.MasterSmith)
 ){
     override val details: List<Component> by lazy {
+        // 광물 이름은 YELLOW, 확률 수치는 GREEN, 단위(%)는 WHITE
+        fun chance(name: String, key: String): Component =
+            Component.text(name, NamedTextColor.YELLOW)
+                .append(Component.text(": ", NamedTextColor.WHITE))
+                .append(Component.text("${config!!.getDouble(key) * 100}", NamedTextColor.GREEN))
+                .append(Component.text("%", NamedTextColor.WHITE))
+        val separator = Component.text(" / ", NamedTextColor.WHITE)
         listOf(
-            Component.text("구리 주괴를 손에 들고 우클릭하면", NamedTextColor.WHITE),
+            Component.text("구리 주괴", NamedTextColor.YELLOW)
+                .append(Component.text("를 손에 들고 우클릭하면", NamedTextColor.WHITE)),
             Component.text("10개를 소모하여 다른 광물로 변환합니다.", NamedTextColor.WHITE),
             Component.text("변환 가능한 광물은 다음과 같습니다:", NamedTextColor.WHITE),
-            Component.text("석탄: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("coal") * 100}%", NamedTextColor.GREEN))
-                .append(Component.text(" / 철 조각: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("iron_nugget") * 100}%", NamedTextColor.GREEN)))
-                .append(Component.text(" / 철 주괴: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("iron_ingot") * 100}%", NamedTextColor.GREEN)))
-                .append(Component.text(" / 금 조각: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("gold_nugget") * 100}%", NamedTextColor.GREEN))),
-            Component.text("금 주괴: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("gold_ingot") * 100}%", NamedTextColor.GREEN))
-                .append(Component.text(" / 레드스톤: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("redstone") * 100}%", NamedTextColor.GREEN)))
-                .append(Component.text(" / 청금석: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("lapis_lazuli") * 100}%", NamedTextColor.GREEN)))
-                .append(Component.text(" / 에메랄드: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("emerald") * 100}%", NamedTextColor.GREEN))),
-            Component.text("다이아몬드: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("diamond") * 100}%", NamedTextColor.GREEN))
-                .append(Component.text(" / 네더라이트 주괴: ", NamedTextColor.WHITE).append(Component.text("${config!!.getDouble("netherite_ingot") * 100}%", NamedTextColor.GREEN)))
+            chance("석탄", "coal")
+                .append(separator).append(chance("철 조각", "iron_nugget"))
+                .append(separator).append(chance("철 주괴", "iron_ingot"))
+                .append(separator).append(chance("금 조각", "gold_nugget")),
+            chance("금 주괴", "gold_ingot")
+                .append(separator).append(chance("레드스톤", "redstone"))
+                .append(separator).append(chance("청금석", "lapis_lazuli"))
+                .append(separator).append(chance("에메랄드", "emerald")),
+            chance("다이아몬드", "diamond")
+                .append(separator).append(chance("네더라이트 주괴", "netherite_ingot"))
         )
     }
 

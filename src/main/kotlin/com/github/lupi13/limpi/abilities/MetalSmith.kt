@@ -42,7 +42,7 @@ object MetalSmith : Ability(
 
     /** Round away floating-point noise (0.009 * 100 = 0.8999999999...) before showing a percentage. */
     private fun percent(key: String) = Component.text("${java.math.BigDecimal(config!!.getDouble(key) * 100)
-        .round(java.math.MathContext(10)).stripTrailingZeros().toPlainString()}%", NamedTextColor.GREEN)
+        .round(java.math.MathContext(10)).stripTrailingZeros().toPlainString()}", NamedTextColor.GREEN).append(Component.text("%", NamedTextColor.WHITE))
 
     override val details: List<Component> get() = listOf(
         Component.text("연금술", NamedTextColor.GOLD)
@@ -51,24 +51,24 @@ object MetalSmith : Ability(
             .append(Component.text(", ", NamedTextColor.WHITE))
             .append(Component.text("에메랄드 수리", NamedTextColor.GREEN))
             .append(Component.text(" 능력을 모두 사용합니다.", NamedTextColor.WHITE)),
-        Component.text("구리 주괴를 손에 들고 우클릭하면", NamedTextColor.WHITE),
+        Component.text("구리 주괴", NamedTextColor.YELLOW).append(Component.text("를 손에 들고 우클릭하면", NamedTextColor.WHITE)),
         Component.text("10개를 소모하여 다른 광물로 변환합니다:", NamedTextColor.WHITE),
-        Component.text("석탄: ", NamedTextColor.WHITE).append(percent("coal"))
-            .append(Component.text(" / 철 조각: ", NamedTextColor.WHITE)).append(percent("iron_nugget"))
-            .append(Component.text(" / 철 주괴: ", NamedTextColor.WHITE)).append(percent("iron_ingot"))
-            .append(Component.text(" / 금 조각: ", NamedTextColor.WHITE)).append(percent("gold_nugget")),
-        Component.text("금 주괴: ", NamedTextColor.WHITE).append(percent("gold_ingot"))
-            .append(Component.text(" / 레드스톤: ", NamedTextColor.WHITE)).append(percent("redstone"))
-            .append(Component.text(" / 청금석: ", NamedTextColor.WHITE)).append(percent("lapis_lazuli"))
-            .append(Component.text(" / 에메랄드: ", NamedTextColor.WHITE)).append(percent("emerald")),
-        Component.text("다이아몬드: ", NamedTextColor.WHITE).append(percent("diamond"))
-            .append(Component.text(" / 네더라이트 주괴: ", NamedTextColor.WHITE)).append(percent("netherite_ingot")),
+        Component.text("석탄", NamedTextColor.YELLOW).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("coal"))
+            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("철 조각", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("iron_nugget"))
+            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("철 주괴", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("iron_ingot"))
+            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("금 조각", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("gold_nugget")),
+        Component.text("금 주괴", NamedTextColor.YELLOW).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("gold_ingot"))
+            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("레드스톤", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("redstone"))
+            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("청금석", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("lapis_lazuli"))
+            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("에메랄드", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("emerald")),
+        Component.text("다이아몬드", NamedTextColor.YELLOW).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("diamond"))
+            .append(Component.text(" / ", NamedTextColor.WHITE)).append(Component.text("네더라이트 주괴", NamedTextColor.YELLOW)).append(Component.text(": ", NamedTextColor.WHITE)).append(percent("netherite_ingot")),
         Component.text("광물을 캐면 익혀서 나오고, ", NamedTextColor.WHITE)
             .append(Component.text("적", NamedTextColor.RED))
-            .append(Component.text("을 곡괭이로 공격하면 ", NamedTextColor.WHITE))
-            .append(Component.text("${config!!.getInt("fireTicks") / 20.0}초", NamedTextColor.GREEN))
+            .append(Component.text("을 ", NamedTextColor.WHITE)).append(Component.text("곡괭이", NamedTextColor.YELLOW)).append(Component.text("로 공격하면 ", NamedTextColor.WHITE))
+            .append(Component.text("${config!!.getInt("fireTicks") / 20.0}", NamedTextColor.GREEN).append(Component.text("초", NamedTextColor.WHITE)))
             .append(Component.text("간 불태웁니다.", NamedTextColor.WHITE)),
-        Component.text("인벤토리에서 커서에 에메랄드를 들고 아이템을 우클릭하면", NamedTextColor.WHITE),
+        Component.text("인벤토리에서 커서에 ", NamedTextColor.WHITE).append(Component.text("에메랄드", NamedTextColor.YELLOW)).append(Component.text("를 들고 아이템을 우클릭하면", NamedTextColor.WHITE)),
         Component.text("내구도를 ", NamedTextColor.WHITE)
             .append(Component.text("${RepairPolicy.amount(config?.get("repair"))}", NamedTextColor.GREEN))
             .append(Component.text(" 수리합니다.", NamedTextColor.WHITE))

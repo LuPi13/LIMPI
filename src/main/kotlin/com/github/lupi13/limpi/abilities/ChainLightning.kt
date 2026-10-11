@@ -29,9 +29,11 @@ object ChainLightning : Ability(
     override val details: List<Component> by lazy {
         listOf(
             Component.text("가한 피해의 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getDouble("damageRatio") * 100}%", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getDouble("damageRatio") * 100}", NamedTextColor.GREEN))
+                .append(Component.text("%", NamedTextColor.WHITE))
                 .append(Component.text(" 데미지가 ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getDouble("probability") * 100}%", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getDouble("probability") * 100}", NamedTextColor.GREEN))
+                .append(Component.text("%", NamedTextColor.WHITE))
                 .append(Component.text("확률로", NamedTextColor.WHITE)),
             Component.text("주변 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getDouble("radius")}", NamedTextColor.GREEN))

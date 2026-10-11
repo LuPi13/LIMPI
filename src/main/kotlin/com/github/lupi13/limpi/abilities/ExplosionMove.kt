@@ -44,7 +44,9 @@ object ExplosionMove : Ability(
 
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("왼손이 리볼버 캐논으로 고정됩니다.", NamedTextColor.WHITE),
+            Component.text("왼손이 ", NamedTextColor.WHITE)
+                .append(Component.text("리볼버 캐논", NamedTextColor.YELLOW))
+                .append(Component.text("으로 고정됩니다.", NamedTextColor.WHITE)),
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
                 .append(Component.text("키를 눌러 짧은 전방의 ", NamedTextColor.WHITE))
@@ -56,7 +58,8 @@ object ExplosionMove : Ability(
             Component.text("최대 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("max_charges")}", NamedTextColor.GREEN))
                 .append(Component.text("번까지 축적됩니다. (충전: ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getInt("charge_ticks") / 20.0}초", NamedTextColor.WHITE))
+                .append(Component.text("${config!!.getInt("charge_ticks") / 20.0}", NamedTextColor.GREEN))
+                .append(Component.text("초", NamedTextColor.WHITE))
                 .append(Component.text(")", NamedTextColor.WHITE))
         )
     }

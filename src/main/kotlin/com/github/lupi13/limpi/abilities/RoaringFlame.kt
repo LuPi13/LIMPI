@@ -43,19 +43,19 @@ object RoaringFlame : Ability(
         listOf(
             Component.text("방패강타", NamedTextColor.GRAY)
                 .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),
-            Component.text("지상에서 방패를 든 상태로 빠르게 두 번 웅크려", NamedTextColor.WHITE),
+            Component.text("지상에서 ", NamedTextColor.WHITE).append(Component.text("방패", NamedTextColor.YELLOW)).append(Component.text("를 든 상태로 빠르게 두 번 웅크려", NamedTextColor.WHITE)),
             Component.text("전방으로 돌진합니다. 부딪힌 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게", NamedTextColor.WHITE)),
             Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN)
                 .append(Component.text("의 피해를 주고 ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getInt("fireTicks") / 20.0}초", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getInt("fireTicks") / 20.0}", NamedTextColor.GREEN).append(Component.text("초", NamedTextColor.WHITE)))
                 .append(Component.text("간 불태웁니다.", NamedTextColor.WHITE)),
             Component.text("부딪힌 뒤 전방 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("fireRange")}칸", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getInt("fireRange")}", NamedTextColor.GREEN).append(Component.text("칸", NamedTextColor.WHITE)))
                 .append(Component.text("에 불을 지핍니다.", NamedTextColor.WHITE)),
             Component.text("쿨타임: ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("cooldown") / 1000.0}초", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getInt("cooldown") / 1000.0}", NamedTextColor.GREEN).append(Component.text("초", NamedTextColor.WHITE)))
         )
     }
 

@@ -24,9 +24,14 @@ object HotPickaxe : Ability(
 
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("곡괭이로 광물을 캐면 익혀서 나옵니다.", NamedTextColor.WHITE),
-            Component.text("적을 곡괭이로 공격하면 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("fireTicks") / 20.0}초", NamedTextColor.GREEN))
+            Component.text("곡괭이", NamedTextColor.YELLOW)
+                .append(Component.text("로 광물을 캐면 익혀서 나옵니다.", NamedTextColor.WHITE)),
+            Component.text("적", NamedTextColor.RED)
+                .append(Component.text("을 ", NamedTextColor.WHITE))
+                .append(Component.text("곡괭이", NamedTextColor.YELLOW))
+                .append(Component.text("로 공격하면 ", NamedTextColor.WHITE))
+                .append(Component.text("${config!!.getInt("fireTicks") / 20.0}", NamedTextColor.GREEN))
+                .append(Component.text("초", NamedTextColor.WHITE))
                 .append(Component.text(" 간 불태웁니다.", NamedTextColor.WHITE))
         )
     }

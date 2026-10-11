@@ -66,26 +66,41 @@ abstract class HawkEyeAbility(
     protected open val countedQuest: Quest? get() = null
 
     protected fun effectLines(): List<Component> = listOf(
-        Component.text("검을 우클릭하면 주변 ", NamedTextColor.WHITE)
+        Component.text("검", NamedTextColor.YELLOW)
+            .append(Component.text("을 우클릭하면 주변 ", NamedTextColor.WHITE))
             .append(Component.text("${config!!.getDouble("horizontal_range")}", NamedTextColor.GREEN))
             .append(Component.text("블럭 안의 무작위 ", NamedTextColor.WHITE))
             .append(Component.text("적", NamedTextColor.RED))
             .append(Component.text(" 하나에게", NamedTextColor.WHITE)),
         Component.text("", NamedTextColor.WHITE)
-            .append(Component.text("${config!!.getInt("glow_ticks") / 20.0}초", NamedTextColor.GREEN))
-            .append(Component.text(" 동안 발광을 부여합니다.", NamedTextColor.WHITE)),
-        Component.text("발광이 부여된 적을 직접 처치하면 전리품이 ", NamedTextColor.WHITE)
-            .append(Component.text("${config!!.getInt("drop_multiplier")}배", NamedTextColor.GREEN))
+            .append(Component.text("${config!!.getInt("glow_ticks") / 20.0}", NamedTextColor.GREEN))
+            .append(Component.text("초", NamedTextColor.WHITE))
+            .append(Component.text(" 동안 ", NamedTextColor.WHITE))
+            .append(Component.text("발광", NamedTextColor.DARK_RED))
+            .append(Component.text("을 부여합니다.", NamedTextColor.WHITE)),
+        Component.text("발광", NamedTextColor.DARK_RED)
+            .append(Component.text("이 부여된 ", NamedTextColor.WHITE))
+            .append(Component.text("적", NamedTextColor.RED))
+            .append(Component.text("을 직접 처치하면 전리품이 ", NamedTextColor.WHITE))
+            .append(Component.text("${config!!.getInt("drop_multiplier")}", NamedTextColor.GREEN))
+            .append(Component.text("배", NamedTextColor.WHITE))
             .append(Component.text(",", NamedTextColor.WHITE)),
         Component.text("경험치가 ", NamedTextColor.WHITE)
-            .append(Component.text("${config!!.getInt("exp_multiplier")}배", NamedTextColor.GREEN))
+            .append(Component.text("${config!!.getInt("exp_multiplier")}", NamedTextColor.GREEN))
+            .append(Component.text("배", NamedTextColor.WHITE))
             .append(Component.text("로 증가하며, 무작위 아이템 ", NamedTextColor.WHITE))
-            .append(Component.text("${config!!.getInt("extra_items")}개", NamedTextColor.GREEN))
+            .append(Component.text("${config!!.getInt("extra_items")}", NamedTextColor.GREEN))
+            .append(Component.text("개", NamedTextColor.WHITE))
             .append(Component.text("를 추가로 떨어뜨립니다.", NamedTextColor.WHITE)),
         Component.text("주의! 플레이어의 전리품은 늘어나지 않습니다.", NamedTextColor.YELLOW),
         Component.text("쿨타임: ", NamedTextColor.WHITE)
-            .append(Component.text("${config!!.getInt("cooldown_ticks") / 20.0}초", NamedTextColor.GREEN))
-            .append(Component.text(" (모든 검 공유, 주변에 적이 없으면 소모되지 않음)", NamedTextColor.WHITE))
+            .append(Component.text("${config!!.getInt("cooldown_ticks") / 20.0}", NamedTextColor.GREEN))
+            .append(Component.text("초", NamedTextColor.WHITE))
+            .append(Component.text(" (모든 ", NamedTextColor.WHITE))
+            .append(Component.text("검", NamedTextColor.YELLOW))
+            .append(Component.text(" 공유, 주변에 ", NamedTextColor.WHITE))
+            .append(Component.text("적", NamedTextColor.RED))
+            .append(Component.text("이 없으면 소모되지 않음)", NamedTextColor.WHITE))
     )
 
     @EventHandler(priority = EventPriority.MONITOR)

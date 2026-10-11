@@ -25,7 +25,8 @@ object AdaptiveDefense : Ability(
         listOf(
             Component.text("같은 유형의 피해를 연속해서 받을 때마다", NamedTextColor.WHITE),
             Component.text("피해량이 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getDouble("damage_reduction") * 100}%", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getDouble("damage_reduction") * 100}", NamedTextColor.GREEN))
+                .append(Component.text("%", NamedTextColor.WHITE))
                 .append(Component.text("로 곱연산 감소합니다.", NamedTextColor.WHITE)),
         )
     }

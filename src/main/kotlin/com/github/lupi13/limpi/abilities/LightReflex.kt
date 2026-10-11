@@ -31,7 +31,7 @@ object LightReflex : DodgeVariant(
             Component.text("회피 후 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("window") / 1000.0}", NamedTextColor.GREEN))
                 .append(Component.text("초 동안 받는 피해가 ", NamedTextColor.WHITE))
-                .append(Component.text("${Math.round((1 - config!!.getDouble("damage_multiplier")) * 1000) / 10.0}%", NamedTextColor.GREEN))
+                .append(Component.text("${Math.round((1 - config!!.getDouble("damage_multiplier")) * 1000) / 10.0}", NamedTextColor.GREEN).append(Component.text("%", NamedTextColor.WHITE)))
                 .append(Component.text(" 감소합니다.", NamedTextColor.WHITE)),
             cooldownLine()
         )

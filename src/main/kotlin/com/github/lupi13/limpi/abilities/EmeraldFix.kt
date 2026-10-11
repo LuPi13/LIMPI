@@ -23,7 +23,9 @@ object EmeraldFix : Ability(
     relatedQuest = listOf(com.github.lupi13.limpi.quests.MasterSmith)
 ){
     override val details: List<Component> get() = listOf(
-            Component.text("인벤토리에서 커서에 에메랄드를 들고 ", NamedTextColor.WHITE),
+            Component.text("인벤토리에서 커서에 ", NamedTextColor.WHITE)
+                .append(Component.text("에메랄드", NamedTextColor.YELLOW))
+                .append(Component.text("를 들고 ", NamedTextColor.WHITE)),
             Component.text("수리하고 싶은 아이템을 우클릭하면", NamedTextColor.WHITE),
             Component.text("내구도를 ", NamedTextColor.WHITE)
                 .append(Component.text("${RepairPolicy.amount(config?.get("repair"))}", NamedTextColor.GREEN))

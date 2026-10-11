@@ -43,12 +43,19 @@ object InvisibleDodge : DodgeVariant(
             inheritLine(),
             Component.text("회피 후 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("invisible_ticks") / 20.0}", NamedTextColor.GREEN))
-                .append(Component.text("초 동안 은신합니다.", NamedTextColor.WHITE)),
-            Component.text("은신 중에는 갑옷이 다른 플레이어에게 보이지 않고,", NamedTextColor.WHITE),
+                .append(Component.text("초 동안 ", NamedTextColor.WHITE))
+                .append(Component.text("은신", NamedTextColor.BLUE))
+                .append(Component.text("합니다.", NamedTextColor.WHITE)),
+            Component.text("은신", NamedTextColor.BLUE)
+                .append(Component.text(" 중에는 ", NamedTextColor.WHITE))
+                .append(Component.text("갑옷", NamedTextColor.YELLOW))
+                .append(Component.text("이 다른 플레이어에게 보이지 않고,", NamedTextColor.WHITE)),
             Component.text("주변 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getDouble("target_clear_range")}", NamedTextColor.GREEN))
                 .append(Component.text("블록 내 몹이 당신을 놓칩니다.", NamedTextColor.WHITE)),
-            Component.text("공격하거나 피해를 입으면 은신이 풀립니다.", NamedTextColor.WHITE),
+            Component.text("공격하거나 피해를 입으면 ", NamedTextColor.WHITE)
+                .append(Component.text("은신", NamedTextColor.BLUE))
+                .append(Component.text("이 풀립니다.", NamedTextColor.WHITE)),
             cooldownLine()
         )
     }

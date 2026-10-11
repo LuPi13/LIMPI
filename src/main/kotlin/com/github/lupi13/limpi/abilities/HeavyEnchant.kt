@@ -14,9 +14,12 @@ object HeavyEnchant : Ability(
     codeName = "heavy_enchant",
     material = org.bukkit.Material.ENCHANTED_BOOK,
     description = listOf(
-        Component.text("마법부여대에서 부여받은 모든 마법부여의 등급이", NamedTextColor.WHITE),
+        Component.text("마법부여대", NamedTextColor.YELLOW)
+            .append(Component.text("에서 부여받은 모든 마법부여의 등급이", NamedTextColor.WHITE)),
         Component.text("강제로 1 높게 부여됩니다. 또, 붙일 수 없는", NamedTextColor.WHITE),
-        Component.text("일부 마법부여를 모루에서 강제로 붙입니다.", NamedTextColor.WHITE)
+        Component.text("일부 마법부여를 ", NamedTextColor.WHITE)
+            .append(Component.text("모루", NamedTextColor.YELLOW))
+            .append(Component.text("에서 강제로 붙입니다.", NamedTextColor.WHITE))
     )
 ){
     override val details: List<Component> by lazy {

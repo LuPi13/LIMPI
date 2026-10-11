@@ -32,12 +32,18 @@ object FocusBow : Ability(
 ) {
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("공중에서 활시위를 당기면 시야가 확대되고", NamedTextColor.WHITE),
+            Component.text("공중에서 ", NamedTextColor.WHITE)
+                .append(Component.text("활", NamedTextColor.YELLOW))
+                .append(Component.text("시위를 당기면 시야가 확대되고", NamedTextColor.WHITE)),
             Component.text("제자리에서 아주 느리게 낙하합니다.", NamedTextColor.WHITE),
             Component.text("처음 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("brake_ticks") / 20.0}초", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getInt("brake_ticks") / 20.0}", NamedTextColor.GREEN))
+                .append(Component.text("초", NamedTextColor.WHITE))
                 .append(Component.text(" 동안 서서히 감속한 뒤 멈춰 섭니다.", NamedTextColor.WHITE)),
-            Component.text("화살을 쏘거나, 활시위를 놓거나, 착지하면 끝나며", NamedTextColor.WHITE),
+            Component.text("화살", NamedTextColor.YELLOW)
+                .append(Component.text("을 쏘거나, ", NamedTextColor.WHITE))
+                .append(Component.text("활", NamedTextColor.YELLOW))
+                .append(Component.text("시위를 놓거나, 착지하면 끝나며", NamedTextColor.WHITE)),
             Component.text("집중하는 동안 쌓인 낙하 거리는 초기화됩니다.", NamedTextColor.WHITE)
         )
     }

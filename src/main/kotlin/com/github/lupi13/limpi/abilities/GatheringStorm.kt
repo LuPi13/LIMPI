@@ -35,17 +35,22 @@ object GatheringStorm : Ability(
     override val details: List<Component> by lazy {
         listOf(
             Component.text("집전", NamedTextColor.AQUA)
-                .append(Component.text(" 삼지창의 투사 속도가 ", NamedTextColor.WHITE))
+                .append(Component.text(" ", NamedTextColor.WHITE))
+                .append(Component.text("삼지창", NamedTextColor.YELLOW))
+                .append(Component.text("의 투사 속도가 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("projection_velocity")}", NamedTextColor.GREEN))
                 .append(Component.text("배 증가합니다.", NamedTextColor.WHITE)),
             Component.text("밤 또는 비/뇌우 날씨중에 ", NamedTextColor.WHITE)
                 .append(Component.text("집전", NamedTextColor.AQUA))
-                .append(Component.text(" 삼지창이 부딪힌 곳에 번개 폭풍을 생성합니다.", NamedTextColor.WHITE)),
+                .append(Component.text(" ", NamedTextColor.WHITE))
+                .append(Component.text("삼지창", NamedTextColor.YELLOW))
+                .append(Component.text("이 부딪힌 곳에 번개 폭풍을 생성합니다.", NamedTextColor.WHITE)),
             Component.text("폭풍의 반경은 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getDouble("storm_radius")}", NamedTextColor.GREEN))
                 .append(Component.text("블럭 이며, ", NamedTextColor.WHITE))
                 .append(Component.text("매 틱마다 "))
-                .append(Component.text("${config!!.getDouble("damage_probability") * 100}%", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getDouble("damage_probability") * 100}", NamedTextColor.GREEN))
+                .append(Component.text("%", NamedTextColor.WHITE))
                 .append(Component.text(" 확률로 ", NamedTextColor.WHITE))
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게 ", NamedTextColor.WHITE))

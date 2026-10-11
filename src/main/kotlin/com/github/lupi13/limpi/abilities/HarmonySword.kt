@@ -32,9 +32,12 @@ object HarmonySword : Ability(
 
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("검으로 ", NamedTextColor.WHITE)
+            Component.text("검", NamedTextColor.YELLOW)
+                .append(Component.text("으로 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("required_damage")}", NamedTextColor.GREEN))
-                .append(Component.text("의 피해를 누적하면, 다음에 발사하는 화살이 ", NamedTextColor.WHITE))
+                .append(Component.text("의 피해를 누적하면, 다음에 발사하는 ", NamedTextColor.WHITE))
+                .append(Component.text("화살", NamedTextColor.YELLOW))
+                .append(Component.text("이 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("damage_amplifier")}", NamedTextColor.GREEN))
                 .append(Component.text("배의 피해를 입힙니다.", NamedTextColor.WHITE))
         )

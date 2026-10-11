@@ -43,18 +43,26 @@ object BladeLeaper : Ability(
 
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("오른손으로 검을 들고 우클릭하면 전방으로 검을 던집니다.", NamedTextColor.WHITE),
-            Component.text("검이 어딘가에 닿거나, 최대 ", NamedTextColor.WHITE)
+            Component.text("오른손으로 ", NamedTextColor.WHITE)
+                .append(Component.text("검", NamedTextColor.YELLOW))
+                .append(Component.text("을 들고 우클릭하면 전방으로 ", NamedTextColor.WHITE))
+                .append(Component.text("검", NamedTextColor.YELLOW))
+                .append(Component.text("을 던집니다.", NamedTextColor.WHITE)),
+            Component.text("검", NamedTextColor.YELLOW)
+                .append(Component.text("이 어딘가에 닿거나, 최대 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("throwLifeTimeTicks") / 20.0}", NamedTextColor.GREEN))
                 .append(Component.text("초를 날아간 후,", NamedTextColor.WHITE)),
-            Component.text("검이 있던 위치로 점멸하여 ", NamedTextColor.WHITE)
+            Component.text("검", NamedTextColor.YELLOW)
+                .append(Component.text("이 있던 위치로 점멸하여 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("damageRadius")}", NamedTextColor.GREEN))
                 .append(Component.text("칸 내 ", NamedTextColor.WHITE))
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN))
                 .append(Component.text("의 피해를 줍니다.", NamedTextColor.WHITE)),
-            Component.text("쿨타임: 각 검마다 ")
+            Component.text("쿨타임: 각 ")
+                .append(Component.text("검", NamedTextColor.YELLOW))
+                .append(Component.text("마다 "))
                 .append(Component.text("${config!!.getInt("coolTimeTicks") / 20.0}", NamedTextColor.GREEN))
                 .append(Component.text("초", NamedTextColor.WHITE))
         )

@@ -46,10 +46,10 @@ object ZombieKing : Ability(
         listOf(
             Component.text("언데드 몹이 나를 적대하지 않습니다.", NamedTextColor.WHITE),
             Component.text("낮 시간에 모자 슬롯에 장착된 아이템이 없고 머리 위로 블럭이 없다면 불에 탑니다.", NamedTextColor.WHITE),
-            Component.text("침대에서 잠을 잘 수 없으며 오직 스폰 포인트 역할만을 합니다.", NamedTextColor.WHITE),
-            Component.text("즉시 회복", NamedTextColor.DARK_BLUE)
+            Component.text("침대", NamedTextColor.YELLOW).append(Component.text("에서 잠을 잘 수 없으며 오직 스폰 포인트 역할만을 합니다.", NamedTextColor.WHITE)),
+            Component.text("즉시 회복", NamedTextColor.BLUE)
                 .append(Component.text(" 효과와 ", NamedTextColor.WHITE))
-                .append(Component.text("즉시 피해", NamedTextColor.DARK_BLUE))
+                .append(Component.text("즉시 피해", NamedTextColor.DARK_RED))
                 .append(Component.text(" 효과가 서로 바뀌어 적용됩니다.", NamedTextColor.WHITE)),
             Component.text("방어력이 ", NamedTextColor.WHITE)
                 .append(Component.text(config!!.getDouble("armor_point").let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() }, NamedTextColor.GREEN))
@@ -65,7 +65,7 @@ object ZombieKing : Ability(
                 .append(Component.text("을 공격 대상으로 삼습니다.", NamedTextColor.WHITE)),
             Component.text("적", NamedTextColor.RED)
                 .append(Component.text("에게 피해를 입을 때, ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getDouble("reinforcement_probability") * 100}%", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getDouble("reinforcement_probability") * 100}", NamedTextColor.GREEN).append(Component.text("%", NamedTextColor.WHITE)))
                 .append(Component.text("의 확률로 주변에 해당 ", NamedTextColor.WHITE))
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("을 공격 대상으로 삼는 좀비를 소환합니다.", NamedTextColor.WHITE))

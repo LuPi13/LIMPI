@@ -48,15 +48,15 @@ object Transcendence : Ability(
 
     override val details: List<Component> by lazy {
         listOf(
-            Component.text("검으로 ", NamedTextColor.WHITE)
+            Component.text("검", NamedTextColor.YELLOW).append(Component.text("으로 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("sword_required_damage")}", NamedTextColor.GREEN))
-                .append(Component.text(", 화살로 ", NamedTextColor.WHITE))
+                .append(Component.text(", ", NamedTextColor.WHITE)).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("로 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("arrow_required_damage")}", NamedTextColor.GREEN))
                 .append(Component.text("의 피해를 누적시켜 ", NamedTextColor.WHITE))
                 .append(Component.text("통달", NamedTextColor.LIGHT_PURPLE))
                 .append(Component.text(" 게이지를 채웁니다.", NamedTextColor.WHITE)),
             Component.text("통달", NamedTextColor.LIGHT_PURPLE)
-                .append(Component.text(" 게이지가 다 찼을 때, 검을 들고 ", NamedTextColor.WHITE))
+                .append(Component.text(" 게이지가 다 찼을 때, ", NamedTextColor.WHITE)).append(Component.text("검", NamedTextColor.YELLOW)).append(Component.text("을 들고 ", NamedTextColor.WHITE))
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
                 .append(Component.text("키를 눌러 ", NamedTextColor.WHITE))
                 .append(Component.text("통달 상태", NamedTextColor.LIGHT_PURPLE))
@@ -65,23 +65,23 @@ object Transcendence : Ability(
                 .append(Component.text(" (", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("duration_ticks") / 20.0}", NamedTextColor.GREEN))
                 .append(Component.text("초)", NamedTextColor.WHITE)),
-            Component.text("  -검과 화살의 피해가 각각 ", NamedTextColor.WHITE)
+            Component.text("  -", NamedTextColor.WHITE).append(Component.text("검", NamedTextColor.YELLOW)).append(Component.text("과 ", NamedTextColor.WHITE)).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("의 피해가 각각 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("sword_damage_amplifier")}", NamedTextColor.GREEN))
                 .append(Component.text("배, ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("arrow_damage_amplifier")}", NamedTextColor.GREEN))
                 .append(Component.text("배 증가합니다.", NamedTextColor.WHITE)),
             Component.text("  -", NamedTextColor.WHITE)
-                .append(Component.text("저항 ${config!!.getInt("resistance_level")}", NamedTextColor.BLUE))
+                .append(Component.text("저항 ", NamedTextColor.BLUE)).append(Component.text("${config!!.getInt("resistance_level")}", NamedTextColor.GREEN))
                 .append(Component.text(", ", NamedTextColor.WHITE))
-                .append(Component.text("신속 ${config!!.getInt("speed_level")}", NamedTextColor.BLUE))
+                .append(Component.text("신속 ", NamedTextColor.BLUE)).append(Component.text("${config!!.getInt("speed_level")}", NamedTextColor.GREEN))
                 .append(Component.text(" 효과를 얻습니다.", NamedTextColor.WHITE)),
-            Component.text("  -검을 휘두를 때 무작위 편차를 가진 ", NamedTextColor.WHITE)
+            Component.text("  -", NamedTextColor.WHITE).append(Component.text("검", NamedTextColor.YELLOW)).append(Component.text("을 휘두를 때 무작위 편차를 가진 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getInt("additional_arrow_count")}", NamedTextColor.GREEN))
-                .append(Component.text("개의 화살을 발사합니다.", NamedTextColor.WHITE)),
-            Component.text("  -화살에 무한한 ", NamedTextColor.WHITE)
+                .append(Component.text("개의 ", NamedTextColor.WHITE)).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("을 발사합니다.", NamedTextColor.WHITE)),
+            Component.text("  -", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("에 무한한 ", NamedTextColor.WHITE))
                 .append(Component.text("관통", NamedTextColor.AQUA))
                 .append(Component.text(" 효과가 부여됩니다.", NamedTextColor.WHITE)),
-            Component.text("  -화살이 날아가는 동안 검격이 발생하여 주변의 ", NamedTextColor.WHITE)
+            Component.text("  -", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("이 날아가는 동안 검격이 발생하여 주변의 ", NamedTextColor.WHITE))
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("additional_sword_damage")}", NamedTextColor.GREEN))

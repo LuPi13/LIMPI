@@ -26,7 +26,7 @@ object PickPocket : Ability(
     codeName = "pick_pocket",
     material = Material.FISHING_ROD,
     description = listOf(
-        Component.text("낚싯대로 엔티티를 당길 때, 해당 대상의", NamedTextColor.WHITE),
+        Component.text("낚싯대", NamedTextColor.YELLOW).append(Component.text("로 엔티티를 당길 때, 해당 대상의", NamedTextColor.WHITE)),
         Component.text("인벤토리에서 무작위 아이템을 하나 낚아챕니다.", NamedTextColor.WHITE)
     ),
 ) {

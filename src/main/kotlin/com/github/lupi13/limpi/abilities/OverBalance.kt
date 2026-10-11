@@ -46,9 +46,9 @@ object OverBalance : Ability(
         listOf(
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
-                .append(Component.text("키를 눌러 레일건 사격을 시작합니다.", NamedTextColor.WHITE)),
+                .append(Component.text("키를 눌러 ", NamedTextColor.WHITE).append(Component.text("레일건", NamedTextColor.YELLOW)).append(Component.text(" 사격을 시작합니다.", NamedTextColor.WHITE))),
             Component.text("${config!!.getInt("shootingDelayTicks") / 20.0}", NamedTextColor.GREEN)
-                .append(Component.text("초 간 움직이지 못하고 레일건 사격을 준비합니다.", NamedTextColor.WHITE)),
+                .append(Component.text("초 간 움직이지 못하고 ", NamedTextColor.WHITE).append(Component.text("레일건", NamedTextColor.YELLOW)).append(Component.text(" 사격을 준비합니다.", NamedTextColor.WHITE))),
             Component.text("이 후, ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게 ", NamedTextColor.WHITE))

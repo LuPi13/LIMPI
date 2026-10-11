@@ -44,7 +44,7 @@ object ShieldStrikePlus : Ability(
         listOf(
             Component.text("방패강타", NamedTextColor.GRAY)
                 .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),
-            Component.text("지상에서 방패를 든 상태로 빠르게 두 번 웅크려", NamedTextColor.WHITE),
+            Component.text("지상에서 ", NamedTextColor.WHITE).append(Component.text("방패", NamedTextColor.YELLOW)).append(Component.text("를 든 상태로 빠르게 두 번 웅크려", NamedTextColor.WHITE)),
             Component.text("더 빠르고 멀리 돌진합니다. 부딪힌 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게", NamedTextColor.WHITE)),
@@ -54,7 +54,7 @@ object ShieldStrikePlus : Ability(
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("을 처치하면", NamedTextColor.WHITE)),
             Component.text("쿨타임(", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getInt("cooldown") / 1000.0}초", NamedTextColor.GREEN))
+                .append(Component.text("${config!!.getInt("cooldown") / 1000.0}", NamedTextColor.GREEN).append(Component.text("초", NamedTextColor.WHITE)))
                 .append(Component.text(")이 초기화됩니다.", NamedTextColor.WHITE))
         )
     }

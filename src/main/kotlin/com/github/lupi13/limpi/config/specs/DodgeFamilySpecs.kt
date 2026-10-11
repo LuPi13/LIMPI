@@ -44,12 +44,12 @@ object DodgeFamilySpecs {
             number("target_clear_range", 20.0, 0.0, 128.0)
         )),
         "critical_dodge" to AbilitySpec(listOf(
-            integer("cooldown", 10000),
+            integer("cooldown", 5000),
             number("velocity", 2.0, 0.000001, 64.0),
             flag("allowJump", false),
             integer("window", 3000),
             number("damage_multiplier", 1.5, 0.0, 64.0),
-            integer("kill_cooldown_reduction", 5000)
+            integer("kill_cooldown_reduction", 2500)
         )),
         "winter_shroud" to AbilitySpec(listOf(
             integer("cooldown", 10000),

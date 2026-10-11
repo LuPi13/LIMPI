@@ -15,7 +15,8 @@ object QuestManager {
     val quests = listOf(
         ExpAbsorber, DoEndermansDreamOfFreeingEnd, UndeadCooperation, LineBetweenSwordAndArrow,
         DodgeMaster, YourDodge, EnoughDodge, ShouldDodge, DodgeCliche, ColdDodge,
-        PerfectDistance, FireStrike, MasterSmith, MoebiusReactor, IntoTheDark
+        PerfectDistance, FireStrike, MasterSmith, MoebiusReactor, IntoTheDark,
+        GhostStab, GiveAll, NogadaKing, TriggerFinger, NoHurt, BoldForBoom, LightTime, DarkTime
     )
 
 
@@ -54,6 +55,13 @@ object QuestManager {
     /** Count one step of a counted quest (e.g. "use dodge 100 times"); completes it when [target] is reached. */
     fun progress(player: Player, quest: Quest, counter: String, target: Long) {
         notify(player, quest, FileManager.quest.progress(java.util.UUID.randomUUID(), player.uniqueId, counter, target,
+            quest.codeName, quest.rewardAbility.codeName))
+    }
+
+    /** Add [amount] (non-negative) to an accumulated quest counter; completes it when [target] is reached. */
+    fun progress(player: Player, quest: Quest, counter: String, amount: Long, target: Long) {
+        if (amount <= 0) return
+        notify(player, quest, FileManager.quest.progress(java.util.UUID.randomUUID(), player.uniqueId, counter, amount, target,
             quest.codeName, quest.rewardAbility.codeName))
     }
 

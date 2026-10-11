@@ -196,5 +196,7 @@ object AbilitySpecs {
             number("damage_reduction", 0.8, 0.0, 1.0)
         ))
     ) + com.github.lupi13.limpi.config.specs.DodgeFamilySpecs.all + com.github.lupi13.limpi.config.specs.SmithAndShieldSpecs.all +
-        com.github.lupi13.limpi.config.specs.CloakSpecs.all
+        com.github.lupi13.limpi.config.specs.CloakSpecs.all + com.github.lupi13.limpi.config.specs.StealthSpecs.all +
+        com.github.lupi13.limpi.config.specs.ArcherySpecs.all + com.github.lupi13.limpi.config.specs.HandCannonSpecs.all +
+        com.github.lupi13.limpi.config.specs.TimeLeapSpecs.all
 }

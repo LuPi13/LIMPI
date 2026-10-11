@@ -115,4 +115,26 @@ class QuestRewardsTest {
             assertEquals(3, data.getLong("quest.dodge_count")); assertEquals(listOf("dodge_plus"), data.getStringList("unlockedAbilities"))
         }
     }
+    @Test fun `accumulated quest adds amounts, caps at its target and replays never add twice`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\n") }
+            assertFalse(service(store).progress(UUID.randomUUID(), owner, "healed", 1200, 2000, "light_time", "time_leaper_plus").newCompletion)
+            assertFalse(service(store).progress(UUID.randomUUID(), owner, "healed", 0, 2000, "light_time", "time_leaper_plus").newCompletion)
+            val request = UUID.randomUUID()
+            assertEquals(QuestRewardResult(true, true, false), service(store).progress(request, owner, "healed", 900, 2000, "light_time", "time_leaper_plus"))
+            assertTrue(service(store).progress(request, owner, "healed", 900, 2000, "light_time", "time_leaper_plus").replayed)
+            assertThrows(TransactionIdentityConflict::class.java) { service(store).progress(request, owner, "healed", 901, 2000, "light_time", "time_leaper_plus") }
+            assertFalse(service(store).progress(UUID.randomUUID(), owner, "healed", Long.MAX_VALUE, 2000, "light_time", "time_leaper_plus").newCompletion)
+            val data = YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner)))
+            assertEquals(2000, data.getLong("quest.healed")); assertEquals(listOf("time_leaper_plus"), data.getStringList("unlockedAbilities"))
+            assertThrows(IllegalArgumentException::class.java) { service(store).progress(UUID.randomUUID(), owner, "healed", -1, 2000, "light_time", "time_leaper_plus") }
+        }
+    }
+    @Test fun `accumulated quest near Long range never overflows`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  lost: 9223372036854775800\n") }
+            assertTrue(service(store).progress(UUID.randomUUID(), owner, "lost", Long.MAX_VALUE, Long.MAX_VALUE, "dark_time", "chronobreak").newCompletion)
+            assertEquals(Long.MAX_VALUE, YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getLong("quest.lost"))
+        }
+    }
 }

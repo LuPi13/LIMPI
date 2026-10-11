@@ -62,6 +62,29 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
         })
     }
 
+    /**
+     * Add a non-negative [amount] to the durable counter `quest.<counter>` (capped at [target]); reaching [target]
+     * completes [quest] and unlocks [ability] in the same transaction. Replaying [request] never counts twice.
+     */
+    fun progress(request: UUID, owner: UUID, counter: String, amount: Long, target: Long, quest: String, ability: String): QuestRewardResult {
+        require(counter.matches(Regex("[a-z0-9_]+")) && amount >= 0 && target > 0 && quest.isNotBlank() && ability.isNotBlank())
+        return result(store.execute(request, BankService.fingerprint("QUEST_PROGRESS_AMOUNT", owner.toString(), counter,
+            amount.toString(), target.toString(), quest, ability)) { tx ->
+            val profile = Accounts.read(tx, owner)
+            val raw = profile.get("quest.$counter")
+            require(raw == null || raw is Int || raw is Long) { "Non-integral quest progress" }
+            val old = (raw as Number?)?.toLong() ?: 0L
+            require(old >= 0)
+            val updated = if (old >= target) old else Math.addExact(old, minOf(amount, target - old))
+            profile.set("quest.$counter", updated)
+            tx.put(SqliteProfilePersistence.key(owner), profile.saveToString())
+            val flags = if (updated >= target) reward(tx, owner, quest, ability) else false to false
+            YamlFiles.parse(receipt(owner, quest, ability, flags.first, flags.second)).apply {
+                set("counter", counter); set("amount", amount); set("previous", old); set("current", updated)
+            }.saveToString()
+        })
+    }
+
     private fun reward(tx: StateTransaction, owner: UUID, quest: String, ability: String): Pair<Boolean, Boolean> {
         val key = "quest_reward/$owner/$quest"
         tx.get(key)?.let {

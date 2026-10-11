@@ -323,6 +323,12 @@
 - YAML 저장소 기반 캐시 시험은 SQLite persistence의 `CachedPlayerRepositoryTest`로 옮겼다.
 - **324개** 시험 통과(실패/에러/스킵 0), test build 성공.
 
+### 2026-10-11 / 첫 서버 시험: 26.1 플레이어 파일 위치
+
+- **서버 실패(첫 접속):** 초기 지급 probe가 `world/dimensions/minecraft/overworld/playerdata/<UUID>.dat`에서 `NoSuchFileException`으로 실패해 APPLYING이 남고 매 접속 kick되었다. 26.1부터 플레이어 파일은 `<월드>/players/data/`에 저장되는데 기본 경로를 주 월드 폴더 기준으로 계산했다.
+- 수정: `PlayerDataDirectory`가 비어 있으면 `level.dat` 루트의 `players/data`, `playerdata`, 주 월드 폴더 `playerdata`를 후보로 두고, 첫 probe가 실제로 나타난 곳을 확정해 이후 그 경로만 쓴다. 확정 전 여러 후보에 같은 파일이 있으면 거부한다. 슬롯 변경 전 probe 단계에서 실패했으므로 기존 APPLYING은 다음 fresh login에서 before 상태로 재적용된다.
+- 시험 2개 추가, **326개** 통과. 서버 재확인 필요.
+
 ## 항목별 진행 상태
 
 | 계획 ID | 구현 상태 | 남은 내용 |

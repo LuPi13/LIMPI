@@ -8,7 +8,7 @@
 
 1. 새 서버를 준비한다. 이전 버전 LIMPI 데이터(`playerData/`, `financial/market.yml` 등)는 넣지 않는다. 이 플러그인은 이전 데이터를 가져오지 않는다.
 2. Java 25, Paper 26.3 build 169 이상. `build/libs/LIMPI-1.0.0.jar`만 `plugins/`에 넣는다. operations JAR은 서버 플러그인이 아니다.
-3. 별도 저장 환경이면 `config.yml`의 `PlayerDataDirectory`를 실제 playerdata 위치로 지정하고, enable 로그의 `Delivery checkpoint directory`가 맞는지 확인한다.
+3. 별도 저장 환경이면 `config.yml`의 `PlayerDataDirectory`를 실제 playerdata 위치로 지정하고, 기본값이면 첫 접속 로그 `Delivery checkpoint directory confirmed`가 `world/players/data`인지 확인한다.
 4. 강제 종료·복구 시험(3·7단계) 전에는 서버를 정상 종료하고 `plugins/LIMPI`와 월드/`playerdata`를 같은 시점으로 백업해 두면 다시 시작하기 쉽다.
 
 ## 1. enable·disable

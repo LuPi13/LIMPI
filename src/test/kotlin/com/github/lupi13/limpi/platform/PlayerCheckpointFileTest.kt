@@ -13,10 +13,10 @@ class PlayerCheckpointFileTest {
     @TempDir lateinit var directory: Path
     private val owner = UUID.randomUUID()
     private val key = "limpi:delivery_checkpoint"
-    private fun write(value: String?) {
+    private fun write(value: String?, dir: Path = directory) {
         val values = CompoundBinaryTag.builder().apply { if (value != null) putString(key, value) }.build()
         val root = CompoundBinaryTag.builder().put("BukkitValues", values).putInt("DataVersion", 1).build()
-        Files.newOutputStream(directory.resolve("$owner.dat")).use { BinaryTagIO.writer().write(root, it, BinaryTagIO.Compression.GZIP) }
+        Files.createDirectories(dir); Files.newOutputStream(dir.resolve("$owner.dat")).use { BinaryTagIO.writer().write(root, it, BinaryTagIO.Compression.GZIP) }
     }
 
     @Test fun `checkpoint is read from a real gzip NBT player file and confirmed only for the matching UUID`() {
@@ -43,5 +43,25 @@ class PlayerCheckpointFileTest {
         assertThrows(Exception::class.java) { PlayerCheckpointFile(directory, key).read(owner) }
         write("broken UUID")
         assertThrows(IllegalArgumentException::class.java) { PlayerCheckpointFile(directory, key).read(owner) }
+    }
+
+    @Test fun `26_1 layout is found by where the saved probe appears and then locked in`() {
+        val modern = directory.resolve("players/data"); val worldLocal = directory.resolve("dimensions/minecraft/overworld/playerdata")
+        var located: Path? = null
+        val reader = PlayerCheckpointFile(listOf(worldLocal, modern), key) { located = it }
+        assertNull(reader.read(owner))
+        val probe = UUID.randomUUID(); write(probe.toString(), modern)
+        reader.confirm(owner, probe)
+        assertEquals(modern.toAbsolutePath().normalize(), located); assertEquals(probe, reader.read(owner))
+        write(UUID.randomUUID().toString(), worldLocal)
+        assertEquals(probe, reader.read(owner))
+    }
+
+    @Test fun `a player file in several unconfirmed candidates is ambiguous`() {
+        val a = directory.resolve("a"); val b = directory.resolve("b")
+        write(UUID.randomUUID().toString(), a); write(UUID.randomUUID().toString(), b)
+        val reader = PlayerCheckpointFile(listOf(a, b), key)
+        assertThrows(IllegalStateException::class.java) { reader.read(owner) }
+        assertThrows(IllegalStateException::class.java) { reader.confirm(owner, UUID.randomUUID()) }
     }
 }

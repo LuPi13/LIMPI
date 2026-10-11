@@ -9,6 +9,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
 import java.util.logging.Level
@@ -16,14 +17,27 @@ import java.util.logging.Level
 class DeliveryController(val plugin: Plugin, private val service: DeliveryService, private val escrow: MarketEscrow, private val removals: RemovalJournal,
                          private val transitions: com.github.lupi13.limpi.ability.AbilityTransitions) {
     private val checkpoint = NamespacedKey(plugin, "delivery_checkpoint")
-    private val directory = plugin.config.getString("PlayerDataDirectory")?.takeIf(String::isNotBlank)?.let { configured ->
+    private val directories = plugin.config.getString("PlayerDataDirectory")?.takeIf(String::isNotBlank)?.let { configured ->
         val path = Path.of(configured)
-        if (path.isAbsolute) path else plugin.server.worldContainer.toPath().resolve(path)
-    } ?: plugin.server.worlds.first().worldFolder.toPath().resolve("playerdata")
-    private val files = PlayerCheckpointFile(directory, checkpoint.toString())
+        listOf(if (path.isAbsolute) path else plugin.server.worldContainer.toPath().resolve(path))
+    } ?: defaultDirectories(plugin.server.worlds.first().worldFolder.toPath())
+    private val files = PlayerCheckpointFile(directories, checkpoint.toString()) {
+        plugin.logger.info("Delivery checkpoint directory confirmed: $it")
+    }
     private val blocked = mutableSetOf<UUID>()
     var afterClaim: (Player) -> Unit = {}
-    init { plugin.logger.info("Delivery checkpoint directory: ${directory.toAbsolutePath().normalize()}") }
+    init {
+        plugin.logger.info("Delivery checkpoint directory candidates: ${directories.joinToString { it.toAbsolutePath().normalize().toString() }}")
+    }
+
+    private companion object {
+        /** 26.1+ stores players at <level>/players/data; the main world folder is <level>/dimensions/minecraft/overworld. */
+        fun defaultDirectories(worldFolder: Path): List<Path> {
+            val absolute = worldFolder.toAbsolutePath().normalize()
+            val level = generateSequence(absolute) { it.parent }.firstOrNull { Files.exists(it.resolve("level.dat")) } ?: absolute
+            return listOf(level.resolve("players").resolve("data"), level.resolve("playerdata"), absolute.resolve("playerdata"))
+        }
+    }
 
     fun blocked(id: UUID) = id in blocked
     fun release(id: UUID) { blocked.remove(id); awaitingRespawn.remove(id); service.release(id) }

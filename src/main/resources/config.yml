@@ -1,6 +1,6 @@
 #=== Financial System Configuration ===#
 EnableFinancialSystem: true  # 금융 시스템 활성화 여부
-PlayerDataDirectory: ''  # 비어 있으면 첫 서버 월드의 playerdata. 별도 저장 환경에서는 서버 worldContainer 기준 경로 또는 절대 경로
+PlayerDataDirectory: ''  # 비어 있으면 자동 탐지(26.1+: <월드>/players/data). 별도 저장 환경에서는 서버 worldContainer 기준 경로 또는 절대 경로
 InitialMoney: 10000  # 첫 소지금
 DefaultShopRatio: 5  # 기본 상점 비율(미사용)
 StockMinimumRatio: 0.7  # 주식의 변동 최소 배율

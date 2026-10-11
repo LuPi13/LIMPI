@@ -21,7 +21,7 @@
 
 저장된 checkpoint는 UUID이지만 live PDC의 값은 증거가 아니다. 슬롯을 바꾼 뒤 메모리 PDC만 바뀌고 playerdata 저장이 실패할 수 있다. `PaperDeliveryInventory`는 먼저 probe를 실제 파일에 저장·확인한 후 슬롯을 바꾸고 해당 시도의 checkpoint를 저장·확인한다. `PlayerCheckpointFile`은 `.dat`를 force하고 gzip NBT의 `BukkitValues`를 읽는다. `Player.saveData()` 반환만으로 commit 성공이라고 간주하지 않는다. [Paper Player.saveData API](https://jd.papermc.io/paper/26.3/org/bukkit/entity/Player.html#saveData())
 
-`PlayerDataDirectory: ''`의 기본 경로는 첫 서버 월드의 `playerdata`다. startup 로그의 `Delivery checkpoint directory`를 확인한다. 별도 저장 위치가 있으면 server worldContainer 기준 상대 경로나 절대 경로를 지정한다. probe가 해당 파일에 나타나지 않으면 물품 변경을 진행하지 않는다. playerdata를 외부 DB에 저장하는 플러그인에는 이 파일 어댑터를 그대로 적용할 수 없으며 해당 저장소의 증거 어댑터가 필요하다.
+`PlayerDataDirectory: ''`이면 후보 경로를 자동으로 찾는다. Minecraft 26.1부터 플레이어 파일은 `<월드>/players/data/<UUID>.dat`이고 주 월드 폴더는 `<월드>/dimensions/minecraft/overworld`다. 후보는 `level.dat`가 있는 월드 루트의 `players/data`, `playerdata`, 주 월드 폴더의 `playerdata` 순이며, 첫 probe가 실제로 나타난 곳을 확정해 이후 그 경로만 사용한다(로그 `Delivery checkpoint directory confirmed`). 확정 전 같은 UUID 파일이 여러 후보에 있으면 모호하므로 거부한다. 별도 저장 위치가 있으면 server worldContainer 기준 상대 경로나 절대 경로를 지정한다. probe가 해당 파일에 나타나지 않으면 물품 변경을 진행하지 않는다. playerdata를 외부 DB에 저장하는 플러그인에는 이 파일 어댑터를 그대로 적용할 수 없으며 해당 저장소의 증거 어댑터가 필요하다.
 
 지급 시도마다 별도 UUID를 기록하며 관리자 retry 후에도 새 UUID를 사용한다. 인벤토리의 maxStackSize와 아이템 구성요소의 maxStackSize 중 작은 값으로 계획한다.
 

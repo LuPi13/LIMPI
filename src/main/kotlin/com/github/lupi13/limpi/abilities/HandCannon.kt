@@ -30,7 +30,6 @@ import kotlin.random.Random
 
 object HandCannon : Ability(
     grade = Grade.COMMON,
-    element = Element.NONE,
     displayName = Component.text("핸드캐논", NamedTextColor.GRAY),
     codeName = "hand_cannon",
     material = Material.INK_SAC,

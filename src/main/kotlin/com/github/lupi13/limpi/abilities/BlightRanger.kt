@@ -30,7 +30,6 @@ import kotlin.random.Random
 
 object BlightRanger : DodgeVariant(
     grade = Grade.MYTHIC,
-    element = Element.MAGIC,
     displayName = Component.text("어둠그림자 돌격대", NamedTextColor.DARK_PURPLE),
     codeName = "blight_ranger",
     material = Material.WITHER_SKELETON_SKULL,

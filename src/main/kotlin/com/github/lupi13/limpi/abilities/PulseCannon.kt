@@ -19,7 +19,6 @@ import kotlin.random.Random
 object PulseCannon : Ability(
     grade = Grade.COMMON,
     acquisition = AcquisitionType.QUEST,
-    element = Element.NONE,
     displayName = Component.text("펄스캐논", NamedTextColor.YELLOW),
     codeName = "pulse_cannon",
     material = Material.INK_SAC,

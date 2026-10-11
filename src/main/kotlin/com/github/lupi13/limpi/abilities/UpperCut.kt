@@ -10,7 +10,6 @@ import org.bukkit.util.Vector
 
 object UpperCut : Ability(
     grade = Grade.RARE,
-    element = Element.NONE,
     displayName = Component.text("어퍼컷", NamedTextColor.DARK_BLUE),
     codeName = "upper_cut",
     material = Material.IRON_GOLEM_SPAWN_EGG,

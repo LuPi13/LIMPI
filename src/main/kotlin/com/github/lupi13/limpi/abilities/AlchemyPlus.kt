@@ -12,7 +12,6 @@ import kotlin.random.Random
 
 object AlchemyPlus : Ability(
     grade = Grade.EPIC,
-    element = Element.SMITH,
     acquisition = AcquisitionType.QUEST,
     displayName = Component.text("연금술+...?", NamedTextColor.GOLD),
     codeName = "alchemy_plus",

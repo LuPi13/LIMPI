@@ -11,7 +11,6 @@ import org.bukkit.event.entity.PlayerDeathEvent
 
 object LetsBoom : Ability(
     grade = Grade.TROLL,
-    element = Element.EXPLOSIVE,
     displayName = Component.text("함께 폭⭐사하자", NamedTextColor.DARK_RED),
     codeName = "lets_boom",
     material = Material.TNT,

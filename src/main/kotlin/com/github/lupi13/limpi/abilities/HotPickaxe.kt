@@ -10,7 +10,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 
 object HotPickaxe : Ability(
     grade = Grade.RARE,
-    element = Element.SMITH,
     displayName = Component.text("뜨거운 곡괭이", NamedTextColor.DARK_RED),
     codeName = "hot_pickaxe",
     material = Material.NETHERITE_PICKAXE,

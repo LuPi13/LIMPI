@@ -17,7 +17,6 @@ import java.util.Locale.getDefault
 
 abstract class Ability(
     val grade: Grade,
-    val element: Element,
     val displayName: Component,
     val codeName: String,
     val material: Material,
@@ -74,7 +73,6 @@ abstract class Ability(
         val meta = item.itemMeta
         meta.itemModel = NamespacedKey("minecraft", material.name.lowercase(getDefault()))
         meta.itemName(displayName
-            .append(Component.text(" ")).append(element.displayElement)
             .append(Component.text(" ")).append(grade.displayGrade))
 
         val lore = mutableListOf<Component>()
@@ -95,8 +93,6 @@ abstract class Ability(
             .append(this.displayName)
             .append(Component.text(" ", NamedTextColor.WHITE))
             .append(this.grade.displayGrade)
-            .append(Component.text(" ", NamedTextColor.WHITE))
-            .append(this.element.displayElement)
             .append(Component.text("\n\n", NamedTextColor.WHITE))
 
         for (line in this.details) {
@@ -127,17 +123,4 @@ enum class Grade(val displayGrade: Component) {
     EPIC(Component.text("(EPIC)", NamedTextColor.DARK_PURPLE)),
     LEGENDARY(Component.text("(LEGENDARY)", NamedTextColor.GOLD)),
     MYTHIC(Component.text("(MYTHIC)", NamedTextColor.DARK_RED))
-}
-
-enum class Element(val displayElement: Component) {
-    NONE(Component.text("[무]", NamedTextColor.WHITE)),
-    FIRE(Component.text("[불]", NamedTextColor.RED)),
-    WATER(Component.text("[물]", NamedTextColor.BLUE)),
-    ELECTRIC(Component.text("[번개]", NamedTextColor.YELLOW)),
-    MAGIC(Component.text("[마법]", NamedTextColor.LIGHT_PURPLE)),
-    EXPLOSIVE(Component.text("[폭발]", NamedTextColor.DARK_RED)),
-    DEFENSIVE(Component.text("[방어]", NamedTextColor.GRAY)),
-    UNDEAD(Component.text("[언데드]", NamedTextColor.DARK_GREEN)),
-    UTILITY(Component.text("[유틸리티]", NamedTextColor.AQUA)),
-    SMITH(Component.text("[장인]", NamedTextColor.DARK_AQUA))
 }

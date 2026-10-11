@@ -20,7 +20,6 @@ import kotlin.math.min
 object RoaringFlame : Ability(
     grade = Grade.EPIC,
     acquisition = AcquisitionType.QUEST,
-    element = Element.FIRE,
     displayName = Component.text("포효하는 불길", NamedTextColor.RED),
     codeName = "roaring_flame",
     material = Material.BURN_POTTERY_SHERD,

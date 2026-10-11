@@ -29,7 +29,6 @@ import kotlin.random.Random
 object Transcendence : Ability(
     grade = Grade.LEGENDARY,
     acquisition = AcquisitionType.QUEST,
-    element = Element.NONE,
     displayName = Component.text("통달", NamedTextColor.LIGHT_PURPLE),
     codeName = "transcendence",
     material = Material.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE,

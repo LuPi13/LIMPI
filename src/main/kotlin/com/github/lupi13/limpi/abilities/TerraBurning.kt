@@ -12,7 +12,6 @@ import org.bukkit.event.player.PlayerLevelChangeEvent
 
 object TerraBurning : Ability(
     grade = Grade.LEGENDARY,
-    element = Element.NONE,
     displayName = Component.text("테라버닝", NamedTextColor.YELLOW),
     codeName = "terra_burning",
     material = Material.NETHER_STAR,

@@ -16,7 +16,6 @@ import kotlin.random.Random
 
 object WinterShroud : DodgeVariant(
     grade = Grade.LEGENDARY,
-    element = Element.WATER,
     displayName = Component.text("겨울의 장막", NamedTextColor.AQUA),
     codeName = "winter_shroud",
     material = Material.WHITE_DYE,

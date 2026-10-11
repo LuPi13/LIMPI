@@ -29,7 +29,6 @@ import org.bukkit.util.Vector
 
 object Dodge : Ability(
     grade = Grade.RARE,
-    element = Element.NONE,
     displayName = Component.text("회피", NamedTextColor.GRAY),
     codeName = "dodge",
     material = Material.RABBIT_FOOT,

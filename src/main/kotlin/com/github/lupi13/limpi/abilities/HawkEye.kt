@@ -41,7 +41,6 @@ abstract class HawkEyeAbility(
     private val bonusSound: () -> Sound
 ) : Ability(
     grade = grade,
-    element = Element.UTILITY,
     displayName = displayName,
     codeName = codeName,
     material = Material.MUSIC_DISC_13,

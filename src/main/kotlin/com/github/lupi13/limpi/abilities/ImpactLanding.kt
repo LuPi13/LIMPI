@@ -16,7 +16,6 @@ import kotlin.random.Random
 
 object ImpactLanding : Ability(
     grade = Grade.COMMON,
-    element = Element.NONE,
     displayName = Component.text("충격 피해 변환", NamedTextColor.GRAY),
     codeName = "impact_landing",
     material = Material.HEAVY_CORE,

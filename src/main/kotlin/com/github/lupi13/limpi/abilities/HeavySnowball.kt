@@ -12,7 +12,6 @@ import org.bukkit.event.entity.ProjectileHitEvent
 
 object HeavySnowball : Ability(
     grade = Grade.COMMON,
-    element = Element.NONE,
     displayName = Component.text("돌덩이 눈덩이", NamedTextColor.GRAY),
     codeName = "heavy_snowball",
     material = Material.SNOWBALL,

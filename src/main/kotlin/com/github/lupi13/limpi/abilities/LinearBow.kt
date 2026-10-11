@@ -17,7 +17,6 @@ import java.util.UUID
 
 object LinearBow : Ability(
     grade = Grade.EPIC,
-    element = Element.NONE,
     displayName = Component.text("직선 화살", NamedTextColor.WHITE),
     codeName = "linear_bow",
     material = Material.ARROW,

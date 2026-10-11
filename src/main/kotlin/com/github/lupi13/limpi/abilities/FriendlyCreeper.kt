@@ -10,7 +10,6 @@ import org.bukkit.event.entity.EntityTargetLivingEntityEvent
 
 object FriendlyCreeper : Ability(
     grade = Grade.COMMON,
-    element = Element.NONE,
     displayName = Component.text("우호적 크리퍼", NamedTextColor.GREEN),
     codeName = "friendly_creeper",
     material = Material.CREEPER_HEAD,

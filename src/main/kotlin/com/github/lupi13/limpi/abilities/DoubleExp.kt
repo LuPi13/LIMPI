@@ -8,7 +8,6 @@ import org.bukkit.event.player.PlayerExpChangeEvent
 
 object DoubleExp : Ability(
     grade = Grade.RARE,
-    element = Element.NONE,
     displayName = Component.text("경험치 보너스", NamedTextColor.YELLOW),
     codeName = "double_exp",
     material = Material.EXPERIENCE_BOTTLE,

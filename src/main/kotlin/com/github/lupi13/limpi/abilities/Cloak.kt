@@ -35,7 +35,6 @@ import java.util.UUID
  */
 abstract class CloakAbility(
     grade: Grade,
-    element: Element,
     displayName: Component,
     codeName: String,
     material: Material,
@@ -43,7 +42,7 @@ abstract class CloakAbility(
     acquisition: AcquisitionType = AcquisitionType.GACHA,
     relatedQuest: List<Quest>? = null,
 ) : Ability(
-    grade = grade, element = element, displayName = displayName, codeName = codeName, material = material,
+    grade = grade, displayName = displayName, codeName = codeName, material = material,
     description = description, acquisition = acquisition, relatedQuest = relatedQuest, needFile = true
 ) {
     protected class Session(val effect: AbilityEffect, val settings: com.github.lupi13.limpi.config.AbilitySettings) {
@@ -232,7 +231,6 @@ abstract class CloakAbility(
 
 object Cloak : CloakAbility(
     grade = Grade.LEGENDARY,
-    element = Element.UTILITY,
     displayName = Component.text("은폐", NamedTextColor.DARK_GREEN),
     codeName = "cloak",
     material = Material.MUSIC_DISC_CAT,

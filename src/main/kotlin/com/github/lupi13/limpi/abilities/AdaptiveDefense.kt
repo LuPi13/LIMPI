@@ -10,7 +10,6 @@ import kotlin.math.pow
 
 object AdaptiveDefense : Ability(
     grade = Grade.RARE,
-    element = Element.DEFENSIVE,
     displayName = Component.text("적응형 피해 감쇠기", NamedTextColor.YELLOW),
     codeName = "adaptive_defense",
     material = Material.GOLDEN_CHESTPLATE,

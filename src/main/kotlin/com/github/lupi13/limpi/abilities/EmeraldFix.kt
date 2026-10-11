@@ -12,7 +12,6 @@ import org.bukkit.inventory.meta.Damageable
 
 object EmeraldFix : Ability(
     grade = Grade.RARE,
-    element = Element.SMITH,
     displayName = Component.text("에메랄드 수리", NamedTextColor.GREEN),
     codeName = "emerald_fix",
     material = Material.EMERALD,

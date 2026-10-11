@@ -24,7 +24,6 @@ import kotlin.random.Random
 object ExplosionMove : Ability(
     grade = Grade.RARE,
     acquisition = AcquisitionType.QUEST,
-    element = Element.EXPLOSIVE,
     displayName = Component.text("익스플로전 무브", NamedTextColor.GOLD),
     codeName = "explosion_move",
     material = Material.HONEYCOMB,

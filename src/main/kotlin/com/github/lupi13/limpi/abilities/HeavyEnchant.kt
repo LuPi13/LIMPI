@@ -9,7 +9,6 @@ import org.bukkit.event.inventory.PrepareAnvilEvent
 
 object HeavyEnchant : Ability(
     grade = Grade.LEGENDARY,
-    element = Element.SMITH,
     displayName = Component.text("진보된 지식", NamedTextColor.AQUA),
     codeName = "heavy_enchant",
     material = org.bukkit.Material.ENCHANTED_BOOK,

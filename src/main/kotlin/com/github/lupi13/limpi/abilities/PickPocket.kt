@@ -21,7 +21,6 @@ import java.util.logging.Level
 
 object PickPocket : Ability(
     grade = Grade.RARE,
-    element = Element.UTILITY,
     displayName = Component.text("소매치기", NamedTextColor.RED),
     codeName = "pick_pocket",
     material = Material.FISHING_ROD,

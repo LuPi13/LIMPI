@@ -30,7 +30,6 @@ import kotlin.random.Random
 
 object EntityThrower : Ability(
     grade = Grade.EPIC,
-    element = Element.NONE,
     displayName = Component.text("괴력투척", NamedTextColor.DARK_GREEN),
     codeName = "entity_thrower",
     material = Material.OMINOUS_BOTTLE,

@@ -19,14 +19,12 @@ import java.util.UUID
  */
 abstract class DodgeVariant(
     grade: Grade,
-    element: Element,
     displayName: Component,
     codeName: String,
     material: Material,
     description: List<Component>,
 ) : Ability(
     grade = grade,
-    element = element,
     displayName = displayName,
     codeName = codeName,
     material = material,
@@ -105,7 +103,6 @@ abstract class DodgeVariant(
 
 object DodgePlus : DodgeVariant(
     grade = Grade.RARE,
-    element = Element.NONE,
     displayName = Component.text("회피+", NamedTextColor.GRAY),
     codeName = "dodge_plus",
     material = Material.RABBIT_FOOT,

@@ -23,7 +23,6 @@ import kotlin.random.Random
 
 object KillingDice : Ability(
     grade = Grade.EPIC,
-    element = Element.MAGIC,
     displayName = Component.text("죽음의 주사위", NamedTextColor.DARK_RED),
     codeName = "killing_dice",
     material = Material.END_CRYSTAL,

@@ -11,7 +11,6 @@ import org.bukkit.util.Vector
 
 object PullingBow : Ability(
     grade = Grade.RARE,
-    element = Element.NONE,
     displayName = Component.text("갈고리 화살", NamedTextColor.LIGHT_PURPLE),
     codeName = "pulling_bow",
     material = Material.TRIPWIRE_HOOK,

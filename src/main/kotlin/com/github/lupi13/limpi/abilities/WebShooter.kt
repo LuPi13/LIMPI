@@ -24,7 +24,6 @@ import kotlin.random.Random
 
 object WebShooter : Ability(
     grade = Grade.LEGENDARY,
-    element = Element.UTILITY,
     displayName = Component.text("웹슈터", NamedTextColor.WHITE),
     codeName = "web_shooter",
     material = Material.STRING,

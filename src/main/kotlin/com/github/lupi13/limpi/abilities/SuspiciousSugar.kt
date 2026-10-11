@@ -16,7 +16,6 @@ import kotlin.random.Random
 
 object SuspiciousSugar : Ability(
     grade = Grade.COMMON,
-    element = Element.MAGIC,
     displayName = Component.text("정체불명의 흰 가루", NamedTextColor.WHITE),
     codeName = "suspicious_sugar",
     material = Material.SUGAR,

@@ -13,7 +13,6 @@ import org.bukkit.event.entity.EntityDeathEvent
 
 object SuperCloak : CloakAbility(
     grade = Grade.MYTHIC,
-    element = Element.UTILITY,
     displayName = Component.text("초은폐", NamedTextColor.DARK_AQUA),
     codeName = "super_cloak",
     material = Material.MUSIC_DISC_CAT,

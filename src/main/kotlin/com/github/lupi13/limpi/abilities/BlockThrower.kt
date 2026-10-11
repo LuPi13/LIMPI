@@ -34,7 +34,6 @@ import java.util.UUID
 
 object BlockThrower : Ability(
     grade = Grade.RARE,
-    element = Element.UTILITY,
     displayName = Component.text("투척 설치", NamedTextColor.GRAY),
     codeName = "block_thrower",
     material = Material.STONE,

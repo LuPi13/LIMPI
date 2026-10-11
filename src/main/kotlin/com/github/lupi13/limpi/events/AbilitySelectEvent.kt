@@ -25,8 +25,7 @@ import org.bukkit.plugin.java.JavaPlugin
 enum class SortOption {
     UNLOCKED,
     GANADA,
-    GRADE,
-    ELEMENT
+    GRADE
 }
 
 class AbilitySelectEvent : Listener {
@@ -86,12 +85,11 @@ class AbilitySelectEvent : Listener {
             }
             lore += listOf(
             Component.text("가나다순", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
-            Component.text("등급순", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
-            Component.text("속성순", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
+            Component.text("등급순", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
             )
 
 
-            for (i in 1..4) {
+            for (i in 1..SortOption.entries.size) {
                 if (i-1 == sort.ordinal) {
                     lore[i] = lore[i].color(NamedTextColor.GREEN).decoration(TextDecoration.STRIKETHROUGH, false)
                 } else {

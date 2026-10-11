@@ -17,7 +17,6 @@ import java.util.UUID
 
 object CriticalDodge : DodgeVariant(
     grade = Grade.LEGENDARY,
-    element = Element.NONE,
     displayName = Component.text("치명적인 회피", NamedTextColor.RED),
     codeName = "critical_dodge",
     material = Material.TARGET,

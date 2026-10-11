@@ -10,7 +10,12 @@ import java.util.Base64
 import java.util.UUID
 
 object PaperItemCodec {
-    fun payload(item: ItemStack): String = Base64.getEncoder().encodeToString(item.asOne().serializeAsBytes())
+    /**
+     * Canonical bytes: a freshly built Bukkit ItemStack (meta not yet applied to a server stack) can serialize
+     * differently from the same item read back from an inventory, so round-trip through a server stack first.
+     */
+    fun payload(item: ItemStack): String =
+        Base64.getEncoder().encodeToString(ItemStack.deserializeBytes(item.asOne().serializeAsBytes()).serializeAsBytes())
     fun item(payload: String, count: Int): ItemStack = ItemStack.deserializeBytes(Base64.getDecoder().decode(payload)).apply { amount = count }
     fun grant(item: ItemStack) = ItemGrant(payload(item), item.amount.toLong(), item.maxStackSize)
     fun snapshot(player: Player, includeOffHand: Boolean = false, includeArmor: Boolean = false): List<StoredStack?> {

@@ -29,7 +29,7 @@ object AlchemyPlus : Ability(
         fun chance(name: String, key: String): Component =
             Component.text(name, NamedTextColor.YELLOW)
                 .append(Component.text(": ", NamedTextColor.WHITE))
-                .append(Component.text("${config!!.getDouble(key) * 100}", NamedTextColor.GREEN))
+                .append(Component.text(java.math.BigDecimal(config!!.getDouble(key) * 100).round(java.math.MathContext(10)).stripTrailingZeros().toPlainString(), NamedTextColor.GREEN))
                 .append(Component.text("%", NamedTextColor.WHITE))
         val separator = Component.text(" / ", NamedTextColor.WHITE)
         listOf(

@@ -63,7 +63,6 @@ object RealHandCannon : Ability(
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게만 피해를 주며, ", NamedTextColor.WHITE))
                 .append(Component.text(if (config!!.getBoolean("break_blocks")) "지형을 파괴합니다." else "지형을 파괴하지 않습니다.", NamedTextColor.WHITE)),
-            Component.text("크리에이티브 모드에서는 ", NamedTextColor.GRAY).append(Component.text("화약", NamedTextColor.YELLOW)).append(Component.text("을 소비하지 않습니다.", NamedTextColor.GRAY)),
             Component.text("쿨타임: ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("cooldown_ticks") / 20.0}", NamedTextColor.GREEN).append(Component.text("초", NamedTextColor.WHITE)))
         )

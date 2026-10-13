@@ -137,6 +137,17 @@ class ChestEvents : Listener {
             }
         }
 
+        private val dirty = mutableSetOf<UUID>()
+
+        /** Several pickups in one tick share a single commit. */
+        fun checkpointNextTick(player: Player) {
+            if (!dirty.add(player.uniqueId)) return
+            plugin.server.scheduler.runTask(plugin, Runnable {
+                dirty.remove(player.uniqueId)
+                if (player.isOnline) checkpoint(player)
+            })
+        }
+
         fun closeAll() = Bukkit.getOnlinePlayers().filter { it.uniqueId in sessions }.forEach { finish(it, closeView = true) }
 
         private fun image(inventory: Inventory): List<StoredStack?> = (0 until inventory.size).map { slot ->
@@ -210,8 +221,9 @@ class ChestEvents : Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun drop(event: PlayerDropItemEvent) { if (event.player.uniqueId in sessions) checkpoint(event.player) }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    fun pickup(event: EntityPickupItemEvent) { if (event.entity.uniqueId in sessions) event.isCancelled = true }
+    /** Picking up works with the window open; the inventory changes after this event, so commit on the next tick. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun pickup(event: EntityPickupItemEvent) { (event.entity as? Player)?.takeIf { it.uniqueId in sessions }?.let(::checkpointNextTick) }
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun quit(event: PlayerQuitEvent) {
@@ -237,22 +249,44 @@ class ChestEvents : Listener {
     fun autoStore(event: PlayerAttemptPickupItemEvent) {
         val player = event.player; val item = event.item; val stack = item.itemStack
         if (!enabled || stack.isEmpty || event.remaining != stack.amount || !item.isValid || !item.canPlayerPickup()) return
-        if (player.isDead || player.uniqueId in sessions || FileManager.delivery.blocked(player.uniqueId)) return
+        if (player.isDead || FileManager.delivery.blocked(player.uniqueId)) return
         if (item.owner != null && item.owner != player.uniqueId) return
-        if (runCatching { AbilityManager.active(stack) }.getOrDefault(true)) return
         val request = UUID.randomUUID()
         try {
-            if (!FileManager.chests.state(player.uniqueId).autoEnabled) return
+            val state = FileManager.chests.state(player.uniqueId)
+            if (!state.autoEnabled || runCatching { AbilityManager.active(stack) }.getOrDefault(true)) return
+            // While the window is open, the window (not the saved slots) is the chest.
+            val holder = sessions[player.uniqueId]
+            if (holder != null) { storeInOpenWindow(event, player, holder); return }
+            // Standing on a pile with a full chest fires this every tick; stop before serializing the item.
+            if (state.slots.none { it == null || it.count < it.limit }) return
             val accepted = FileManager.chests.absorb(request, player.uniqueId, item.uniqueId, PaperItemCodec.payload(stack),
                 stack.amount, stack.maxStackSize)
             if (accepted == 0) return
             event.isCancelled = true
             if (accepted == stack.amount) item.remove() else item.itemStack = stack.clone().apply { amount -= accepted }
-            player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 0.2f, 0.8f)
-            player.sendActionBar(stack.effectiveName().append(Component.text("이(가) 자동 저장되었습니다", NamedTextColor.WHITE)))
+            notifyStored(player, stack)
         } catch (failure: Exception) {
             plugin.logger.log(Level.WARNING, "Chest auto store $request failed for ${player.uniqueId}", failure)
         }
+    }
+
+    /** With the window open the chest lives in that window, so store there and commit it like any other change. */
+    private fun storeInOpenWindow(event: PlayerAttemptPickupItemEvent, player: Player, holder: ChestHolder) {
+        if (holder.finished) return
+        val item = event.item; val stack = item.itemStack
+        val left = holder.inventory.addItem(stack.clone()).values.sumOf { it.amount }
+        val accepted = stack.amount - left
+        if (accepted <= 0) return
+        event.isCancelled = true
+        if (left == 0) item.remove() else item.itemStack = stack.clone().apply { amount = left }
+        notifyStored(player, stack)
+        checkpointNextTick(player)
+    }
+
+    private fun notifyStored(player: Player, stack: ItemStack) {
+        player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 0.2f, 0.8f)
+        player.sendActionBar(stack.effectiveName().append(Component.text("이(가) 자동 저장되었습니다", NamedTextColor.WHITE)))
     }
 
     /** An older world save can bring back an item that was already stored; trim it to what was left on the ground. */

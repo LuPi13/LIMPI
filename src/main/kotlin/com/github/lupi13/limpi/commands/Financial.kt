@@ -67,7 +67,7 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
         try {
             when (route.id.substringBefore(' ')) {
                 "help" -> if (sender is Player && enabled) helpBook(sender)
-                    else CommandHelp.show(sender, "financial", CommandDefinitions.financial, enabled)
+                    else CommandHelp.show(sender, "financial", CommandDefinitions.financial, enabled, web = WebHelp.links(plugin, sender))
                 "send", "set", "add" -> accountCommands.execute(sender, args)
                 "claim", "delivery" -> deliveryCommands.execute(sender, args)
                 "market" -> marketCommands.execute(sender, args)
@@ -133,6 +133,7 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
 
         var page = Component.text("\n\n[/financial 도움말]\n", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
         page = page.append(Component.text("/fi, /fc 로도 입력할 수 있습니다.", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+        page = page.append(WebHelp.component(WebHelp.links(plugin, sender)))
         meta.addPages(page)
 
         page = cmd("/financial help").append(desc(": 이 도움말을 보여줍니다.\n\n"))

@@ -1,0 +1,45 @@
+site_name: LIMPI 도움말
+site_url: https://lupi13.github.io/LIMPI/
+site_description: LuPi13's Integrated Minecraft Plug-In 명령어 안내
+repo_url: https://github.com/LuPi13/LIMPI
+repo_name: LuPi13/LIMPI
+docs_dir: pages
+site_dir: build/site
+
+nav:
+  - 처음으로: index.md
+  - 명령어: commands.md
+  - 관리자 명령어: admin.md
+
+theme:
+  name: material
+  language: ko
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      toggle:
+        icon: material/weather-night
+        name: 어두운 테마
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      toggle:
+        icon: material/weather-sunny
+        name: 밝은 테마
+  features:
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - toc.follow
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences

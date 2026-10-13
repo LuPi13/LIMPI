@@ -9,11 +9,13 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.BookMeta
 
 object CommandHelp {
-    fun show(sender: CommandSender, root: String, index: CommandIndex, enabled: Boolean, extra: List<Component> = emptyList()) {
+    fun show(sender: CommandSender, root: String, index: CommandIndex, enabled: Boolean, extra: List<Component> = emptyList(),
+             web: List<WebHelp.Link> = emptyList()) {
         val routes = index.visible(enabled, sender is Player, sender::hasPermission)
         if (sender !is Player) {
             routes.forEach { sender.sendMessage("/$root ${it.usage}: ${it.description}") }
             extra.forEach(sender::sendMessage)
+            WebHelp.console(sender, web)
             return
         }
         val book = ItemStack(Material.WRITTEN_BOOK)
@@ -26,6 +28,7 @@ object CommandHelp {
             meta.addPages(page)
         }
         extra.forEach(meta::addPages)
+        if (web.isNotEmpty()) meta.addPages(Component.text("[/$root 도움말]", NamedTextColor.DARK_AQUA).append(WebHelp.component(web)))
         book.itemMeta = meta
         sender.openBook(book)
     }

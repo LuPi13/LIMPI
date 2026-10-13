@@ -21,8 +21,8 @@ class Ability(private val plugin: Plugin, private val enabled: Boolean) : Comman
         try {
             when (route.id) {
                 "help" -> {
-                    if (sender is Player && enabled) information.openHelpBook(sender, sender.isOp || sender.hasPermission("limpi.ability.admin.set"))
-                    else CommandHelp.show(sender, "ability", CommandDefinitions.ability, enabled)
+                    if (sender is Player && enabled) information.openHelpBook(sender, sender.isOp || sender.hasPermission("limpi.ability.admin.set"), WebHelp.links(plugin, sender))
+                    else CommandHelp.show(sender, "ability", CommandDefinitions.ability, enabled, web = WebHelp.links(plugin, sender))
                 }
                 "me" -> {
                     val player = sender as Player

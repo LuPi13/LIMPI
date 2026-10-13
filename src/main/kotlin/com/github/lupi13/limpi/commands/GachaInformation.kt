@@ -59,7 +59,7 @@ class GachaInformation(private val plugin: Plugin) {
     }
 
     /** /ability help 책 */
-    fun openHelpBook(player: Player, admin: Boolean) {
+    fun openHelpBook(player: Player, admin: Boolean, web: List<WebHelp.Link> = emptyList()) {
         val config = plugin.config
         val book = ItemStack(Material.WRITTEN_BOOK)
         val meta = book.itemMeta as BookMeta
@@ -68,6 +68,7 @@ class GachaInformation(private val plugin: Plugin) {
 
         var page = Component.text("\n\n[/ability 도움말]\n", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
         page = page.append(Component.text("/ab 로도 입력할 수 있습니다.", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+        page = page.append(WebHelp.component(web))
         meta.addPages(page)
 
         page = Component.text("/ability help", NamedTextColor.GREEN)

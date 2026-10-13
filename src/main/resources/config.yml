@@ -1,3 +1,5 @@
+HelpUrl: 'https://lupi13.github.io/LIMPI/'  # /ability help, /financial help에 표시할 웹 도움말 주소. 비워 두면 링크를 표시하지 않음
+
 #=== Financial System Configuration ===#
 EnableFinancialSystem: true  # 금융 시스템 활성화 여부
 PlayerDataDirectory: ''  # 비어 있으면 자동 탐지(26.1+: <월드>/players/data). 별도 저장 환경에서는 서버 worldContainer 기준 경로 또는 절대 경로

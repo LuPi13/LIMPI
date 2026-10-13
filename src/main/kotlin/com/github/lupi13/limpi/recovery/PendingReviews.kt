@@ -25,6 +25,7 @@ object PendingReviews {
                 val reason = if (malformed) "문서 형식·식별자 오류: 원본 보존 후 개별 조회 필요" else
                     data!!.getString("reviewReason") ?: data.getString("reason") ?: when (state) {
                         "APPLYING" -> "물리 저장 확인 대기(진행 중일 수 있음)"
+                        "OPEN", "CLOSING" -> "상자 창 저장 확인 대기(열려 있을 수 있음)"
                         "PENDING" -> if (kind == "sugar") "효과 적용 대기" else "미수령 물품"
                         else -> "개별 기록 확인 필요"
                     }
@@ -37,6 +38,7 @@ object PendingReviews {
                     "delivery" -> if (state == "PENDING") "/financial claim (소유자 접속 후)" else
                         "/financial delivery resolve $owner $id delivered|retry <근거>"
                     "removal" -> "/financial removal resolve $owner $id removed|retained <근거>"
+                    "chest" -> "/chest resolve $owner $id before|after <근거>"
                     else -> "/financial transition resolve $owner $id applied|retained <근거>"
                 }
                 PendingReview(owner, name, kind, id, state, reason, command)
@@ -44,5 +46,6 @@ object PendingReviews {
         }.sortedWith(compareBy({ it.owner?.toString().orEmpty() }, { it.kind }, { it.id }))
     }
     private val KINDS = linkedMapOf("delivery_pending" to "delivery", "removal_pending" to "removal",
-        "ability_transition_pending" to "transition", "market_escrow_pending" to "market", "sugar_pending" to "sugar")
+        "ability_transition_pending" to "transition", "market_escrow_pending" to "market", "sugar_pending" to "sugar",
+        "chest_session" to "chest")
 }

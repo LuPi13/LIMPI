@@ -67,5 +67,15 @@ class PaperDeliveryInventory(
         check(snapshot() == after) { "Inventory serialization changed during delivery" }
     }
 
+    override fun checkpoint(current: List<StoredStack?>, id: UUID) {
+        checkMainThread()
+        check(player.isOnline) { "Player is unavailable" }
+        check(snapshot() == current) { "Inventory changed before checkpoint" }
+        player.persistentDataContainer.set(checkpoint, PersistentDataType.STRING, id.toString())
+        player.saveData()
+        files.confirm(player.uniqueId, id)
+        check(snapshot() == current) { "Inventory serialization changed during checkpoint" }
+    }
+
     private fun checkMainThread() { check(Bukkit.isPrimaryThread()) { "Inventory delivery must run on the server thread" } }
 }

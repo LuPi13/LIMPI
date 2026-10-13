@@ -45,6 +45,7 @@ class DeliveryJournal(private val store: StateStore) {
             checkpoint = UUID.randomUUID(), slotLimit = slotLimit)
         store.atomic { tx ->
             check(decode(requireNotNull(tx.get(pendingKey(record.owner, record.id)))) == record) { "Delivery changed while planning" }
+            check(tx.documents("chest_session/${record.owner}/").isEmpty()) { "A chest window is still being recorded" }
             tx.put(pendingKey(record.owner, record.id), encode(planned))
         }
         return planned

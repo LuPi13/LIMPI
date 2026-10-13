@@ -27,7 +27,7 @@ class MarketEscrow(private val store: StateStore, private val catalog: MarketCat
         val fingerprint = BankService.fingerprint("MARKET_REGISTER", catalog.encode(listing),
             YamlConfiguration().apply { set("before", InventoryImages.encode(before)); set("slot", slot) }.saveToString())
         val committed = store.execute(id, fingerprint) { tx ->
-            check(tx.documents("market_escrow_pending/$owner/").isEmpty() && tx.documents("removal_pending/$owner/").isEmpty() && tx.documents("ability_transition_pending/$owner/").isEmpty()) { "An unresolved inventory operation exists" }
+            check(tx.documents("market_escrow_pending/$owner/").isEmpty() && tx.documents("removal_pending/$owner/").isEmpty() && tx.documents("ability_transition_pending/$owner/").isEmpty() && tx.documents("chest_session/$owner/").isEmpty()) { "An unresolved inventory operation exists" }
             check(catalog.read(tx, id) == null) { "Listing ID already exists" }
             catalog.write(tx, listing)
             tx.put(pendingKey(owner, id), encode(candidate))

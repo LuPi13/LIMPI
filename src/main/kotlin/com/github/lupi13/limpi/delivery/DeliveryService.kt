@@ -9,6 +9,8 @@ interface DeliveryInventory {
     fun persistedCheckpoint(): UUID?
     /** Check before, apply after, save player data and verify the checkpoint reached the player data file. */
     fun applyAndCheckpoint(before: List<StoredStack?>, after: List<StoredStack?>, id: UUID)
+    /** Save the unchanged [current] inventory with checkpoint [id] and verify it reached the player data file. */
+    fun checkpoint(current: List<StoredStack?>, id: UUID): Unit = throw UnsupportedOperationException("Checkpoint-only saves are not supported")
 }
 
 class DeliveryRecoveryRequired(val owner: UUID, val delivery: UUID, cause: Throwable? = null) :

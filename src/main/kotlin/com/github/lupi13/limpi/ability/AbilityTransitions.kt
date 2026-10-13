@@ -58,7 +58,7 @@ class AbilityTransitions(private val store: StateStore, private val players: Pla
             YamlConfiguration().apply { set("before", InventoryImages.encode(before)) }.saveToString())
         return decode(store.execute(id, fingerprint) { tx ->
             check(tx.documents("ability_transition_pending/$owner/").isEmpty() && tx.documents("removal_pending/$owner/").isEmpty() &&
-                tx.documents("market_escrow_pending/$owner/").isEmpty()) { "An unresolved inventory operation exists" }
+                tx.documents("market_escrow_pending/$owner/").isEmpty() && tx.documents("chest_session/$owner/").isEmpty()) { "An unresolved inventory operation exists" }
             // Completed/PENDING deliveries have no reserved image; APPLYING/REVIEW must finish first.
             check(tx.documents("delivery_pending/$owner/").values.none { YamlFiles.parse(it).getString("state") in listOf("APPLYING", "REVIEW") })
             validateProfile(tx, candidate)

@@ -99,7 +99,7 @@ class GachaInformation(private val plugin: Plugin) {
             page = page.append(Component.text("/ability set <플레이어> <능력 code>", NamedTextColor.GREEN).decoration(TextDecoration.BOLD, false))
             page = page.append(Component.text(": 대상에게 해당 능력을 적용합니다.\n\n", NamedTextColor.BLACK))
             page = page.append(Component.text("/ability dictionary(또는 dict)", NamedTextColor.GREEN))
-            page = page.append(Component.text(": 여기서 우클릭하여 해당 능력을 자신에게 적용할 수 있습니다.\n\n", NamedTextColor.BLACK))
+            page = page.append(Component.text(": 여기서 좌클릭하여 해당 능력을 자신에게 적용할 수 있습니다.\n\n", NamedTextColor.BLACK))
             meta.addPages(page)
         }
 

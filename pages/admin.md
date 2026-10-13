@@ -9,7 +9,7 @@
 | 명령어 | 권한 | 설명 |
 | --- | --- | --- |
 | `/ability set <접속 플레이어> <능력 ID>` | `limpi.ability.admin.set` | 선택권 없이 대상에게 능력을 적용합니다. 능력 ID 대신 `none`을 쓰면 능력을 없앱니다. 콘솔에서도 쓸 수 있습니다. |
-| `/ability dictionary` | `limpi.ability.admin.set` | 관리자는 도감에서 능력을 우클릭해 자신에게 바로 적용할 수 있습니다. |
+| `/ability dictionary` | `limpi.ability.admin.set` | 관리자는 도감에서 능력을 좌클릭해 자신에게 바로 적용할 수 있습니다. 우클릭은 일반 플레이어와 같이 상세 정보를 봅니다. |
 | `/ability reload` | `limpi.ability.admin.reload` | `ability/<능력>.yml`을 모두 검사한 뒤 한꺼번에 다시 불러옵니다. 하나라도 잘못되면 아무것도 바뀌지 않습니다. |
 
 대상에게 끝나지 않은 지급·회수·능력 전환 기록이 있으면 `/ability set`이 거부됩니다. 아래 [거래 복구](#recovery)를 먼저 처리하세요.

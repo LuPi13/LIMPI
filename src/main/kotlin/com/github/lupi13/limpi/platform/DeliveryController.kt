@@ -15,7 +15,8 @@ import java.util.UUID
 import java.util.logging.Level
 
 class DeliveryController(val plugin: Plugin, private val service: DeliveryService, private val escrow: MarketEscrow, private val removals: RemovalJournal,
-                         private val transitions: com.github.lupi13.limpi.ability.AbilityTransitions) {
+                         private val transitions: com.github.lupi13.limpi.ability.AbilityTransitions,
+                         private val chests: com.github.lupi13.limpi.chest.ChestService) {
     private val checkpoint = NamespacedKey(plugin, "delivery_checkpoint")
     private val directories = plugin.config.getString("PlayerDataDirectory")?.takeIf(String::isNotBlank)?.let { configured ->
         val path = Path.of(configured)
@@ -26,6 +27,8 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
     }
     private val blocked = mutableSetOf<UUID>()
     var afterClaim: (Player) -> Unit = {}
+    /** Runs before any operation that saves this player's checkpoint; an open chest window is committed first. */
+    var beforeInventoryOperation: (Player) -> Unit = {}
     init {
         plugin.logger.info("Delivery checkpoint directory candidates: ${directories.joinToString { it.toAbsolutePath().normalize().toString() }}")
     }
@@ -59,6 +62,8 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
     /** [quiet] suppresses the "delivered" notice right after a purchase that already has its own message. */
     fun claim(player: Player, freshLogin: Boolean = false, quiet: Boolean = false): Boolean {
         if (blocked(player.uniqueId) && !freshLogin) return false
+        beforeInventoryOperation(player)
+        if (blocked(player.uniqueId) && !freshLogin) return false
         if (player.isDead) {
             // A player rejoining on the death screen cannot receive or save inventory changes. Attempting recovery would
             // fail identically on every login; keep inputs blocked and run the fresh recovery after respawn instead.
@@ -69,7 +74,9 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
         try {
             val inventory = PaperDeliveryInventory(player, checkpoint, files)
             val pendingRemovals = removals.pending(player.uniqueId)
-            check(escrow.pending(player.uniqueId).size + pendingRemovals.size + transitions.pending(player.uniqueId).size <= 1) { "Multiple interrupted inventory operations" }
+            check(escrow.pending(player.uniqueId).size + pendingRemovals.size + transitions.pending(player.uniqueId).size +
+                chests.pending(player.uniqueId).size <= 1) { "Multiple interrupted inventory operations" }
+            chests.recover(player.uniqueId, fullInventory(player), freshLogin)
             transitions.recover(player.uniqueId, removalInventory(player, 37), freshLogin)
             escrow.recover(player.uniqueId, inventory, freshLogin)
             val removalInventory = pendingRemovals.singleOrNull()?.let { removalInventory(player, it.evidence.before.size) } ?: inventory
@@ -136,6 +143,8 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
 
     fun transition(player: Player, terms: com.github.lupi13.limpi.ability.TransitionTerms, before: List<StoredStack?>): Boolean {
         if (blocked(player.uniqueId)) return false
+        beforeInventoryOperation(player)
+        if (blocked(player.uniqueId)) return false
         // Never record a transition that cannot be saved (dead or resurrecting players); nothing is changed yet.
         require(player.isOnline && !player.isDead && player.health > 0) { "Player is unavailable for an ability transition" }
         val id = UUID.randomUUID()
@@ -155,6 +164,18 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
             player.kick(Component.text("능력 전환 기록을 확인해야 합니다. 관리자에게 UUID ${player.uniqueId}를 알려주세요.", NamedTextColor.RED))
             return false
         }
+    }
+
+    /** Storage, armor and off hand: everything a chest window can move items into or out of. */
+    fun fullInventory(player: Player): PaperDeliveryInventory = removalInventory(player, player.inventory.storageContents.size + 5)
+
+    /** Block further inventory use now and disconnect on the next tick (safe to call from inside an inventory event). */
+    fun fail(player: Player, failure: Exception, log: String, message: String) {
+        blocked.add(player.uniqueId)
+        plugin.logger.log(Level.SEVERE, log, failure)
+        plugin.server.scheduler.runTask(plugin, Runnable {
+            if (player.isOnline) player.kick(Component.text("$message 관리자에게 UUID ${player.uniqueId}를 알려주세요.", NamedTextColor.RED))
+        })
     }
 
     private fun removalInventory(player: Player, size: Int): PaperDeliveryInventory {

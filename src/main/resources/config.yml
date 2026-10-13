@@ -52,3 +52,11 @@ SelectPrice:  # 능력 선택권 가격(에메랄드)
   EPIC: 30
   LEGENDARY: 40
   MYTHIC: 50
+
+#=== Chest System Configuration ===#
+EnableChestSystem: true  # 상자 시스템 활성화 여부. 꺼도 이미 해금한 상자는 /chest로 열 수 있음(구매·자동 저장·사망 시 떨어뜨림은 중지)
+ChestUnlockPrice: 10000  # 상자 해금(1줄, 9칸) 가격
+ChestUpgradePrice: [20000, 40000, 80000, 160000, 320000]  # 2줄, 3줄, 4줄, 5줄, 6줄로 늘리는 가격(5개)
+ChestAutoStorePrice: 50000  # 자동 저장 가격
+ChestEnderPrice: 1000000  # 엔더화(죽어도 상자 아이템을 떨어뜨리지 않음) 가격
+#=== Chest System Configuration End ===#

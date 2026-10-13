@@ -12,7 +12,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.plugin.Plugin
 
-enum class MenuKind { STOCK, SHOP, SELL, MARKET, ABILITY_SELECT, ABILITY_DICTIONARY, ABILITY_SHOP, ABILITY_ENEMY }
+enum class MenuKind { STOCK, SHOP, SELL, MARKET, ABILITY_SELECT, ABILITY_DICTIONARY, ABILITY_SHOP, ABILITY_ENEMY, CHEST_SHOP }
 sealed interface MenuAction {
     data class Page(val index: Int) : MenuAction
     data class AbilityCode(val code: String) : MenuAction
@@ -21,6 +21,7 @@ sealed interface MenuAction {
     data class StockQuote(val code: String, val price: Long) : MenuAction
     data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
     data class ShopQuote(val code: String, val price: Long) : MenuAction
+    data class ChestQuote(val product: String, val price: Long) : MenuAction
     data class ItemExchangeQuote(val product: String, val price: Long, val reward: com.github.lupi13.limpi.delivery.ItemGrant) : MenuAction
 }
 

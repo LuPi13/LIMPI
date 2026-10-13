@@ -23,7 +23,7 @@ class DeliveryGuard(private val controller: DeliveryController, private val jour
     @EventHandler(priority = EventPriority.LOWEST)
     fun login(event: AsyncPlayerPreLoginEvent) {
         try {
-            if (journal.pending(event.uniqueId).any { it.state == DeliveryState.REVIEW } || escrow.pending(event.uniqueId).any { it.state == EscrowState.REVIEW } || removals.pending(event.uniqueId).any { it.state == RemovalState.REVIEW } || com.github.lupi13.limpi.FileManager.transitions.pending(event.uniqueId).any { it.state == com.github.lupi13.limpi.ability.TransitionState.REVIEW }) {
+            if (journal.pending(event.uniqueId).any { it.state == DeliveryState.REVIEW } || escrow.pending(event.uniqueId).any { it.state == EscrowState.REVIEW } || removals.pending(event.uniqueId).any { it.state == RemovalState.REVIEW } || com.github.lupi13.limpi.FileManager.transitions.pending(event.uniqueId).any { it.state == com.github.lupi13.limpi.ability.TransitionState.REVIEW } || com.github.lupi13.limpi.FileManager.chests.pending(event.uniqueId).any { it.state == com.github.lupi13.limpi.chest.ChestSessionState.REVIEW }) {
                 event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER,
                     Component.text("지급 검토가 필요합니다. 관리자에게 UUID ${event.uniqueId}를 알려주세요."))
             }

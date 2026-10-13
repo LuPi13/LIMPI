@@ -204,4 +204,10 @@ class ChestServiceTest {
         service.release(owner); buy(service, ChestProduct.UPGRADE)
         assertEquals("kept", YamlFiles.parse(store.get(ChestDocuments.key(owner))).getString("future"))
     }
+
+    @Test fun `packaged config prices match the agreed defaults`() {
+        val config = javaClass.classLoader.getResourceAsStream("config.yml")!!.use { YamlConfiguration().apply { loadFromString(it.readBytes().toString(Charsets.UTF_8)) } }
+        assertEquals(ChestPrices.DEFAULT, ChestPrices.read(config))
+        assertTrue(config.getBoolean("EnableChestSystem"))
+    }
 }

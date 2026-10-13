@@ -56,6 +56,7 @@ class FileManager {
         private lateinit var initialRewards: InitialRewards
         private lateinit var initialItems: List<com.github.lupi13.limpi.delivery.ItemGrant>
         private lateinit var questRewards: QuestRewards
+        private lateinit var chestService: com.github.lupi13.limpi.chest.ChestService
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
@@ -75,6 +76,7 @@ class FileManager {
         val transitions: AbilityTransitions get() = abilityTransitions
         val sugar: com.github.lupi13.limpi.ability.SugarSettlement get() = sugarSettlement
         val quest: QuestRewards get() = questRewards
+        val chests: com.github.lupi13.limpi.chest.ChestService get() = chestService
 
         /** Finished delivery/removal/transition/escrow records and their ledger rows are only kept for RecordRetentionDays. */
         private fun pruneRecords(owner: Plugin) {
@@ -82,7 +84,7 @@ class FileManager {
             if (days <= 0) return
             val cutoff = System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(days.toLong())
             val pruned = state.prune(cutoff,
-                setOf("delivery_done/", "removal_done/", "ability_transition_done/", "market_escrow_done/"),
+                setOf("delivery_done/", "removal_done/", "ability_transition_done/", "market_escrow_done/", "chest_absorbed/"),
                 // Initial rewards rely on their once-only ledger identities; never forget them.
                 setOf("initial-register:", "initial-grant:"))
             owner.logger.info("Pruned ${pruned.documents} finished records and ${pruned.transactions} ledger rows older than $days days")
@@ -132,7 +134,8 @@ class FileManager {
                 com.github.lupi13.limpi.ability.PickPocketSettlement.KIND to com.github.lupi13.limpi.ability.PickPocketSettlement(deliveryJournal),
                 com.github.lupi13.limpi.ability.SugarSettlement.KIND to sugarSettlement,
             ))
-            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal, abilityTransitions)
+            chestService = com.github.lupi13.limpi.chest.ChestService(state, repository)
+            deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal, abilityTransitions, chestService)
             financial.clear()
         }
 

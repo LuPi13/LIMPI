@@ -62,6 +62,9 @@ class LIMPI : JavaPlugin() {
         server.pluginManager.registerEvents(AbilityTicketGuard(), this)
         server.pluginManager.registerEvents(AbilityRuntime, this)
         server.pluginManager.registerEvents(com.github.lupi13.limpi.platform.AbilityPotions, this)
+        // Always registered: an unlocked chest stays usable (and recoverable) even when the chest system is off.
+        server.pluginManager.registerEvents(ChestEvents(), this)
+        FileManager.delivery.beforeInventoryOperation = { ChestEvents.finish(it, closeView = true) }
         if (config.getBoolean("EnableFinancialSystem")) {
             server.pluginManager.registerEvents(checks, this)
             server.pluginManager.registerEvents(SellEvents(), this)
@@ -115,6 +118,7 @@ class LIMPI : JavaPlugin() {
         backups?.close()
         backups = null
         StockEvents.stop()
+        ChestEvents.closeAll()
         SellEvents.closeAll()
         AbilityRuntime.closeAll()
         if (config.getBoolean("EnableAbilitySystem")) AbilityManager.shutdown()

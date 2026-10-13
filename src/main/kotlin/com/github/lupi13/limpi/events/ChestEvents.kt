@@ -217,7 +217,6 @@ class ChestEvents : Listener {
     fun quit(event: PlayerQuitEvent) {
         finish(event.player, closeView = false)
         FileManager.chests.release(event.player.uniqueId)
-        com.github.lupi13.limpi.platform.ChestToast.forget(event.player.uniqueId)
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -250,7 +249,7 @@ class ChestEvents : Listener {
             event.isCancelled = true
             if (accepted == stack.amount) item.remove() else item.itemStack = stack.clone().apply { amount -= accepted }
             player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 0.2f, 0.8f)
-            com.github.lupi13.limpi.platform.ChestToast.show(plugin, player, stack)
+            player.sendActionBar(stack.effectiveName().append(Component.text("이(가) 자동 저장되었습니다", NamedTextColor.WHITE)))
         } catch (failure: Exception) {
             plugin.logger.log(Level.WARNING, "Chest auto store $request failed for ${player.uniqueId}", failure)
         }

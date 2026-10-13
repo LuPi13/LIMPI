@@ -29,6 +29,8 @@ open class CommandCompletion(private val plugin: Plugin, private val index: Comm
                     "deliveryDecision" -> listOf("delivered", "retry")
                     "removalDecision" -> listOf("removed", "retained")
                     "transitionDecision" -> listOf("applied", "retained")
+                    "toggle" -> listOf("on", "off")
+                    "chestDecision" -> listOf("before", "after")
                     else -> emptyList()
                 }
             }

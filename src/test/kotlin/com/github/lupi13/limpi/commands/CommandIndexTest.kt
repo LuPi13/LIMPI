@@ -61,7 +61,7 @@ class CommandIndexTest {
             }
         }
         val permissions = descriptor.getConfigurationSection("permissions")!!.getKeys(false)
-        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes) {
+        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes) {
             route.permission?.let { assertTrue(it in permissions, "Missing declared permission $it") }
         }
     }
@@ -84,5 +84,14 @@ class CommandIndexTest {
         assertNull(CommandAccess.route(sender, "financial", arrayOf("set", "name", "100"), index, true))
         assertEquals("stock add", CommandAccess.route(sender, "financial", arrayOf("STOCK", "ADD", "name", "ABCD", "DIAMOND", "100"), index, true)!!.first.id)
         assertEquals(4, messages.size)
+    }
+    @Test fun `chest opening and recovery stay available when the chest system is off`() {
+        val routes = CommandDefinitions.chest.visible(false, true) { true }.map { it.id }
+        assertTrue(routes.containsAll(listOf("help", "open", "inspect", "resolve")))
+        assertFalse(routes.any { it in setOf("shop", "auto") })
+        val auto = CommandDefinitions.chest.resolve(listOf("AUTO", "on"))!!
+        assertEquals("auto", auto.id); assertEquals(1, auto.minimum); assertEquals(2, auto.maximum)
+        assertEquals(listOf("on", "off"), CommandDefinitions.chest.complete(listOf("auto", ""), true, true, { true }) { if (it == "toggle") listOf("on", "off") else emptyList() })
+        assertTrue(CommandDefinitions.chest.visible(true, false) { true }.none { it.id in setOf("open", "shop", "auto") })
     }
 }

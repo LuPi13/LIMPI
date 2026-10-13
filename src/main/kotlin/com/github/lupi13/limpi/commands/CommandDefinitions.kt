@@ -59,4 +59,12 @@ object CommandDefinitions {
         route("sugar void", "limpi.financial.admin.sugar", false, 5, Int.MAX_VALUE, "sugar void <owner UUID> <결과 UUID> <근거>", "적용할 수 없는 설탕 결과를 환불 없이 종료하고 원장을 남깁니다.", true),
         route("review", "limpi.financial.admin.delivery", false, 1, 1, "review", "모든 소유자의 확인 대기 기록과 해결 명령을 조회합니다.", true),
     ))
+    val chest = CommandIndex(listOf(
+        route("help", null, false, 1, 1, "help", "사용 가능한 상자 명령을 확인합니다.", true),
+        route("open", "limpi.chest.open", true, 1, 1, "open", "상자를 엽니다. 해금하지 않았다면 상자 상점을 엽니다.", true),
+        route("shop", "limpi.chest.shop", true, 1, 1, "shop", "돈으로 상자 해금·업그레이드·자동 저장·엔더화를 구매합니다."),
+        route("auto", "limpi.chest.auto", true, 1, 2, "auto [on|off]", "자동 저장을 켜거나 끕니다. 생략하면 전환합니다.", suggestions = mapOf(1 to "toggle")),
+        route("inspect", "limpi.chest.admin.inspect", false, 2, 2, "inspect <플레이어>", "상자 크기·기능·내용물과 미해결 창 기록을 조회합니다.", true, mapOf(1 to "players")),
+        route("resolve", "limpi.chest.admin.resolve", false, 6, Int.MAX_VALUE, "resolve <owner UUID> <창 기록 UUID> before|after <근거>", "오프라인 상자 창 기록 판단을 기록합니다.", true, mapOf(4 to "chestDecision")),
+    ))
 }

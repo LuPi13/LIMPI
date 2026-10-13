@@ -99,6 +99,8 @@ class LIMPI : JavaPlugin() {
         getCommand("financial")!!.tabCompleter = FinancialTab(this)
         getCommand("ability")!!.setExecutor(Ability(this, config.getBoolean("EnableAbilitySystem")))
         getCommand("ability")!!.tabCompleter = AbilityTab(this)
+        getCommand("chest")!!.setExecutor(com.github.lupi13.limpi.commands.Chest(this, config.getBoolean("EnableChestSystem")))
+        getCommand("chest")!!.tabCompleter = com.github.lupi13.limpi.commands.ChestTab(this)
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         val blue = "\u001B[36m"

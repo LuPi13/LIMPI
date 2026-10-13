@@ -16,6 +16,11 @@ commands:
     usage: 잘못된 사용법이거나, config.yml에서 ability 시스템이 비활성화 되어 있습니다.
     aliases: [ab]
 
+  chest:
+    description: command about the purchasable personal chest
+    usage: 잘못된 사용법이거나, config.yml에서 chest 시스템이 비활성화 되어 있습니다.
+    aliases: [ch]
+
 permissions:
   limpi.ability.quest:
     description: Inspect your quest completion rewards and progress
@@ -106,4 +111,19 @@ permissions:
     default: op
   limpi.financial.admin.add:
     description: Adjust an account balance
+    default: op
+  limpi.chest.open:
+    description: Open your purchased chest
+    default: true
+  limpi.chest.shop:
+    description: Buy chest unlock, upgrades, auto store and ender
+    default: true
+  limpi.chest.auto:
+    description: Toggle chest auto store
+    default: true
+  limpi.chest.admin.inspect:
+    description: Inspect any player's chest and unresolved chest windows
+    default: op
+  limpi.chest.admin.resolve:
+    description: Resolve interrupted chest windows while the owner is offline
     default: op

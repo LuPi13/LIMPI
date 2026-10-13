@@ -44,8 +44,8 @@ import java.util.logging.Level
  * the chest as opened until the close is committed together with a player data checkpoint (see ChestService).
  */
 class ChestEvents : Listener {
-    class ChestHolder(val owner: UUID, val session: ChestSession) : InventoryHolder {
-        private val view = Bukkit.createInventory(this, session.chestBefore.size, chestGUIName)
+    class ChestHolder(val owner: UUID, var session: ChestSession, ownerName: String) : InventoryHolder {
+        private val view = Bukkit.createInventory(this, session.chestBefore.size, chestGUIName(ownerName))
         /** Set once the close is being committed; later clicks in a lingering view are refused. */
         var finished = false
         override fun getInventory(): Inventory = view
@@ -53,7 +53,7 @@ class ChestEvents : Listener {
 
     companion object {
         private val plugin get() = JavaPlugin.getPlugin(LIMPI::class.java)
-        val chestGUIName = Component.text("LIMPI: 상자", NamedTextColor.GOLD, TextDecoration.BOLD)
+        fun chestGUIName(ownerName: String) = Component.text("LIMPI: ${ownerName}님의 상자", NamedTextColor.GOLD, TextDecoration.BOLD)
         val chestShopGUIName = Component.text("LIMPI: 상자 상점", NamedTextColor.GOLD, TextDecoration.BOLD)
         private val sessions = mutableMapOf<UUID, ChestHolder>()
 
@@ -80,7 +80,7 @@ class ChestEvents : Listener {
                 FileManager.delivery.fail(player, failure, "Chest window ${session.id} could not be opened for $owner", "상자 기록을 확인해야 합니다.")
                 return
             }
-            val holder = ChestHolder(owner, session)
+            val holder = ChestHolder(owner, session, player.name)
             session.chestBefore.forEachIndexed { slot, stack -> stack?.let { holder.inventory.setItem(slot, PaperItemCodec.item(it.payload, it.count)) } }
             sessions[owner] = holder
             player.openInventory(holder.inventory)
@@ -112,6 +112,29 @@ class ChestEvents : Listener {
                 FileManager.delivery.fail(player, failure, "Chest window ${holder.session.id} could not be saved for ${player.uniqueId}", "상자 기록을 확인해야 합니다.")
             }
             if (showing && closeView) player.closeInventory()
+        }
+
+        /**
+         * Commit the window as it is now and keep it open under a fresh record. Used right after something leaves the
+         * window onto the ground, so a crash cannot bring that item back into the chest while it also lies in the world.
+         * Items on the cursor are in neither image until the window closes.
+         */
+        private fun checkpoint(player: Player) {
+            val holder = sessions[player.uniqueId] ?: return
+            if (holder.finished) return
+            try {
+                val inventory = FileManager.delivery.fullInventory(player)
+                val current = inventory.snapshot()
+                val closing = FileManager.chests.closing(holder.session, current, image(holder.inventory))
+                inventory.checkpoint(current, requireNotNull(closing.closeCheckpoint))
+                FileManager.chests.complete(closing)
+                val next = FileManager.chests.open(player.uniqueId, current)
+                inventory.checkpoint(current, next.openCheckpoint)
+                holder.session = next
+            } catch (failure: Exception) {
+                sessions.remove(player.uniqueId); holder.finished = true
+                FileManager.delivery.fail(player, failure, "Chest window ${holder.session.id} could not be checkpointed for ${player.uniqueId}", "상자 기록을 확인해야 합니다.")
+            }
         }
 
         fun closeAll() = Bukkit.getOnlinePlayers().filter { it.uniqueId in sessions }.forEach { finish(it, closeView = true) }
@@ -166,10 +189,7 @@ class ChestEvents : Listener {
     @EventHandler(priority = EventPriority.LOW)
     fun click(event: InventoryClickEvent) {
         val holder = event.view.topInventory.holder as? ChestHolder ?: return
-        if (holder.finished || FileManager.delivery.blocked(event.whoClicked.uniqueId)) { event.isCancelled = true; return }
-        // Nothing leaves through the window onto the ground while the chest is only half recorded.
-        if (event.slotType == InventoryType.SlotType.OUTSIDE || event.action in setOf(InventoryAction.DROP_ALL_CURSOR,
-                InventoryAction.DROP_ONE_CURSOR, InventoryAction.DROP_ALL_SLOT, InventoryAction.DROP_ONE_SLOT)) event.isCancelled = true
+        if (holder.finished || FileManager.delivery.blocked(event.whoClicked.uniqueId)) event.isCancelled = true
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -186,8 +206,9 @@ class ChestEvents : Listener {
         player.playSound(player.location, Sound.BLOCK_CHEST_CLOSE, 0.5f, 1.0f)
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    fun drop(event: PlayerDropItemEvent) { if (event.player.uniqueId in sessions) event.isCancelled = true }
+    /** Dropping (Q, or outside the window) works as in a vanilla chest; the window is committed at once. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun drop(event: PlayerDropItemEvent) { if (event.player.uniqueId in sessions) checkpoint(event.player) }
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun pickup(event: EntityPickupItemEvent) { if (event.entity.uniqueId in sessions) event.isCancelled = true }
@@ -196,6 +217,7 @@ class ChestEvents : Listener {
     fun quit(event: PlayerQuitEvent) {
         finish(event.player, closeView = false)
         FileManager.chests.release(event.player.uniqueId)
+        com.github.lupi13.limpi.platform.ChestToast.forget(event.player.uniqueId)
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -228,6 +250,7 @@ class ChestEvents : Listener {
             event.isCancelled = true
             if (accepted == stack.amount) item.remove() else item.itemStack = stack.clone().apply { amount -= accepted }
             player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 0.2f, 0.8f)
+            com.github.lupi13.limpi.platform.ChestToast.show(plugin, player, stack)
         } catch (failure: Exception) {
             plugin.logger.log(Level.WARNING, "Chest auto store $request failed for ${player.uniqueId}", failure)
         }

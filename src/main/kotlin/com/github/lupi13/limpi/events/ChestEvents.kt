@@ -177,7 +177,7 @@ class ChestEvents : Listener {
             if (!state.unlocked) icon(11, Material.CHEST, Component.text("상자 해금", NamedTextColor.GOLD, TextDecoration.BOLD),
                 listOf(line("9칸(1줄)짜리 개인 상자를 엽니다."), line("/chest로 언제든 열 수 있습니다.")) + price(ChestProduct.UNLOCK), ChestProduct.UNLOCK)
             else icon(11, Material.CHEST, Component.text("상자 업그레이드", NamedTextColor.GOLD, TextDecoration.BOLD),
-                listOf(line("현재 ${state.rows}줄(${state.rows * 9}칸)입니다.")) +
+                listOf(line("현재 ").append(line("${state.rows}줄(${state.rows * 9}칸)", NamedTextColor.GREEN)).append(line("입니다."))) +
                     (if (state.rows < ChestState.MAX_ROWS) listOf(line("구매하면 1줄(9칸) 늘어납니다.")) + price(ChestProduct.UPGRADE)
                     else listOf(line("최대 크기입니다.", NamedTextColor.GREEN))), ChestProduct.UPGRADE)
             icon(13, Material.HOPPER, Component.text("자동 저장", NamedTextColor.AQUA, TextDecoration.BOLD),

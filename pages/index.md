@@ -2,13 +2,25 @@
 
 **LuPi13's Integrated Minecraft Plug-In**의 명령어 안내 페이지입니다.
 
-접속할 때 나오는 **[도움말 보기]**를 누르면 이 페이지로 옵니다. 게임 안에서는 `/limpi help`로 모든 도움말을 모아 볼 수 있고, `/ability help`(`/ab help`), `/financial help`(`/fc help`), `/chest help`(`/ch help`), `/notice help`(`/nt help`)는 채팅에 명령어 사용법을 보여 줍니다. 첫 줄의 **[웹 도움말]**을 누르면 이 사이트의 명령어 페이지가 열립니다.
+접속할 때 나오는 **[도움말 보기]**를 누르면 이 페이지로 옵니다. 게임 안에서는 `/limpi help`로 모든 도움말을 모아 볼 수 있고, `/ability help`(`/ab help`), `/financial help`(`/fc help`), `/chest help`(`/ch help`), `/notice help`(`/nt help`)는 채팅에 명령어 사용법을 보여 줍니다. 첫 줄의 **[웹 도움말]**을 누르면 이 사이트에서 그 시스템의 페이지가 열립니다.
 
 <div class="grid cards" markdown>
 
-- **[명령어](commands.md)**
+- **[능력](ability.md)**
 
-    모든 플레이어가 쓰는 능력·뽑기·퀘스트·계좌·수표·상점·장터·주식·상자·공지 명령어
+    능력·뽑기·선택권·도감·천장·퀘스트 명령어
+
+- **[금융](financial.md)**
+
+    계좌·송금·수표·상점·장터·주식 명령어
+
+- **[상자](chest.md)**
+
+    개인 상자 구매·자동 저장·엔더화
+
+- **[공지](notice.md)**
+
+    서버 공지 보기
 
 - **[관리자 명령어](admin.md)**
 

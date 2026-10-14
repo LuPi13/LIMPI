@@ -8,7 +8,12 @@ site_dir: build/site
 
 nav:
   - 처음으로: index.md
-  - 명령어: commands.md
+  - 명령어:
+      - 명령어 목록: commands.md
+      - 능력: ability.md
+      - 금융: financial.md
+      - 상자: chest.md
+      - 공지: notice.md
   - 관리자 명령어: admin.md
 
 theme:

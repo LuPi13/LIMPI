@@ -14,7 +14,7 @@ import org.bukkit.plugin.Plugin
 class Limpi(private val plugin: Plugin) : CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, input: Array<out String>): Boolean {
         CommandAccess.route(sender, "limpi", input, CommandDefinitions.limpi, true) ?: return true
-        val web = WebHelp.links(plugin, sender)
+        val web = WebHelp.links(plugin, sender, null)
         lines(web).forEach(sender::sendMessage)
         if (sender !is Player) web.forEach { sender.sendMessage("${it.label}: ${it.url}") }
         return true

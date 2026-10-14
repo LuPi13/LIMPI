@@ -14,12 +14,17 @@ object WebHelp {
 
     private fun root(base: String?): String? = base?.trim()?.ifEmpty { null }?.let { if (it.endsWith('/')) it else "$it/" }
 
-    fun links(base: String?, admin: Boolean): List<Link> {
+    /**
+     * [system] (ability, financial, chest, notice) links to that system's page and its section of the admin page;
+     * null (/limpi help) links to the front page and the top of the admin page.
+     */
+    fun links(base: String?, admin: Boolean, system: String?): List<Link> {
         val root = root(base) ?: return emptyList()
-        return listOfNotNull(Link("웹 도움말", "${root}commands/"), if (admin) Link("관리자 명령어", "${root}admin/", true) else null)
+        return listOfNotNull(Link("웹 도움말", if (system == null) root else "$root$system/"),
+            if (admin) Link("관리자 명령어", if (system == null) "${root}admin/" else "${root}admin/#$system", true) else null)
     }
 
-    fun links(plugin: Plugin, sender: CommandSender): List<Link> = links(plugin.config.getString("HelpUrl"), admin(sender))
+    fun links(plugin: Plugin, sender: CommandSender, system: String?): List<Link> = links(plugin.config.getString("HelpUrl"), admin(sender), system)
 
     /** The site's front page, or null when no address is configured. */
     fun home(base: String?): String? = root(base)

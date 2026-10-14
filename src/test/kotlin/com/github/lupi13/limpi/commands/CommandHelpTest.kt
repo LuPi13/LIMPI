@@ -10,13 +10,13 @@ class CommandHelpTest {
     private fun plain(component: Component) = PlainTextComponentSerializer.plainText().serialize(component)
     private val player: (String) -> Boolean = { !it.contains(".admin.") }
     private val admin: (String) -> Boolean = { true }
-    private val web = WebHelp.links("https://example.org/LIMPI/", true)
+    private val web = WebHelp.links("https://example.org/LIMPI/", true, null)
 
     private fun clicks(component: Component): List<ClickEvent<*>> =
         listOfNotNull(component.clickEvent()) + component.children().flatMap(::clicks)
 
     @Test fun `player help lists usage lines only and hides administrative commands`() {
-        val lines = CommandHelp.lines("financial", CommandDefinitions.financial, true, false, true, player, WebHelp.links("https://example.org/LIMPI/", false))
+        val lines = CommandHelp.lines("financial", CommandDefinitions.financial, true, false, true, player, WebHelp.links("https://example.org/LIMPI/", false, "financial"))
         val text = lines.map(::plain)
         assertEquals("━━━━━ /financial 도움말 ━━━━━ [웹 도움말]", text[0])
         assertEquals("/fi, /fc 로도 입력할 수 있습니다.", text[1])
@@ -80,7 +80,7 @@ class CommandHelpTest {
         val lines = Limpi.lines(web)
         assertEquals("━━━━━ LIMPI 도움말 ━━━━━ [웹 도움말] [관리자 명령어]", plain(lines[0]))
         assertEquals(CommandDefinitions.all.keys.map { ClickEvent.runCommand("/$it help") }, lines.drop(1).map { it.clickEvent() })
-        assertEquals(listOf(ClickEvent.openUrl("https://example.org/LIMPI/commands/"), ClickEvent.openUrl("https://example.org/LIMPI/admin/")), clicks(lines[0]))
+        assertEquals(listOf(ClickEvent.openUrl("https://example.org/LIMPI/"), ClickEvent.openUrl("https://example.org/LIMPI/admin/")), clicks(lines[0]))
     }
 
     @Test fun `the web home is the configured address`() {

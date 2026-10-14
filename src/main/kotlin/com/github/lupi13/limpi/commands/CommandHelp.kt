@@ -18,7 +18,7 @@ object CommandHelp {
     val ALIASES = mapOf("ability" to listOf("ab"), "financial" to listOf("fi", "fc"), "chest" to listOf("ch"), "notice" to listOf("no", "nt"))
 
     fun show(plugin: Plugin, sender: CommandSender, root: String, index: CommandIndex, enabled: Boolean, admin: Boolean) {
-        val web = WebHelp.links(plugin, sender)
+        val web = WebHelp.links(plugin, sender, root)
         lines(root, index, enabled, admin, sender is Player, sender::hasPermission, web).forEach(sender::sendMessage)
         // The console cannot click; print the addresses instead.
         if (sender !is Player) web.filter { it.admin == admin }.forEach { sender.sendMessage("${it.label}: ${it.url}") }

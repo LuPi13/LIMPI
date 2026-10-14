@@ -19,8 +19,8 @@ object WebHelp {
 
     fun links(plugin: Plugin, sender: CommandSender): List<Link> = links(plugin.config.getString("HelpUrl"), admin(sender))
 
-    /** Whether the sender can use any administrative ability/financial/chest command. */
-    fun admin(sender: CommandSender): Boolean = (CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes)
+    /** Whether the sender can use any administrative ability/financial/chest/notice command. */
+    fun admin(sender: CommandSender): Boolean = (CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes + CommandDefinitions.notice.routes)
         .any { route -> route.permission?.contains(".admin.") == true && sender.hasPermission(route.permission) }
 
     /** Clickable lines for a help book page; empty when no link is configured. */

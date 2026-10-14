@@ -7,6 +7,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import java.util.UUID
 
+/** A mistake in what the sender typed; shown to them as is. */
+class NoticeInputError(message: String) : IllegalArgumentException(message)
+
 /** A notice is numbered per day: 2026-10-14 (001). Numbers are never reused, even after a delete. */
 data class NoticeId(val date: LocalDate, val number: Int) : Comparable<NoticeId> {
     init { require(number > 0) { "Notice numbers start at 1" } }
@@ -17,9 +20,9 @@ data class NoticeId(val date: LocalDate, val number: Int) : Comparable<NoticeId>
 
     companion object {
         fun parseDate(text: String): LocalDate = try { LocalDate.parse(text) }
-            catch (_: DateTimeParseException) { throw IllegalArgumentException("날짜는 2026-10-14 형식으로 입력하세요.") }
+            catch (_: DateTimeParseException) { throw NoticeInputError("날짜는 2026-10-14 형식으로 입력하세요.") }
         fun parseNumber(text: String): Int = text.toIntOrNull()?.takeIf { it > 0 }
-            ?: throw IllegalArgumentException("공지 번호는 1 이상의 숫자로 입력하세요.")
+            ?: throw NoticeInputError("공지 번호는 1 이상의 숫자로 입력하세요.")
         /** "2026-10-14/001" as stored in read lists and keys. */
         fun parse(text: String): NoticeId {
             val (date, number) = text.split('/').takeIf { it.size == 2 } ?: throw IllegalArgumentException("Invalid notice id $text")
@@ -38,7 +41,7 @@ data class Notice(val id: NoticeId, val json: String, val author: String, val cr
  */
 class NoticeBoard(private val store: StateStore) {
     fun write(json: String, author: String, today: LocalDate, now: Long): Notice {
-        require(json.isNotBlank()) { "공지 내용을 입력하세요." }
+        if (json.isBlank()) throw NoticeInputError("공지 내용을 입력하세요.")
         lateinit var notice: Notice
         store.atomic { tx ->
             val meta = tx.get(META)?.let(YamlFiles::parse) ?: YamlConfiguration()

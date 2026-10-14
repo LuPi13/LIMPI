@@ -22,15 +22,15 @@ object NoticeText {
     /** Returns the component to store as serialized JSON. */
     fun parse(input: String): Component {
         val text = input.trim()
-        require(text.isNotEmpty()) { "공지 내용을 입력하세요." }
+        if (text.isEmpty()) throw NoticeInputError("공지 내용을 입력하세요.")
         if (!looksLikeJson(text)) return Component.text(text.replace("\\n", "\n"))
         val tree = try { JsonParser.parseString(text) } catch (failure: Exception) {
-            throw IllegalArgumentException("JSON 형식이 올바르지 않습니다: ${failure.message?.substringBefore('\n') ?: "해석 실패"}")
+            throw NoticeInputError("JSON 형식이 올바르지 않습니다: ${failure.message?.substringBefore('\n') ?: "해석 실패"}")
         }
         val component = try { GsonComponentSerializer.gson().deserializeFromTree(normalize(tree)) } catch (failure: Exception) {
-            throw IllegalArgumentException("JSON 텍스트 형식이 올바르지 않습니다: ${failure.message?.substringBefore('\n') ?: "해석 실패"}")
+            throw NoticeInputError("JSON 텍스트 형식이 올바르지 않습니다: ${failure.message?.substringBefore('\n') ?: "해석 실패"}")
         }
-        require(PlainTextComponentSerializer.plainText().serialize(component).isNotBlank()) { "공지 내용이 비어 있습니다." }
+        if (PlainTextComponentSerializer.plainText().serialize(component).isBlank()) throw NoticeInputError("공지 내용이 비어 있습니다.")
         return component
     }
 

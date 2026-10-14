@@ -57,6 +57,7 @@ class FileManager {
         private lateinit var initialItems: List<com.github.lupi13.limpi.delivery.ItemGrant>
         private lateinit var questRewards: QuestRewards
         private lateinit var chestService: com.github.lupi13.limpi.chest.ChestService
+        private lateinit var noticeBoard: com.github.lupi13.limpi.notice.NoticeBoard
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
@@ -77,6 +78,7 @@ class FileManager {
         val sugar: com.github.lupi13.limpi.ability.SugarSettlement get() = sugarSettlement
         val quest: QuestRewards get() = questRewards
         val chests: com.github.lupi13.limpi.chest.ChestService get() = chestService
+        val notices: com.github.lupi13.limpi.notice.NoticeBoard get() = noticeBoard
 
         /** Finished delivery/removal/transition/escrow records and their ledger rows are only kept for RecordRetentionDays. */
         private fun pruneRecords(owner: Plugin) {
@@ -135,6 +137,8 @@ class FileManager {
                 com.github.lupi13.limpi.ability.SugarSettlement.KIND to sugarSettlement,
             ))
             chestService = com.github.lupi13.limpi.chest.ChestService(state, repository)
+            noticeBoard = com.github.lupi13.limpi.notice.NoticeBoard(state)
+            com.github.lupi13.limpi.commands.Notice.prune(owner)
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal, abilityTransitions, chestService)
             financial.clear()
         }

@@ -60,3 +60,7 @@ ChestUpgradePrice: [20000, 40000, 80000, 160000, 320000]  # 2줄, 3줄, 4줄, 5�
 ChestAutoStorePrice: 50000  # 자동 저장 가격
 ChestEnderPrice: 1000000  # 엔더화(죽어도 상자 아이템을 떨어뜨리지 않음) 가격
 #=== Chest System Configuration End ===#
+
+#=== Notice Configuration ===#
+NoticeRetentionDays: 30  # 서버 시작 시와 공지 등록 시 이 일수보다 오래된 공지를 삭제 (0 이하면 삭제 안 함)
+#=== Notice Configuration End ===#

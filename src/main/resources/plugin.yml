@@ -21,7 +21,21 @@ commands:
     usage: 잘못된 사용법이거나, config.yml에서 chest 시스템이 비활성화 되어 있습니다.
     aliases: [ch]
 
+  notice:
+    description: command about server notices
+    usage: 잘못된 사용법입니다. /notice help를 확인하세요.
+    aliases: [no, nt]
+
 permissions:
+  limpi.notice.show:
+    description: Read current and past notices
+    default: true
+  limpi.notice.admin.write:
+    description: Write a notice and show it to online players
+    default: op
+  limpi.notice.admin.delete:
+    description: Delete a notice
+    default: op
   limpi.ability.quest:
     description: Inspect your quest completion rewards and progress
     default: true

@@ -101,6 +101,8 @@ class LIMPI : JavaPlugin() {
         getCommand("ability")!!.tabCompleter = AbilityTab(this)
         getCommand("chest")!!.setExecutor(com.github.lupi13.limpi.commands.Chest(this, config.getBoolean("EnableChestSystem")))
         getCommand("chest")!!.tabCompleter = com.github.lupi13.limpi.commands.ChestTab(this)
+        getCommand("notice")!!.setExecutor(com.github.lupi13.limpi.commands.Notice(this))
+        getCommand("notice")!!.tabCompleter = com.github.lupi13.limpi.commands.NoticeTab(this)
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         val blue = "\u001B[36m"

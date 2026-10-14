@@ -67,4 +67,12 @@ object CommandDefinitions {
         route("inspect", "limpi.chest.admin.inspect", false, 2, 2, "inspect <플레이어>", "상자 크기·기능·내용물과 미해결 창 기록을 조회합니다.", true, mapOf(1 to "players")),
         route("resolve", "limpi.chest.admin.resolve", false, 6, Int.MAX_VALUE, "resolve <owner UUID> <창 기록 UUID> before|after <근거>", "오프라인 상자 창 기록 판단을 기록합니다.", true, mapOf(4 to "chestDecision")),
     ))
+    val notice = CommandIndex(listOf(
+        route("help", null, false, 1, 1, "help", "사용 가능한 공지 명령을 확인합니다.", true),
+        route("show", "limpi.notice.show", false, 2, 3, "show <날짜> [번호]", "지난 공지를 다시 봅니다. 번호를 생략하면 그날의 공지를 모두 봅니다.", true, mapOf(1 to "noticeDates", 2 to "noticeNumbers")),
+        route("list", "limpi.notice.show", false, 1, 1, "list", "보관 중인 공지의 날짜와 번호를 확인합니다.", true),
+        route("unread", "limpi.notice.show", true, 1, 1, "unread", "읽지 않은 공지를 모두 봅니다.", true),
+        route("write", "limpi.notice.admin.write", false, 2, Int.MAX_VALUE, "write <내용|JSON 텍스트>", "공지를 등록하고 접속 중인 플레이어에게 보여줍니다.", true),
+        route("delete", "limpi.notice.admin.delete", false, 3, 3, "delete <날짜> <번호>", "공지를 삭제합니다. 번호는 다시 쓰지 않습니다.", true, mapOf(1 to "noticeDates", 2 to "noticeNumbers")),
+    ))
 }

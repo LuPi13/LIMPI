@@ -61,7 +61,7 @@ class CommandIndexTest {
             }
         }
         val permissions = descriptor.getConfigurationSection("permissions")!!.getKeys(false)
-        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes) {
+        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes + CommandDefinitions.notice.routes) {
             route.permission?.let { assertTrue(it in permissions, "Missing declared permission $it") }
         }
     }
@@ -93,5 +93,18 @@ class CommandIndexTest {
         assertEquals("auto", auto.id); assertEquals(1, auto.minimum); assertEquals(2, auto.maximum)
         assertEquals(listOf("on", "off"), CommandDefinitions.chest.complete(listOf("auto", ""), true, true, { true }) { if (it == "toggle") listOf("on", "off") else emptyList() })
         assertTrue(CommandDefinitions.chest.visible(true, false) { true }.none { it.id in setOf("open", "shop", "auto") })
+    }
+    @Test fun `notice reading is open to everyone and console while writing and deleting stay admin`() {
+        val index = CommandDefinitions.notice
+        assertEquals(listOf("help", "show", "list"), index.visible(true, false) { !it.contains(".admin.") }.map { it.id })
+        assertEquals(listOf("help", "show", "list", "unread"), index.visible(true, true) { !it.contains(".admin.") }.map { it.id })
+        assertEquals("limpi.notice.admin.write", index.resolve(listOf("WRITE", "[{\"text\":\"a\"}]", "b"))!!.permission)
+        assertEquals(Int.MAX_VALUE, index.resolve(listOf("write"))!!.maximum)
+        val show = index.resolve(listOf("show", "2026-10-14"))!!
+        assertEquals(2, show.minimum); assertEquals(3, show.maximum)
+        val values = { kind: String -> if (kind == "noticeDates") listOf("2026-10-14") else if (kind == "noticeNumbers") listOf("001", "002") else emptyList() }
+        assertEquals(listOf("2026-10-14"), index.complete(listOf("show", "2026"), true, true, { true }, values))
+        assertEquals(listOf("001", "002"), index.complete(listOf("delete", "2026-10-14", "0"), true, false, { true }, values))
+        assertTrue(index.complete(listOf("delete", ""), true, false, { !it.contains(".admin.") }, values).isEmpty())
     }
 }

@@ -32,8 +32,13 @@ class LIMPI : JavaPlugin() {
         // File Setting
         var time = System.currentTimeMillis()
         logger.info("File setting...")
-        config.options().copyDefaults()
         saveDefaultConfig()
+        // Settings added by a newer version are written into an existing config.yml with their comments.
+        getResource("config.yml")?.use { template ->
+            com.github.lupi13.limpi.config.ConfigMerge.apply(dataFolder.toPath().resolve("config.yml"), template.readBytes().toString(Charsets.UTF_8),
+                java.time.LocalDateTime.now(), logger::info) { message, failure -> logger.log(java.util.logging.Level.WARNING, message, failure) }
+        }
+        reloadConfig()
         AbilityManager.initialize(this)
         FileManager.initialize(this)
         backups = com.github.lupi13.limpi.platform.BackupScheduler(this)

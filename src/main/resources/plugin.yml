@@ -24,7 +24,7 @@ commands:
   notice:
     description: command about server notices
     usage: 잘못된 사용법입니다. /notice help를 확인하세요.
-    aliases: [no, nt]
+    aliases: ['no', nt]
 
   limpi:
     description: LIMPI help for every system

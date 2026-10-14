@@ -107,4 +107,13 @@ class CommandIndexTest {
         assertEquals(listOf("001", "002"), index.complete(listOf("delete", "2026-10-14", "0"), true, false, { true }, values))
         assertTrue(index.complete(listOf("delete", ""), true, false, { !it.contains(".admin.") }, values).isEmpty())
     }
+    @Test fun `aliases are read as strings from the packaged descriptor`() {
+        // An unquoted YAML 1.1 "no" becomes boolean false and registers /false instead of /no.
+        val descriptor = javaClass.classLoader.getResourceAsStream("plugin.yml")!!.use { stream ->
+            org.bukkit.configuration.file.YamlConfiguration().apply { loadFromString(stream.readBytes().toString(Charsets.UTF_8)) }
+        }
+        val aliases = descriptor.getConfigurationSection("commands")!!.getKeys(false).associateWith { descriptor.getList("commands.$it.aliases").orEmpty() }
+        assertEquals(mapOf("financial" to listOf("fi", "fc"), "ability" to listOf("ab"), "chest" to listOf("ch"), "notice" to listOf("no", "nt"), "limpi" to emptyList<Any>()), aliases)
+        assertEquals(CommandHelp.ALIASES, aliases.filterValues { it.isNotEmpty() }.mapValues { (_, list) -> list.map { it as String } })
+    }
 }

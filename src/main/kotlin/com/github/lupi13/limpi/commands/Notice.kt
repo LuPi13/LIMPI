@@ -24,7 +24,8 @@ class Notice(private val plugin: Plugin) : CommandExecutor {
         val (route, args) = CommandAccess.route(sender, "notice", input, CommandDefinitions.notice, true) ?: return true
         try {
             when (route.id) {
-                "help" -> CommandHelp.show(sender, "notice", CommandDefinitions.notice, true, web = WebHelp.links(plugin, sender))
+                "help" -> CommandHelp.show(plugin, sender, "notice", CommandDefinitions.notice, true, admin = false)
+                "help admin" -> CommandHelp.show(plugin, sender, "notice", CommandDefinitions.notice, true, admin = true)
                 "write" -> write(sender, args.drop(1).joinToString(" "))
                 "show" -> {
                     val date = NoticeId.parseDate(args[1])

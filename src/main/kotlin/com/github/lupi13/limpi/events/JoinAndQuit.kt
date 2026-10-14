@@ -29,19 +29,7 @@ class JoinAndQuit: Listener {
             FileManager.delivery.reject(player, failure)
             return
         }
-        player.sendMessage(Component.text("환영합니다, ", NamedTextColor.WHITE)
-            .append(Functions.playerDisplay(player))
-            .append(Component.text("님!\n").color(NamedTextColor.WHITE))
-            .append(Component.text("/financial help", NamedTextColor.LIGHT_PURPLE)
-                .hoverEvent(HoverEvent.showText(Component.text("클릭하여 명령 실행", NamedTextColor.WHITE)))
-                .clickEvent(ClickEvent.runCommand("/financial help")))
-            .append(Component.text(", ", NamedTextColor.WHITE))
-            .append(Component.text("/ability help", NamedTextColor.LIGHT_PURPLE)
-            .hoverEvent(HoverEvent.showText(Component.text("클릭하여 명령 실행", NamedTextColor.WHITE)))
-            .clickEvent(ClickEvent.runCommand("/ability help")))
-            .append(Component.text(" 명령어를 입력하여 도움말을 확인하세요.", NamedTextColor.WHITE)))
-        player.sendMessage(Component.text("보라색 ", NamedTextColor.LIGHT_PURPLE)
-            .append(Component.text("글씨를 눌러 바로 실행할 수도 있습니다!", NamedTextColor.WHITE)))
+        player.sendMessage(welcome(player, plugin.config.getString("HelpUrl")))
         // 환영 메시지 뒤에 미수령/전환 기록을 복구합니다. 복구 대기 여부와 관계없이 환영 메시지는 표시합니다.
         FileManager.delivery.claim(player, freshLogin = true)
         com.github.lupi13.limpi.quests.MasterSmith.check(player)
@@ -52,5 +40,17 @@ class JoinAndQuit: Listener {
     fun onQuit(event: PlayerQuitEvent) {
         FileManager.releasePlayer(event.player)
         FileManager.delivery.release(event.player.uniqueId)
+    }
+
+    companion object {
+        /** One line: the greeting and a single help link (the web site, or /limpi help when HelpUrl is blank). */
+        fun welcome(player: Player, helpUrl: String?): Component {
+            val home = com.github.lupi13.limpi.commands.WebHelp.home(helpUrl)
+            val link = Component.text("[도움말 보기]", NamedTextColor.LIGHT_PURPLE)
+                .hoverEvent(HoverEvent.showText(Component.text(if (home != null) "클릭하면 브라우저에서 엽니다." else "클릭하여 명령 실행", NamedTextColor.WHITE)))
+                .clickEvent(if (home != null) ClickEvent.openUrl(home) else ClickEvent.runCommand("/limpi help"))
+            return Component.text("환영합니다, ", NamedTextColor.WHITE).append(Functions.playerDisplay(player))
+                .append(Component.text("님! ", NamedTextColor.WHITE)).append(link)
+        }
     }
 }

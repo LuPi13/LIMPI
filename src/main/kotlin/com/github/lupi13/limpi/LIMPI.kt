@@ -103,6 +103,8 @@ class LIMPI : JavaPlugin() {
         getCommand("chest")!!.tabCompleter = com.github.lupi13.limpi.commands.ChestTab(this)
         getCommand("notice")!!.setExecutor(com.github.lupi13.limpi.commands.Notice(this))
         getCommand("notice")!!.tabCompleter = com.github.lupi13.limpi.commands.NoticeTab(this)
+        getCommand("limpi")!!.setExecutor(com.github.lupi13.limpi.commands.Limpi(this))
+        getCommand("limpi")!!.tabCompleter = com.github.lupi13.limpi.commands.LimpiTab()
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")
 
         val blue = "\u001B[36m"

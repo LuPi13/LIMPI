@@ -20,10 +20,9 @@ class Ability(private val plugin: Plugin, private val enabled: Boolean) : Comman
         val (route, args) = CommandAccess.route(sender, "ability", input, CommandDefinitions.ability, enabled) ?: return true
         try {
             when (route.id) {
-                "help" -> {
-                    if (sender is Player && enabled) information.openHelpBook(sender, sender.isOp || sender.hasPermission("limpi.ability.admin.set"), WebHelp.links(plugin, sender))
-                    else CommandHelp.show(sender, "ability", CommandDefinitions.ability, enabled, web = WebHelp.links(plugin, sender))
-                }
+                "help" -> CommandHelp.show(plugin, sender, "ability", CommandDefinitions.ability, enabled, admin = false)
+                "help admin" -> CommandHelp.show(plugin, sender, "ability", CommandDefinitions.ability, enabled, admin = true)
+                "rates" -> information.rates(sender)
                 "me" -> {
                     val player = sender as Player
                     val code = AbilityManager.getPlayerAbilityCodeName(player)

@@ -8,15 +8,11 @@ import com.github.lupi13.limpi.economy.BankException
 import com.github.lupi13.limpi.economy.BankFailure
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
-import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.BookMeta
 import org.bukkit.plugin.Plugin
 import java.util.UUID
 import java.util.logging.Level
@@ -66,8 +62,8 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
         val (route, args) = CommandAccess.route(sender, "financial", input, CommandDefinitions.financial, enabled) ?: return true
         try {
             when (route.id.substringBefore(' ')) {
-                "help" -> if (sender is Player && enabled) helpBook(sender)
-                    else CommandHelp.show(sender, "financial", CommandDefinitions.financial, enabled, web = WebHelp.links(plugin, sender))
+                "help" -> CommandHelp.show(plugin, sender, "financial", CommandDefinitions.financial, enabled, admin = false)
+                "help admin" -> CommandHelp.show(plugin, sender, "financial", CommandDefinitions.financial, enabled, admin = true)
                 "send", "set", "add" -> accountCommands.execute(sender, args)
                 "claim", "delivery" -> deliveryCommands.execute(sender, args)
                 "market" -> marketCommands.execute(sender, args)
@@ -121,84 +117,6 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
     }
 
     /** The original /financial help book; commands added later are appended in the same style. */
-    private fun helpBook(sender: Player) {
-        val routes = CommandDefinitions.financial.visible(enabled, true, sender::hasPermission)
-        val admin = routes.any { it.permission?.contains(".admin.") == true }
-        val book = ItemStack(Material.WRITTEN_BOOK)
-        val meta = book.itemMeta as BookMeta
-        meta.title = "/financial 도움말"
-        meta.author = "LIMPI"
-        fun cmd(usage: String) = Component.text(usage, NamedTextColor.GREEN)
-        fun desc(text: String) = Component.text(text, NamedTextColor.BLACK)
-
-        var page = Component.text("\n\n[/financial 도움말]\n", NamedTextColor.DARK_AQUA, TextDecoration.BOLD)
-        page = page.append(Component.text("/fi, /fc 로도 입력할 수 있습니다.", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
-        page = page.append(WebHelp.component(WebHelp.links(plugin, sender)))
-        meta.addPages(page)
-
-        page = cmd("/financial help").append(desc(": 이 도움말을 보여줍니다.\n\n"))
-            .append(cmd("/financial me")).append(desc(": 현재 본인 계좌의 돈을 보여줍니다.\n\n"))
-            .append(cmd("/financial check <금액>")).append(desc(": 입력한 금액의 수표를 작성합니다. 우클릭하여 사용 가능합니다. "))
-        meta.addPages(page)
-
-        page = cmd("/financial send <플레이어> <금액>").append(desc(": 입력한 금액을 대상 플레이어에게 송금합니다. 수수료 5%가 부과됩니다.\n\n"))
-            .append(cmd("/financial sell")).append(desc(": 아이템을 판매하는 창을 엽니다. 판매할 아이템을 넣고 오른쪽 아래 금을 클릭하면 판매됩니다.\n\n"))
-            .append(cmd("/financial shop")).append(desc(": 아이템을 구매하는 창을 엽니다.\n\n"))
-        meta.addPages(page)
-
-        page = cmd("/financial stock").append(desc(": 주식 시장을 엽니다.\n\n"))
-            .append(cmd("/financial market")).append(desc(": 유저간 거래가 가능한 장터 창을 엽니다.\n\n"))
-            .append(cmd("/financial market add <코드> <가격>")).append(desc(": 손에 든 아이템을 장터에 추가합니다. 코드는 대문자 알파벳, 숫자로 이루어진 4글자입니다.\n\n"))
-        meta.addPages(page)
-
-        page = cmd("/financial market remove <코드>").append(desc(": 장터에서 아이템을 삭제합니다.\n\n"))
-            .append(cmd("/financial claim")).append(desc(": 인벤토리 공간이 부족해 받지 못한 아이템을 받습니다.\n\n"))
-        meta.addPages(page)
-
-        val covered = setOf("help", "me", "check", "send", "sell", "shop", "stock", "market", "market add", "market remove", "claim",
-            "spy", "set", "add", "sell set", "sell remove", "shop set", "shop remove", "stock add", "stock refix", "stock remove")
-        fun extraPages(routes: List<CommandRoute>, perPage: Int = 3) {
-            for (group in routes.chunked(perPage)) {
-                var extra = Component.empty()
-                for (route in group) extra = extra.append(cmd("/financial ${route.usage}")).append(desc(": ${route.description}\n\n"))
-                meta.addPages(extra)
-            }
-        }
-        val extras = routes.filter { it.id !in covered }
-        extraPages(extras.filter { it.permission?.contains(".admin.") != true })
-
-        if (admin) {
-            page = Component.text("이하 관리자 전용 명령어\n", NamedTextColor.RED)
-                .append(cmd("/financial spy <플레이어>").decoration(TextDecoration.BOLD, false)).append(desc(": 대상의 계좌의 돈을 보여줍니다.\n\n"))
-                .append(cmd("/financial set <플레이어> <금액>")).append(desc(": 대상의 계좌의 돈을 입력한 금액으로 설정합니다.\n\n"))
-                .append(cmd("/financial add <플레이어> <금액>")).append(desc(": 대상의 계좌에 입력한 금액을 추가합니다. 금액에 음수를 적을 시 돈을 차감합니다.\n\n"))
-            meta.addPages(page)
-
-            page = cmd("/financial sell set <아이템> <금액>").append(desc(": 아이템의 판매가격을 설정합니다.\n\n"))
-                .append(cmd("/financial sell remove <아이템>")).append(desc(": 아이템의 판매가격을 삭제합니다.\n\n"))
-                .append(cmd("/financial shop set <아이템> <비율>")).append(desc(": 아이템의 구매가격비율을 설정합니다. sell 가격 * 비율이 구매가격이 됩니다.\n\n"))
-            meta.addPages(page)
-
-            page = cmd("/financial shop remove <아이템>").append(desc(": 아이템의 구매가격비율을 삭제합니다.\n\n"))
-                .append(cmd("/financial stock add <이름> <코드> <아이템> <가격>")).append(desc(": 주식을 추가합니다. 이름은 주식의 이름, 코드는 주식의 코드, 아이템은 주식의 아이템, 가격은 주식의 기준 가격입니다.\n\n"))
-            meta.addPages(page)
-
-            page = cmd("/financial stock refix <이름> <코드> <아이템> <가격>").append(desc(": 주식의 기준 가격을 현재 가격으로 재설정합니다. 주식의 가격은 기준 가격을 향하게 미세하게 조정됩니다.\n\n"))
-                .append(cmd("/financial stock remove <이름>")).append(desc(": 주식을 삭제합니다.\n\n"))
-            meta.addPages(page)
-            page = cmd("/financial market remove <코드>").append(desc(": 다른 사람이 장터에 올린 아이템을 강제로 제거합니다.\n\n"))
-            meta.addPages(page)
-            // The long recovery commands (from "delivery resolve" on) do not fit three to a page; show two per page.
-            val adminExtras = extras.filter { it.permission?.contains(".admin.") == true }
-            val long = adminExtras.indexOfFirst { it.id == "delivery resolve" }.let { if (it < 0) adminExtras.size else it }
-            extraPages(adminExtras.take(long))
-            extraPages(adminExtras.drop(long), perPage = 2)
-        }
-
-        book.itemMeta = meta
-        sender.openBook(book)
-    }
-
     private fun sugar(sender: CommandSender, args: Array<out String>) {
         val owner = UUID.fromString(if (args[1].equals("void", true)) args[2] else args[1])
         if (!args[1].equals("void", true)) {

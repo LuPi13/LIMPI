@@ -88,6 +88,20 @@
     - `<근거>`에는 무엇을 확인했는지 적습니다. 기록에 남습니다.
     - 상태가 `APPLYING`인 기록은 아직 처리 중일 수 있으니 바로 판단하지 마세요.
 
+## 공지
+
+| 명령어 | 권한 | 설명 |
+| --- | --- | --- |
+| `/notice write <내용>` | `limpi.notice.admin.write` | 공지를 등록하고 접속 중인 플레이어에게 바로 보여 줍니다. 번호는 날짜마다 001부터 매깁니다. 콘솔에서도 됩니다. |
+| `/notice delete <날짜> <번호>` | `limpi.notice.admin.delete` | 공지를 지웁니다. 지운 번호는 다시 쓰지 않습니다. |
+
+`<내용>`은 일반 글자나 게임 안 JSON 텍스트 형식으로 씁니다.
+
+- 일반 글자: `/notice write [공지] 오늘 밤 10시 점검`. `\n`을 쓰면 줄이 바뀝니다.
+- JSON 텍스트: `{`나 `[{`로 시작하면 JSON으로 읽습니다. 예: `/notice write [{"text":"공지입니다\n","bold":true,"color":"gold"},{"text":"hello","italic":true}]`. `"bold":"true"`처럼 따옴표로 감싼 값도 됩니다. 형식이 틀리면 등록하지 않고 오류를 알려 줍니다.
+- 게임 채팅창은 256자까지만 입력되므로 긴 JSON은 콘솔에서 등록하세요.
+- `config.yml`의 `NoticeRetentionDays`(기본 30)보다 오래된 공지는 서버를 켤 때와 새 공지를 등록할 때 지워집니다. 0 이하면 지우지 않습니다.
+
 복구 조회 명령은 `config.yml`에서 금융 시스템을 꺼도 쓸 수 있고, 콘솔에서도 쓸 수 있습니다.
 
 ## 권한 목록
@@ -109,8 +123,10 @@
 | `limpi.financial.admin.sugar` | OP | 설탕 결과 복구 |
 | `limpi.chest.admin.inspect` | OP | 상자 조회 |
 | `limpi.chest.admin.resolve` | OP | 상자 창 기록 복구 |
+| `limpi.notice.admin.write` | OP | 공지 등록 |
+| `limpi.notice.admin.delete` | OP | 공지 삭제 |
 
-일반 플레이어 명령어의 권한(`limpi.ability.me`, `limpi.financial.send`, `limpi.chest.open` 등)은 모두 기본값이 `true`입니다. 권한 플러그인으로 빼앗으면 해당 명령어가 도움말과 탭 완성에서 사라집니다.
+일반 플레이어 명령어의 권한(`limpi.ability.me`, `limpi.financial.send`, `limpi.chest.open`, `limpi.notice.show` 등)은 모두 기본값이 `true`입니다. 권한 플러그인으로 빼앗으면 해당 명령어가 도움말과 탭 완성에서 사라집니다.
 
 ## 설정 파일
 
@@ -118,7 +134,7 @@
 
 | 파일 | 바꿀 수 있는 것 |
 | --- | --- |
-| `config.yml` | 능력·금융 시스템 켜기/끄기, 첫 소지금과 첫 뽑기권 수, 뽑기 등급 확률, 뽑기권 가격, 픽업 주기, 주식 변동 폭, 자동 백업 주기, 상자 시스템 켜기/끄기와 상자 상점 가격, 게임 안 도움말의 웹 링크 주소(`HelpUrl`) 등 |
+| `config.yml` | 능력·금융 시스템 켜기/끄기, 첫 소지금과 첫 뽑기권 수, 뽑기 등급 확률, 뽑기권 가격, 픽업 주기, 주식 변동 폭, 자동 백업 주기, 상자 시스템 켜기/끄기와 상자 상점 가격, 공지 보관 일수(`NoticeRetentionDays`), 게임 안 도움말의 웹 링크 주소(`HelpUrl`) 등 |
 | `ability/<능력>.yml` | 능력별 세부 수치(피해량, 쿨타임, 범위, 지속 시간 등) |
 | `financial/sellPrice.yml` | 아이템 판매 가격 |
 | `financial/shopRatio.yml` | 상점 판매 아이템과 가격 비율 |

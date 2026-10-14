@@ -58,10 +58,10 @@
 
 명령어 설명은 **[LIMPI 도움말](https://lupi13.github.io/LIMPI/)** 페이지에 있습니다.
 
-- [명령어](https://lupi13.github.io/LIMPI/commands/): 능력·뽑기·퀘스트·계좌·수표·상점·장터·주식·상자
-- [관리자 명령어](https://lupi13.github.io/LIMPI/admin/): 능력 지정, 잔액 조정, 상점·주식 관리, 상자 조회, 거래 복구, 권한 목록
+- [명령어](https://lupi13.github.io/LIMPI/commands/): 능력·뽑기·퀘스트·계좌·수표·상점·장터·주식·상자·공지
+- [관리자 명령어](https://lupi13.github.io/LIMPI/admin/): 능력 지정, 잔액 조정, 상점·주식 관리, 상자 조회, 공지 등록, 거래 복구, 권한 목록
 
-게임 안에서 `/ability help`(`/ab help`), `/financial help`(`/fc help`), `/chest help`(`/ch help`)를 입력하면 나오는 도움말 책에서도 이 페이지로 갈 수 있습니다.
+게임 안에서 `/ability help`(`/ab help`), `/financial help`(`/fc help`), `/chest help`(`/ch help`), `/notice help`(`/nt help`)를 입력하면 나오는 도움말 책에서도 이 페이지로 갈 수 있습니다.
 
 ## 설치
 

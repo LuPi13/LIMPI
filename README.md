@@ -85,4 +85,6 @@
 | `financial/shopRatio.yml` | 상점 판매 아이템과 가격 비율 |
 | `financial/stock.yml` | 주식 종목 |
 
+플러그인을 새 버전으로 바꾸면 `config.yml`에 새로 생긴 설정만 설명과 함께 자동으로 추가됩니다. 이미 고친 값은 그대로 두고, 바꾸기 전 파일은 `config.yml.bak-<날짜-시각>`으로 남깁니다.
+
 능력 수치는 `/ability reload`로 서버를 끄지 않고 다시 불러올 수 있고, 판매 가격·상점·주식은 관리자 명령으로도 바꿀 수 있습니다. 자세한 내용은 [관리자 명령어](https://lupi13.github.io/LIMPI/admin/)를 보세요.

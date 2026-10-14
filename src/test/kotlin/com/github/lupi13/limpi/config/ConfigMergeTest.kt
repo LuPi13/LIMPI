@@ -26,7 +26,7 @@ class ConfigMergeTest {
                 "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice", "NoticeRetentionDays"),
         )
         for ((name, added) in history) {
-            val old = javaClass.classLoader.getResourceAsStream("config-history/$name")!!.use { it.readBytes().toString(Charsets.UTF_8) }
+            val old = javaClass.classLoader.getResourceAsStream("config-history/$name")!!.use { it.readBytes().toString(Charsets.UTF_8) }.replace("\r\n", "\n")
             val result = ConfigMerge.merge(template, old)!!
             assertEquals(added, result.added, name)
             assertEquals(template, result.text, name)

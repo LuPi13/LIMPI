@@ -21,8 +21,7 @@ class Chest(private val plugin: Plugin, private val enabled: Boolean) : CommandE
         val (route, args) = CommandAccess.route(sender, "chest", if (input.isEmpty()) arrayOf("open") else input, CommandDefinitions.chest, enabled) ?: return true
         try {
             when (route.id) {
-                "help" -> CommandHelp.show(plugin, sender, "chest", CommandDefinitions.chest, enabled, admin = false)
-                "help admin" -> CommandHelp.show(plugin, sender, "chest", CommandDefinitions.chest, enabled, admin = true)
+                "help", "help admin" -> CommandHelp.show(plugin, sender, "chest", CommandDefinitions.chest, enabled, admin = route.adminHelp)
                 "open" -> {
                     val player = sender as Player
                     if (FileManager.chests.state(player.uniqueId).unlocked) ChestEvents.open(player)

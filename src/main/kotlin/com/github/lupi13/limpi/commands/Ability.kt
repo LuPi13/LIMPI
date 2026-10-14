@@ -20,8 +20,7 @@ class Ability(private val plugin: Plugin, private val enabled: Boolean) : Comman
         val (route, args) = CommandAccess.route(sender, "ability", input, CommandDefinitions.ability, enabled) ?: return true
         try {
             when (route.id) {
-                "help" -> CommandHelp.show(plugin, sender, "ability", CommandDefinitions.ability, enabled, admin = false)
-                "help admin" -> CommandHelp.show(plugin, sender, "ability", CommandDefinitions.ability, enabled, admin = true)
+                "help", "help admin" -> CommandHelp.show(plugin, sender, "ability", CommandDefinitions.ability, enabled, admin = route.adminHelp)
                 "rates" -> information.rates(sender)
                 "me" -> {
                     val player = sender as Player

@@ -62,8 +62,7 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
         val (route, args) = CommandAccess.route(sender, "financial", input, CommandDefinitions.financial, enabled) ?: return true
         try {
             when (route.id.substringBefore(' ')) {
-                "help" -> CommandHelp.show(plugin, sender, "financial", CommandDefinitions.financial, enabled, admin = false)
-                "help admin" -> CommandHelp.show(plugin, sender, "financial", CommandDefinitions.financial, enabled, admin = true)
+                "help" -> CommandHelp.show(plugin, sender, "financial", CommandDefinitions.financial, enabled, admin = route.adminHelp)
                 "send", "set", "add" -> accountCommands.execute(sender, args)
                 "claim", "delivery" -> deliveryCommands.execute(sender, args)
                 "market" -> marketCommands.execute(sender, args)

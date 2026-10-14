@@ -61,7 +61,7 @@
 - [명령어](https://lupi13.github.io/LIMPI/commands/): 능력·뽑기·퀘스트·계좌·수표·상점·장터·주식·상자·공지
 - [관리자 명령어](https://lupi13.github.io/LIMPI/admin/): 능력 지정, 잔액 조정, 상점·주식 관리, 상자 조회, 공지 등록, 거래 복구, 권한 목록
 
-게임 안에서 `/ability help`(`/ab help`), `/financial help`(`/fc help`), `/chest help`(`/ch help`), `/notice help`(`/nt help`)를 입력하면 나오는 도움말 책에서도 이 페이지로 갈 수 있습니다.
+접속할 때 나오는 **[도움말 보기]**를 누르면 이 페이지로 갑니다. 게임 안에서는 `/limpi help`로 모든 도움말을 모아 볼 수 있고, `/ability help`(`/ab help`), `/financial help`(`/fc help`), `/chest help`(`/ch help`), `/notice help`(`/nt help`)는 채팅에 명령어 사용법과 이 페이지 링크를 보여 줍니다. 뽑기 확률은 `/ability rates`로 봅니다.
 
 ## 설치
 

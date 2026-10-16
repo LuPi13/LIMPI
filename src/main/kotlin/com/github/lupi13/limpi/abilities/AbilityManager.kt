@@ -47,7 +47,7 @@ object AbilityManager : Listener {
         DodgePlus, EndDodge, LightReflex, InvisibleDodge, CriticalDodge, WinterShroud,
         ShieldStrikePlus, RoaringFlame, MetalSmith, LinearBow, Cloak, SuperCloak, BlightRanger,
         BackStab, Berserker, BlockThrower, Counter, FocusBow, HawkEye, HawkEyePlus, LavaJump,
-        HandCannon, PulseCannon, ChargeShot, ChargeShotPlus, ExplosionMove, RealHandCannon, TimeLeaper, TimeLeaperPlus, Chronobreak, AlchemyPlus
+        HandCannon, PulseCannon, ChargeShot, ChargeShotPlus, ExplosionMove, RealHandCannon, TimeLeaper, TimeLeaperPlus, Chronobreak, AlchemyPlus, VolleyShot
         )
 
     /**

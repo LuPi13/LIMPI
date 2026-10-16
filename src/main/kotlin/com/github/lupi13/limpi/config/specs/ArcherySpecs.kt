@@ -5,6 +5,9 @@ import com.github.lupi13.limpi.config.*
 /** Settings of abilities ported from GotchaAbility. */
 object ArcherySpecs {
     val all: Map<String, AbilitySpec> = linkedMapOf(
+        "volley_shot" to AbilitySpec(listOf(
+            number("spread", 5.0, 0.0, 85.0) // 왼손 일제 사격 화살의 무작위 편차(도, 표준편차)
+        )),
         "focus_bow" to AbilitySpec(listOf(
             integer("brake_ticks", 20, 0, 72000),
             number("brake_multiplier", 0.3, 0.0, 1.0),

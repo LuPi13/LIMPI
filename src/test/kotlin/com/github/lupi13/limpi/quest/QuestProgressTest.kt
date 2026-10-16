@@ -66,7 +66,7 @@ class QuestProgressTest {
     }
     @Test fun `hidden quest hint appears only after enough uses and never for visible or cleared quests`() {
         val hidden = QuestManager.quests.filter { it.isHidden }
-        assertEquals(10, hidden.size)
+        assertEquals(11, hidden.size)
         assertTrue(hidden.all { it.hint != null })
         assertTrue(QuestManager.quests.filter { !it.isHidden }.all { it.hint == null })
         val question = net.kyori.adventure.text.Component.text("???", net.kyori.adventure.text.format.NamedTextColor.GRAY)
@@ -90,5 +90,15 @@ class QuestProgressTest {
         assertEquals(QuestProgressDefinitions.DODGE.counter, ColdDodge.hint!!.counter)
         assertEquals(QuestProgressDefinitions.CANNON_SHOTS.counter, BoldForBoom.hint!!.counter)
         assertTrue(QuestHints.DODGE_THRESHOLD <= QuestProgressDefinitions.DODGE.target && BoldForBoom.hint!!.threshold <= QuestProgressDefinitions.CANNON_SHOTS.target)
+    }
+    @Test fun `charge shot overload quest is hidden behind a usage hint and rewards charge shot plus`() {
+        assertSame(WhyDidYouDoThat, QuestManager.getQuestByCodeName("why_did_you_do_that"))
+        assertTrue(WhyDidYouDoThat.isHidden)
+        assertEquals(QuestHints.CHARGE_SHOT_USES, WhyDidYouDoThat.hint!!.counter)
+        assertEquals("charge_shot_plus", WhyDidYouDoThat.rewardAbility.codeName)
+        assertEquals(6000, QuestConditions.CHARGE_SHOT_OVERLOAD_TICKS)
+        val plus = com.github.lupi13.limpi.config.AbilitySpecs.all.getValue("charge_shot_plus").fields.associate { it.key to it.default }
+        assertEquals(30, plus["max_charge_ticks"]); assertEquals(1.3, plus["perfect_multiplier"]); assertEquals(0.3, plus["kill_refund"])
+        assertEquals(1, plus["perfect_window_ticks"])
     }
 }

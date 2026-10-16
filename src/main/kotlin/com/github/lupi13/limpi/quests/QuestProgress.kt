@@ -38,6 +38,8 @@ object QuestConditions {
     const val COLD_DODGE_SPEED = 0.265
     /** 바람처럼 차갑게: 신속 II 이상(amplifier 1 이상)이어야 합니다. */
     const val COLD_DODGE_SPEED_AMPLIFIER = 1
+    /** 도대체 왜 그러셨어요...: 차지샷을 이만큼(5분) 충전하면 폭발하고 달성합니다. */
+    const val CHARGE_SHOT_OVERLOAD_TICKS = 5 * 60 * 20
 
     /** [speedAmplifier] is the active SPEED effect's amplifier, or null without the effect. */
     fun coldDodge(horizontalSpeed: Double, speedAmplifier: Int?): Boolean =
@@ -51,4 +53,5 @@ object QuestHints {
     const val CLOAK_USES = "cloak_uses"
     const val INVISIBLE_DODGE_USES = "invisible_dodge_uses"
     const val TIME_LEAPER_USES = "time_leaper_uses"
+    const val CHARGE_SHOT_USES = "charge_shot_uses"
 }

@@ -39,9 +39,7 @@ object ChargeShotPlus : ChargeShotAbility(
                 .append(Component.text("배가 됩니다.", NamedTextColor.WHITE)),
             Component.text("이 능력으로 처치하면 쿨타임의 ", NamedTextColor.WHITE)
                 .append(Component.text("${Math.round(config.getDouble("kill_refund") * 100)}%", NamedTextColor.GREEN))
-                .append(Component.text("를 돌려받습니다.", NamedTextColor.WHITE)),
-            Component.text("충전 중이면 바로 그만큼 충전되고, 아니면 다음 충전이", NamedTextColor.WHITE),
-            Component.text("그만큼 충전된 채로 시작합니다.", NamedTextColor.WHITE)
+                .append(Component.text("를 돌려받습니다.", NamedTextColor.WHITE))
         )
     }
 

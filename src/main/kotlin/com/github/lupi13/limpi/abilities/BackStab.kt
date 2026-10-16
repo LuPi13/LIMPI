@@ -28,7 +28,7 @@ abstract class BackStabVariant(
     grade = grade,
     displayName = displayName,
     codeName = codeName,
-    material = Material.GOLDEN_SWORD,
+    material = Material.IRON_SWORD,
     description = description,
     acquisition = acquisition,
     needFile = true

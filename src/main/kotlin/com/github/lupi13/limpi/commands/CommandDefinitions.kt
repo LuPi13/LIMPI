@@ -48,21 +48,10 @@ object CommandDefinitions {
         route("market", "limpi.financial.market", true, 1, 1, "market", "플레이어 장터를 엽니다.", short = "장터 열기"),
         route("market add", "limpi.financial.market", true, 4, 4, "market add <코드> <가격>", "주 손 묶음을 저장 확인 후 등록합니다.", short = "손에 든 아이템 등록"),
         route("market remove", "limpi.financial.market", true, 3, 3, "market remove <코드>", "자신의 매물을 회수해 미수령으로 반환합니다.", suggestions = mapOf(2 to "listings"), short = "내 매물 회수"),
-        route("market escrow", "limpi.financial.admin.market", false, 3, 3, "market escrow <owner UUID>", "중단된 매물 회수를 조회합니다.", true, short = "중단된 매물 회수 조회"),
-        route("market resolve", "limpi.financial.admin.market", false, 6, Int.MAX_VALUE, "market resolve <owner UUID> <매물 UUID> removed|retained <근거>", "오프라인 매물 회수 판단을 기록합니다.", true, mapOf(4 to "removalDecision"), short = "매물 회수 판단 기록"),
         route("spy", "limpi.financial.admin.spy", false, 2, 2, "spy <플레이어>", "오프라인을 포함한 계좌 잔액을 조회합니다.", suggestions = mapOf(1 to "players"), short = "계좌 잔액 조회"),
         route("set", "limpi.financial.admin.set", false, 3, 4, "set <플레이어> <금액>", "잔액을 설정/복구하고 원장을 남깁니다.", suggestions = mapOf(1 to "players"), short = "잔액 설정·복구"),
         route("add", "limpi.financial.admin.add", false, 3, 4, "add <플레이어> <금액>", "잔액을 조정하고 원장을 남깁니다.", suggestions = mapOf(1 to "players"), short = "잔액 조정"),
         route("claim", "limpi.financial.claim", true, 1, 1, "claim", "미수령 물품을 수령합니다.", true, short = "미수령 물품 받기"),
-        route("delivery", "limpi.financial.admin.delivery", false, 2, 3, "delivery <owner UUID> [지급 UUID]", "지급/저장 상태를 조회합니다.", true, short = "지급 기록 조회"),
-        route("delivery resolve", "limpi.financial.admin.delivery", false, 6, Int.MAX_VALUE, "delivery resolve <owner UUID> <지급 UUID> delivered|retry <근거>", "오프라인 물리 저장을 확인한 뒤 복구 판단을 기록합니다.", true, mapOf(4 to "deliveryDecision"), short = "지급 복구 판단 기록"),
-        route("removal", "limpi.financial.admin.removal", false, 2, 3, "removal <owner UUID> [회수 UUID]", "물품 회수를 조회합니다.", true, short = "회수 기록 조회"),
-        route("removal resolve", "limpi.financial.admin.removal", false, 6, Int.MAX_VALUE, "removal resolve <owner UUID> <회수 UUID> removed|retained <근거>", "오프라인 회수 판단을 기록합니다.", true, mapOf(4 to "removalDecision"), short = "회수 판단 기록"),
-        route("transition", "limpi.financial.admin.transition", false, 2, 3, "transition <owner UUID> [전환 UUID]", "능력/인벤토리 전환을 조회합니다.", true, short = "능력 전환 기록 조회"),
-        route("transition resolve", "limpi.financial.admin.transition", false, 6, Int.MAX_VALUE, "transition resolve <owner UUID> <전환 UUID> applied|retained <근거>", "오프라인 전환 판단을 기록합니다.", true, mapOf(4 to "transitionDecision"), short = "전환 판단 기록"),
-        route("sugar", "limpi.financial.admin.sugar", false, 2, 2, "sugar <owner UUID>", "적용 대기 중인 설탕 결과를 조회합니다.", true, short = "설탕 결과 조회"),
-        route("sugar void", "limpi.financial.admin.sugar", false, 5, Int.MAX_VALUE, "sugar void <owner UUID> <결과 UUID> <근거>", "적용할 수 없는 설탕 결과를 환불 없이 종료하고 원장을 남깁니다.", true, short = "설탕 결과 종료"),
-        route("review", "limpi.financial.admin.delivery", false, 1, 1, "review", "모든 소유자의 확인 대기 기록과 해결 명령을 조회합니다.", true, short = "확인 대기 기록 전체 조회"),
     ))
     val chest = CommandIndex(listOf(
         route("help", null, false, 1, 1, "help", "사용 가능한 상자 명령을 확인합니다.", true, short = "명령어 사용법"),
@@ -71,7 +60,6 @@ object CommandDefinitions {
         route("shop", "limpi.chest.shop", true, 1, 1, "shop", "돈으로 상자 해금·업그레이드·자동 저장·엔더화를 구매합니다.", short = "상자 상점"),
         route("auto", "limpi.chest.auto", true, 1, 2, "auto [on|off]", "자동 저장을 켜거나 끕니다. 생략하면 전환합니다.", suggestions = mapOf(1 to "toggle"), short = "자동 저장 켜기/끄기"),
         route("inspect", "limpi.chest.admin.inspect", false, 2, 2, "inspect <플레이어>", "상자 크기·기능·내용물과 미해결 창 기록을 조회합니다.", true, mapOf(1 to "players"), short = "상자 조회"),
-        route("resolve", "limpi.chest.admin.resolve", false, 6, Int.MAX_VALUE, "resolve <owner UUID> <창 기록 UUID> before|after <근거>", "오프라인 상자 창 기록 판단을 기록합니다.", true, mapOf(4 to "chestDecision"), short = "상자 창 기록 판단"),
     ))
     val notice = CommandIndex(listOf(
         route("help", null, false, 1, 1, "help", "사용 가능한 공지 명령을 확인합니다.", true, short = "명령어 사용법"),
@@ -82,8 +70,22 @@ object CommandDefinitions {
         route("write", "limpi.notice.admin.write", false, 2, Int.MAX_VALUE, "write <내용|JSON 텍스트>", "공지를 등록하고 접속 중인 플레이어에게 보여줍니다.", true, short = "공지 등록"),
         route("delete", "limpi.notice.admin.delete", false, 3, 3, "delete <날짜> <번호>", "공지를 삭제합니다. 번호는 다시 쓰지 않습니다.", true, mapOf(1 to "noticeDates", 2 to "noticeNumbers"), short = "공지 삭제"),
     ))
+    /** /limpi: the help hub and, under help admin, every recovery command for interrupted records (always registered). */
     val limpi = CommandIndex(listOf(
         route("help", null, false, 1, 1, "help", "LIMPI의 모든 도움말을 모아 봅니다.", true, short = "전체 도움말"),
+        route("help admin", null, false, 2, 2, "help admin", "확인 대기 기록을 조회·정리하는 복구 명령을 확인합니다.", true, short = "복구 명령어", adminHelp = true),
+        route("review", "limpi.admin.recovery.review", false, 1, 1, "review", "모든 소유자의 확인 대기 기록과 해결 명령을 조회합니다.", true, short = "확인 대기 전체 조회"),
+        route("delivery", "limpi.admin.recovery.delivery", false, 2, 3, "delivery <owner UUID> [지급 UUID]", "지급/저장 상태를 조회합니다.", true, short = "지급 기록 조회"),
+        route("delivery resolve", "limpi.admin.recovery.delivery", false, 6, Int.MAX_VALUE, "delivery resolve <owner UUID> <지급 UUID> delivered|retry <근거>", "오프라인 물리 저장을 확인한 뒤 복구 판단을 기록합니다.", true, mapOf(4 to "deliveryDecision"), short = "지급 복구 판단 기록"),
+        route("removal", "limpi.admin.recovery.removal", false, 2, 3, "removal <owner UUID> [회수 UUID]", "물품 회수를 조회합니다.", true, short = "회수 기록 조회"),
+        route("removal resolve", "limpi.admin.recovery.removal", false, 6, Int.MAX_VALUE, "removal resolve <owner UUID> <회수 UUID> removed|retained <근거>", "오프라인 회수 판단을 기록합니다.", true, mapOf(4 to "removalDecision"), short = "회수 판단 기록"),
+        route("transition", "limpi.admin.recovery.transition", false, 2, 3, "transition <owner UUID> [전환 UUID]", "능력/인벤토리 전환을 조회합니다.", true, short = "능력 전환 기록 조회"),
+        route("transition resolve", "limpi.admin.recovery.transition", false, 6, Int.MAX_VALUE, "transition resolve <owner UUID> <전환 UUID> applied|retained <근거>", "오프라인 전환 판단을 기록합니다.", true, mapOf(4 to "transitionDecision"), short = "전환 판단 기록"),
+        route("escrow", "limpi.admin.recovery.escrow", false, 2, 2, "escrow <owner UUID>", "중단된 장터 등록·회수를 조회합니다.", true, short = "장터 회수 조회"),
+        route("escrow resolve", "limpi.admin.recovery.escrow", false, 6, Int.MAX_VALUE, "escrow resolve <owner UUID> <매물 UUID> removed|retained <근거>", "오프라인 장터 회수 판단을 기록합니다.", true, mapOf(4 to "removalDecision"), short = "장터 회수 판단 기록"),
+        route("chest resolve", "limpi.admin.recovery.chest", false, 6, Int.MAX_VALUE, "chest resolve <owner UUID> <창 기록 UUID> before|after <근거>", "오프라인 상자 창 기록 판단을 기록합니다.", true, mapOf(4 to "chestDecision"), short = "상자 창 기록 판단"),
+        route("sugar", "limpi.admin.recovery.sugar", false, 2, 2, "sugar <owner UUID>", "적용 대기 중인 설탕 결과를 조회합니다.", true, short = "설탕 결과 조회"),
+        route("sugar void", "limpi.admin.recovery.sugar", false, 5, Int.MAX_VALUE, "sugar void <owner UUID> <결과 UUID> <근거>", "적용할 수 없는 설탕 결과를 환불 없이 종료하고 원장을 남깁니다.", true, short = "설탕 결과 종료"),
     ))
     val all: Map<String, CommandIndex> get() = mapOf("ability" to ability, "financial" to financial, "chest" to chest, "notice" to notice)
 }

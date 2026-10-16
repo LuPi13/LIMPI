@@ -158,7 +158,7 @@ class ChestServiceTest {
         assertEquals(ChestSessionState.REVIEW, service.pending(owner).single().state)
         assertThrows(DeliveryRecoveryRequired::class.java) { service.recover(owner, inventory, freshLogin = true) }
         val review = PendingReviews.list(store).single()
-        assertEquals("chest", review.kind); assertTrue(review.command.startsWith("/chest resolve $owner ${session.id}"))
+        assertEquals("chest", review.kind); assertTrue(review.command.startsWith("/limpi chest resolve $owner ${session.id}"))
         assertThrows(IllegalArgumentException::class.java) { service.resolve(UUID.randomUUID(), "admin", owner, session.id, true, "checked") }
         service.resolve(UUID.randomUUID(), "admin", owner, session.id, false, "checked saved inventory")
         assertTrue(service.pending(owner).isEmpty()); assertTrue(service.state(owner).slots.all { it == null })

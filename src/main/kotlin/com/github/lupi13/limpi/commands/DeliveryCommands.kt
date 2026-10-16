@@ -23,10 +23,10 @@ class DeliveryCommands(private val journal: DeliveryJournal, private val control
             if (controller.claim(sender) && nothing) error(sender, "받을 아이템이 없습니다.")
             return true
         }
-        if (!sender.hasPermission("limpi.financial.admin.delivery")) { error(sender, "권한이 부족합니다!"); return true }
+        if (!sender.hasPermission("limpi.admin.recovery.delivery")) { error(sender, "권한이 부족합니다!"); return true }
         try {
             if (args.getOrNull(1)?.equals("resolve", true) == true) {
-                if (args.size < 6) { error(sender, "/financial delivery resolve <소유자 UUID> <지급 UUID> <delivered|retry> <확인 근거>"); return true }
+                if (args.size < 6) { error(sender, "/limpi delivery resolve <소유자 UUID> <지급 UUID> <delivered|retry> <확인 근거>"); return true }
                 val owner = UUID.fromString(args[2]); val id = UUID.fromString(args[3])
                 if (plugin.server.getPlayer(owner) != null) { error(sender, "소유자가 오프라인일 때 저장된 playerdata를 확인한 뒤 해결하세요."); return true }
                 val decision = DeliveryResolution.valueOf(args[4].uppercase(Locale.ROOT))
@@ -36,7 +36,7 @@ class DeliveryCommands(private val journal: DeliveryJournal, private val control
                 sender.sendMessage(Component.text("지급 $id 검토를 ${decision.name}로 기록했습니다. 감사 거래: $request", NamedTextColor.GREEN))
                 return true
             }
-            if (args.size !in 2..3) { error(sender, "/financial delivery <소유자 UUID> [지급 UUID]"); return true }
+            if (args.size !in 2..3) { error(sender, "/limpi delivery <소유자 UUID> [지급 UUID]"); return true }
             val owner = UUID.fromString(args[1])
             val records = if (args.size == 3) listOfNotNull(journal.find(owner, UUID.fromString(args[2]))) else journal.pending(owner)
             if (records.isEmpty()) sender.sendMessage(Component.text("조회할 지급 기록이 없습니다.", NamedTextColor.GRAY))

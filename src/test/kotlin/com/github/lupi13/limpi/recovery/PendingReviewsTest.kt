@@ -30,7 +30,7 @@ class PendingReviewsTest {
             assertTrue(records.all { it.name == "사용자" && it.owner == owner && it.id == id.toString() })
             assertEquals("checkpoint mismatch", records.single { it.kind == "delivery" }.reason)
             assertEquals("MALFORMED", records.single { it.kind == "market" }.state)
-            assertTrue(records.single { it.kind == "sugar" }.command.startsWith("/financial sugar void"))
+            assertTrue(records.single { it.kind == "sugar" }.command.startsWith("/limpi sugar void"))
             assertEquals(before, prefixes.associateWith(store::documents))
         }
     }

@@ -1,6 +1,6 @@
 # 관리자 명령어
 
-서버 관리자용 명령어입니다. 아래 권한은 기본적으로 **OP에게만** 주어집니다. 게임 안에서는 `/<명령어> help admin`(예: `/financial help admin`)으로 관리자 명령어를 따로 볼 수 있고, 그 첫 줄의 **[관리자 명령어]**를 누르면 이 페이지가 열립니다.
+서버 관리자용 명령어입니다. 아래 권한은 기본적으로 **OP에게만** 주어집니다. 게임 안에서는 `/<명령어> help admin`(예: `/financial help admin`)으로 관리자 명령어를 따로 볼 수 있고, 그 첫 줄의 **[관리자 명령어]**를 누르면 이 페이지가 열립니다. 중단된 거래를 정리하는 복구 명령은 모두 `/limpi` 아래에 있습니다([거래 복구](#limpi)).
 
 일반 플레이어 명령어는 [능력](ability.md), [금융](financial.md), [상자](chest.md), [공지](notice.md) 페이지를 보세요.
 
@@ -12,7 +12,7 @@
 | `/ability dictionary` | `limpi.ability.admin.set` | 관리자는 도감에서 능력을 좌클릭해 자신에게 바로 적용할 수 있습니다. 우클릭은 일반 플레이어와 같이 상세 정보를 봅니다. |
 | `/ability reload` | `limpi.ability.admin.reload` | `ability/<능력>.yml`을 모두 검사한 뒤 한꺼번에 다시 불러옵니다. 하나라도 잘못되면 아무것도 바뀌지 않습니다. |
 
-대상에게 끝나지 않은 지급·회수·능력 전환 기록이 있으면 `/ability set`이 거부됩니다. 아래 [거래 복구](#recovery)를 먼저 처리하세요.
+대상에게 끝나지 않은 지급·회수·능력 전환 기록이 있으면 `/ability set`이 거부됩니다. 아래 [거래 복구](#limpi)를 먼저 처리하세요.
 
 ## 계좌 { #financial }
 
@@ -74,29 +74,30 @@ diamond: 500
 
 | 명령어 | 권한 | 설명 |
 | --- | --- | --- |
-| `/chest inspect <플레이어>` | `limpi.chest.admin.inspect` | 상자 크기, 자동 저장·엔더화 여부, 들어 있는 아이템과 끝나지 않은 상자 창 기록을 봅니다. 오프라인 플레이어도 됩니다. |
-| <code>/chest resolve &lt;소유자 UUID&gt; &lt;창 기록 ID&gt; before&#124;after &lt;근거&gt;</code> | `limpi.chest.admin.resolve` | 판단할 수 없게 된 상자 창 기록을 정리합니다. 아래 [거래 복구](#recovery) 참고. |
+| `/chest inspect <플레이어>` | `limpi.chest.admin.inspect` | 상자 크기, 자동 저장·엔더화 여부, 들어 있는 아이템과 끝나지 않은 상자 창 기록을 봅니다. 오프라인 플레이어도 됩니다. 끝나지 않은 창 기록은 [`/limpi chest resolve`](#limpi)로 정리합니다. |
 
 `config.yml`의 `EnableChestSystem`을 꺼도 이미 해금한 상자는 `/chest`로 열 수 있습니다. 구매, 자동 저장, 죽었을 때 떨어뜨리기는 멈춥니다. 상자 구매에는 금융 시스템도 켜져 있어야 합니다.
 
-## 거래 복구 { #recovery }
+## 거래 복구 `/limpi` { #limpi }
 
-돈·아이템 거래 도중 서버가 꺼지거나 오류가 나면, 기록이 **확인 대기** 상태로 남습니다. 대부분은 플레이어가 다시 접속할 때 자동으로 정리되고, 자동으로 판단할 수 없는 것만 관리자가 처리합니다.
+돈·아이템 거래 도중 서버가 꺼지거나 오류가 나면, 기록이 **확인 대기** 상태로 남습니다. 대부분은 플레이어가 다시 접속할 때 자동으로 정리되고, 자동으로 판단할 수 없는 것만 관리자가 처리합니다. 게임 안에서는 `/limpi help admin`으로 이 명령들을 볼 수 있습니다. 시스템을 꺼도 쓸 수 있고, 콘솔에서도 됩니다.
 
 | 명령어 | 권한 | 설명 |
 | --- | --- | --- |
-| `/financial review` | `limpi.financial.admin.delivery` | 모든 플레이어의 확인 대기 기록(상자 창 기록 포함)과, 각각 처리할 명령어 예시를 보여줍니다. **여기서 시작하세요.** |
-| `/financial delivery <소유자 UUID> [지급 ID]` | `limpi.financial.admin.delivery` | 아이템 지급 기록을 봅니다. |
-| <code>/financial delivery resolve &lt;소유자 UUID&gt; &lt;지급 ID&gt; delivered&#124;retry &lt;근거&gt;</code> | `limpi.financial.admin.delivery` | 지급 판단을 기록합니다. |
-| `/financial removal <소유자 UUID> [회수 ID]` | `limpi.financial.admin.removal` | 판매·교환으로 인벤토리에서 아이템을 가져간 기록을 봅니다. |
-| <code>/financial removal resolve &lt;소유자 UUID&gt; &lt;회수 ID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.financial.admin.removal` | 회수 판단을 기록합니다. |
-| `/financial transition <소유자 UUID> [전환 ID]` | `limpi.financial.admin.transition` | 능력 변경에 따른 인벤토리 전환 기록을 봅니다. |
-| <code>/financial transition resolve &lt;소유자 UUID&gt; &lt;전환 ID&gt; applied&#124;retained &lt;근거&gt;</code> | `limpi.financial.admin.transition` | 전환 판단을 기록합니다. |
-| `/financial market escrow <소유자 UUID>` | `limpi.financial.admin.market` | 중단된 장터 등록·회수 기록을 봅니다. |
-| <code>/financial market resolve &lt;소유자 UUID&gt; &lt;매물 ID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.financial.admin.market` | 장터 회수 판단을 기록합니다. |
-| `/financial sugar <소유자 UUID>` | `limpi.financial.admin.sugar` | 적용 대기 중인 설탕 사용 결과를 봅니다. |
-| `/financial sugar void <소유자 UUID> <결과 ID> <근거>` | `limpi.financial.admin.sugar` | 적용할 수 없는 설탕 결과를 환불 없이 종료합니다. |
-| <code>/chest resolve &lt;소유자 UUID&gt; &lt;창 기록 ID&gt; before&#124;after &lt;근거&gt;</code> | `limpi.chest.admin.resolve` | 상자 창 기록을 정리합니다. `before`는 상자를 연 시점 내용으로, `after`는 창을 닫으며 기록된 내용으로 확정합니다(닫기 기록이 있을 때만). |
+| `/limpi review` | `limpi.admin.recovery.review` | 모든 플레이어의 확인 대기 기록과, 각각 처리할 명령어 예시를 보여줍니다. **여기서 시작하세요.** |
+| `/limpi delivery <소유자 UUID> [지급 ID]` | `limpi.admin.recovery.delivery` | 아이템 지급 기록을 봅니다. |
+| <code>/limpi delivery resolve &lt;소유자 UUID&gt; &lt;지급 ID&gt; delivered&#124;retry &lt;근거&gt;</code> | `limpi.admin.recovery.delivery` | 지급 판단을 기록합니다. |
+| `/limpi removal <소유자 UUID> [회수 ID]` | `limpi.admin.recovery.removal` | 뽑기권·선택권 사용 등으로 인벤토리에서 아이템을 가져간 기록을 봅니다. |
+| <code>/limpi removal resolve &lt;소유자 UUID&gt; &lt;회수 ID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.removal` | 회수 판단을 기록합니다. |
+| `/limpi transition <소유자 UUID> [전환 ID]` | `limpi.admin.recovery.transition` | 능력 변경에 따른 인벤토리 전환 기록을 봅니다. |
+| <code>/limpi transition resolve &lt;소유자 UUID&gt; &lt;전환 ID&gt; applied&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.transition` | 전환 판단을 기록합니다. |
+| `/limpi escrow <소유자 UUID>` | `limpi.admin.recovery.escrow` | 중단된 장터 등록·회수 기록을 봅니다. |
+| <code>/limpi escrow resolve &lt;소유자 UUID&gt; &lt;매물 ID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.escrow` | 장터 회수 판단을 기록합니다. |
+| <code>/limpi chest resolve &lt;소유자 UUID&gt; &lt;창 기록 ID&gt; before&#124;after &lt;근거&gt;</code> | `limpi.admin.recovery.chest` | 상자 창 기록을 정리합니다. `before`는 상자를 연 시점 내용으로, `after`는 창을 닫으며 기록된 내용으로 확정합니다(닫기 기록이 있을 때만). |
+| `/limpi sugar <소유자 UUID>` | `limpi.admin.recovery.sugar` | 적용 대기 중인 설탕 사용 결과를 봅니다. |
+| `/limpi sugar void <소유자 UUID> <결과 ID> <근거>` | `limpi.admin.recovery.sugar` | 적용할 수 없는 설탕 결과를 환불 없이 종료합니다. |
+
+권한 `limpi.admin.recovery`를 주면 위 복구 명령을 모두 쓸 수 있습니다.
 
 !!! warning "resolve 전에 확인할 것"
     - `resolve`/`void`는 **소유자가 오프라인일 때만** 쓸 수 있습니다.
@@ -121,8 +122,6 @@ diamond: 500
 - 게임 채팅창은 256자까지만 입력되므로 긴 JSON은 콘솔에서 등록하세요.
 - `config.yml`의 `NoticeRetentionDays`(기본 30)보다 오래된 공지는 서버를 켤 때와 새 공지를 등록할 때 지워집니다. 0 이하면 지우지 않습니다.
 
-복구 조회 명령은 `config.yml`에서 금융 시스템을 꺼도 쓸 수 있고, 콘솔에서도 쓸 수 있습니다.
-
 ## 권한 목록
 
 | 권한 | 기본값 | 대상 |
@@ -134,14 +133,17 @@ diamond: 500
 | `limpi.financial.admin.add` | OP | 잔액 조정 |
 | `limpi.financial.admin.catalog` | OP | 상점·판매 가격 |
 | `limpi.financial.admin.stock` | OP | 종목 관리 |
-| `limpi.financial.admin.market` | OP | 장터 매물 강제 회수, 장터 복구 |
+| `limpi.financial.admin.market` | OP | 다른 사람의 장터 매물 내리기 |
 | `limpi.financial.admin.check` | OP | 수표 기록 확인 |
-| `limpi.financial.admin.delivery` | OP | 지급 복구, `/financial review` |
-| `limpi.financial.admin.removal` | OP | 회수 복구 |
-| `limpi.financial.admin.transition` | OP | 능력 전환 복구 |
-| `limpi.financial.admin.sugar` | OP | 설탕 결과 복구 |
 | `limpi.chest.admin.inspect` | OP | 상자 조회 |
-| `limpi.chest.admin.resolve` | OP | 상자 창 기록 복구 |
+| `limpi.admin.recovery` | OP | 아래 복구 권한 전부 |
+| `limpi.admin.recovery.review` | OP | `/limpi review` |
+| `limpi.admin.recovery.delivery` | OP | 지급 복구 |
+| `limpi.admin.recovery.removal` | OP | 회수 복구 |
+| `limpi.admin.recovery.transition` | OP | 능력 전환 복구 |
+| `limpi.admin.recovery.escrow` | OP | 장터 등록·회수 복구 |
+| `limpi.admin.recovery.chest` | OP | 상자 창 기록 복구 |
+| `limpi.admin.recovery.sugar` | OP | 설탕 결과 복구 |
 | `limpi.notice.admin.write` | OP | 공지 등록 |
 | `limpi.notice.admin.delete` | OP | 공지 삭제 |
 

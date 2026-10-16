@@ -16,7 +16,9 @@ class CommandIndexTest {
         assertEquals("check inspect", check.id); assertEquals(2, check.minimum); assertEquals(3, check.maximum)
         val stock = CommandDefinitions.financial.resolve(listOf("stock", "typo"))!!
         assertEquals("stock", stock.id); assertTrue(2 > stock.maximum)
-        assertEquals(6, CommandDefinitions.financial.resolve(listOf("removal", "resolve"))!!.minimum)
+        assertEquals(6, CommandDefinitions.limpi.resolve(listOf("removal", "resolve"))!!.minimum)
+        assertEquals("chest resolve", CommandDefinitions.limpi.resolve(listOf("CHEST", "resolve", "o", "i", "after", "note"))!!.id)
+        assertNull(CommandDefinitions.financial.resolve(listOf("sugar")))
     }
     @Test fun `console help excludes player actions and includes permitted administrative commands`() {
         val routes = CommandDefinitions.financial.visible(true, false, allow("limpi.financial.admin.stock", "limpi.financial.admin.set"))
@@ -27,8 +29,8 @@ class CommandIndexTest {
         val routes = CommandDefinitions.financial.visible(false, true) { true }
         assertTrue(routes.any { it.id == "check redeem" }); assertFalse(routes.any { it.id == "check" })
         assertFalse(routes.any { it.id.startsWith("stock") || it.id == "send" })
-        val completion = CommandDefinitions.financial.complete(listOf("market", ""), false, true, { true }) { error("no dynamic data needed") }
-        assertEquals(listOf("escrow", "resolve"), completion)
+        // Recovery moved to /limpi; a disabled financial system offers no market subcommands.
+        assertTrue(CommandDefinitions.financial.complete(listOf("market", ""), false, true, { true }) { error("no dynamic data needed") }.isEmpty())
     }
     @Test fun `permissions hide both help and dynamic completions without evaluating providers`() {
         val routes = CommandDefinitions.ability.visible(true, true, allow("limpi.ability.me"))
@@ -48,10 +50,12 @@ class CommandIndexTest {
         assertTrue(CommandDefinitions.ability.complete(emptyList(), true, true, permission) { error("empty") }.isEmpty())
     }
     @Test fun `recovery decisions have correct positions and no inaccessible console actions leak`() {
-        val index = CommandDefinitions.financial
-        assertEquals(listOf("applied", "retained"), index.complete(listOf("transition", "resolve", "owner", "id", ""), false, false,
-            allow("limpi.financial.admin.transition")) { if (it == "transitionDecision") listOf("applied", "retained") else error(it) })
-        assertFalse(index.complete(listOf(""), true, false, { true }) { emptyList() }.contains("claim"))
+        val index = CommandDefinitions.limpi
+        assertEquals(listOf("applied", "retained"), index.complete(listOf("transition", "resolve", "owner", "id", ""), true, false,
+            allow("limpi.admin.recovery.transition")) { if (it == "transitionDecision") listOf("applied", "retained") else error(it) })
+        assertEquals(listOf("before", "after"), index.complete(listOf("chest", "resolve", "owner", "id", ""), true, false,
+            allow("limpi.admin.recovery.chest")) { if (it == "chestDecision") listOf("before", "after") else error(it) })
+        assertFalse(CommandDefinitions.financial.complete(listOf(""), true, false, { true }) { emptyList() }.contains("claim"))
     }
     @Test fun `every configured command permission is explicitly declared in the packaged descriptor`() {
         val descriptor = javaClass.classLoader.getResourceAsStream("plugin.yml")!!.use { stream ->
@@ -61,7 +65,7 @@ class CommandIndexTest {
             }
         }
         val permissions = descriptor.getConfigurationSection("permissions")!!.getKeys(false)
-        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes + CommandDefinitions.notice.routes) {
+        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes + CommandDefinitions.notice.routes + CommandDefinitions.limpi.routes) {
             route.permission?.let { assertTrue(it in permissions, "Missing declared permission $it") }
         }
     }
@@ -87,7 +91,7 @@ class CommandIndexTest {
     }
     @Test fun `chest opening and recovery stay available when the chest system is off`() {
         val routes = CommandDefinitions.chest.visible(false, true) { true }.map { it.id }
-        assertTrue(routes.containsAll(listOf("help", "open", "inspect", "resolve")))
+        assertTrue(routes.containsAll(listOf("help", "open", "inspect")))
         assertFalse(routes.any { it in setOf("shop", "auto") })
         val auto = CommandDefinitions.chest.resolve(listOf("AUTO", "on"))!!
         assertEquals("auto", auto.id); assertEquals(1, auto.minimum); assertEquals(2, auto.maximum)

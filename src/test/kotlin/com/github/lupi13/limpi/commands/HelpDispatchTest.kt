@@ -66,7 +66,7 @@ class HelpDispatchTest {
             val executors = mapOf(
                 "financial" to Financial(plugin, AccountCommands(com.github.lupi13.limpi.economy.BankService(store, players), players, plugin),
                     DeliveryCommands(journal, controller, plugin), true, MarketCommands(plugin),
-                    CheckCommands(plugin, com.github.lupi13.limpi.items.Check(plugin)), CatalogCommands(plugin), RemovalCommands(plugin), TransitionCommands(plugin)),
+                    CheckCommands(plugin, com.github.lupi13.limpi.items.Check(plugin)), CatalogCommands(plugin)),
                 "ability" to Ability(plugin, true), "chest" to Chest(plugin, true), "notice" to Notice(plugin))
             for ((root, executor) in executors) {
                 val normal = run(executor, "help")
@@ -78,6 +78,15 @@ class HelpDispatchTest {
                 assertTrue(admin.contains("관리자 명령어: https://example.org/LIMPI/admin/#$root"), "$root $admin")
                 assertTrue(normal.contains("웹 도움말: https://example.org/LIMPI/$root/"), "$root $normal")
             }
+            // /limpi: the hub help links to the recovery list, which links to the admin page's recovery section.
+            val limpi = Limpi(plugin, DeliveryCommands(journal, controller, plugin), RemovalCommands(plugin), TransitionCommands(plugin), RecoveryCommands(plugin))
+            val hub = run(limpi, "help")
+            assertEquals("━━━━━ LIMPI 도움말 ━━━━━ [웹 도움말] [관리자 명령어]", hub.first())
+            assertTrue(hub.contains("[관리자 명령어 보기]"), hub.toString())
+            val recovery = run(limpi, "help", "admin")
+            assertEquals("━━━━━ /limpi 관리자 명령어 ━━━━━ [관리자 명령어]", recovery.first())
+            assertTrue(recovery.any { it.startsWith("/limpi review") } && recovery.any { it.startsWith("/limpi sugar void ") }, recovery.toString())
+            assertTrue(recovery.contains("관리자 명령어: https://example.org/LIMPI/admin/#limpi"), recovery.toString())
         }
     }
 }

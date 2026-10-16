@@ -76,12 +76,6 @@ permissions:
   limpi.ability.enemy:
     description: Configure ability target categories
     default: true
-  limpi.financial.admin.sugar:
-    description: Inspect and void unresolvable pending sugar results
-    default: op
-  limpi.financial.admin.transition:
-    description: Inspect and resolve interrupted ability inventory transitions
-    default: op
   limpi.ability.select:
     description: Select an unlocked ability with a matching ticket
     default: true
@@ -89,13 +83,10 @@ permissions:
     description: Apply an ability without consuming a selection ticket
     default: op
   limpi.ability.shop:
-    description: Exchange emeralds for ability tickets
+    description: Buy ability tickets with money
     default: true
-  limpi.financial.admin.removal:
-    description: Inspect and resolve interrupted item sales and exchanges
-    default: op
   limpi.financial.admin.catalog:
-    description: Configure server shop ratios and sale prices
+    description: Configure server shop and sale prices
     default: op
   limpi.financial.shop:
     description: Buy items from the server shop
@@ -113,14 +104,11 @@ permissions:
     description: Use the player market
     default: true
   limpi.financial.admin.market:
-    description: Resolve market escrow and listing ownership
+    description: Remove other players' market listings
     default: op
   limpi.financial.claim:
     description: Claim pending items
     default: true
-  limpi.financial.admin.delivery:
-    description: Inspect and resolve interrupted deliveries and list all pending recovery records
-    default: op
   limpi.financial.send:
     description: Send money to an existing account
     default: true
@@ -142,6 +130,35 @@ permissions:
   limpi.chest.admin.inspect:
     description: Inspect any player's chest and unresolved chest windows
     default: op
-  limpi.chest.admin.resolve:
-    description: Resolve interrupted chest windows while the owner is offline
+  limpi.admin.recovery:
+    description: Every /limpi recovery command
+    default: op
+    children:
+      limpi.admin.recovery.review: true
+      limpi.admin.recovery.delivery: true
+      limpi.admin.recovery.removal: true
+      limpi.admin.recovery.transition: true
+      limpi.admin.recovery.escrow: true
+      limpi.admin.recovery.chest: true
+      limpi.admin.recovery.sugar: true
+  limpi.admin.recovery.review:
+    description: List every pending recovery record with its resolve command (/limpi review)
+    default: op
+  limpi.admin.recovery.delivery:
+    description: Inspect and resolve interrupted deliveries (/limpi delivery)
+    default: op
+  limpi.admin.recovery.removal:
+    description: Inspect and resolve interrupted item removals (/limpi removal)
+    default: op
+  limpi.admin.recovery.transition:
+    description: Inspect and resolve interrupted ability inventory transitions (/limpi transition)
+    default: op
+  limpi.admin.recovery.escrow:
+    description: Inspect and resolve interrupted market escrows (/limpi escrow)
+    default: op
+  limpi.admin.recovery.chest:
+    description: Resolve interrupted chest windows while the owner is offline (/limpi chest resolve)
+    default: op
+  limpi.admin.recovery.sugar:
+    description: Inspect and void unresolvable pending sugar results (/limpi sugar)
     default: op

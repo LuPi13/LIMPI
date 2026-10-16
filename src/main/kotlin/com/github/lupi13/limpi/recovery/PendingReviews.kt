@@ -33,13 +33,13 @@ object PendingReviews {
                     runCatching { YamlFiles.parse(store.get("player/$uuid")).getString("name") }.getOrNull() ?: "이름 없음"
                 } } ?: "소유자 형식 오류"
                 val command = if (!identityValid) "해결 예시: DB 백업 후 식별자를 확인하세요($key)." else when (kind) {
-                    "market" -> "/financial market resolve $owner $id removed|retained <근거>"
-                    "sugar" -> "/financial sugar void $owner $id <근거>"
+                    "market" -> "/limpi escrow resolve $owner $id removed|retained <근거>"
+                    "sugar" -> "/limpi sugar void $owner $id <근거>"
                     "delivery" -> if (state == "PENDING") "/financial claim (소유자 접속 후)" else
-                        "/financial delivery resolve $owner $id delivered|retry <근거>"
-                    "removal" -> "/financial removal resolve $owner $id removed|retained <근거>"
-                    "chest" -> "/chest resolve $owner $id before|after <근거>"
-                    else -> "/financial transition resolve $owner $id applied|retained <근거>"
+                        "/limpi delivery resolve $owner $id delivered|retry <근거>"
+                    "removal" -> "/limpi removal resolve $owner $id removed|retained <근거>"
+                    "chest" -> "/limpi chest resolve $owner $id before|after <근거>"
+                    else -> "/limpi transition resolve $owner $id applied|retained <근거>"
                 }
                 PendingReview(owner, name, kind, id, state, reason, command)
             }

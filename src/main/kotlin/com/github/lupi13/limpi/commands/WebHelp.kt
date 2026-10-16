@@ -30,7 +30,7 @@ object WebHelp {
     fun home(base: String?): String? = root(base)
 
     /** Whether the sender can use any administrative command. */
-    fun admin(sender: CommandSender): Boolean = CommandDefinitions.all.values.flatMap { it.routes }
+    fun admin(sender: CommandSender): Boolean = (CommandDefinitions.all.values + CommandDefinitions.limpi).flatMap { it.routes }
         .any { route -> route.admin && sender.hasPermission(route.permission!!) }
 
     fun button(link: Link): Component = Component.text("[${link.label}]", NamedTextColor.BLUE)

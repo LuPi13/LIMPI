@@ -41,7 +41,6 @@ class Chest(private val plugin: Plugin, private val enabled: Boolean) : CommandE
                         .append(Component.text(".", NamedTextColor.WHITE)))
                 }
                 "inspect" -> inspect(sender, args[1])
-                "resolve" -> resolve(sender, args)
                 else -> error("Unbound chest command ${route.id}")
             }
         } catch (failure: ChestUnavailable) {
@@ -72,18 +71,5 @@ class Chest(private val plugin: Plugin, private val enabled: Boolean) : CommandE
             "자동 저장 ${if (!state.autoOwned) "미구매" else if (state.autoEnabled) "켜짐" else "꺼짐"}, 엔더화 ${if (state.ender) "구매" else "미구매"}")
         used.groupBy { runCatching { PaperItemCodec.item(it.payload, 1).type.name }.getOrDefault("UNKNOWN") }
             .forEach { (type, stacks) -> sender.sendMessage("  $type x${stacks.sumOf { it.count }}") }
-    }
-
-    private fun resolve(sender: CommandSender, args: Array<String>) {
-        val owner = UUID.fromString(args[1]); val id = UUID.fromString(args[2])
-        val applyAfter = when (args[3].lowercase(Locale.ROOT)) {
-            "after" -> true; "before" -> false
-            else -> throw IllegalArgumentException("before 또는 after를 입력하세요.")
-        }
-        require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 저장 상태를 확인하세요." }
-        val request = UUID.randomUUID()
-        val actor = (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE"
-        FileManager.chests.resolve(request, actor, owner, id, applyAfter, args.drop(4).joinToString(" "))
-        sender.sendMessage("상자 창 기록 ${id}을(를) ${if (applyAfter) "닫은 뒤" else "열기 전"} 상태로 정리했습니다. 감사 거래: $request")
     }
 }

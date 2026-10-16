@@ -18,26 +18,6 @@ class MarketCommands(private val plugin: Plugin) {
         val request = UUID.randomUUID()
         try {
             val subcommand = args.getOrNull(1)?.lowercase(Locale.ROOT)
-            if (subcommand in setOf("escrow", "resolve")) {
-                require(sender.hasPermission("limpi.financial.admin.market")) { "권한이 부족합니다!" }
-                val actor = (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE"
-                when (subcommand) {
-                    "escrow" -> {
-                        require(args.size == 3) { "/financial market escrow <소유자 UUID>" }
-                        FileManager.escrow.pending(UUID.fromString(args[2])).forEach {
-                            sender.sendMessage(Component.text("${it.listing}: ${it.state} / ${it.reason ?: "등록 중"}", NamedTextColor.WHITE))
-                        }
-                    }
-                    "resolve" -> {
-                        require(args.size >= 6) { "/financial market resolve <소유자 UUID> <매물 UUID> removed|retained <확인 근거>" }
-                        val owner = UUID.fromString(args[2]); require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 저장 상태를 확인하세요." }
-                        val decision = args[4].lowercase(Locale.ROOT); require(decision in setOf("removed", "retained"))
-                        FileManager.escrow.resolve(request, actor, owner, UUID.fromString(args[3]), decision == "removed", args.drop(5).joinToString(" "))
-                    }
-                }
-                sender.sendMessage(Component.text("처리했습니다. 감사 거래 UUID: $request", NamedTextColor.GREEN))
-                MarketEvents.reopenMarketGUI(); return true
-            }
             require(sender is Player) { "플레이어만 사용할 수 있습니다." }
             require(sender.hasPermission("limpi.financial.market")) { "권한이 부족합니다!" }
             if (subcommand == null) { MarketEvents.openMarketGUI(sender); return true }

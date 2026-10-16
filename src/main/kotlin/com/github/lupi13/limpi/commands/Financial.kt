@@ -55,8 +55,7 @@ object EconomyText {
 
 class Financial(private val plugin: Plugin, private val accountCommands: AccountCommands,
     private val deliveryCommands: DeliveryCommands, private val enabled: Boolean, private val marketCommands: MarketCommands,
-    private val checkCommands: CheckCommands, private val catalogCommands: CatalogCommands,
-    private val removalCommands: RemovalCommands, private val transitionCommands: TransitionCommands) : CommandExecutor {
+    private val checkCommands: CheckCommands, private val catalogCommands: CatalogCommands) : CommandExecutor {
     private val stocks = StockCommands()
     override fun onCommand(sender: CommandSender, command: Command, label: String, input: Array<out String>): Boolean {
         val (route, args) = CommandAccess.route(sender, "financial", input, CommandDefinitions.financial, enabled) ?: return true
@@ -64,23 +63,11 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
             when (route.id.substringBefore(' ')) {
                 "help" -> CommandHelp.show(plugin, sender, "financial", CommandDefinitions.financial, enabled, admin = route.adminHelp)
                 "send", "set", "add" -> accountCommands.execute(sender, args)
-                "claim", "delivery" -> deliveryCommands.execute(sender, args)
+                "claim" -> deliveryCommands.execute(sender, args)
                 "market" -> marketCommands.execute(sender, args)
                 "check" -> checkCommands.execute(sender, args)
                 "sell", "shop" -> catalogCommands.execute(sender, args)
-                "removal" -> removalCommands.execute(sender, args)
-                "transition" -> transitionCommands.execute(sender, args)
                 "stock" -> stocks.execute(sender, args)
-                "sugar" -> sugar(sender, args)
-                "review" -> {
-                    val records = com.github.lupi13.limpi.recovery.PendingReviews.list(FileManager.transactions)
-                    if (records.isEmpty()) sender.sendMessage(Component.text("확인 대기 기록이 없습니다.", NamedTextColor.GRAY))
-                    records.forEach { record ->
-                        sender.sendMessage(Component.text("${record.name} / ${record.owner} / ${record.kind} / ${record.id} / ${record.state}", NamedTextColor.WHITE))
-                        sender.sendMessage(Component.text(record.reason, NamedTextColor.YELLOW))
-                        sender.sendMessage(Component.text(record.command, NamedTextColor.GRAY))
-                    }
-                }
                 "me" -> {
                     val player = sender as Player
                     player.sendMessage(playerDisplay(player)
@@ -113,20 +100,5 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
             throw failure // As before: Bukkit reports an internal command error to the sender.
         }
         return true
-    }
-
-    /** The original /financial help book; commands added later are appended in the same style. */
-    private fun sugar(sender: CommandSender, args: Array<out String>) {
-        val owner = UUID.fromString(if (args[1].equals("void", true)) args[2] else args[1])
-        if (!args[1].equals("void", true)) {
-            val ids = FileManager.sugar.pendingIds(owner)
-            sender.sendMessage(if (ids.isEmpty()) "적용 대기 중인 설탕 결과가 없습니다." else "적용 대기: ${ids.joinToString()}")
-            return
-        }
-        require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 결과를 종료하세요." }
-        val request = UUID.randomUUID()
-        val actor = (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE"
-        FileManager.sugar.void(request, actor, owner, UUID.fromString(args[3]), args.drop(4).joinToString(" "))
-        sender.sendMessage("설탕 결과 ${args[3]}을(를) 종료했습니다. 감사 거래: $request")
     }
 }

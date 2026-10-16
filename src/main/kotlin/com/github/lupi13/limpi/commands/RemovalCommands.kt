@@ -11,20 +11,20 @@ import java.util.logging.Level
 
 class RemovalCommands(private val plugin: Plugin) {
     fun execute(sender: CommandSender, args: Array<out String>): Boolean {
-        if (!sender.hasPermission("limpi.financial.admin.removal")) {
+        if (!sender.hasPermission("limpi.admin.recovery.removal")) {
             sender.sendMessage(Component.text("권한이 부족합니다!", NamedTextColor.RED)); return true
         }
         val request = UUID.randomUUID()
         try {
             if (args.getOrNull(1)?.equals("resolve", true) == true) {
-                require(args.size >= 6) { "/financial removal resolve <owner UUID> <회수 UUID> removed|retained <확인 근거>" }
+                require(args.size >= 6) { "/limpi removal resolve <owner UUID> <회수 UUID> removed|retained <확인 근거>" }
                 val owner = UUID.fromString(args[2]); val id = UUID.fromString(args[3])
                 require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 원본/회수 후 슬롯과 저장 기록을 확인하세요." }
                 val removed = when (args[4].lowercase(java.util.Locale.ROOT)) { "removed" -> true; "retained" -> false; else -> error("removed 또는 retained를 지정하세요.") }
                 FileManager.removals.resolve(request, (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE", owner, id, removed, args.drop(5).joinToString(" "))
                 sender.sendMessage(Component.text("회수 $id 결정을 기록했습니다. 감사 거래: $request", NamedTextColor.GREEN))
             } else {
-                require(args.size in 2..3) { "/financial removal <owner UUID> [회수 UUID]" }
+                require(args.size in 2..3) { "/limpi removal <owner UUID> [회수 UUID]" }
                 val owner = UUID.fromString(args[1])
                 val records = if (args.size == 3) listOfNotNull(FileManager.removals.find(owner, UUID.fromString(args[2]))) else FileManager.removals.pending(owner)
                 if (records.isEmpty()) sender.sendMessage(Component.text("조회할 회수 기록이 없습니다.", NamedTextColor.GRAY))

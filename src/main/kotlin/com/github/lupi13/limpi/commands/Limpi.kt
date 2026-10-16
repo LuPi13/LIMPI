@@ -1,5 +1,6 @@
 package com.github.lupi13.limpi.commands
 
+import com.github.lupi13.limpi.chest.ChestUnavailable
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
@@ -9,15 +10,45 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
+import java.util.logging.Level
 
-/** /limpi help: one entry point that leads to each system's help and the web pages. */
-class Limpi(private val plugin: Plugin) : CommandExecutor {
+/**
+ * /limpi help: one entry point that leads to each system's help and the web pages.
+ * /limpi help admin and the rest: the recovery commands for interrupted records, available whatever system is off.
+ */
+class Limpi(private val plugin: Plugin, private val deliveryCommands: DeliveryCommands, private val removalCommands: RemovalCommands,
+            private val transitionCommands: TransitionCommands, private val recovery: RecoveryCommands) : CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, input: Array<out String>): Boolean {
-        CommandAccess.route(sender, "limpi", input, CommandDefinitions.limpi, true) ?: return true
+        val (route, args) = CommandAccess.route(sender, "limpi", input, CommandDefinitions.limpi, true) ?: return true
+        try {
+            when (route.id.substringBefore(' ')) {
+                "help" -> if (route.adminHelp) CommandHelp.show(plugin, sender, "limpi", CommandDefinitions.limpi, true, admin = true) else help(sender)
+                "review" -> recovery.review(sender)
+                "delivery" -> deliveryCommands.execute(sender, args)
+                "removal" -> removalCommands.execute(sender, args)
+                "transition" -> transitionCommands.execute(sender, args)
+                "escrow" -> recovery.escrow(sender, args)
+                "chest" -> recovery.chest(sender, args)
+                "sugar" -> recovery.sugar(sender, args)
+                else -> error("Unbound limpi command ${route.id}")
+            }
+        } catch (failure: ChestUnavailable) {
+            sender.sendMessage(Component.text(failure.message ?: "상자를 사용할 수 없습니다.", NamedTextColor.RED))
+        } catch (failure: IllegalArgumentException) {
+            sender.sendMessage(Component.text(failure.message ?: "입력을 확인하세요.", NamedTextColor.RED))
+        } catch (failure: Exception) {
+            plugin.logger.log(Level.SEVERE, "LIMPI command ${route.id} from ${sender.name} failed", failure)
+            throw failure // As elsewhere: Bukkit reports an internal command error to the sender.
+        }
+        return true
+    }
+
+    private fun help(sender: CommandSender) {
         val web = WebHelp.links(plugin, sender, null)
         lines(web).forEach(sender::sendMessage)
+        if (CommandDefinitions.limpi.visible(true, sender is Player, sender::hasPermission).any { it.adminHelp })
+            sender.sendMessage(CommandHelp.link("[관리자 명령어 보기]", "/limpi help admin", NamedTextColor.RED))
         if (sender !is Player) web.forEach { sender.sendMessage("${it.label}: ${it.url}") }
-        return true
     }
 
     companion object {
@@ -32,7 +63,5 @@ class Limpi(private val plugin: Plugin) : CommandExecutor {
     }
 }
 
-class LimpiTab : org.bukkit.command.TabCompleter {
-    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> =
-        CommandDefinitions.limpi.complete(args.toList(), true, sender is Player, sender::hasPermission) { emptyList() }
-}
+/** Always enabled: recovery must stay reachable when a system is turned off. */
+class LimpiTab(plugin: Plugin) : CommandCompletion(plugin, CommandDefinitions.limpi, null)

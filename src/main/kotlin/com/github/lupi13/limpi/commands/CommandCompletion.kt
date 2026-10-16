@@ -11,10 +11,11 @@ import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
 import java.util.logging.Level
 
-open class CommandCompletion(private val plugin: Plugin, private val index: CommandIndex, private val module: String) : TabCompleter {
+/** [module] is the config switch of the system; null means always enabled (/limpi). */
+open class CommandCompletion(private val plugin: Plugin, private val index: CommandIndex, private val module: String?) : TabCompleter {
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
         return try {
-            index.complete(args.toList(), plugin.config.getBoolean(module), sender is Player, sender::hasPermission) { kind ->
+            index.complete(args.toList(), module == null || plugin.config.getBoolean(module), sender is Player, sender::hasPermission) { kind ->
                 when (kind) {
                     "online" -> plugin.server.onlinePlayers.map { it.name }
                     "players" -> FileManager.players.knownNames()

@@ -18,7 +18,6 @@ import org.bukkit.event.entity.ProjectileHitEvent
 
 object HarmonySword : Ability(
     grade = Grade.RARE,
-    element = Element.NONE,
     displayName = Component.text("조화: 검", NamedTextColor.RED),
     codeName = "harmony_sword",
     material = Material.BLADE_POTTERY_SHERD,

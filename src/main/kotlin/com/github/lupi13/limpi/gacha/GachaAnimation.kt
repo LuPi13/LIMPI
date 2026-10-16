@@ -125,9 +125,7 @@ class GachaAnimation(private val plugin: Plugin) {
                             gachaName = spawn(gachaLocation.clone().apply { yaw = textRotationYaw; pitch = 0f }, TextDisplay::class.java).apply {
                                 text(ability.displayName
                                     .append(Component.text(" "))
-                                    .append(ability.grade.displayGrade)
-                                    .append(Component.text(" "))
-                                    .append(ability.element.displayElement))
+                                    .append(ability.grade.displayGrade))
                                 // 초기상태: 크기 0
                                 transformation = transform(0f)
                                 interpolationDelay = 0

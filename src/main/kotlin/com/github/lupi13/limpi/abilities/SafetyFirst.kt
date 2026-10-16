@@ -11,7 +11,6 @@ import org.bukkit.event.player.PlayerInteractEvent
 
 object SafetyFirst : Ability(
     grade = Grade.TROLL,
-    element = Element.NONE,
     displayName = Component.text("안전제일", NamedTextColor.YELLOW),
     codeName = "safety_first",
     material = Material.GOLDEN_HELMET,

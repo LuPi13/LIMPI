@@ -17,7 +17,6 @@ import kotlin.random.Random
 
 object GatheringStorm : Ability(
     grade = Grade.LEGENDARY,
-    element = Element.ELECTRIC,
     displayName = Component.text("폭풍 결집", NamedTextColor.AQUA),
     codeName = "gathering_storm",
     material = Material.TRIDENT,

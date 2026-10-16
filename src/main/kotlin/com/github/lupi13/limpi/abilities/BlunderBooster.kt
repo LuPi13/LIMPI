@@ -22,7 +22,6 @@ import kotlin.math.sin
 
 object BlunderBooster : Ability(
     grade = Grade.LEGENDARY,
-    element = Element.FIRE,
     displayName = Component.text("블런더 부스터", NamedTextColor.DARK_RED),
     codeName = "blunder_booster",
     material = Material.STRUCTURE_BLOCK,

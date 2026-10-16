@@ -22,7 +22,6 @@ import kotlin.math.acos
 
 object Muspell : Ability(
     grade = Grade.EPIC,
-    element = Element.FIRE,
     displayName = Component.text("무스펠", NamedTextColor.DARK_RED),
     codeName = "muspell",
     material = Material.FIRE_CHARGE,

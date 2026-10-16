@@ -25,7 +25,6 @@ import kotlin.random.Random
 
 object CometStrike : Ability(
     grade = Grade.EPIC,
-    element = Element.EXPLOSIVE,
     displayName = Component.text("혜성강타", NamedTextColor.AQUA),
     codeName = "comet_strike",
     material = Material.BLAZE_POWDER,

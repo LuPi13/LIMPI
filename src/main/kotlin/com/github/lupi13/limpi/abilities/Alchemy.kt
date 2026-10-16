@@ -12,7 +12,6 @@ import kotlin.random.Random
 
 object Alchemy : Ability(
     grade = Grade.RARE,
-    element = Element.SMITH,
     displayName = Component.text("연금술", NamedTextColor.GOLD),
     codeName = "alchemy",
     material = Material.RAW_GOLD,

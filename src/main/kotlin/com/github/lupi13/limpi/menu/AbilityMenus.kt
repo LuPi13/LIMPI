@@ -37,7 +37,6 @@ object AbilityMenus {
             SortOption.UNLOCKED -> entries
             SortOption.GANADA -> entries.sortedBy { PlainTextComponentSerializer.plainText().serialize(it.displayName) }
             SortOption.GRADE -> entries.sortedByDescending { it.grade }
-            SortOption.ELEMENT -> entries.sortedBy { it.element }
         }
         val pagination = Pagination(sorted.size, if (requestedPage <= 1) 0 else requestedPage - 1)
         val holder = MenuHolder(kind, pagination.page, if (dictionary) AbilityDictionary.abilityDictionaryGUIName else AbilitySelectEvent.abilitySelectGUIName)

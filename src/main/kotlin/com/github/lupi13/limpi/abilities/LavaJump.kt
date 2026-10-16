@@ -14,7 +14,6 @@ import kotlin.random.Random
 
 object LavaJump : Ability(
     grade = Grade.COMMON,
-    element = Element.FIRE,
     displayName = Component.text("용암수제비", NamedTextColor.GOLD),
     codeName = "lava_jump",
     material = Material.LAVA_BUCKET,

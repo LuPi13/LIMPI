@@ -14,7 +14,6 @@ import org.bukkit.event.player.PlayerDropItemEvent
 
 object LongThrow : Ability(
     grade = Grade.COMMON,
-    element = Element.UTILITY,
     displayName = Component.text("장거리 투척", NamedTextColor.WHITE),
     codeName = "long_throw",
     material = Material.RABBIT_HIDE,

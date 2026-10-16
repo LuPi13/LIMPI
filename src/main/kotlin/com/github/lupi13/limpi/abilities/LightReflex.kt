@@ -13,7 +13,6 @@ import org.bukkit.event.entity.EntityDamageEvent
 
 object LightReflex : DodgeVariant(
     grade = Grade.EPIC,
-    element = Element.ELECTRIC,
     displayName = Component.text("번개와 같은 반사신경", NamedTextColor.YELLOW),
     codeName = "light_reflex",
     material = Material.SCULK_VEIN,

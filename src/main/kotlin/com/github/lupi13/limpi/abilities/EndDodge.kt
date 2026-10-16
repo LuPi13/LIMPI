@@ -22,7 +22,6 @@ import kotlin.math.min
 
 object EndDodge : DodgeVariant(
     grade = Grade.EPIC,
-    element = Element.MAGIC,
     displayName = Component.text("엔드의 회피", NamedTextColor.DARK_PURPLE),
     codeName = "end_dodge",
     material = Material.ENDER_PEARL,

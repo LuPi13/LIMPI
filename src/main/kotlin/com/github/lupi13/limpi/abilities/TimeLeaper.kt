@@ -48,7 +48,7 @@ abstract class TimeLeapAbility(
     acquisition: AcquisitionType = AcquisitionType.GACHA,
     relatedQuest: List<Quest>? = null,
 ) : Ability(
-    grade = grade, element = Element.MAGIC, displayName = displayName, codeName = codeName, material = material,
+    grade = grade, displayName = displayName, codeName = codeName, material = material,
     description = description, acquisition = acquisition, relatedQuest = relatedQuest, needFile = true, restrictedSlot = 40
 ) {
     protected class Frame(val location: Location, val health: Double)

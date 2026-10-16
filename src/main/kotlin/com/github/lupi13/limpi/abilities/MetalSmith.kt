@@ -20,7 +20,6 @@ import kotlin.random.Random
 object MetalSmith : Ability(
     grade = Grade.EPIC,
     acquisition = AcquisitionType.QUEST,
-    element = Element.SMITH,
     displayName = Component.text("광석 세공사", NamedTextColor.DARK_AQUA),
     codeName = "metal_smith",
     material = Material.SMITHING_TABLE,

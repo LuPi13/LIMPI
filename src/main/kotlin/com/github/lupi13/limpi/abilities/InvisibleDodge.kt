@@ -24,7 +24,6 @@ import java.util.UUID
 
 object InvisibleDodge : DodgeVariant(
     grade = Grade.LEGENDARY,
-    element = Element.MAGIC,
     displayName = Component.text("소멸의 걸음", NamedTextColor.DARK_GRAY),
     codeName = "invisible_dodge",
     material = Material.FROGSPAWN,

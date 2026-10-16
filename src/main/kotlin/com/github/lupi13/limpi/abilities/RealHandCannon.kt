@@ -30,7 +30,6 @@ import java.util.UUID
 object RealHandCannon : Ability(
     grade = Grade.EPIC,
     acquisition = AcquisitionType.QUEST,
-    element = Element.EXPLOSIVE,
     displayName = Component.text("진짜 핸드'캐논'", NamedTextColor.DARK_RED),
     codeName = "real_hand_cannon",
     material = Material.FIRE_CHARGE,

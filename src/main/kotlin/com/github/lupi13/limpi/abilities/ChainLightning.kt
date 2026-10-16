@@ -16,7 +16,6 @@ import kotlin.random.Random
 
 object ChainLightning : Ability(
     grade = Grade.EPIC,
-    element = Element.ELECTRIC,
     displayName = Component.text("연쇄 번개", NamedTextColor.YELLOW),
     codeName = "chain_lightning",
     material = Material.SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE,

@@ -19,7 +19,6 @@ import kotlin.math.min
 
 object ShieldStrike : Ability(
     grade = Grade.RARE,
-    element = Element.NONE,
     displayName = Component.text("방패강타", NamedTextColor.GRAY),
     codeName = "shield_strike",
     material = Material.SHIELD,

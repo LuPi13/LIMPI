@@ -16,7 +16,6 @@ import kotlin.math.min
 
 object KneePropel : Ability(
     grade = Grade.COMMON,
-    element = Element.NONE,
     displayName = Component.text("무릎을 꿇은 이유", NamedTextColor.YELLOW),
     codeName = "knee_propel",
     material = Material.NETHERITE_UPGRADE_SMITHING_TEMPLATE,

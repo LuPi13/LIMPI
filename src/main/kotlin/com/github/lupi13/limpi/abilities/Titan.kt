@@ -23,7 +23,6 @@ import kotlin.random.Random
 
 object Titan : Ability(
     grade = Grade.TROLL,
-    element = Element.EXPLOSIVE,
     displayName = Component.text("타이탄", NamedTextColor.BLACK),
     codeName = "titan",
     material = Material.BLAZE_POWDER,

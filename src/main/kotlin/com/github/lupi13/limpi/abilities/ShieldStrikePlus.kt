@@ -19,7 +19,6 @@ import kotlin.math.min
 object ShieldStrikePlus : Ability(
     grade = Grade.EPIC,
     acquisition = AcquisitionType.QUEST,
-    element = Element.NONE,
     displayName = Component.text("방패강타+", NamedTextColor.GRAY),
     codeName = "shield_strike_plus",
     material = Material.SHIELD,

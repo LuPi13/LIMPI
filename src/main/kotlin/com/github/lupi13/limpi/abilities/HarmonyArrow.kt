@@ -17,7 +17,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 
 object HarmonyArrow : Ability(
     grade = Grade.RARE,
-    element = Element.NONE,
     displayName = Component.text("조화: 화살", NamedTextColor.BLUE),
     codeName = "harmony_arrow",
     material = Material.ARCHER_POTTERY_SHERD,

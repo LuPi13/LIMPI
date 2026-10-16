@@ -28,7 +28,6 @@ import kotlin.random.nextInt
 
 object OverBalance : Ability(
     grade = Grade.LEGENDARY,
-    element = Element.MAGIC,
     displayName = Component.text("밸런스 붕괴", NamedTextColor.YELLOW),
     codeName = "over_balance",
     material = Material.ECHO_SHARD,

@@ -20,7 +20,6 @@ import java.util.UUID
 
 object FocusBow : Ability(
     grade = Grade.EPIC,
-    element = Element.NONE,
     displayName = Component.text("집중의 활시위", NamedTextColor.AQUA),
     codeName = "focus_bow",
     material = Material.ARCHER_POTTERY_SHERD,

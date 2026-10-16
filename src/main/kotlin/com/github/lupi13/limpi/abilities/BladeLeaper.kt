@@ -30,7 +30,6 @@ import kotlin.random.Random
 
 object BladeLeaper : Ability(
     grade = Grade.EPIC,
-    element = Element.MAGIC,
     displayName = Component.text("칼날 도약", NamedTextColor.YELLOW),
     codeName = "blade_leaper",
     material = Material.GOLDEN_SWORD,

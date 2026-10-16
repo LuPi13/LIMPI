@@ -30,7 +30,6 @@ import java.util.UUID
 
 object Counter : Ability(
     grade = Grade.RARE,
-    element = Element.DEFENSIVE,
     displayName = Component.text("카운터", NamedTextColor.AQUA),
     codeName = "counter",
     material = Material.DIAMOND_SWORD,

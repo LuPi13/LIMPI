@@ -9,7 +9,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 
 object WaterMeleeBoost : Ability(
     grade = Grade.COMMON,
-    element = Element.WATER,
     displayName = Component.text("수중 강타", NamedTextColor.AQUA),
     codeName = "water_melee_boost",
     material = Material.WATER_BUCKET,

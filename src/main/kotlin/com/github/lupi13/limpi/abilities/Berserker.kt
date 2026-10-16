@@ -14,7 +14,6 @@ import org.bukkit.event.entity.EntityDamageEvent
 
 object Berserker : Ability(
     grade = Grade.EPIC,
-    element = Element.NONE,
     displayName = Component.text("광전사", NamedTextColor.DARK_RED),
     codeName = "berserker",
     material = Material.RED_DYE,

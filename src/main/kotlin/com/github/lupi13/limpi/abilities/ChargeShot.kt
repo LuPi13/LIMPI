@@ -30,7 +30,6 @@ import kotlin.random.Random
 object ChargeShot : Ability(
     grade = Grade.RARE,
     acquisition = AcquisitionType.QUEST,
-    element = Element.ELECTRIC,
     displayName = Component.text("차지샷", NamedTextColor.AQUA),
     codeName = "charge_shot",
     material = Material.LIGHT_BLUE_DYE,

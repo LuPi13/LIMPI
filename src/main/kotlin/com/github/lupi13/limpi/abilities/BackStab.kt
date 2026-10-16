@@ -26,7 +26,6 @@ abstract class BackStabVariant(
     acquisition: AcquisitionType = AcquisitionType.GACHA,
 ) : Ability(
     grade = grade,
-    element = Element.NONE,
     displayName = displayName,
     codeName = codeName,
     material = Material.GOLDEN_SWORD,

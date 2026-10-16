@@ -12,7 +12,6 @@ import org.bukkit.event.entity.EntityTargetLivingEntityEvent
 
 object FriendlyUndead : Ability(
     grade = Grade.COMMON,
-    element = Element.UNDEAD,
     displayName = Component.text("우호적 언데드", NamedTextColor.DARK_GREEN),
     codeName = "friendly_undead",
     material = Material.ZOMBIE_HEAD,

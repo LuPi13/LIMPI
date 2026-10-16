@@ -159,14 +159,10 @@ class GachaInformation(private val plugin: Plugin) {
             sender.sendMessage(Grade.LEGENDARY.displayGrade
                 .append(Component.text(": ", NamedTextColor.WHITE))
                 .append(legendaryPickUp.displayName)
-                .append(Component.text(" ", NamedTextColor.WHITE))
-                .append(legendaryPickUp.element.displayElement)
                 .append(Component.text(" / ", NamedTextColor.WHITE))
                 .append(Grade.EPIC.displayGrade)
                 .append(Component.text(": ", NamedTextColor.WHITE))
-                .append(epicPickUp.displayName)
-                .append(Component.text(" ", NamedTextColor.WHITE))
-                .append(epicPickUp.element.displayElement))
+                .append(epicPickUp.displayName))
         }
     }
 

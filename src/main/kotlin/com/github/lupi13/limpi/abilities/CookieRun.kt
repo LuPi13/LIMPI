@@ -11,7 +11,6 @@ import org.bukkit.potion.PotionEffectType
 
 object CookieRun : Ability(
     grade = Grade.COMMON,
-    element = Element.NONE,
     displayName = Component.text("쿠키런", TextColor.color(127, 63, 63)),
     codeName = "cookie_run",
     material = Material.COOKIE,

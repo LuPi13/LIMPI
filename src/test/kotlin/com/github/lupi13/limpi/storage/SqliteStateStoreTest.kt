@@ -171,4 +171,27 @@ class SqliteStateStoreTest {
             assertFalse(store.execute(old, "purchase") { "again" }.replayed)
         }
     }
+
+    /** The indexed range lists exactly what the old substr comparison listed, including near-miss neighbours. */
+    @Test fun `prefix listing is an indexed key range with the same results as a prefix comparison`() {
+        val keys = listOf("a", "a-", "a/", "a/-", "a/0", "a/b", "a/b/c", "a/z", "a/zzz", "a0", "a_", "aZ", "a/Z", "b/", "player/x",
+            "removal_pending/u1/", "removal_pending/u1/r", "removal_pending/u10/r", "removal_pending/u1_/r", "removal_pending/u2/r")
+        SqliteStateStore(file()).use { store ->
+            store.atomic { tx -> keys.forEach { tx.put(it, "v-$it") } }
+            for (prefix in listOf("a", "a/", "a/b", "a/z", "removal_pending/u1/", "removal_pending/u1", "removal_pending/", "z", "-", "_")) {
+                val expected = keys.filter { it.startsWith(prefix) }.sorted().associateWith { "v-$it" }
+                assertEquals(expected, store.documents(prefix), prefix)
+                store.atomic { tx -> assertEquals(expected, tx.documents(prefix), prefix) }
+                assertEquals(expected.keys.toList(), store.documents(prefix).keys.toList(), prefix) // ORDER BY key is kept
+            }
+        }
+        JDBC.createConnection("jdbc:sqlite:${file()}", Properties()).use { connection ->
+            connection.prepareStatement("EXPLAIN QUERY PLAN ${SqliteStateStore.LIST_SQL}").use { plan ->
+                plan.setString(1, "a/"); plan.setString(2, SqliteStateStore.upperBound("a/"))
+                val detail = plan.executeQuery().use { rows -> buildList { while (rows.next()) add(rows.getString("detail")) } }.joinToString()
+                assertTrue(detail.contains("SEARCH") && detail.contains("INDEX"), detail)
+                assertFalse(detail.contains("SCAN"), detail)
+            }
+        }
+    }
 }

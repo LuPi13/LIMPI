@@ -203,8 +203,8 @@ class SqliteStateStore(
 
     private fun list(prefix: String): Map<String, String> {
         validateKey(prefix)
-        connection.prepareStatement("SELECT key,payload FROM documents WHERE substr(key,1,length(?))=? ORDER BY key").use {
-            it.setString(1, prefix); it.setString(2, prefix)
+        connection.prepareStatement(LIST_SQL).use {
+            it.setString(1, prefix); it.setString(2, upperBound(prefix))
             it.executeQuery().use { rows ->
                 val result = linkedMapOf<String, String>()
                 while (rows.next()) result[rows.getString(1)] = rows.getString(2)
@@ -229,5 +229,15 @@ class SqliteStateStore(
     private fun checkAvailable() { check(!connection.isClosed && !inTransaction) { "Store is closed or inside another transaction" } }
     private fun validateKey(key: String) { require(key.matches(Regex("[A-Za-z0-9_/-]+"))) { "Invalid state key" } }
 
-    companion object { private const val APPLICATION_ID = 0x4C494D50 }
+    companion object {
+        private const val APPLICATION_ID = 0x4C494D50
+
+        /**
+         * Prefix listing as a primary-key range, so SQLite searches the key index instead of scanning every document
+         * (the old `substr(key,…)=?` read the whole table on each call). Keys only use [A-Za-z0-9_/-], all below DEL,
+         * so `prefix <= key < prefix + DEL` holds exactly the keys that start with the prefix.
+         */
+        internal const val LIST_SQL = "SELECT key,payload FROM documents WHERE key>=? AND key<? ORDER BY key"
+        internal fun upperBound(prefix: String) = prefix + '\u007F'
+    }
 }

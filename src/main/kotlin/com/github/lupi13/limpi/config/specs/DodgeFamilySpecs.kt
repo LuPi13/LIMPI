@@ -27,7 +27,7 @@ object DodgeFamilySpecs {
             number("damage_multiplier", 0.1, 0.0, 1.0)
         )),
         "blight_ranger" to AbilitySpec(listOf(
-            integer("cooldown", 10000),
+            integer("cooldown", 15000),
             number("velocity", 2.0, 0.000001, 64.0),
             flag("allowJump", false),
             integer("invisible_ticks", 140, 1, 72000),

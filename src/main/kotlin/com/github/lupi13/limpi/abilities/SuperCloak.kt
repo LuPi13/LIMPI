@@ -26,6 +26,8 @@ object SuperCloak : CloakAbility(
     ),
     acquisition = AcquisitionType.QUEST,
 ) {
+    override val glint: Boolean get() = true
+
     override val stillSaves = true
     override val label = "SuperCloak"
 

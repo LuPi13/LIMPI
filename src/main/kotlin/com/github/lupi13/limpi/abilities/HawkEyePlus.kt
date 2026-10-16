@@ -6,7 +6,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Sound
 
 object HawkEyePlus : HawkEyeAbility(
-    grade = Grade.RARE,
+    grade = Grade.EPIC,
     displayName = Component.text("매의 눈+", NamedTextColor.YELLOW),
     codeName = "hawk_eye_plus",
     description = listOf(
@@ -18,6 +18,8 @@ object HawkEyePlus : HawkEyeAbility(
     acquisition = AcquisitionType.QUEST,
     bonusSound = { Sound.ITEM_DYE_USE }
 ) {
+    override val glint: Boolean get() = true
+
     override val howToGet: Component by lazy {
         Component.text("퀘스트 ", NamedTextColor.WHITE)
             .append(GiveAll.displayName)

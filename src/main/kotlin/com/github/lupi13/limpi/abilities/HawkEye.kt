@@ -226,7 +226,7 @@ abstract class HawkEyeAbility(
 }
 
 object HawkEye : HawkEyeAbility(
-    grade = Grade.RARE,
+    grade = Grade.EPIC,
     displayName = Component.text("매의 눈", NamedTextColor.YELLOW),
     codeName = "hawk_eye",
     description = listOf(

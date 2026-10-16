@@ -16,7 +16,7 @@ import org.bukkit.util.Vector
 import java.util.UUID
 
 object LinearBow : Ability(
-    grade = Grade.EPIC,
+    grade = Grade.RARE,
     displayName = Component.text("직선 화살", NamedTextColor.WHITE),
     codeName = "linear_bow",
     material = Material.ARROW,
@@ -32,9 +32,7 @@ object LinearBow : Ability(
             Component.text("최대로 당겨 쏜 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("이 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getInt("delayTicks") / 20.0}", NamedTextColor.GREEN).append(Component.text("초", NamedTextColor.WHITE)))
                 .append(Component.text(" 후 직선 방향의", NamedTextColor.WHITE)),
-            Component.text("히트스캔 방식으로 발사됩니다. (중력 없음, 틱당 약 ", NamedTextColor.WHITE)
-                .append(Component.text("${(3.0 * config!!.getDouble("speedMultiplier")).toInt()}", NamedTextColor.GREEN).append(Component.text("블럭", NamedTextColor.WHITE)))
-                .append(Component.text(")", NamedTextColor.WHITE)),
+            Component.text("히트스캔 방식으로 발사됩니다.", NamedTextColor.WHITE),
             Component.text("피해량은 일반 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("과 같으며,", NamedTextColor.WHITE)),
             Component.text("벽에 부딪히지 않으면 사라집니다.", NamedTextColor.WHITE)
         )

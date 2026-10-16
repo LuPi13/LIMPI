@@ -32,7 +32,7 @@ object RealHandCannon : Ability(
     acquisition = AcquisitionType.QUEST,
     displayName = Component.text("진짜 핸드'캐논'", NamedTextColor.DARK_RED),
     codeName = "real_hand_cannon",
-    material = Material.FIRE_CHARGE,
+    material = Material.FIREWORK_STAR,
     description = listOf(
         Component.text("왼손이 핸드'캐논'으로 고정됩니다.", NamedTextColor.WHITE),
         Component.text("")
@@ -54,10 +54,7 @@ object RealHandCannon : Ability(
             Component.text("왼손이 ", NamedTextColor.WHITE).append(Component.text("핸드'캐논'", NamedTextColor.YELLOW)).append(Component.text("으로 고정됩니다.", NamedTextColor.WHITE)),
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
-                .append(Component.text("키를 누르면 인벤토리 내의 ", NamedTextColor.WHITE)).append(Component.text("화약", NamedTextColor.YELLOW)).append(Component.text(" 1개를 소비해", NamedTextColor.WHITE)),
-            Component.text("위력 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getDouble("explosion_power")}", NamedTextColor.GREEN))
-                .append(Component.text("의 폭발을 일으키는 짧은 곡사포를 발사합니다.", NamedTextColor.WHITE)),
+                .append(Component.text("키를 누르면 인벤토리 내의 ", NamedTextColor.WHITE)).append(Component.text("화약", NamedTextColor.YELLOW)).append(Component.text(" 1개를 소비해 폭발을 일으키는 짧은 곡사포를 발사합니다.", NamedTextColor.WHITE)),
             Component.text("폭발은 ", NamedTextColor.WHITE)
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게만 피해를 주며, ", NamedTextColor.WHITE))
@@ -70,7 +67,7 @@ object RealHandCannon : Ability(
     override val activeItem: ItemStack by lazy {
         val item = ItemStack(Material.TURTLE_SCUTE)
         val meta = item.itemMeta
-        meta.itemModel = NamespacedKey("minecraft", "fire_charge")
+        meta.itemModel = NamespacedKey("minecraft", "firework_star")
         meta.itemName(Component.text("핸드'캐논'", NamedTextColor.DARK_RED))
         meta.lore(listOf(
             Component.text("")

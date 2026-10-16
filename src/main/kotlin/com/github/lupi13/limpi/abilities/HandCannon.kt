@@ -55,9 +55,7 @@ object HandCannon : Ability(
                 .append(Component.text("적", NamedTextColor.RED))
                 .append(Component.text("에게 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN))
-                .append(Component.text("의 피해를 주는 작은 탄환을 발사합니다.", NamedTextColor.WHITE)),
-            Component.text("이 능력은 특정 조건을 통해 다른 능력을 해금할 수 있습니다.", NamedTextColor.WHITE)
-                .decoration(TextDecoration.ITALIC, true)
+                .append(Component.text("의 피해를 주는 작은 탄환을 발사합니다.", NamedTextColor.WHITE))
         )
     }
 

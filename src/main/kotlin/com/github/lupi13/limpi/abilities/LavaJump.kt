@@ -25,9 +25,7 @@ object LavaJump : Ability(
     override val details: List<Component> by settingsCached {
         listOf(
             Component.text("용암에 닿으면 피해를 받지 않고", NamedTextColor.WHITE),
-            Component.text("위로 강하게 튀어오릅니다. (속도 ", NamedTextColor.WHITE)
-                .append(Component.text("${config!!.getDouble("launch_speed")}", NamedTextColor.GREEN))
-                .append(Component.text(")", NamedTextColor.WHITE)),
+            Component.text("위로 강하게 튀어오릅니다.", NamedTextColor.WHITE),
             Component.text("용암에 붙은 불에 의한 피해는 막지 않습니다.", NamedTextColor.YELLOW)
         )
     }

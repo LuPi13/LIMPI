@@ -71,6 +71,7 @@ abstract class TimeLeapAbility(
                 .decoration(TextDecoration.ITALIC, false),
             Component.text("(쿨타임: ${seconds(config!!.getInt("cooldown_ticks"))}초)", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
         ))
+        if (glint) meta.setEnchantmentGlintOverride(true)
         item.itemMeta = meta
         item
     }
@@ -86,8 +87,7 @@ abstract class TimeLeapAbility(
             .append(Component.text("키를 누르면 ", NamedTextColor.WHITE))
             .append(Component.text(seconds(config!!.getInt("rewind_ticks")), NamedTextColor.GREEN))
             .append(Component.text("초 전의 위치와 체력으로 돌아갑니다.", NamedTextColor.WHITE)),
-        Component.text("되돌아가는 동안 피해를 받지 않습니다.", NamedTextColor.WHITE),
-        Component.text("쿨타임이 끝나면 되돌아갈 경로가 자신에게만 보입니다.", NamedTextColor.WHITE)
+        Component.text("되돌아가는 동안 피해를 받지 않습니다.", NamedTextColor.WHITE)
     )
 
     protected fun cooldownLine(): Component = Component.text("(쿨타임: ", NamedTextColor.WHITE)

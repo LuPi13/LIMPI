@@ -31,6 +31,8 @@ object PulseCannon : Ability(
     needFile = true,
     restrictedSlot = 40
 ) {
+    override val glint: Boolean get() = true
+
     override val howToGet: Component by lazy {
         Component.text("퀘스트 ", NamedTextColor.WHITE)
             .append(TriggerFinger.displayName)

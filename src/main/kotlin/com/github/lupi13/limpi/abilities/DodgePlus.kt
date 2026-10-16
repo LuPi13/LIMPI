@@ -112,6 +112,8 @@ object DodgePlus : DodgeVariant(
         Component.text("회피의 쿨타임이 감소합니다.", NamedTextColor.WHITE)
     )
 ) {
+    override val glint: Boolean get() = true
+
     override val unlockQuest: Quest get() = DodgeMaster
 
     override val details: List<Component> by settingsCached {

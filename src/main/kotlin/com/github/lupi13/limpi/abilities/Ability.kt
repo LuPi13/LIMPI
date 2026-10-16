@@ -68,6 +68,9 @@ abstract class Ability(
         Bukkit.getServer().pluginManager.registerEvents(this, plugin)
     }
 
+    /** Enchantment glint on the icon (and the off-hand item where the ability sets it) to set upgraded abilities apart. */
+    open val glint: Boolean get() = false
+
     fun getItem(): ItemStack {
         val item = ItemStack(Material.TURTLE_SCUTE, 1)
         val meta = item.itemMeta
@@ -84,6 +87,7 @@ abstract class Ability(
         ItemFlag.entries.forEach { flag ->
             meta.addItemFlags(flag)
         }
+        if (glint) meta.setEnchantmentGlintOverride(true)
         item.itemMeta = meta
         return item
     }

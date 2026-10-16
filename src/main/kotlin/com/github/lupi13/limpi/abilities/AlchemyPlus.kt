@@ -22,6 +22,8 @@ object AlchemyPlus : Ability(
     ),
     needFile = true
 ){
+    override val glint: Boolean get() = true
+
     override val howToGet by lazy { Component.text("퀘스트 ", NamedTextColor.WHITE).append(com.github.lupi13.limpi.quests.Lotto.displayName).append(Component.text(" 달성", NamedTextColor.WHITE)) }
     override val details: List<Component> by settingsCached {
         // 광물 이름은 YELLOW, 확률 수치는 GREEN, 단위(%)는 WHITE

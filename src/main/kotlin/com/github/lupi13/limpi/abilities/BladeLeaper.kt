@@ -121,7 +121,8 @@ object BladeLeaper : Ability(
                 meta.damage = Math.addExact(meta.damage, 1)
             }
             item.itemMeta = meta
-            if (!FileManager.delivery.claim(player)) return
+            // A sword from an earlier throw may come back here; that return is not news to the player.
+            if (!FileManager.delivery.claim(player, quiet = true)) return
             val before = PaperItemCodec.snapshot(player, true)
             val slot = player.inventory.heldItemSlot
             val source = requireNotNull(before[slot])
@@ -131,7 +132,7 @@ object BladeLeaper : Ability(
             val returned = if (meta.isUnbreakable || meta.damage < maximumDamage) PaperItemCodec.grant(item) else null
             broken = returned == null
             val terms = AbilityItemTerms(codeName, slot, source.payload, returned)
-            if (!FileManager.delivery.remove(player, UUID.randomUUID(), AbilityItemUse.KIND, terms.encode(), before, after)) return
+            if (!FileManager.delivery.remove(player, UUID.randomUUID(), AbilityItemUse.KIND, terms.encode(), before, after, quiet = true)) return
         }
 
         val color = when (item.type) {

@@ -33,6 +33,8 @@ object ShieldStrikePlus : Ability(
     ),
     needFile = true
 ) {
+    override val glint: Boolean get() = true
+
     override val howToGet: Component by lazy {
         Component.text("퀘스트 ", NamedTextColor.WHITE)
             .append(PerfectDistance.displayName)

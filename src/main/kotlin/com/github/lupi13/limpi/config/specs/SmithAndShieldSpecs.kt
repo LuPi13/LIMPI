@@ -38,7 +38,7 @@ object SmithAndShieldSpecs {
             number("diamond", 0.009, 0.0, 1.0),
             number("netherite_ingot", 0.001, 0.0, 1.0),
             integer("fireTicks", 60),
-            integer("repair", 20)
+            integer("repair", 50)
         )) { settings -> require(kotlin.math.abs(alchemyOutputs.sumOf(settings::getDouble) - 1.0) <= 1.0e-9) { "Metal smith probabilities must sum to 1" } },
         "linear_bow" to AbilitySpec(listOf(
             number("minimumSpeed", 2.9, 0.0, 64.0),

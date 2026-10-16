@@ -20,6 +20,8 @@ object ExpRich : Ability(
         Component.text("레벨업 시 4레벨을 추가로 상승시킵니다.", NamedTextColor.WHITE)
     )
 ) {
+    override val glint: Boolean get() = true
+
     private val changing = mutableSetOf<java.util.UUID>()
     override val howToGet: Component by lazy {
         Component.text("퀘스트 ", NamedTextColor.WHITE)

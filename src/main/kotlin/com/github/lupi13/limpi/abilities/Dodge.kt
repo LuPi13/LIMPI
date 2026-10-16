@@ -28,7 +28,7 @@ import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
 
 object Dodge : Ability(
-    grade = Grade.RARE,
+    grade = Grade.COMMON,
     displayName = Component.text("회피", NamedTextColor.GRAY),
     codeName = "dodge",
     material = Material.RABBIT_FOOT,

@@ -16,7 +16,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import java.util.UUID
 
 object CriticalDodge : DodgeVariant(
-    grade = Grade.LEGENDARY,
+    grade = Grade.EPIC,
     displayName = Component.text("치명적인 회피", NamedTextColor.RED),
     codeName = "critical_dodge",
     material = Material.TARGET,

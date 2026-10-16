@@ -99,7 +99,7 @@ abstract class BackStabVariant(
 
 object BackStab : BackStabVariant(
     grade = Grade.RARE,
-    displayName = Component.text("백스탭", NamedTextColor.GOLD),
+    displayName = Component.text("백스탭", NamedTextColor.RED),
     codeName = "back_stab",
     description = listOf(
         Component.text("적", NamedTextColor.RED)

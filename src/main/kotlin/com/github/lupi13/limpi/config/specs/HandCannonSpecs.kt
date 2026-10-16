@@ -18,9 +18,9 @@ object HandCannonSpecs {
             number("no_invulnerability_chance", 0.1, 0.0, 1.0)
         )),
         "charge_shot" to AbilitySpec(listOf(
-            number("max_damage", 10.0),
+            number("max_damage", 12.0),
             integer("charge_ticks_per_damage", 4, 1, 1200),
-            integer("max_charge_ticks", 40, 1, 1200),
+            integer("max_charge_ticks", 48, 1, 1200), // 48 / 4 = 12, so the max_damage default is reachable
             integer("lifetime_ticks", 127, 1, 1200),
             number("charging_slowness", 0.45, 0.0, 1.0),
             integer("cooldown_ticks", 10, 0, 72000)

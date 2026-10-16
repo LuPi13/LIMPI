@@ -18,6 +18,8 @@ object TimeLeaperPlus : TimeLeapAbility(
     ),
     acquisition = AcquisitionType.QUEST
 ) {
+    override val glint: Boolean get() = true
+
     override val activeName: Component = Component.text("시간여행장치+", NamedTextColor.AQUA)
 
     override val howToGet: Component by lazy {

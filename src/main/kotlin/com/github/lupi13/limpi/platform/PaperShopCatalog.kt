@@ -12,13 +12,13 @@ class PaperShopCatalog(private val plugin: Plugin) {
         val material = Material.getMaterial(code) ?: return null
         if (!material.isItem || material.isAir) return null
         val name = material.name.lowercase(Locale.ROOT)
-        val ratios = FileManager.getShopRatioConfig()
-        if (!ratios.contains(name)) return null
-        val ratio = CatalogPrices.ratio(ratios.get(name) ?: plugin.config.get("DefaultShopRatio"))
-        val price = CatalogPrices.shop(CatalogPrices.sell(FileManager.getSellPriceConfig().get(name)), ratio)
+        val prices = FileManager.getShopPriceConfig()
+        if (!prices.contains(name)) return null
+        val sell = FileManager.getSellPriceConfig()
+        val price = CatalogPrices.shop(prices.get(name), CatalogPrices.highestSell(SellCatalog.of(sell), name) { sell.get(it) })
         return ShopOffer(code, PaperItemCodec.grant(ItemStack(material)), price)
     }
-    fun available(): List<ShopOffer> = FileManager.getShopRatioConfig().getKeys(false).mapNotNull { code ->
+    fun available(): List<ShopOffer> = FileManager.getShopPriceConfig().getKeys(false).mapNotNull { code ->
         try { offer(code.uppercase(Locale.ROOT)) ?: run { plugin.logger.warning("Invalid shop material $code"); null } }
         catch (failure: Exception) { plugin.logger.warning("Invalid shop entry $code: ${failure.message}"); null }
     }

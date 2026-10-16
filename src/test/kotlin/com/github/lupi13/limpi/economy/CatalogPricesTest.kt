@@ -2,20 +2,28 @@ package com.github.lupi13.limpi.economy
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import java.math.BigDecimal
 
 class CatalogPricesTest {
-    @Test fun `defaults integral prices and decimal floor retain catalog semantics without Int clipping`() {
-        assertEquals(1, CatalogPrices.sell(null).units)
-        assertEquals(3_000_000_000, CatalogPrices.sell(3_000_000_000L).units)
-        assertEquals(151, CatalogPrices.shop(Money(101), CatalogPrices.ratio(1.5)).units)
-        assertEquals(4_500_000_000, CatalogPrices.shop(Money(3_000_000_000), CatalogPrices.ratio(1.5)).units)
-        assertEquals(0, CatalogPrices.shop(Money(Long.MAX_VALUE), BigDecimal.ZERO).units)
-        assertEquals(Long.MAX_VALUE, CatalogPrices.shop(Money(1), CatalogPrices.ratio(Long.MAX_VALUE)).units)
+    private val sell = mapOf<String, Any?>(
+        "diamond" to 120, "iron_ingot" to mapOf("price" to 8, "half" to 64, "floor" to 2),
+        "iron_block" to mapOf("same" to "iron_ingot", "count" to 9),
+    )
+    private val catalog = SellCatalog { sell[it] }
+    private fun highest(code: String) = CatalogPrices.highestSell(catalog, code) { sell[it] }
+
+    @Test fun `prices are strict non-negative integers without Int saturation`() {
+        assertEquals(3_000_000_000, CatalogPrices.price(3_000_000_000L).units)
+        assertEquals(0, CatalogPrices.price(0).units)
+        for (raw in listOf(-1, 1.5, "100", null)) assertThrows(IllegalArgumentException::class.java) { CatalogPrices.price(raw) }
     }
-    @Test fun `fractional negative textual and nonfinite settings fail instead of silently saturating`() {
-        for (raw in listOf(-1, 1.5, "100")) assertThrows(IllegalArgumentException::class.java) { CatalogPrices.sell(raw) }
-        for (raw in listOf(-1, Double.NaN, Double.POSITIVE_INFINITY, "1.5", null)) assertThrows(IllegalArgumentException::class.java) { CatalogPrices.ratio(raw) }
-        assertThrows(ArithmeticException::class.java) { CatalogPrices.shop(Money(Long.MAX_VALUE), BigDecimal.TWO) }
+
+    @Test fun `shop price may not undercut what one unit sells for`() {
+        assertEquals(120, highest("diamond")); assertEquals(8, highest("iron_ingot")); assertEquals(72, highest("iron_block"))
+        assertEquals(0, highest("dirt"))
+        assertEquals(500, CatalogPrices.shop(500, highest("diamond")).units)
+        assertEquals(120, CatalogPrices.shop(120, highest("diamond")).units)
+        assertThrows(IllegalArgumentException::class.java) { CatalogPrices.shop(119, highest("diamond")) }
+        assertThrows(IllegalArgumentException::class.java) { CatalogPrices.shop(71, highest("iron_block")) }
+        assertEquals(3, CatalogPrices.shop(3, highest("dirt")).units)
     }
 }

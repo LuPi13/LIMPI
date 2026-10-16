@@ -4,7 +4,7 @@ HelpUrl: 'https://lupi13.github.io/LIMPI/'  # /ability help, /financial help에 
 EnableFinancialSystem: true  # 금융 시스템 활성화 여부
 PlayerDataDirectory: ''  # 비어 있으면 자동 탐지(26.1+: <월드>/players/data). 별도 저장 환경에서는 서버 worldContainer 기준 경로 또는 절대 경로
 InitialMoney: 10000  # 첫 소지금
-DefaultShopRatio: 5  # 기본 상점 비율(미사용)
+SellRecoveryHours: 12  # 많이 팔수록 내려가는 판매가(financial/sellPrice.yml)에서, 플레이어별 누적 판매 개수가 절반으로 회복되는 시간(시간), 1 이상의 정수
 StockMinimumRatio: 0.7  # 주식의 변동 최소 배율
 StockMaximumRatio: 1.3  # 주식의 변동 최대 배율
 StockStandardDeviation: 0.1  # 주식 변동 표준 편차(추천: (최대배율 - 최소배율) / 5)
@@ -44,14 +44,14 @@ ForceTroll: true  # TROLL 능력이 뽑기에서 등장 시 강제 적용 여부
 
 RAREProbability: 0.3  # LEGENDARY, EPIC, TROLL이 등장하지 않았을 때, RARE 등급 등장 확률
 
-TicketPrice: 20  # 뽑기권 가격(에메랄드)
-SelectPrice:  # 능력 선택권 가격(에메랄드)
-  TROLL: 10
-  COMMON: 15
-  RARE: 20
-  EPIC: 30
-  LEGENDARY: 40
-  MYTHIC: 50
+TicketMoneyPrice: 2000  # 뽑기권 가격(원). 2.0.0부터 에메랄드 대신 돈으로 결제하며, 예전 TicketPrice/SelectPrice(에메랄드)는 쓰지 않음
+SelectMoneyPrice:  # 능력 선택권 가격(원)
+  TROLL: 1000
+  COMMON: 1500
+  RARE: 2000
+  EPIC: 3000
+  LEGENDARY: 4000
+  MYTHIC: 5000
 
 #=== Chest System Configuration ===#
 EnableChestSystem: true  # 상자 시스템 활성화 여부. 꺼도 이미 해금한 상자는 /chest로 열 수 있음(구매·자동 저장·사망 시 떨어뜨림은 중지)

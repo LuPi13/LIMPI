@@ -14,24 +14,37 @@ class ConfigMergeTest {
     private fun lines(text: String) = text.split('\n')
     private fun without(text: String, vararg removed: String) = lines(text).filterNot { line -> removed.any { line.startsWith(it) } }.joinToString("\n")
 
-    /** Real config.yml files shipped by earlier commits; each later version only added settings. */
+    /** 2.0.0 replaced these (shop ratio, emerald ticket prices); an upgraded file keeps them, unused and untouched. */
+    private val replaced = listOf("DefaultShopRatio: 5  # 기본 상점 비율(미사용)", "TicketPrice: 20  # 뽑기권 가격(에메랄드)", "SelectPrice:  # 능력 선택권 가격(에메랄드)",
+        "  TROLL: 10", "  COMMON: 15", "  RARE: 20", "  EPIC: 30", "  LEGENDARY: 40", "  MYTHIC: 50")
+    private fun withoutReplaced(text: String): String {
+        val result = lines(text).toMutableList()
+        for (line in replaced) result.removeAt(result.indexOf(line).also { assertTrue(it >= 0, line) })
+        // The replaced block leaves its blank separator next to the inserted one; the template has no double blanks.
+        return result.filterIndexed { index, line -> !(line.isEmpty() && index > 0 && result[index - 1].isEmpty()) }.joinToString("\n")
+    }
+
+    /** Real config.yml files shipped by earlier commits; each later version added settings, and 2.0.0 also replaced three. */
     @Test fun `every earlier shipped config is upgraded to the current template exactly`() {
+        val chest = listOf("EnableChestSystem", "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice")
+        val tickets = listOf("TicketMoneyPrice", "SelectMoneyPrice")
         val history = mapOf(
-            "1.1.1.yml" to listOf("NoticeRetentionDays"),
-            "before-816e68c.yml" to listOf("EnableChestSystem", "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice", "NoticeRetentionDays"),
-            "before-ca07fea.yml" to listOf("HelpUrl", "EnableChestSystem", "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice", "NoticeRetentionDays"),
-            "before-4722e13.yml" to listOf("HelpUrl", "BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming", "EnableChestSystem", "ChestUnlockPrice",
-                "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice", "NoticeRetentionDays"),
-            "before-803fc3f.yml" to listOf("HelpUrl", "RecordRetentionDays", "BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming", "EnableChestSystem",
-                "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice", "NoticeRetentionDays"),
+            "1.4.0.yml" to listOf("SellRecoveryHours") + tickets,
+            "1.1.1.yml" to listOf("SellRecoveryHours") + tickets + "NoticeRetentionDays",
+            "before-816e68c.yml" to listOf("SellRecoveryHours") + tickets + chest + "NoticeRetentionDays",
+            "before-ca07fea.yml" to listOf("HelpUrl", "SellRecoveryHours") + tickets + chest + "NoticeRetentionDays",
+            "before-4722e13.yml" to listOf("HelpUrl", "SellRecoveryHours", "BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") + tickets + chest + "NoticeRetentionDays",
+            "before-803fc3f.yml" to listOf("HelpUrl", "SellRecoveryHours", "RecordRetentionDays", "BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") +
+                tickets + chest + "NoticeRetentionDays",
         )
         for ((name, added) in history) {
             val old = javaClass.classLoader.getResourceAsStream("config-history/$name")!!.use { it.readBytes().toString(Charsets.UTF_8) }.replace("\r\n", "\n")
             val result = ConfigMerge.merge(template, old)!!
             assertEquals(added, result.added, name)
-            assertEquals(template, result.text, name)
+            assertEquals(template, withoutReplaced(result.text), name)
+            assertNull(ConfigMerge.merge(template, result.text), name)
             // The same file with Windows newlines keeps them.
-            assertEquals(template.replace("\n", "\r\n"), ConfigMerge.merge(template, old.replace("\n", "\r\n"))!!.text, name)
+            assertEquals(result.text.replace("\n", "\r\n"), ConfigMerge.merge(template, old.replace("\n", "\r\n"))!!.text, name)
         }
     }
 

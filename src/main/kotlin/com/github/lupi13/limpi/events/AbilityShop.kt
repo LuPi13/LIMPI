@@ -40,7 +40,7 @@ class AbilityShop : Listener {
          * 능력 선택권 아이템 또는 뽑기권을 생성합니다.
          * isShopDisplay가 false일 경우, 플레이어 정보는 null로 설정할 수 있습니다.
          * @param grade 능력의 등급, null일 경우 뽑기권 아이템을 생성합니다.
-         * @param isShopDisplay 상점에서 보여지는지 여부(가격, 보유 에메랄드 등 표시)
+         * @param isShopDisplay 상점에서 보여지는지 여부(가격, 보유 금액 등 표시)
          * @param player 플레이어 정보 (상점에서 구매 시 사용)
          * @return 생성된 아이템 스택
          */
@@ -72,12 +72,12 @@ class AbilityShop : Listener {
 
             if (isShopDisplay) {
                 val price = price(grade?.name ?: "GACHA")
-                val money = emeraldCount(player!!)
-                lore = lore + Component.text("가격: 에메랄드 ", NamedTextColor.WHITE)
+                // 2.0.0: paid from the account like the server shop (user decision 2026-10-16), same line format.
+                lore = lore + Component.text("가격: ", NamedTextColor.WHITE)
                     .append(moneyDisplay(price))
-                    .append(Component.text("개, 현재 보유 에메랄드: ", NamedTextColor.WHITE))
-                    .append(moneyDisplay(money))
-                    .append(Component.text("개", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false)
+                    .append(Component.text("원, 현재 보유 금액: ", NamedTextColor.WHITE))
+                    .append(com.github.lupi13.limpi.commands.EconomyText.balanceDisplay(player!!.uniqueId))
+                    .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false)
                 lore = lore + Component.text("좌클릭하여 구매합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
                 lore = lore + Component.text("Shift를 누르고 클릭하면 10개/최대한 많이 구매합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
             }
@@ -86,13 +86,20 @@ class AbilityShop : Listener {
             return com.github.lupi13.limpi.platform.AbilityTickets.mark(item, grade?.name ?: "GACHA")
         }
 
+        private const val BUNDLE = 10L
+
         private fun price(code: String): Long {
-            val path = if (code == "GACHA") "TicketPrice" else "SelectPrice.${Grade.valueOf(code).name}"
-            return CatalogPrices.sell(requireNotNull(plugin.config.get(path)) { "Missing ability shop price $path" }).units
+            val path = if (code == "GACHA") "TicketMoneyPrice" else "SelectMoneyPrice.${Grade.valueOf(code).name}"
+            return CatalogPrices.price(requireNotNull(plugin.config.get(path)) { "Missing ability shop price $path" }).units
         }
 
-        private val emeraldPayload: String get() = PaperItemCodec.payload(ItemStack(Material.EMERALD))
-        private fun emeraldCount(player: Player): Long = InventoryPlan.count(PaperItemCodec.snapshot(player), emeraldPayload)
+        /** The current product for a code (GACHA or a grade), or null when it is unknown or misconfigured. */
+        fun offer(code: String): ShopOffer? = try {
+            val grade = if (code == "GACHA") null else Grade.valueOf(code)
+            ShopOffer(code, PaperItemCodec.grant(getSelectTicketItem(grade, false, null)), Money(price(code)), BUNDLE)
+        } catch (failure: Exception) {
+            plugin.logger.warning("Invalid ability shop product $code: ${failure.message}"); null
+        }
 
         fun openAbilityShopGUI(player: Player, expected: Inventory? = null) {
             if (!player.hasPermission("limpi.ability.shop") || !FileManager.delivery.claim(player)) return
@@ -100,14 +107,9 @@ class AbilityShop : Listener {
             val grades = listOf<Grade?>(null) + Grade.entries
             for ((index, grade) in grades.withIndex()) {
                 val code = grade?.name ?: "GACHA"
-                try {
-                    val unit = price(code)
-                    val grant = PaperItemCodec.grant(getSelectTicketItem(grade, false, null))
-                    holder.inventory.setItem(index + 1, getSelectTicketItem(grade, true, player))
-                    holder.actions[index + 1] = MenuAction.ItemExchangeQuote(code, unit, grant)
-                } catch (failure: Exception) {
-                    plugin.logger.warning("Invalid ability shop product $code: ${failure.message}")
-                }
+                val offer = offer(code) ?: continue
+                holder.inventory.setItem(index + 1, getSelectTicketItem(grade, true, player))
+                holder.actions[index + 1] = MenuAction.ShopQuote(code, offer.price.units)
             }
             openMenu(plugin, player, holder.inventory, expected)
         }
@@ -122,47 +124,41 @@ class AbilityShop : Listener {
         if (event.rawSlot !in 0 until top.size || event.click !in setOf(ClickType.LEFT, ClickType.SHIFT_LEFT)) return
         val player = event.whoClicked as? Player ?: return
         if (!player.hasPermission("limpi.ability.shop") || FileManager.delivery.blocked(player.uniqueId)) return
-        val quote = holder.actions[event.rawSlot] as? MenuAction.ItemExchangeQuote ?: return
+        val quote = holder.actions[event.rawSlot] as? MenuAction.ShopQuote ?: return
         val request = UUID.randomUUID()
+        val bundle = event.click == ClickType.SHIFT_LEFT
         try {
-            require(price(quote.product) == quote.price) { "가격이 변경되었습니다. 화면을 다시 열어주세요." }
             if (!FileManager.delivery.claim(player)) return
-            val before = PaperItemCodec.snapshot(player)
-            val currency = emeraldPayload
-            val available = InventoryPlan.count(before, currency)
-            val maximum = if (event.click == ClickType.SHIFT_LEFT) 10L else 1L
-            val count = if (quote.price == 0L) maximum else minOf(maximum, available / quote.price)
-            if (count <= 0) {
-                player.sendMessage(Component.text("에메랄드가 부족합니다! ", NamedTextColor.RED))
-                player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
-                return
+            val offer = offer(quote.code)
+            if (offer != null && offer.price.units == quote.price) {
+                // Refuse up front, like the server shop, when the tickets would not fit.
+                val balance = com.github.lupi13.limpi.commands.EconomyText.balance(player.uniqueId) ?: 0L
+                val count = if (!bundle) 1L else if (quote.price == 0L) BUNDLE else minOf(BUNDLE, balance / quote.price)
+                if (count > 0) try {
+                    InventoryPlan.grant(PaperItemCodec.snapshot(player), listOf(offer.item.copy(count = count)), player.inventory.maxStackSize)
+                } catch (_: InventoryFull) {
+                    player.sendMessage(Component.text("인벤토리가 가득 찼습니다.", NamedTextColor.RED))
+                    player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
+                    return
+                }
             }
-            val cost = Math.multiplyExact(quote.price, count)
-            val remaining = if (cost == 0L) before else InventoryPlan.remove(before, currency, cost)
-            try {
-                InventoryPlan.grant(remaining, listOf(quote.reward.copy(count = count)))
-            } catch (_: InventoryFull) {
-                player.sendMessage(Component.text("인벤토리가 가득 찼습니다.", NamedTextColor.RED))
-                player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
-                return
-            }
-            val terms = ExchangeTerms(quote.product, currency, cost, quote.reward.copy(count = count))
-            val completed = if (cost == 0L) {
-                FileManager.exchanges.free(request, player.uniqueId, terms); true
-            } else FileManager.delivery.remove(player, request, ItemExchange.KIND, terms.encode(), before, remaining)
-            if (completed) {
-                val name = (event.currentItem ?: PaperItemCodec.item(quote.reward.payload, 1)).displayName()
-                player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-                player.sendMessage(name
-                    .append(Component.text(" $count", NamedTextColor.GREEN))
-                    .append(Component.text("개 구매 완료.", NamedTextColor.WHITE)))
-                if (FileManager.delivery.claim(player, quiet = true)) openAbilityShopGUI(player, top)
-            }
-        } catch (failure: IllegalArgumentException) {
-            player.sendMessage(Component.text(failure.message ?: "구매하지 못했습니다.", NamedTextColor.RED))
+            val receipt = FileManager.abilityShop.buy(request, player.uniqueId, quote.code, quote.price, bundle)
+            val name = (event.currentItem ?: PaperItemCodec.item(requireNotNull(offer).item.payload, 1)).displayName()
+            player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
+            player.sendMessage(name
+                .append(Component.text(" ${receipt.count}", NamedTextColor.GREEN))
+                .append(Component.text("개 구매 완료.", NamedTextColor.WHITE)))
+            if (FileManager.delivery.claim(player, quiet = true)) openAbilityShopGUI(player, top)
+        } catch (failure: BankException) {
+            if (failure.reason == BankFailure.INSUFFICIENT_FUNDS) player.sendMessage(com.github.lupi13.limpi.commands.EconomyText.insufficient(player, "원 있습니다."))
+            else com.github.lupi13.limpi.commands.EconomyText.bankFailure(player, failure)
             player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
+        } catch (failure: ShopUnavailable) {
+            player.sendMessage(Component.text(failure.message ?: "상품을 확인하세요.", NamedTextColor.RED))
+            player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)
+            openAbilityShopGUI(player, top)
         } catch (failure: Exception) {
-            plugin.logger.log(Level.SEVERE, "Ability shop exchange $request failed for ${player.uniqueId}", failure)
+            plugin.logger.log(Level.SEVERE, "Ability shop purchase $request failed for ${player.uniqueId}", failure)
         }
     }
 

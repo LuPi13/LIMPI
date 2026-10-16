@@ -22,7 +22,6 @@ sealed interface MenuAction {
     data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
     data class ShopQuote(val code: String, val price: Long) : MenuAction
     data class ChestQuote(val product: String, val price: Long) : MenuAction
-    data class ItemExchangeQuote(val product: String, val price: Long, val reward: com.github.lupi13.limpi.delivery.ItemGrant) : MenuAction
 }
 
 /** Server-owned identity and actions: titles and item names carry no authority. */

@@ -64,8 +64,8 @@ class ShopEvents : Listener {
     private fun fits(player: Player, quote: MenuAction.ShopQuote, bundle: Boolean): Boolean {
         val offer = PaperShopCatalog(plugin).offer(quote.code) ?: return true
         val balance = EconomyText.balance(player.uniqueId) ?: return true
-        val count = if (!bundle) 1L else if (quote.price == 0L) offer.item.limit.toLong()
-            else minOf(offer.item.limit.toLong(), balance / quote.price)
+        val count = if (!bundle) 1L else if (quote.price == 0L) offer.bundle
+            else minOf(offer.bundle, balance / quote.price)
         if (count <= 0L) return true
         return try {
             InventoryPlan.grant(PaperItemCodec.snapshot(player), listOf(offer.item.copy(count = count)), player.inventory.maxStackSize); true

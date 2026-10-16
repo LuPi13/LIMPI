@@ -81,8 +81,8 @@
 | --- | --- |
 | `config.yml` | 능력·금융·상자 시스템 켜기/끄기, 상자 상점 가격, 첫 소지금과 첫 뽑기권 수, 뽑기 등급 확률, 뽑기권 가격, 픽업 주기, 주식 변동 폭, 자동 백업 주기 등 |
 | `ability/<능력>.yml` | 능력별 세부 수치(피해량, 쿨타임, 범위, 지속 시간 등) |
-| `financial/sellPrice.yml` | 아이템 판매 가격 |
-| `financial/shopRatio.yml` | 상점 판매 아이템과 가격 비율 |
+| `financial/sellPrice.yml` | 아이템 판매 가격(고정·감소형, 처음 실행 시 기본값 생성) |
+| `financial/shopPrice.yml` | 상점에서 파는 아이템과 구매 가격(처음 실행 시 기본값 생성) |
 | `financial/stock.yml` | 주식 종목 |
 
 플러그인을 새 버전으로 바꾸면 `config.yml`에 새로 생긴 설정만 설명과 함께 자동으로 추가됩니다. 이미 고친 값은 그대로 두고, 바꾸기 전 파일은 `config.yml.bak-<날짜-시각>`으로 남깁니다.

@@ -28,10 +28,29 @@
 
 | 명령어 | 권한 | 설명 |
 | --- | --- | --- |
-| `/financial sell set <아이템> <금액>` | `limpi.financial.admin.catalog` | 아이템의 판매 가격을 정합니다. |
-| `/financial sell remove <아이템>` | `limpi.financial.admin.catalog` | 판매 품목에서 뺍니다. |
-| `/financial shop set <아이템> <비율>` | `limpi.financial.admin.catalog` | 상점 구매 가격 비율을 정합니다. 구매 가격은 판매 가격 × 비율입니다. |
+| `/financial sell set <아이템> <금액>` | `limpi.financial.admin.catalog` | 아이템의 판매 가격을 고정 금액으로 정합니다. |
+| `/financial sell set <아이템> <금액> <반감 개수> <최저 가격>` | `limpi.financial.admin.catalog` | 많이 팔수록 내려가는 판매 가격을 정합니다. 처음 금액에서 시작해 반감 개수만큼 팔 때마다 절반이 되고, 최저 가격 밑으로는 내려가지 않습니다. |
+| `/financial sell remove <아이템>` | `limpi.financial.admin.catalog` | 판매 품목에서 뺍니다(0원이 됩니다). |
+| `/financial shop set <아이템> <가격>` | `limpi.financial.admin.catalog` | 상점 구매 가격을 정합니다. 그 아이템을 팔 때 받는 가격(감소형은 처음 가격)보다 낮게 정할 수 없습니다. |
 | `/financial shop remove <아이템>` | `limpi.financial.admin.catalog` | 상점 품목에서 뺍니다. |
+
+### 가격 파일
+
+서버를 처음 켤 때 `financial/sellPrice.yml`, `financial/shopPrice.yml`에 기본 가격이 만들어집니다(직접 플레이 시급 약 10,000원, 다이아몬드 120원 기준). 파일이 이미 있으면 덮어쓰지 않습니다.
+
+```yaml
+# sellPrice.yml
+diamond: 120                                       # 고정 가격
+totem_of_undying: {price: 300, half: 5, floor: 30} # 사람마다 많이 팔수록 감소
+iron_block: {same: iron_ingot, count: 9}           # 철 주괴 9개로 계산(압축 블록으로 감소를 피할 수 없음)
+
+# shopPrice.yml: 여기 있는 아이템만 상점에 나옵니다
+diamond: 500
+```
+
+- 목록에 없는 아이템은 판매가 0원입니다.
+- 감소형은 n번째 판매가 `max(floor, price × 0.5^(n / half))`이며, 한 번 판 합계에서 원 단위로 내림합니다. 판매 개수는 `config.yml`의 `SellRecoveryHours`(기본 12)시간마다 절반으로 회복됩니다.
+- 상점 구매 가격이 판매 가격보다 낮은 항목은 상점에 나오지 않고 서버 로그에 남습니다.
 
 ## 주식
 
@@ -134,10 +153,10 @@
 
 | 파일 | 바꿀 수 있는 것 |
 | --- | --- |
-| `config.yml` | 능력·금융 시스템 켜기/끄기, 첫 소지금과 첫 뽑기권 수, 뽑기 등급 확률, 뽑기권 가격, 픽업 주기, 주식 변동 폭, 자동 백업 주기, 상자 시스템 켜기/끄기와 상자 상점 가격, 공지 보관 일수(`NoticeRetentionDays`), 게임 안 도움말의 웹 링크 주소(`HelpUrl`) 등 |
+| `config.yml` | 능력·금융 시스템 켜기/끄기, 첫 소지금과 첫 뽑기권 수, 뽑기 등급 확률, 뽑기권·선택권 가격(`TicketMoneyPrice`, `SelectMoneyPrice`, 원), 판매가 회복 시간(`SellRecoveryHours`), 픽업 주기, 주식 변동 폭, 자동 백업 주기, 상자 시스템 켜기/끄기와 상자 상점 가격, 공지 보관 일수(`NoticeRetentionDays`), 게임 안 도움말의 웹 링크 주소(`HelpUrl`) 등 |
 | `ability/<능력>.yml` | 능력별 세부 수치(피해량, 쿨타임, 범위, 지속 시간 등) |
-| `financial/sellPrice.yml` | 아이템 판매 가격 |
-| `financial/shopRatio.yml` | 상점 판매 아이템과 가격 비율 |
+| `financial/sellPrice.yml` | 아이템 판매 가격(고정·감소형) |
+| `financial/shopPrice.yml` | 상점에서 파는 아이템과 구매 가격 |
 | `financial/stock.yml` | 주식 종목 |
 
 ### 플러그인을 업데이트하면

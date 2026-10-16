@@ -1,0 +1,75 @@
+# 상점 구매 가격(원). 여기에 있는 아이템만 상점에 나온다.
+# 기준: 직접 구하는 시간 비용(시급 약 10,000원) 이상, 판매가의 3배 이상.
+#       구매가가 판매가보다 낮으면 그 항목은 불러올 때 거부된다.
+# 이 파일은 없을 때만 만들어지며, 고친 내용은 덮어쓰지 않는다.
+
+# --- 건축 재료(손으로 2,000~4,000개/시간 → 개당 3~5원) ---
+dirt: 3
+grass_block: 5
+sand: 3
+red_sand: 4
+gravel: 3
+cobblestone: 3
+stone: 3
+cobbled_deepslate: 3
+netherrack: 3
+sandstone: 5
+stone_bricks: 5
+glass: 5
+clay: 10
+terracotta: 8
+snow_block: 5
+ice: 10
+packed_ice: 30
+end_stone: 10
+obsidian: 30
+white_wool: 10
+white_concrete_powder: 5
+light_gray_concrete_powder: 5
+gray_concrete_powder: 5
+black_concrete_powder: 5
+brown_concrete_powder: 5
+red_concrete_powder: 5
+orange_concrete_powder: 5
+yellow_concrete_powder: 5
+lime_concrete_powder: 5
+green_concrete_powder: 5
+cyan_concrete_powder: 5
+light_blue_concrete_powder: 5
+blue_concrete_powder: 5
+purple_concrete_powder: 5
+magenta_concrete_powder: 5
+pink_concrete_powder: 5
+
+# --- 원목(손으로 600~1,000개/시간 → 개당 ~15원) ---
+oak_log: 15
+spruce_log: 15
+birch_log: 15
+jungle_log: 15
+acacia_log: 15
+dark_oak_log: 15
+mangrove_log: 15
+cherry_log: 15
+pale_oak_log: 15
+crimson_stem: 15
+warped_stem: 15
+
+# --- 자원 ---
+coal: 15
+iron_ingot: 30
+gold_ingot: 45
+copper_ingot: 10
+redstone: 10
+lapis_lazuli: 15
+quartz: 10
+diamond: 500
+
+# --- 농장 산출물(농장이 없는 사람용) ---
+string: 10
+bone: 10
+gunpowder: 30
+slime_ball: 15
+leather: 10
+blaze_rod: 45
+ender_pearl: 60
+# 팔지 않음: 에메랄드(뽑기는 돈으로 결제), 네더라이트, 탐험 전리품

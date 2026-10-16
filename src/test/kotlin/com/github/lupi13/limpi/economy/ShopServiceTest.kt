@@ -62,4 +62,21 @@ class ShopServiceTest {
             assertEquals(-1, balance(store)); assertTrue(DeliveryJournal(store).pending(buyer).isEmpty()); assertNull(store.entry(request))
         }
     }
+    /** The ability shop (2.0.0) pays tickets from the account through the same service: Shift buys at most 10. */
+    @Test fun `ability tickets are paid with money and a bundle stops at ten`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store, 50_000)
+            val ticket = ShopOffer("GACHA", ItemGrant("ticket", 1, 64), Money(2_000), 10)
+            val tickets = ShopService(store, DeliveryJournal(store), CachedPlayerRepository(SqliteProfilePersistence(store)), { ticket.takeIf { _ -> it == "GACHA" } }, "ABILITY_SHOP_BUY")
+            val result = tickets.buy(request, buyer, "GACHA", 2_000, true)
+            assertEquals(10, result.count); assertEquals(20_000, result.total); assertEquals(30_000, balance(store))
+            assertEquals(10, DeliveryJournal(store).pending(buyer).single().items.single().count)
+            assertEquals(1, tickets.buy(UUID.randomUUID(), buyer, "GACHA", 2_000, false).count); assertEquals(28_000, balance(store))
+            setup(store, 5_000)
+            assertEquals(2, tickets.buy(UUID.randomUUID(), buyer, "GACHA", 2_000, true).count); assertEquals(1_000, balance(store))
+            assertEquals(BankFailure.INSUFFICIENT_FUNDS, assertThrows(BankException::class.java) { tickets.buy(UUID.randomUUID(), buyer, "GACHA", 2_000, false) }.reason)
+            assertThrows(ShopUnavailable::class.java) { tickets.buy(UUID.randomUUID(), buyer, "EPIC", 3_000, false) }
+            assertEquals(1_000, balance(store))
+        }
+    }
 }

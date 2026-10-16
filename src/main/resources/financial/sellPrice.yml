@@ -1,0 +1,133 @@
+# 서버 판매 가격(원). 여기에 없는 아이템은 0원(판매창에 넣으면 사라짐).
+# 기준: 직접 플레이 시급 약 10,000원(다이아 수동 채굴 약 50개/시간).
+#
+# 쓰는 법
+#   아이템: 가격                 고정 가격
+#   아이템: {price, half, floor} 사람별로 많이 팔수록 감소
+#       n번째(0부터) 판매가 = max(floor, price × 0.5^(n / half)), 한 번 판매한 합계에서 원 단위 내림
+#       누적 판매 개수는 config.yml의 SellRecoveryHours(기본 12)마다 절반으로 회복
+#   아이템: {same, count}        다른 아이템 count개로 계산(압축 블록 우회 방지)
+# 이 파일은 없을 때만 만들어지며, 고친 내용은 덮어쓰지 않는다.
+
+# --- 채굴 전용(농장 없음, 고정) ---
+diamond: 120
+diamond_block: 1080
+raw_iron: 8
+raw_iron_block: 72
+raw_gold: 12
+raw_gold_block: 108
+raw_copper: 2
+raw_copper_block: 18
+coal: 3
+coal_block: 27
+lapis_lazuli: 3
+lapis_block: 27
+quartz: 2
+ancient_debris: 400
+netherite_scrap: 400
+netherite_ingot: 1700
+netherite_block: 15300
+obsidian: 2
+
+# --- 탐험 전리품(고정) ---
+elytra: 1500
+enchanted_golden_apple: 1000
+heart_of_the_sea: 300
+heavy_core: 300
+echo_shard: 100
+sniffer_egg: 100
+disc_fragment_5: 10
+netherite_upgrade_smithing_template: 300  # 다이아 7개(840원)로 복제 가능하므로 그보다 싸게
+sentry_armor_trim_smithing_template: 150
+dune_armor_trim_smithing_template: 150
+coast_armor_trim_smithing_template: 150
+wild_armor_trim_smithing_template: 150
+ward_armor_trim_smithing_template: 150
+eye_armor_trim_smithing_template: 150
+vex_armor_trim_smithing_template: 150
+tide_armor_trim_smithing_template: 150
+snout_armor_trim_smithing_template: 150
+rib_armor_trim_smithing_template: 150
+spire_armor_trim_smithing_template: 150
+wayfinder_armor_trim_smithing_template: 150
+shaper_armor_trim_smithing_template: 150
+silence_armor_trim_smithing_template: 150
+raiser_armor_trim_smithing_template: 150
+host_armor_trim_smithing_template: 150
+flow_armor_trim_smithing_template: 150
+bolt_armor_trim_smithing_template: 150
+
+# --- 희귀 드롭(손으로 몇 개 → 높게, 농장 → 바닥) ---
+totem_of_undying: {price: 300, half: 5, floor: 30}       # 습격 / 습격 농장
+nether_star: {price: 1000, half: 3, floor: 200}          # 위더 처치
+wither_skeleton_skull: {price: 100, half: 5, floor: 10}
+shulker_shell: {price: 50, half: 10, floor: 10}
+trident: {price: 100, half: 3, floor: 20}
+nautilus_shell: {price: 30, half: 5, floor: 5}
+name_tag: {price: 30, half: 5, floor: 5}
+saddle: {price: 30, half: 5, floor: 5}
+ghast_tear: {price: 30, half: 10, floor: 10}
+ominous_trial_key: {price: 50, half: 4, floor: 10}
+trial_key: {price: 10, half: 8, floor: 2}
+breeze_rod: {price: 10, half: 16, floor: 2}
+emerald: {price: 10, half: 32, floor: 0}                 # 주민 거래소 → 돈 통로를 작게 제한
+emerald_block: {same: emerald, count: 9}
+ender_pearl: {price: 20, half: 16, floor: 0}             # 엔더맨 농장은 수만/h
+
+# --- 몹·농장 산출물 ---
+phantom_membrane: {price: 10, half: 16, floor: 2}
+gunpowder: {price: 10, half: 32, floor: 1}
+blaze_rod: {price: 15, half: 32, floor: 1}
+slime_ball: {price: 5, half: 32, floor: 1}
+slime_block: {same: slime_ball, count: 9}
+magma_cream: {price: 5, half: 32, floor: 1}
+glow_ink_sac: {price: 5, half: 32, floor: 1}
+bone: {price: 3, half: 64, floor: 1}
+bone_block: {same: bone, count: 3}
+string: {price: 3, half: 64, floor: 1}
+spider_eye: {price: 2, half: 32, floor: 0}
+leather: {price: 3, half: 64, floor: 1}
+rabbit_hide: {price: 3, half: 32, floor: 1}
+honeycomb: {price: 3, half: 64, floor: 1}
+prismarine_shard: {price: 3, half: 64, floor: 1}
+prismarine_crystals: {price: 3, half: 64, floor: 1}
+amethyst_shard: {price: 2, half: 64, floor: 1}
+amethyst_block: {same: amethyst_shard, count: 4}
+
+# --- 제련·농장 겸용 금속(직접 캔 원석을 녹인 양은 높게) ---
+iron_ingot: {price: 8, half: 64, floor: 2}               # 철 농장
+iron_block: {same: iron_ingot, count: 9}
+gold_ingot: {price: 12, half: 64, floor: 1}              # 피글린 금 농장
+gold_block: {same: gold_ingot, count: 9}
+copper_ingot: {price: 2, half: 64, floor: 1}             # 드라운드 농장
+copper_block: {same: copper_ingot, count: 9}
+redstone: {price: 2, half: 256, floor: 1}                # 채굴 + 마녀 농장
+redstone_block: {same: redstone, count: 9}
+glowstone_dust: {price: 3, half: 64, floor: 1}
+glowstone: {same: glowstone_dust, count: 4}
+
+# --- 나무·작물(손으로 하면 적당히, 자동화는 바닥) ---
+oak_log: {price: 5, half: 256, floor: 1}
+spruce_log: {price: 5, half: 256, floor: 1}
+birch_log: {price: 5, half: 256, floor: 1}
+jungle_log: {price: 5, half: 256, floor: 1}
+acacia_log: {price: 5, half: 256, floor: 1}
+dark_oak_log: {price: 5, half: 256, floor: 1}
+mangrove_log: {price: 5, half: 256, floor: 1}
+cherry_log: {price: 5, half: 256, floor: 1}
+pale_oak_log: {price: 5, half: 256, floor: 1}
+crimson_stem: {price: 5, half: 256, floor: 1}
+warped_stem: {price: 5, half: 256, floor: 1}
+wheat: {price: 2, half: 256, floor: 1}
+hay_block: {same: wheat, count: 9}
+carrot: {price: 2, half: 256, floor: 1}
+potato: {price: 2, half: 256, floor: 1}
+beetroot: {price: 2, half: 256, floor: 1}
+sugar_cane: {price: 2, half: 256, floor: 1}
+cocoa_beans: {price: 2, half: 256, floor: 1}
+nether_wart: {price: 2, half: 256, floor: 1}
+pumpkin: {price: 3, half: 128, floor: 1}
+melon: {price: 3, half: 128, floor: 1}
+
+# 0원(목록에 없음): 흙·돌·모래·자갈·네더랙, 대나무, 다시마, 선인장, 수박 조각,
+#   썩은 살점, 화살, 깃털, 달걀, 금 조각, 가공품(장비·도구·황금 사과·인첸트 책 등)

@@ -47,6 +47,8 @@ class FileManager {
         private lateinit var marketEscrow: MarketEscrow
         private lateinit var checkService: CheckService
         private lateinit var shopService: ShopService
+        private lateinit var abilityShopService: ShopService
+        private lateinit var saleService: com.github.lupi13.limpi.economy.SaleService
         private lateinit var removalJournal: RemovalJournal
         private lateinit var itemExchange: ItemExchange
         private lateinit var gachaSettlement: GachaSettlement
@@ -70,6 +72,8 @@ class FileManager {
         val escrow: MarketEscrow get() = marketEscrow
         val checks: CheckService get() = checkService
         val shop: ShopService get() = shopService
+        val abilityShop: ShopService get() = abilityShopService
+        val sales: com.github.lupi13.limpi.economy.SaleService get() = saleService
         val removals: RemovalJournal get() = removalJournal
         val exchanges: ItemExchange get() = itemExchange
         val gacha: GachaSettlement get() = gachaSettlement
@@ -120,6 +124,8 @@ class FileManager {
                 }
             checkService = CheckService(state, deliveryJournal, repository)
             shopService = ShopService(state, deliveryJournal, repository, PaperShopCatalog(owner)::offer)
+            abilityShopService = ShopService(state, deliveryJournal, repository, com.github.lupi13.limpi.events.AbilityShop::offer, "ABILITY_SHOP_BUY")
+            saleService = com.github.lupi13.limpi.economy.SaleService(state, repository)
             marketCatalog = MarketCatalog(state)
             marketService = MarketService(state, marketCatalog, deliveryJournal, repository)
             marketEscrow = MarketEscrow(state, marketCatalog)
@@ -143,19 +149,25 @@ class FileManager {
             financial.clear()
         }
 
+        /** Bundled default prices are copied only when the file does not exist; an edited file is never overwritten. */
         fun setup() {
-            for (name in listOf("misc", "sellPrice", "shopRatio", "stock")) {
+            for (name in listOf("sellPrice", "shopPrice")) {
+                if (!java.nio.file.Files.exists(financialPath(name))) plugin.saveResource("financial/$name.yml", false)
+            }
+            if (java.nio.file.Files.exists(financialPath("shopRatio")))
+                plugin.logger.warning("financial/shopRatio.yml is no longer used; shop prices are read from financial/shopPrice.yml")
+            for (name in listOf("misc", "sellPrice", "shopPrice", "stock")) {
                 financial[name] = YamlFiles.read(financialPath(name))
             }
         }
 
         fun getMiscConfig(): FileConfiguration = financial.getValue("misc")
         fun getSellPriceConfig(): FileConfiguration = financial.getValue("sellPrice")
-        fun getShopRatioConfig(): FileConfiguration = financial.getValue("shopRatio")
+        fun getShopPriceConfig(): FileConfiguration = financial.getValue("shopPrice")
         fun getStockConfig(): FileConfiguration = financial.getValue("stock")
 
         fun saveSellPrice() = saveFinancial("sellPrice")
-        fun saveShopRatio() = saveFinancial("shopRatio")
+        fun saveShopPrice() = saveFinancial("shopPrice")
         fun saveStock() = saveFinancial("stock")
         fun replaceStock(value: YamlConfiguration) {
             val copy = YamlFiles.parse(value.saveToString())

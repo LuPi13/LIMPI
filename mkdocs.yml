@@ -18,6 +18,7 @@ nav:
 
 theme:
   name: material
+  custom_dir: overrides
   language: ko
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -38,6 +39,9 @@ theme:
     - search.suggest
     - toc.follow
     - content.code.copy
+
+extra:
+  build: !ENV [GITHUB_SHA, dev]  # docs workflow: compared with version.json to refresh stale pages
 
 markdown_extensions:
   - admonition

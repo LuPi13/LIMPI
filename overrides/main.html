@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <script>
+    // GitHub Pages cannot send no-cache headers. Each deploy writes version.json with its build id;
+    // when the page in hand is from an older build, reload once (and drop any stale service worker).
+    (function () {
+      var built = "{{ config.extra.build }}";
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (all) {
+          all.forEach(function (registration) { registration.unregister(); });
+        }).catch(function () {});
+      }
+      if (!window.fetch || built === "dev") return;
+      fetch("{{ base_url }}/version.json", { cache: "no-store" }).then(function (response) {
+        return response.ok ? response.json() : null;
+      }).then(function (latest) {
+        if (!latest || !latest.build || latest.build === built) return;
+        var key = "limpi-reloaded";
+        try { if (sessionStorage.getItem(key) === latest.build) return; sessionStorage.setItem(key, latest.build); } catch (e) { return; }
+        location.reload();
+      }).catch(function () {});
+    })();
+  </script>
+{% endblock %}

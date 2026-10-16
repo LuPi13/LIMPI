@@ -3,7 +3,7 @@ name: docs
 on:
   push:
     branches: [ main ]
-    paths: [ 'pages/**', 'mkdocs.yml', '.github/workflows/docs.yml' ]
+    paths: [ 'pages/**', 'overrides/**', 'mkdocs.yml', '.github/workflows/docs.yml' ]
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,8 @@ jobs:
           python-version: '3.12'
       - run: pip install mkdocs-material==9.5.49
       - run: mkdocs build --strict
+      # Read with cache: no-store by overrides/main.html; a page from an older build reloads itself once.
+      - run: echo "{\"build\":\"$GITHUB_SHA\"}" > build/site/version.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

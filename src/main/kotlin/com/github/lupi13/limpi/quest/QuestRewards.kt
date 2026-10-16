@@ -23,6 +23,14 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
         val counters = com.github.lupi13.limpi.quests.QuestProgressDefinitions.HARMONY.counters
         require(branch in counters.map { it.counter })
         val swordTarget = counters[0].target; val arrowTarget = counters[1].target
+        // This branch is full: counting changes nothing unless it would finish an unrewarded quest.
+        if (store.entry(request) == null) stored(owner)?.let { profile ->
+            val mine = count(profile, branch) ?: return@let
+            val other = counters.single { it.counter != branch }
+            val theirs = count(profile, other.counter) ?: return@let
+            val target = counters.single { it.counter == branch }.target
+            if (mine >= target && (theirs < other.target || rewarded(owner, HARMONY_QUEST))) return UNCHANGED
+        }
         return result(store.execute(request, BankService.fingerprint("HARMONY_PROGRESS", owner.toString(), branch)) { tx ->
             val profile = Accounts.read(tx, owner)
             fun count(path: String): Long {
@@ -49,6 +57,7 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
      */
     fun progress(request: UUID, owner: UUID, counter: String, target: Long, quest: String, ability: String): QuestRewardResult {
         require(counter.matches(Regex("[a-z0-9_]+")) && target > 0 && quest.isNotBlank() && ability.isNotBlank())
+        if (store.entry(request) == null && settled(owner, counter, target, quest)) return UNCHANGED
         return result(store.execute(request, BankService.fingerprint("QUEST_PROGRESS", owner.toString(), counter, target.toString(), quest, ability)) { tx ->
             val profile = Accounts.read(tx, owner)
             val raw = profile.get("quest.$counter")
@@ -71,6 +80,7 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
      */
     fun progress(request: UUID, owner: UUID, counter: String, amount: Long, target: Long, quest: String, ability: String): QuestRewardResult {
         require(counter.matches(Regex("[a-z0-9_]+")) && amount >= 0 && target > 0 && quest.isNotBlank() && ability.isNotBlank())
+        if (store.entry(request) == null && settled(owner, counter, target, quest)) return UNCHANGED
         return result(store.execute(request, BankService.fingerprint("QUEST_PROGRESS_AMOUNT", owner.toString(), counter,
             amount.toString(), target.toString(), quest, ability)) { tx ->
             val profile = Accounts.read(tx, owner)
@@ -115,6 +125,32 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
         return YamlFiles.parse(committed.entry.receipt).getLong("current")
     }
 
+    /*
+     * Counting is called on every dodge, hand cannon shot, harmony hit, ... A finished counter whose reward is recorded
+     * would only add a ledger row and rewrite the same profile (with an fsync) on the main thread each time, so these
+     * read-only checks skip that write. Anything unusual (missing or malformed data) still takes the transaction path,
+     * which reports it exactly as before. A request that is already recorded is never skipped, so its replay still
+     * returns the original receipt.
+     */
+    private fun stored(owner: UUID): YamlConfiguration? =
+        store.get(SqliteProfilePersistence.key(owner))?.let { runCatching { YamlFiles.parse(it) }.getOrNull() }
+
+    /** The stored counter, 0 when absent, or null when it is malformed. */
+    private fun count(profile: YamlConfiguration, counter: String): Long? {
+        val raw = profile.get("quest.$counter") ?: return 0
+        if (raw !is Int && raw !is Long) return null
+        return (raw as Number).toLong().takeIf { it >= 0 }
+    }
+
+    private fun rewarded(owner: UUID, quest: String) = store.get("quest_reward/$owner/$quest") != null
+
+    /** [counter] already reached [target] and [quest]'s reward is recorded, so counting would change nothing. */
+    private fun settled(owner: UUID, counter: String, target: Long, quest: String): Boolean {
+        val profile = stored(owner) ?: return false
+        val current = count(profile, counter) ?: return false
+        return current >= target && rewarded(owner, quest)
+    }
+
     private fun reward(tx: StateTransaction, owner: UUID, quest: String, ability: String): Pair<Boolean, Boolean> {
         val key = "quest_reward/$owner/$quest"
         tx.get(key)?.let {
@@ -150,5 +186,7 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
     companion object {
         const val HARMONY_QUEST = "line_between_sword_and_arrow"
         const val HARMONY_REWARD = "transcendence"
+        /** Counting skipped because nothing would change; no ledger row is written (callers notify nothing). */
+        val UNCHANGED = QuestRewardResult(newCompletion = false, newUnlock = false, replayed = false)
     }
 }

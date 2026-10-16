@@ -171,4 +171,55 @@ class QuestRewardsTest {
             assertEquals(2500, data.getLong("quest.hand_cannon_shots")); assertEquals(80, data.getLong("quest.hawk_eye_extra_items"))
         }
     }
+
+    /** After the reward is recorded, further counting writes nothing (no ledger row, same profile) and notifies nothing. */
+    @Test fun `counting a finished and rewarded quest writes nothing`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  dodge_count: 98\n") }
+            val quests = service(store)
+            assertEquals(QuestRewardResult(false, false, false), quests.progress(UUID.randomUUID(), owner, "dodge_count", 100, "dodge_master", "dodge_plus"))
+            assertEquals(QuestRewardResult(true, true, false), quests.progress(UUID.randomUUID(), owner, "dodge_count", 100, "dodge_master", "dodge_plus"))
+            val settled = store.get(SqliteProfilePersistence.key(owner))
+            for (call in listOf<(UUID) -> QuestRewardResult>(
+                { quests.progress(it, owner, "dodge_count", 100, "dodge_master", "dodge_plus") },
+                { quests.progress(it, owner, "dodge_count", 5, 100, "dodge_master", "dodge_plus") })) {
+                val request = UUID.randomUUID()
+                assertEquals(QuestRewardResult(false, false, false), call(request))
+                assertNull(store.entry(request)) // skipped: no transaction recorded
+            }
+            assertEquals(settled, store.get(SqliteProfilePersistence.key(owner)))
+        }
+    }
+
+    @Test fun `a counter at its target without a recorded reward still completes through the transaction`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  dodge_count: 150\n") }
+            val request = UUID.randomUUID()
+            assertEquals(QuestRewardResult(true, true, false), service(store).progress(request, owner, "dodge_count", 100, "dodge_master", "dodge_plus"))
+            assertNotNull(store.entry(request))
+            assertEquals(150, YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getLong("quest.dodge_count"))
+            // Malformed progress is never skipped: the transaction reports it as before.
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  dodge_count: many\n") }
+            assertThrows(IllegalArgumentException::class.java) { service(store).progress(UUID.randomUUID(), owner, "dodge_count", 100, "dodge_master", "dodge_plus") }
+        }
+    }
+
+    @Test fun `harmony skips only when its branch is full and nothing could finish`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  harmony_sword: 10\n  harmony_arrow: 3\n") }
+            val quests = service(store)
+            val full = UUID.randomUUID()
+            assertEquals(QuestRewardResult(false, false, false), quests.harmony(full, owner, "harmony_sword"))
+            assertNull(store.entry(full)) // the sword branch is full and the arrow branch is not: nothing changes
+            val arrow = UUID.randomUUID()
+            assertEquals(QuestRewardResult(false, false, false), quests.harmony(arrow, owner, "harmony_arrow"))
+            assertNotNull(store.entry(arrow)) // still counting
+            assertEquals(4, YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getLong("quest.harmony_arrow"))
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  harmony_sword: 10\n  harmony_arrow: 10\n") }
+            assertEquals(QuestRewardResult(true, true, false), quests.harmony(UUID.randomUUID(), owner, "harmony_sword")) // not yet rewarded
+            val after = UUID.randomUUID()
+            assertEquals(QuestRewardResult(false, false, false), quests.harmony(after, owner, "harmony_arrow"))
+            assertNull(store.entry(after))
+        }
+    }
 }

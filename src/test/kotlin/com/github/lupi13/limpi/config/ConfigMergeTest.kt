@@ -20,6 +20,8 @@ class ConfigMergeTest {
     private fun withoutReplaced(text: String): String {
         val result = lines(text).toMutableList()
         for (line in replaced) result.removeAt(result.indexOf(line).also { assertTrue(it >= 0, line) })
+        // 2.0.0 lowered the default starting money; an existing file keeps the value it already has.
+        result[result.indexOf("InitialMoney: 10000  # 첫 소지금").also { assertTrue(it >= 0) }] = "InitialMoney: 1000  # 첫 소지금"
         // The replaced block leaves its blank separator next to the inserted one; the template has no double blanks.
         return result.filterIndexed { index, line -> !(line.isEmpty() && index > 0 && result[index - 1].isEmpty()) }.joinToString("\n")
     }
@@ -52,7 +54,7 @@ class ConfigMergeTest {
         val notice = lines(template).filter { it.startsWith("#=== Notice") || it.startsWith("NoticeRetentionDays") }
         assertEquals(3, notice.size)
         // An older file: no notice section, and the server changed a value and added its own comment.
-        val edited = template.replace("InitialMoney: 10000", "InitialMoney: 50000  # 우리 서버")
+        val edited = template.replace("InitialMoney: 1000", "InitialMoney: 50000  # 우리 서버")
         val old = edited.replace("\n" + notice.joinToString("\n") + "\n", "")
         assertNotEquals(edited, old)
         val result = ConfigMerge.merge(template, old)!!

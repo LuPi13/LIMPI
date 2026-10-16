@@ -13,7 +13,6 @@ import com.github.lupi13.limpi.platform.PaperItemCodec
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
-import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -21,7 +20,6 @@ import org.bukkit.event.Listener
 import org.bukkit.event.inventory.ClickType
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.Locale
 import java.util.UUID
@@ -44,18 +42,14 @@ class ShopEvents : Listener {
                     .append(Component.text("원, 현재 보유 금액: ", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                     .append(balance.decoration(TextDecoration.ITALIC, false))
                     .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false),
-                    Component.text("좌클릭하여 구매합니다.", NamedTextColor.WHITE),
-                    Component.text("Shift를 누르고 클릭하면 1세트/최대한 많이 구매합니다.", NamedTextColor.WHITE)))
+                    Component.text("좌클릭하여 구매합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
+                    Component.text("Shift를 누르고 클릭하면 1세트/최대한 많이 구매합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)))
                 icon.itemMeta = meta
                 holder.inventory.setItem(slot, icon); holder.actions[slot] = MenuAction.ShopQuote(offer.code, offer.price.units)
             }
-            fun button(slot: Int, target: Int, label: String) {
-                val icon = ItemStack(Material.ARROW); val meta = icon.itemMeta
-                meta.customName(Component.text(label, NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)); icon.itemMeta = meta
-                holder.inventory.setItem(slot, icon); holder.actions[slot] = MenuAction.Page(target)
-            }
-            if (page.hasPrevious) button(45, page.page - 1, "이전 페이지")
-            if (page.hasNext) button(53, page.page + 1, "다음 페이지")
+            // Same page buttons (dye, lore, slots 47/51) as the ability dictionary.
+            if (page.hasPrevious) { holder.inventory.setItem(47, AbilitySelectEvent.getPreviousPageItem()); holder.actions[47] = MenuAction.Page(page.page - 1) }
+            if (page.hasNext) { holder.inventory.setItem(51, AbilitySelectEvent.getNextPageItem()); holder.actions[51] = MenuAction.Page(page.page + 1) }
             openMenu(plugin, player, holder.inventory, expected)
         }
     }
@@ -82,7 +76,11 @@ class ShopEvents : Listener {
         val player = event.whoClicked as? Player ?: return
         if (FileManager.delivery.blocked(player.uniqueId) || !player.hasPermission("limpi.financial.shop")) return
         val action = holder.actions[event.rawSlot] ?: return
-        if (action is MenuAction.Page) { openShopGUI(player, action.index, top); return }
+        if (action is MenuAction.Page) {
+            openShopGUI(player, action.index, top)
+            player.playSound(player.location, Sound.ITEM_BOOK_PAGE_TURN, 1f, 1.5f)
+            return
+        }
         val quote = action as? MenuAction.ShopQuote ?: return
         val request = UUID.randomUUID()
         try {

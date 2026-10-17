@@ -123,8 +123,13 @@ class DeliveryController(val plugin: Plugin, private val service: DeliveryServic
     }
 
     /** [quiet] hides the "미수령 물품 N건" notice of the claim that runs first (e.g. a sword returning from a previous throw). */
-    fun remove(player: Player, id: UUID, kind: String, terms: String, before: List<StoredStack?>, after: List<StoredStack?>, quiet: Boolean = false): Boolean {
-        if (!claim(player, quiet = quiet)) return false
+    /**
+     * [claimed]: the caller ran [claim] for this player just before taking [before] in the same tick, so recovery and
+     * pending deliveries are already settled and a second claim would only repeat the same lookups.
+     */
+    fun remove(player: Player, id: UUID, kind: String, terms: String, before: List<StoredStack?>, after: List<StoredStack?>,
+               quiet: Boolean = false, claimed: Boolean = false): Boolean {
+        if (if (claimed) blocked(player.uniqueId) else !claim(player, quiet = quiet)) return false
         val inventory = removalInventory(player, before.size)
         require(inventory.snapshot() == before) { "인벤토리가 변경되었습니다. 소모 대상을 다시 확인하세요." }
         var prepared = false

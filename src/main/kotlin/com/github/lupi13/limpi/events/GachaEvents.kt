@@ -134,7 +134,7 @@ class GachaEvents(private val owner: Plugin) : Listener {
             val after = before.toMutableList().apply { this[slot] = if (ticket.count == 1) null else ticket.copy(count = ticket.count - 1) }.toList()
             val terms = GachaTerms(ticket.payload, slot, state, outcome, pickupTime, owner.config.getBoolean("ForceTroll") && outcome.grade == DrawGrade.TROLL)
             val id = java.util.UUID.randomUUID()
-            if (!FileManager.delivery.remove(player, id, GachaSettlement.KIND, terms.encode(), before, after)) return
+            if (!FileManager.delivery.remove(player, id, GachaSettlement.KIND, terms.encode(), before, after, claimed = true)) return
             requireNotNull(FileManager.gacha.find(player.uniqueId, id))
             owner.logger.info("Gacha draw $id for ${player.uniqueId}: ${outcome.grade} ${outcome.ability} pickup=${outcome.pickup}")
             // Result, unlock and counters are already committed; the animation only reveals them as before.

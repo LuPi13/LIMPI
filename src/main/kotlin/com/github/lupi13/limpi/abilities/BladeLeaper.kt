@@ -132,7 +132,7 @@ object BladeLeaper : Ability(
             val returned = if (meta.isUnbreakable || meta.damage < maximumDamage) PaperItemCodec.grant(item) else null
             broken = returned == null
             val terms = AbilityItemTerms(codeName, slot, source.payload, returned)
-            if (!FileManager.delivery.remove(player, UUID.randomUUID(), AbilityItemUse.KIND, terms.encode(), before, after, quiet = true)) return
+            if (!FileManager.delivery.remove(player, UUID.randomUUID(), AbilityItemUse.KIND, terms.encode(), before, after, quiet = true, claimed = true)) return
         }
 
         val color = when (item.type) {

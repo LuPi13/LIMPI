@@ -84,7 +84,7 @@ object PickPocket : Ability(
         val slot = candidates.randomOrNull() ?: return
         val terms = PickPocketTerms(player.uniqueId, slot, requireNotNull(before[slot]))
         val after = before.toMutableList().apply { this[slot] = null }
-        if (!FileManager.delivery.remove(victim, id, PickPocketSettlement.KIND, terms.encode(), before, after)) return
+        if (!FileManager.delivery.remove(victim, id, PickPocketSettlement.KIND, terms.encode(), before, after, claimed = true)) return
         FileManager.delivery.claim(player, quiet = true)
     }
 

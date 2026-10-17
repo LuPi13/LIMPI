@@ -55,6 +55,8 @@ abstract class HawkEyeAbility(
 
     private class Mark(val target: UUID, val effect: AbilityEffect, val settings: com.github.lupi13.limpi.config.AbilitySettings)
 
+    private val candidatesByWorld = java.util.concurrent.ConcurrentHashMap<UUID, List<org.bukkit.inventory.ItemType>>()
+
     /** 플레이어 → 현재 표식. 발광 효과가 끝나면(시간 만료, 사망, 퇴장 등) 표식도 사라집니다. */
     private val marks: MutableMap<UUID, Mark> = mutableMapOf()
 
@@ -181,9 +183,12 @@ abstract class HawkEyeAbility(
     /** 관리자 전용·생존에서 얻을 수 없는 아이템을 제외하고, 이 월드에서 활성화된 아이템 중 무작위로 고릅니다(중복 가능). */
     private fun randomItems(world: World, count: Int): List<ItemStack> {
         if (count <= 0) return emptyList()
-        val candidates = Registry.ITEM.filter { type ->
-            type.key.namespace == "minecraft" && type.key.key !in EXCLUDED_ITEMS && EXCLUDED_PATTERNS.none { it.matches(type.key.key) } &&
-                world.isEnabled(type)
+        // A world's enabled features are fixed while it is loaded, so its candidate list is computed once.
+        val candidates = candidatesByWorld.getOrPut(world.uid) {
+            Registry.ITEM.filter { type ->
+                type.key.namespace == "minecraft" && type.key.key !in EXCLUDED_ITEMS && EXCLUDED_PATTERNS.none { it.matches(type.key.key) } &&
+                    world.isEnabled(type)
+            }
         }
         if (candidates.isEmpty()) return emptyList()
         return List(count) { candidates.random().createItemStack(1) }

@@ -68,10 +68,17 @@ object EndDodge : DodgeVariant(
             if (speed >= 0.1) speed * config.getDouble("speed_distance_multiplier") else config.getDouble("distance"))
         val step = direction.multiply(distance / STEPS)
 
+        // The path is horizontal, so whether a step is standable depends only on its block column: several steps share
+        // one column, and each column is looked up once.
         val destination = origin.clone()
+        var column: Long? = null
         for (i in 1..STEPS) {
             val candidate = destination.clone().add(step)
-            if (!standable(candidate)) break
+            val key = (candidate.blockX.toLong() shl 32) or (candidate.blockZ.toLong() and 0xffffffffL)
+            if (key != column) {
+                if (!standable(candidate)) break
+                column = key
+            }
             destination.add(step)
         }
         return destination

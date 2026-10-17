@@ -1,11 +1,8 @@
 package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.FileManager
-import com.github.lupi13.limpi.ability.AbilityItemTerms
-import com.github.lupi13.limpi.ability.AbilityItemUse
 import com.github.lupi13.limpi.platform.AbilityEffect
 import com.github.lupi13.limpi.platform.AbilityRuntime
-import com.github.lupi13.limpi.platform.PaperItemCodec
 import com.github.lupi13.limpi.quests.BoldForBoom
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -128,23 +125,20 @@ object RealHandCannon : Ability(
         } catch (failure: Exception) { effect.close(); throw failure }
     }
 
-    /** 저장 공간의 화약 1개를 회수 기록과 함께 소비합니다. 없으면 안내하고 false. */
+    /** 저장 공간의 화약 1개를 소비합니다. 없으면 안내하고 false. */
     private fun consumeGunpowder(player: Player): Boolean {
         val noGunpowder = {
             player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 2f)
             player.sendActionBar(Component.text("화약을 갖고 있지 않습니다!", NamedTextColor.YELLOW))
             false
         }
-        if (player.inventory.storageContents.none { it?.type == Material.GUNPOWDER }) return noGunpowder()
-        if (!FileManager.delivery.claim(player)) return false
+        // 화약 1개라 DB 기록 없이 게임 안에서 소비합니다(2026-10-17 사용자 결정).
         val slot = player.inventory.storageContents.indexOfFirst { it?.type == Material.GUNPOWDER }
         if (slot < 0) return noGunpowder()
-        val before = PaperItemCodec.snapshot(player, true)
-        val source = before[slot] ?: return false
-        if (player.ability != this) return false
-        val after = before.toMutableList().apply { this[slot] = if (source.count == 1) null else source.copy(count = source.count - 1) }
-        val terms = AbilityItemTerms(codeName, slot, source.payload, null)
-        return FileManager.delivery.remove(player, UUID.randomUUID(), AbilityItemUse.KIND, terms.encode(), before, after)
+        val source = player.inventory.getItem(slot) ?: return noGunpowder()
+        source.amount -= 1
+        player.inventory.setItem(slot, source)
+        return true
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

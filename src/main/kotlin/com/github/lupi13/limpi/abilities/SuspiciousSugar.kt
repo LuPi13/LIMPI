@@ -48,25 +48,24 @@ object SuspiciousSugar : Ability(
         if (event.hand != org.bukkit.inventory.EquipmentSlot.HAND && event.hand != org.bukkit.inventory.EquipmentSlot.OFF_HAND) return
         if (config!!.getInt("duration") == 0 || com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
         val observed = event.item?.takeIf { it.type == Material.SUGAR && it.amount > 0 } ?: return
-        val original = com.github.lupi13.limpi.platform.PaperItemCodec.payload(observed)
+        val hand = event.hand ?: return
         event.setUseItemInHand(org.bukkit.event.Event.Result.DENY)
-        if (!com.github.lupi13.limpi.FileManager.delivery.claim(player)) return
-        val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
-        val slot = if (event.hand == org.bukkit.inventory.EquipmentSlot.HAND) player.inventory.heldItemSlot else 36
-        val source = before[slot] ?: return
-        if (player.ability != this || source.payload != original) return
-        val randomEffect = Registry.POTION_EFFECT_TYPE.toList().randomOrNull() ?: return
-        val duration = if (randomEffect.isInstant) 1 else config!!.getInt("duration")
+        // 설탕 1개짜리 효과라 DB 기록 없이 게임 안에서 바로 소비하고 적용합니다(2026-10-17 사용자 결정).
+        val held = player.inventory.getItem(hand)
+        if (!held.isSimilar(observed) || held.amount <= 0) return
+        val type = Registry.POTION_EFFECT_TYPE.toList().randomOrNull() ?: return
+        val duration = if (type.isInstant) 1 else config!!.getInt("duration")
         val range = config!!.getDouble("range")
         val targets = if (Random.nextDouble() < config!!.getDouble("areaChance")) {
             player.getNearbyEntities(range, range, range).filterIsInstance<LivingEntity>()
-                .filter { affected(player, it, range) }.take(256).map { it.uniqueId }
+                .filter { affected(player, it, range) }.take(256)
         } else emptyList()
-        val terms = com.github.lupi13.limpi.ability.SugarTerms(slot, source.payload, randomEffect.key.toString(),
-            duration, player.world.uid, targets, range)
-        val after = before.toMutableList().apply { this[slot] = if (source.count == 1) null else source.copy(count = source.count - 1) }
-        if (com.github.lupi13.limpi.FileManager.delivery.remove(player, java.util.UUID.randomUUID(),
-                com.github.lupi13.limpi.ability.SugarSettlement.KIND, terms.encode(), before, after)) recover(player)
+        held.amount -= 1
+        player.inventory.setItem(hand, held)
+        player.addPotionEffect(PotionEffect(type, duration, 0))
+        for (entity in targets) entity.addPotionEffect(PotionEffect(type, duration, 0))
+        player.world.spawnParticle(Particle.SPIT, player.eyeLocation, 30, 0.0, 0.0, 0.0, 1.0)
+        player.world.playSound(player.location, Sound.ENTITY_WITHER_SHOOT, 0.4f, 2f)
     }
 
     private fun affected(player: org.bukkit.entity.Player, entity: LivingEntity, range: Double): Boolean {
@@ -78,6 +77,7 @@ object SuspiciousSugar : Ability(
         return true
     }
 
+    /** 이전 버전이 DB에 남긴 미적용 설탕 결과만 적용합니다. 새 사용은 기록을 남기지 않습니다. */
     fun recover(player: org.bukkit.entity.Player) {
         if (!player.isOnline || player.isDead || com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
         val pending = try { com.github.lupi13.limpi.FileManager.sugar.pending(player.uniqueId) } catch (failure: Exception) {

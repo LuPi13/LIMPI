@@ -1,10 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.FileManager
-import com.github.lupi13.limpi.ability.AbilityItemTerms
-import com.github.lupi13.limpi.ability.AbilityItemUse
 import com.github.lupi13.limpi.platform.AbilityDamage
-import com.github.lupi13.limpi.platform.PaperItemCodec
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.GameMode
@@ -89,15 +86,11 @@ object BlockThrower : Ability(
 
         val creative = player.gameMode == GameMode.CREATIVE
         if (!creative) {
-            val original = PaperItemCodec.payload(item)
-            if (!FileManager.delivery.claim(player, quiet = true)) return
-            val before = PaperItemCodec.snapshot(player, true)
-            val slot = player.inventory.heldItemSlot
-            val source = before[slot] ?: return
-            if (player.ability != this || source.payload != original) return
-            val after = before.toMutableList().apply { this[slot] = if (source.count == 1) null else source.copy(count = source.count - 1) }
-            val terms = AbilityItemTerms(codeName, slot, source.payload, null)
-            if (!FileManager.delivery.remove(player, UUID.randomUUID(), AbilityItemUse.KIND, terms.encode(), before, after)) return
+            // 기본 블록 1개라 DB 기록 없이 게임 안에서 소비합니다(2026-10-17 사용자 결정).
+            val held = player.inventory.itemInMainHand
+            if (!held.isSimilar(item) || held.amount <= 0) return
+            held.amount -= 1
+            player.inventory.setItemInMainHand(held)
         }
         lastThrow[player.uniqueId] = now
 

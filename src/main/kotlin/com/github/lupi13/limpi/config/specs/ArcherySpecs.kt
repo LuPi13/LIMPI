@@ -18,7 +18,6 @@ object ArcherySpecs {
             number("horizontal_range", 16.0, 0.0, 64.0),
             number("vertical_range", 8.0, 0.0, 64.0),
             integer("glow_ticks", 200, 1, 72000),
-            integer("drop_multiplier", 2, 1, 16),
             integer("exp_multiplier", 2, 1, 16),
             integer("extra_items", 1, 0, 64)
         )),
@@ -27,7 +26,6 @@ object ArcherySpecs {
             number("horizontal_range", 16.0, 0.0, 64.0),
             number("vertical_range", 8.0, 0.0, 64.0),
             integer("glow_ticks", 200, 1, 72000),
-            integer("drop_multiplier", 2, 1, 16),
             integer("exp_multiplier", 2, 1, 16),
             integer("extra_items", 2, 0, 64)
         )),

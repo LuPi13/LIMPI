@@ -28,9 +28,9 @@ import java.util.logging.Level
 
 /**
  * 매의 눈 계열 공통 동작: 검 우클릭으로 주변 무작위 적 하나에 표식(발광)을 남기고,
- * 표식이 남은 적을 직접 처치하면 전리품/경험치를 늘리고 무작위 아이템을 추가로 떨어뜨립니다.
+ * 표식이 남은 적을 직접 처치하면 경험치를 늘리고 무작위 아이템을 추가로 떨어뜨립니다.
  * 추가 전리품은 사망 이벤트의 드롭 목록에만 더하며 인벤토리를 직접 건드리지 않습니다.
- * 설정: cooldown_ticks, horizontal_range, vertical_range, glow_ticks, drop_multiplier, exp_multiplier, extra_items.
+ * 설정: cooldown_ticks, horizontal_range, vertical_range, glow_ticks, exp_multiplier, extra_items.
  */
 abstract class HawkEyeAbility(
     grade: Grade,
@@ -80,18 +80,14 @@ abstract class HawkEyeAbility(
         Component.text("발광", NamedTextColor.DARK_RED)
             .append(Component.text("이 부여된 ", NamedTextColor.WHITE))
             .append(Component.text("적", NamedTextColor.RED))
-            .append(Component.text("을 직접 처치하면 전리품이 ", NamedTextColor.WHITE))
-            .append(Component.text("${config!!.getInt("drop_multiplier")}", NamedTextColor.GREEN))
-            .append(Component.text("배", NamedTextColor.WHITE))
-            .append(Component.text(",", NamedTextColor.WHITE)),
-        Component.text("경험치가 ", NamedTextColor.WHITE)
+            .append(Component.text("을 직접 처치하면 경험치가 ", NamedTextColor.WHITE))
             .append(Component.text("${config!!.getInt("exp_multiplier")}", NamedTextColor.GREEN))
             .append(Component.text("배", NamedTextColor.WHITE))
-            .append(Component.text("로 증가하며, 무작위 아이템 ", NamedTextColor.WHITE))
+            .append(Component.text("로 증가하며,", NamedTextColor.WHITE)),
+        Component.text("무작위 아이템 ", NamedTextColor.WHITE)
             .append(Component.text("${config!!.getInt("extra_items")}", NamedTextColor.GREEN))
             .append(Component.text("개", NamedTextColor.WHITE))
             .append(Component.text("를 추가로 떨어뜨립니다.", NamedTextColor.WHITE)),
-        Component.text("주의! 플레이어의 전리품은 늘어나지 않습니다.", NamedTextColor.YELLOW),
         Component.text("쿨타임: ", NamedTextColor.WHITE)
             .append(Component.text("${config!!.getInt("cooldown_ticks") / 20.0}", NamedTextColor.GREEN))
             .append(Component.text("초", NamedTextColor.WHITE))
@@ -156,15 +152,10 @@ abstract class HawkEyeAbility(
         mark.effect.close()
         if (killer.ability != this || FileManager.delivery.blocked(killer.uniqueId)) return
 
-        val dropMultiplier = config.getInt("drop_multiplier")
         val expMultiplier = config.getInt("exp_multiplier")
         val extraCount = config.getInt("extra_items")
         event.droppedExp = (event.droppedExp.toLong() * expMultiplier).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
-        // 플레이어의 소지품은 복제하지 않습니다. 최대 겹침 수를 넘지 않도록 수량 대신 복사본을 추가합니다.
-        if (entity !is Player && dropMultiplier > 1) {
-            val originals = event.drops.filter { !it.type.isAir && it.amount > 0 }.map { it.clone() }
-            repeat(dropMultiplier - 1) { originals.forEach { event.drops.add(it.clone()) } }
-        }
+        // 원래 전리품은 늘리지 않습니다. 드롭 목록에는 몹이 주운 장비나 동물 상자 내용물도 들어 있어 복제가 됩니다.
         val extras = randomItems(entity.world, extraCount)
         event.drops.addAll(extras)
         if (extras.isNotEmpty()) {

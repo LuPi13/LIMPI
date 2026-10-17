@@ -206,7 +206,6 @@ object ZombieKing : Ability(
         if (Random.nextDouble() < config!!.getDouble("reinforcement_probability")) {
             // 50회 생성 시도
             for (i in 1..50) {
-                player.sendMessage("소환 시도 $i")
                 val location = player.location.clone().add(
                     Random.nextDouble(-40.0, 40.0),
                     Random.nextDouble(-5.0, 5.0),

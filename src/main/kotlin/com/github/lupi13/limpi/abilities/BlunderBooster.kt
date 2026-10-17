@@ -184,7 +184,7 @@ object BlunderBooster : Ability(
     fun onPlayerDamaged(event: EntityDamageEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
-        if (player.ability != this) return
+        if (player.ability != this || event.cause == EntityDamageEvent.DamageCause.KILL) return // /kill은 막지 않습니다.
 
         // 화상 피해에 면역
         if (event.cause == EntityDamageEvent.DamageCause.FIRE || event.cause == EntityDamageEvent.DamageCause.FIRE_TICK) {

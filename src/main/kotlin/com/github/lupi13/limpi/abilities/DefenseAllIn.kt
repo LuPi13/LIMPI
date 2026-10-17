@@ -39,7 +39,7 @@ object DefenseAllIn : Ability(
     fun onDamage(event: EntityDamageEvent) {
         if (event.entity !is Player) return
         val player = event.entity as Player
-        if (player.ability != this) return
+        if (player.ability != this || event.cause == EntityDamageEvent.DamageCause.KILL) return // /kill은 막지 않습니다.
         if (config!!.getInt("noDamageMilliseconds") > 0 && lastDamageTime.containsKey(player.uniqueId) && (System.nanoTime() / 1_000_000 - lastDamageTime[player.uniqueId]!! < config!!.getInt("noDamageMilliseconds"))) {
             event.isCancelled = true
             return

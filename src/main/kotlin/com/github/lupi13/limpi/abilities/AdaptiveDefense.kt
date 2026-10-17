@@ -37,7 +37,8 @@ object AdaptiveDefense : Ability(
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     fun onDamage(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
-        if (player.ability != this || event.cause == EntityDamageEvent.DamageCause.VOID || player.noDamageTicks > 10) return
+        if (player.ability != this || event.cause == EntityDamageEvent.DamageCause.VOID ||
+            event.cause == EntityDamageEvent.DamageCause.KILL || player.noDamageTicks > 10) return
         val count = if (damageHistory[player.uniqueId] == event.cause) ((damageStack[player.uniqueId] ?: 0).toLong() + 1).coerceAtMost(Int.MAX_VALUE.toLong()).toInt() else 0
         val reduction = config!!.getDouble("damage_reduction")
         require(reduction in 0.0..1.0)

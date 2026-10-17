@@ -61,8 +61,8 @@ class SellEvents : Listener {
         }
 
         /** The preview on the gold ingot uses the counts read when the window opened; the sale itself rereads them. */
-        private fun total(holder: SellHolder): Money = try {
-            catalog().quote(lines(holder.inventory), holder.counters, System.currentTimeMillis(), recoveryMillis()).total
+        private fun total(holder: SellHolder, lines: List<SaleLine> = lines(holder.inventory)): Money = try {
+            catalog().quote(lines, holder.counters, System.currentTimeMillis(), recoveryMillis()).total
         } catch (_: Exception) { Money(0) }
 
         private fun sellButton(total: Money, processing: String? = null): ItemStack {
@@ -84,12 +84,25 @@ class SellEvents : Listener {
             refresh(player, holder)
         }
 
-        /** Keep the total on the gold ingot current while the window is open (the original 1-tick updater). */
+        /**
+         * Keep the total on the gold ingot current while the window is open (the original 1-tick updater). The quote is
+         * recomputed when the items change, and once a second for the sold-count recovery over time; the button is
+         * only replaced when the total changes.
+         */
         private fun refresh(player: Player, holder: SellHolder) {
             object : BukkitRunnable() {
+                var lastLines: List<SaleLine>? = null
+                var lastTotal: Money? = null
+                var age = 0
                 override fun run() {
                     if (!player.isOnline || player.openInventory.topInventory !== holder.inventory || holder.sold != null) { cancel(); return }
-                    holder.inventory.setItem(SELL_SLOT, sellButton(total(holder)))
+                    val lines = lines(holder.inventory)
+                    if (lines == lastLines && ++age < 20) return
+                    lastLines = lines; age = 0
+                    val total = total(holder, lines)
+                    if (total == lastTotal && holder.inventory.getItem(SELL_SLOT)?.type == Material.GOLD_INGOT) return
+                    lastTotal = total
+                    holder.inventory.setItem(SELL_SLOT, sellButton(total))
                 }
             }.runTaskTimer(plugin, 1L, 1L)
         }

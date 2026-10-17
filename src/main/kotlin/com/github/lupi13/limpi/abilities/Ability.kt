@@ -44,6 +44,18 @@ abstract class Ability(
     /** Cooldowns, gauges and magazines. They survive death, world change and rejoining; cleared only when the ability changes. */
     open fun resetCooldowns(owner: java.util.UUID) {}
 
+    /** True when [activeItem] is rebuilt from the settings, so a copy made under older settings can exist. */
+    open val activeItemFollowsSettings: Boolean get() = false
+
+    /** A copy of this ability's active item made under older settings: same type and item name, different lore. */
+    fun isStaleActiveItem(item: ItemStack?): Boolean {
+        if (!activeItemFollowsSettings || item == null || item.isEmpty || !item.hasItemMeta()) return false
+        val current = activeItem ?: return false
+        if (item.type != current.type || item.isSimilar(current)) return false
+        val meta = item.itemMeta
+        return meta.hasItemName() && meta.itemName() == current.itemMeta.itemName()
+    }
+
     /** Metadata is cached for the lifetime of one immutable settings snapshot. */
     protected fun <T> settingsCached(build: () -> T): kotlin.properties.ReadOnlyProperty<Any?, T> =
         object : kotlin.properties.ReadOnlyProperty<Any?, T> {

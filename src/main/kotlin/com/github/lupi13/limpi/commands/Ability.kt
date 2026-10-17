@@ -68,6 +68,7 @@ class Ability(private val plugin: Plugin, private val enabled: Boolean) : Comman
                         requireNotNull(AbilityManager.getAbilityByCodeName(code)) to settings
                     }
                     abilities.forEach { (ability, settings) -> ability.config = settings }
+                    AbilityManager.refreshActiveItems(plugin.server.onlinePlayers)
                     sender.sendMessage(Component.text("능력 설정을 다시 불러왔습니다.", NamedTextColor.GREEN))
                 }
                 "result" -> {

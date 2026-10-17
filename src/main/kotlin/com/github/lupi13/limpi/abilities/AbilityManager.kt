@@ -53,7 +53,24 @@ object AbilityManager : Listener {
     /**
      * 능력들의 activeItem을 모은 리스트입니다.
      */
-    val activeItems by lazy { abilities.mapNotNull { it.activeItem } }
+    @Volatile private var activeCache: List<ItemStack>? = null
+    val activeItems: List<ItemStack> get() = activeCache ?: abilities.mapNotNull { it.activeItem }.also { activeCache = it }
+    private val refreshing by lazy { abilities.filter { it.activeItemFollowsSettings } }
+
+    /** After /ability reload: rebuild the active item list and swap the copies online players hold. */
+    fun refreshActiveItems(players: Collection<Player>) {
+        activeCache = null
+        players.forEach { if (!it.isDead) restoreActiveItem(it) }
+    }
+
+    /** Old copies are placeholders, not possessions: remove them before a transition plans the inventory. */
+    private fun removeStaleActiveItems(player: Player) {
+        val inventory = player.inventory
+        for (slot in 0 until inventory.size) {
+            val item = inventory.getItem(slot) ?: continue
+            if (refreshing.any { it.isStaleActiveItem(item) }) inventory.setItem(slot, null)
+        }
+    }
     private val abilitiesByCode by lazy {
         abilities.associateBy { it.codeName }.also {
             check(it.size == abilities.size) { "Ability code names must be unique" }
@@ -72,7 +89,8 @@ object AbilityManager : Listener {
         }
     }
     /** Ability active items and temporary placeholders are not possessions: never sell, move or hand them off. */
-    fun active(item: ItemStack?): Boolean = item != null && (activeItems.any { it.isSimilar(item) } || item.isSimilar(EntityThrower.getRestrictHand()))
+    fun active(item: ItemStack?): Boolean = item != null && (activeItems.any { it.isSimilar(item) } ||
+        item.isSimilar(EntityThrower.getRestrictHand()) || refreshing.any { it.isStaleActiveItem(item) })
 
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onClickInventory(event: InventoryClickEvent) {
@@ -125,6 +143,7 @@ object AbilityManager : Listener {
     fun restoreActiveItem(player: Player) {
         if (FileManager.delivery.blocked(player.uniqueId)) return
         if (player.uniqueId !in EntityThrower.heldEntity) EntityThrower.clearRestrictHand(player)
+        removeStaleActiveItems(player)
         val ability = player.ability ?: return
         if (ability.restrictedSlot == null || ability.activeItem == null) return
         val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
@@ -225,6 +244,7 @@ object AbilityManager : Listener {
     fun applyAbility(player: Player, ability: Ability?, preserveEffect: java.util.UUID? = null) {
         if (FileManager.delivery.blocked(player.uniqueId)) error("Ability application is blocked during item recovery")
         if (getPlayerAbilityCodeName(player).orEmpty() == ability?.codeName.orEmpty()) return
+        removeStaleActiveItems(player)
         val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
         val terms = transitionTerms(player, ability)
         if (!FileManager.delivery.transition(player, terms, before)) throw IllegalStateException("Ability transition requires recovery")

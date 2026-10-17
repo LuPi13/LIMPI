@@ -59,8 +59,10 @@ abstract class TimeLeapAbility(
     private val trail by lazy { Particle.DustOptions(Color.fromRGB(150, 230, 255), 0.6f) }
 
     protected abstract val activeName: Component
+    override val activeItemFollowsSettings: Boolean get() = true
 
-    override val activeItem: ItemStack by lazy {
+    // 설명에 설정값이 들어가므로 설정을 다시 불러오면 새로 만들고, 들고 있던 옛 아이템은 교체합니다.
+    override val activeItem: ItemStack by settingsCached {
         val item = ItemStack(material)
         val meta = item.itemMeta
         meta.itemName(activeName)

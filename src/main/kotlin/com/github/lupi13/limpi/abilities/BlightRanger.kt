@@ -151,7 +151,11 @@ object BlightRanger : DodgeVariant(
             for (entity in world.getNearbyEntities(center, radius, radius, radius)) {
                 if (entity !is LivingEntity || entity == owner || entity.location.distance(center) > radius) continue
                 if (!AbilityManager.isEnemy(owner, entity)) continue
-                weaken.forEach { type -> scope.potion(entity, PotionEffect(type, weakenTicks, 0, true, true, true)) }
+                // Renew a weakening only when it is about to run out (at most 10 ticks early) instead of every tick.
+                weaken.forEach { type ->
+                    if ((entity.getPotionEffect(type)?.duration ?: 0) <= weakenTicks - minOf(10, weakenTicks - 1))
+                        scope.potion(entity, PotionEffect(type, weakenTicks, 0, true, true, true))
+                }
             }
         }
         player.playSound(player.location, Sound.ENTITY_ALLAY_AMBIENT_WITHOUT_ITEM, 1f, 2f)

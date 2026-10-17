@@ -172,6 +172,33 @@ class SqliteStateStoreTest {
         }
     }
 
+    @Test fun `prune keeps documents that are still in use`() {
+        var now = 1_000L
+        val clock = object : java.time.Clock() {
+            override fun getZone() = java.time.ZoneOffset.UTC
+            override fun withZone(zone: java.time.ZoneId?) = this
+            override fun instant() = java.time.Instant.ofEpochMilli(now)
+        }
+        SqliteStateStore(file(), clock).use { store ->
+            store.execute(UUID.randomUUID(), "draws") { tx ->
+                tx.put("gacha_result/a/1", "applied"); tx.put("gacha_result/a/2", "waiting"); tx.put("gacha_apply_pending/a/2", "waiting")
+                tx.put("check/1", "state: REDEEMED"); tx.put("check/2", "state: ISSUED")
+                tx.put("market_listing/1", "state: SOLD"); tx.put("market_listing/2", "state: ACTIVE"); tx.put("market_listing/3", "state: RETURNED")
+                tx.put("sugar_result/a/1", "done"); tx.put("ability_selection_result/a/1", "waiting"); tx.put("ability_selection_pending/a/1", "waiting")
+                "r"
+            }
+            now = 10_000L
+            val result = store.prune(5_000L, RecordRetention.prefixes, emptySet(), RecordRetention::stillUsed)
+            assertNull(store.get("gacha_result/a/1")); assertEquals("waiting", store.get("gacha_result/a/2"))
+            assertNull(store.get("check/1")); assertNotNull(store.get("check/2"))
+            assertNull(store.get("market_listing/1")); assertNotNull(store.get("market_listing/2")); assertNull(store.get("market_listing/3"))
+            assertNull(store.get("sugar_result/a/1")); assertNotNull(store.get("ability_selection_result/a/1"))
+            // Pending records are never prune candidates.
+            assertNotNull(store.get("gacha_apply_pending/a/2")); assertNotNull(store.get("ability_selection_pending/a/1"))
+            assertEquals(PruneResult(5, 1), result)
+        }
+    }
+
     /** The indexed range lists exactly what the old substr comparison listed, including near-miss neighbours. */
     @Test fun `prefix listing is an indexed key range with the same results as a prefix comparison`() {
         val keys = listOf("a", "a-", "a/", "a/-", "a/0", "a/b", "a/b/c", "a/z", "a/zzz", "a0", "a_", "aZ", "a/Z", "b/", "player/x",

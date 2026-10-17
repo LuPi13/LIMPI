@@ -89,10 +89,9 @@ class FileManager {
             val days = owner.config.getInt("RecordRetentionDays", 7)
             if (days <= 0) return
             val cutoff = System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(days.toLong())
-            val pruned = state.prune(cutoff,
-                setOf("delivery_done/", "removal_done/", "ability_transition_done/", "market_escrow_done/", "chest_absorbed/"),
+            val pruned = state.prune(cutoff, com.github.lupi13.limpi.storage.RecordRetention.prefixes,
                 // Initial rewards rely on their once-only ledger identities; never forget them.
-                setOf("initial-register:", "initial-grant:"))
+                setOf("initial-register:", "initial-grant:"), com.github.lupi13.limpi.storage.RecordRetention::stillUsed)
             owner.logger.info("Pruned ${pruned.documents} finished records and ${pruned.transactions} ledger rows older than $days days")
         }
 

@@ -29,10 +29,10 @@ object OperationsFiles {
     fun export(snapshot: DatabaseSnapshot, target: Path) = publish(target) { Files.writeString(it, snapshot.export()) }
     fun backup(source: Path, target: Path) {
         ReadOnlyDatabase(source).use { database ->
-            val expected = database.snapshot().fingerprint()
+            val expected = database.fingerprint()
             publish(target) { temporary ->
                 database.backupTo(temporary)
-                ReadOnlyDatabase(temporary).use { require(it.snapshot().fingerprint() == expected) { "Backup verification failed" } }
+                ReadOnlyDatabase(temporary).use { require(it.fingerprint() == expected) { "Backup verification failed" } }
             }
         }
     }

@@ -32,7 +32,9 @@ interface StateStore : AutoCloseable {
     /**
      * Delete finished-record documents under [documentPrefixes] and ledger rows last written before [cutoffMillis].
      * A document is only removed when no newer ledger row touched it; rows whose fingerprint starts with one of
-     * [keepFingerprintPrefixes] (once-only identities) are kept.
+     * [keepFingerprintPrefixes] (once-only identities) are kept. A candidate for which [retain] (key, payload, lookup of
+     * another document) answers true is still in use and kept.
      */
-    fun prune(cutoffMillis: Long, documentPrefixes: Set<String>, keepFingerprintPrefixes: Set<String>): PruneResult
+    fun prune(cutoffMillis: Long, documentPrefixes: Set<String>, keepFingerprintPrefixes: Set<String>,
+              retain: (key: String, payload: String, get: (String) -> String?) -> Boolean = { _, _, _ -> false }): PruneResult
 }

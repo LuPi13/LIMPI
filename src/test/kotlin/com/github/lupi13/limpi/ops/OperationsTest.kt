@@ -52,6 +52,11 @@ class OperationsTest {
             assertNull(snapshot(backup).documents["extension/after_backup"])
         }
     }
+    @Test fun `streamed fingerprint equals the snapshot fingerprint`() {
+        val source = fixture()
+        ReadOnlyDatabase(source).use { assertEquals(it.snapshot().fingerprint(), it.fingerprint()) }
+    }
+
     @Test fun `existing targets and source itself are never overwritten`() {
         val source = fixture(); val original = Files.readAllBytes(source)
         val target = root.resolve("existing"); Files.writeString(target, "keep")

@@ -50,6 +50,25 @@ class ReadOnlyDatabase(path: Path) : AutoCloseable {
         }
         return DatabaseSnapshot(documents, transactions)
     }
+    /** Same value as snapshot().fingerprint(), streamed row by row so a backup never holds the database in memory. */
+    fun fingerprint(): String {
+        fun count(table: String) = connection.createStatement().use { statement ->
+            statement.executeQuery("SELECT COUNT(*) FROM $table").use { rows -> check(rows.next()); rows.getInt(1) }
+        }
+        val digest = SnapshotDigest(count("documents"), count("transactions"))
+        connection.createStatement().use { statement ->
+            statement.executeQuery("SELECT key,payload FROM documents ORDER BY key").use { rows ->
+                while (rows.next()) digest.document(rows.getString(1), rows.getString(2))
+            }
+        }
+        connection.createStatement().use { statement ->
+            statement.executeQuery("SELECT id,fingerprint,receipt,changed_keys,created_at FROM transactions ORDER BY id").use { rows ->
+                while (rows.next()) digest.transaction(LedgerEntry(UUID.fromString(rows.getString(1)), rows.getString(2), rows.getString(3),
+                    rows.getString(4).split('\n').filter(String::isNotEmpty).toSet(), rows.getLong(5)))
+            }
+        }
+        return digest.finish()
+    }
     internal fun backupTo(emptyTarget: Path) {
         val result = (connection as SQLiteConnection).database.backup("main", emptyTarget.toString(), null, 100, 10, 500)
         check(result == 0) { "SQLite backup failed: $result" }

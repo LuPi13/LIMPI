@@ -10,20 +10,11 @@ data class DatabaseSnapshot(val documents: Map<String, String>, val transactions
         require(transactions.map { it.id }.toSet().size == transactions.size)
         require(transactions.all { it.fingerprint.isNotBlank() && it.changedKeys.all { key -> key.matches(Regex("[A-Za-z0-9_/-]+")) } })
     }
-    /** Length-prefix every value so separators inside unknown user payloads cannot collide. */
     fun fingerprint(): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        fun add(value: String) {
-            val bytes = value.toByteArray(Charsets.UTF_8)
-            digest.update(java.nio.ByteBuffer.allocate(8).putLong(bytes.size.toLong()).array()); digest.update(bytes)
-        }
-        add("LIMPI_EXPORT_1"); add(documents.size.toString()); add(transactions.size.toString())
-        documents.toSortedMap().forEach { (key, payload) -> add(key); add(payload) }
-        transactions.sortedBy { it.id.toString() }.forEach { entry ->
-            add(entry.id.toString()); add(entry.fingerprint); add(entry.receipt); add(entry.createdAt.toString())
-            add(entry.changedKeys.size.toString()); entry.changedKeys.sorted().forEach(::add)
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
+        val digest = SnapshotDigest(documents.size, transactions.size)
+        documents.toSortedMap().forEach { (key, payload) -> digest.document(key, payload) }
+        transactions.sortedBy { it.id.toString() }.forEach(digest::transaction)
+        return digest.finish()
     }
     fun export(): String = OperationsYaml.dump(linkedMapOf(
         "formatVersion" to 1, "applicationId" to ReadOnlyDatabase.APPLICATION_ID, "databaseVersion" to 1,
@@ -56,4 +47,23 @@ data class DatabaseSnapshot(val documents: Map<String, String>, val transactions
             return DatabaseSnapshot(documents, transactions).also { require(it.fingerprint() == data["sha256"]) { "Export fingerprint mismatch" } }
         }
     }
+}
+
+/**
+ * Length-prefix every value so separators inside unknown user payloads cannot collide. Fed documents in key order and
+ * transactions in id order, so it can also be computed while streaming rows without holding the whole database.
+ */
+internal class SnapshotDigest(documents: Int, transactions: Int) {
+    private val digest = MessageDigest.getInstance("SHA-256")
+    init { add("LIMPI_EXPORT_1"); add(documents.toString()); add(transactions.toString()) }
+    private fun add(value: String) {
+        val bytes = value.toByteArray(Charsets.UTF_8)
+        digest.update(java.nio.ByteBuffer.allocate(8).putLong(bytes.size.toLong()).array()); digest.update(bytes)
+    }
+    fun document(key: String, payload: String) { add(key); add(payload) }
+    fun transaction(entry: LedgerEntry) {
+        add(entry.id.toString()); add(entry.fingerprint); add(entry.receipt); add(entry.createdAt.toString())
+        add(entry.changedKeys.size.toString()); entry.changedKeys.sorted().forEach(::add)
+    }
+    fun finish(): String = digest.digest().joinToString("") { "%02x".format(it) }
 }

@@ -105,7 +105,8 @@ class SqliteStateStore(
         }
     }
 
-    @Synchronized override fun prune(cutoffMillis: Long, documentPrefixes: Set<String>, keepFingerprintPrefixes: Set<String>): PruneResult {
+    @Synchronized override fun prune(cutoffMillis: Long, documentPrefixes: Set<String>, keepFingerprintPrefixes: Set<String>,
+                                     retain: (key: String, payload: String, get: (String) -> String?) -> Boolean): PruneResult {
         checkAvailable()
         require(documentPrefixes.all { it.endsWith("/") && it.length > 1 })
         val result = transaction { _ ->
@@ -125,10 +126,18 @@ class SqliteStateStore(
                 }
             }
             var documents = 0
-            connection.prepareStatement("DELETE FROM documents WHERE key=?").use { delete ->
-                for (key in oldKeys) {
-                    if (key in recent || documentPrefixes.none { key.startsWith(it) }) continue
-                    delete.setString(1, key); documents += delete.executeUpdate()
+            connection.prepareStatement("SELECT payload FROM documents WHERE key=?").use { select ->
+                fun read(key: String): String? {
+                    select.setString(1, key)
+                    return select.executeQuery().use { rows -> if (rows.next()) rows.getString(1) else null }
+                }
+                connection.prepareStatement("DELETE FROM documents WHERE key=?").use { delete ->
+                    for (key in oldKeys) {
+                        if (key in recent || documentPrefixes.none { key.startsWith(it) }) continue
+                        val payload = read(key) ?: continue
+                        if (retain(key, payload, ::read)) continue
+                        delete.setString(1, key); documents += delete.executeUpdate()
+                    }
                 }
             }
             connection.prepareStatement("DELETE FROM transactions WHERE id=?").use { delete ->

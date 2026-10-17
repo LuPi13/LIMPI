@@ -252,6 +252,7 @@ class ChestEvents : Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun quit(event: PlayerQuitEvent) {
+        refused.remove(event.player.uniqueId)
         finish(event.player, closeView = false)
         FileManager.chests.release(event.player.uniqueId)
     }
@@ -285,9 +286,13 @@ class ChestEvents : Listener {
             if (holder != null) { storeInOpenWindow(event, player, holder); return }
             // Standing on a pile with a full chest fires this every tick; stop before serializing the item.
             if (state.slots.none { it == null || it.count < it.limit }) return
+            // Only partial stacks of other items are left: the same pile is refused again until the chest changes.
+            val refusal = Refusal(item.uniqueId, stack.amount, state)
+            if (refused[player.uniqueId] == refusal) return
             val accepted = FileManager.chests.absorb(request, player.uniqueId, item.uniqueId, PaperItemCodec.payload(stack),
                 stack.amount, stack.maxStackSize)
-            if (accepted == 0) return
+            if (accepted == 0) { refused[player.uniqueId] = refusal; return }
+            refused.remove(player.uniqueId)
             event.isCancelled = true
             if (accepted == stack.amount) item.remove() else item.itemStack = stack.clone().apply { amount -= accepted }
             notifyStored(player, stack)
@@ -295,6 +300,13 @@ class ChestEvents : Listener {
             plugin.logger.log(Level.WARNING, "Chest auto store $request failed for ${player.uniqueId}", failure)
         }
     }
+
+    /** The chest state is a fresh object after every change, so identity tells whether it is still the refused one. */
+    private class Refusal(val entity: UUID, val amount: Int, val state: com.github.lupi13.limpi.chest.ChestState) {
+        override fun equals(other: Any?) = other is Refusal && other.entity == entity && other.amount == amount && other.state === state
+        override fun hashCode() = entity.hashCode()
+    }
+    private val refused = mutableMapOf<UUID, Refusal>()
 
     /** With the window open the chest lives in that window, so store there and commit it like any other change. */
     private fun storeInOpenWindow(event: PlayerAttemptPickupItemEvent, player: Player, holder: ChestHolder) {

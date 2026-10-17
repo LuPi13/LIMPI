@@ -61,22 +61,29 @@ object EntityThrower : Ability(
      * 엔티티를 들고 있는 상태에서 플레이어가 우클릭할 때 사용되는 아이템입니다.
      * 이 아이템은 양손을 비우고 엔티티를 들고 있을 때만 사용됩니다.
      */
-    fun getRestrictHand(): ItemStack {
+    private val restrictHandTemplate: ItemStack by lazy {
         val restrictHand = ItemStack(Material.COMMAND_BLOCK, 1)
         val meta: ItemMeta = restrictHand.itemMeta
         meta.itemName(Component.text("엔티티 들고 있음!", NamedTextColor.YELLOW))
         meta.itemModel = NamespacedKey("minecraft", "air")
         meta.isHideTooltip = true
         restrictHand.itemMeta = meta
-        return restrictHand
+        restrictHand
     }
+    fun getRestrictHand(): ItemStack = restrictHandTemplate.clone()
+    /** Checked on every move and inventory event, so compare against one template instead of building a new item. */
+    fun isRestrictHand(item: ItemStack?): Boolean = item != null && item.isSimilar(restrictHandTemplate)
+
+    /** Players who were given restrict hands and not cleared since; leftovers from before a restart are cleared on join. */
+    private val mayHold = mutableSetOf<java.util.UUID>()
 
     /**
      * 플레이어의 인벤토리에서 모든 restrictHand 아이템을 제거합니다.
      */
     fun clearRestrictHand(player: Player) {
+        mayHold.remove(player.uniqueId)
         player.inventory.contents.forEachIndexed { index, item ->
-            if (item != null && item.isSimilar(getRestrictHand())) {
+            if (isRestrictHand(item)) {
                 player.inventory.setItem(index, ItemStack(Material.AIR))
             }
         }
@@ -108,6 +115,7 @@ object EntityThrower : Ability(
             return
         }
 
+        mayHold.add(player.uniqueId)
         player.inventory.setItemInMainHand(getRestrictHand())
         player.inventory.setItemInOffHand(getRestrictHand())
         player.world.playSound(player.location, Sound.ITEM_BUNDLE_INSERT, 1f, 0.5f)
@@ -154,8 +162,7 @@ object EntityThrower : Ability(
                         return
                     }
                     // 플레이어의 양손이 restrictHand가 아니면 엔티티를 놓아줌
-                    if (!player.inventory.itemInMainHand.isSimilar(getRestrictHand()) ||
-                        !player.inventory.itemInOffHand.isSimilar(getRestrictHand())) {
+                    if (!isRestrictHand(player.inventory.itemInMainHand) || !isRestrictHand(player.inventory.itemInOffHand)) {
                         heldEntity.remove(player.uniqueId)
                         clearRestrictHand(player)
                         cancel()
@@ -352,7 +359,7 @@ object EntityThrower : Ability(
     // 플레이어 죽었을 때 제거
     @EventHandler(ignoreCancelled = true)
     fun onDropItem(event: ItemSpawnEvent) {
-        if (event.entity.itemStack.isSimilar(getRestrictHand())) {
+        if (isRestrictHand(event.entity.itemStack)) {
             event.entity.remove()
             return
         }
@@ -361,7 +368,7 @@ object EntityThrower : Ability(
     //Q키로 아이템 버리기 제한
     @EventHandler(ignoreCancelled = true)
     fun onPlayerDropItem(event: PlayerDropItemEvent) {
-        if (event.itemDrop.itemStack.isSimilar(getRestrictHand())) {
+        if (isRestrictHand(event.itemDrop.itemStack)) {
             event.isCancelled = true
         }
     }
@@ -370,7 +377,7 @@ object EntityThrower : Ability(
     @EventHandler(ignoreCancelled = true)
     fun onInventoryClick(event: InventoryClickEvent) {
         val item = event.currentItem ?: return
-        if (!item.isSimilar(getRestrictHand())) return
+        if (!isRestrictHand(item)) return
 
         event.isCancelled = true
     }
@@ -379,7 +386,7 @@ object EntityThrower : Ability(
     @EventHandler(ignoreCancelled = true)
     fun onMove(event: PlayerMoveEvent) {
         val player = event.player
-        if (heldEntity.containsKey(player.uniqueId)) return
+        if (player.uniqueId !in mayHold || heldEntity.containsKey(player.uniqueId)) return
         clearRestrictHand(player)
     }
     override fun release(owner: java.util.UUID) { heldEffects.remove(owner)?.close(); heldEntity.remove(owner); org.bukkit.Bukkit.getPlayer(owner)?.let(::clearRestrictHand) }

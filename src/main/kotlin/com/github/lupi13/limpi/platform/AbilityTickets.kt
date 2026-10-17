@@ -11,8 +11,12 @@ object AbilityTickets {
     private val kindKey = NamespacedKey("limpi", "ability_ticket")
     private val formatKey = NamespacedKey("limpi", "ability_ticket_format")
     private val kinds = setOf("GACHA") + Grade.entries.map { it.name }
-    fun protected(item: ItemStack?): Boolean = item != null && item.hasItemMeta() &&
-        (item.itemMeta.persistentDataContainer.has(kindKey) || item.itemMeta.persistentDataContainer.has(formatKey) || identify(item) != null)
+    /** Runs on every hopper move and inventory click: the PDC view is read without copying the item meta. */
+    fun protected(item: ItemStack?): Boolean {
+        if (item == null || item.isEmpty) return false
+        val data = item.persistentDataContainer
+        return data.has(kindKey) || data.has(formatKey)
+    }
     fun mark(item: ItemStack, kind: String): ItemStack {
         require(kind in kinds)
         val meta = item.itemMeta
@@ -30,8 +34,8 @@ object AbilityTickets {
         return item
     }
     fun identify(item: ItemStack?): String? {
-        if (item == null || item.type.isAir || !item.hasItemMeta()) return null
-        val data = item.itemMeta.persistentDataContainer
+        if (item == null || item.type.isAir) return null
+        val data = item.persistentDataContainer
         if (data.has(kindKey) || data.has(formatKey)) {
             val kind = data.get(kindKey, PersistentDataType.STRING) ?: return null
             if (kind !in kinds || data.get(formatKey, PersistentDataType.INTEGER) != 1) return null

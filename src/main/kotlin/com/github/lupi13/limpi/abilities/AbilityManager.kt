@@ -90,7 +90,7 @@ object AbilityManager : Listener {
     }
     /** Ability active items and temporary placeholders are not possessions: never sell, move or hand them off. */
     fun active(item: ItemStack?): Boolean = item != null && (activeItems.any { it.isSimilar(item) } ||
-        item.isSimilar(EntityThrower.getRestrictHand()) || refreshing.any { it.isStaleActiveItem(item) })
+        EntityThrower.isRestrictHand(item) || refreshing.any { it.isStaleActiveItem(item) })
 
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST, ignoreCancelled = true)
     fun onClickInventory(event: InventoryClickEvent) {

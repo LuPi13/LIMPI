@@ -69,7 +69,7 @@ object PickPocket : Ability(
     }
 
     private fun protected(item: ItemStack?): Boolean = item == null || item.type.isAir ||
-        AbilityManager.activeItems.any { it.isSimilar(item) } || item.isSimilar(EntityThrower.getRestrictHand())
+        AbilityManager.activeItems.any { it.isSimilar(item) } || EntityThrower.isRestrictHand(item)
 
     private fun stealPlayer(player: Player, victim: Player, hook: UUID) {
         val id = UUID.nameUUIDFromBytes("pick-pocket:$hook:${victim.uniqueId}:${player.uniqueId}".toByteArray(Charsets.UTF_8))

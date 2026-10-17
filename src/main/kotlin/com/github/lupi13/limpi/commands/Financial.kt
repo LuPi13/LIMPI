@@ -79,7 +79,8 @@ class Financial(private val plugin: Plugin, private val accountCommands: Account
                     val id = runCatching { UUID.fromString(args[1]) }.getOrNull() ?: FileManager.players.findByName(args[1])
                     if (id == null) { EconomyText.error(sender, "해당 플레이어를 찾을 수 없습니다!"); return true }
                     val data = runCatching { FileManager.players.snapshot(id) }.getOrNull()
-                    if (data == null) { EconomyText.error(sender, "해당 플레이어를 찾을 수 없습니다!"); return true }
+                    // A UUID that never joined has an empty profile; it is unknown, not an account needing repair.
+                    if (data == null || data.getKeys(false).isEmpty()) { EconomyText.error(sender, "해당 플레이어를 찾을 수 없습니다!"); return true }
                     val name = data.getString("name") ?: id.toString()
                     // A malformed value is reported as needing repair instead of being shown as 0.
                     sender.sendMessage(playerDisplay(name)

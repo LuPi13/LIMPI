@@ -317,7 +317,7 @@ object AbilityManager : Listener {
         if (entity.uniqueId == player.uniqueId || entity.world.uid != player.world.uid) return false
         // Armor stands and mannequins are decorations, not creatures.
         if (entity is ArmorStand || entity is Mannequin) return false
-        val settings = com.github.lupi13.limpi.combat.EnemySettings.read(FileManager.getPlayerData(player))
+        val settings = FileManager.players.read(player.uniqueId, com.github.lupi13.limpi.combat.EnemySettings::read)
         fun sameTeam(name: String?): Boolean = name != null && player.scoreboard.getEntryTeam(player.name)?.hasEntry(name) == true
         if (entity is Tameable && entity.isTamed) {
             val owner = entity.owner

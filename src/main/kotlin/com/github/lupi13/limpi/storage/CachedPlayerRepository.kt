@@ -39,6 +39,8 @@ open class CachedPlayerRepository(
 
     override fun abilityCode(id: UUID): String? = current(id).getString("ability")?.takeIf { it.isNotBlank() }
 
+    override fun <T> read(id: UUID, view: (ConfigurationSection) -> T): T = view(current(id))
+
     override fun snapshot(id: UUID): FileConfiguration {
         val values = flatten(current(id))
         val snapshot = fromValues(values)
@@ -113,10 +115,17 @@ open class CachedPlayerRepository(
         trimCache(id)
     }
 
+    /** Runs on every profile read, so the common case (within the limit) is answered by counting only online players. */
     private fun trimCache(requested: UUID) {
-        val offline = cache.keys.filter { it !in online && it != requested }
-        val excess = cache.keys.count { it !in online } - offlineCacheSize.coerceAtLeast(1)
-        offline.take(excess.coerceAtLeast(0)).forEach { cache.remove(it) }
+        if (cache.size <= offlineCacheSize) return
+        var excess = cache.size - online.count(cache::containsKey) - offlineCacheSize
+        if (excess <= 0) return
+        // Least recently used first, as before; the profile being read is kept.
+        val keys = cache.keys.iterator()
+        while (excess > 0 && keys.hasNext()) {
+            val key = keys.next()
+            if (key !in online && key != requested) { keys.remove(); excess-- }
+        }
     }
 
     private fun indexName(id: UUID, name: String?) {

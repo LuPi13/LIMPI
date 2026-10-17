@@ -24,12 +24,12 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
         require(branch in counters.map { it.counter })
         val swordTarget = counters[0].target; val arrowTarget = counters[1].target
         // This branch is full: counting changes nothing unless it would finish an unrewarded quest.
-        if (store.entry(request) == null) stored(owner)?.let { profile ->
-            val mine = count(profile, branch) ?: return@let
+        if (store.entry(request) == null) {
             val other = counters.single { it.counter != branch }
-            val theirs = count(profile, other.counter) ?: return@let
+            val pair = runCatching { players.read(owner) { count(it, branch) to count(it, other.counter) } }.getOrNull()
+            val mine = pair?.first; val theirs = pair?.second
             val target = counters.single { it.counter == branch }.target
-            if (mine >= target && (theirs < other.target || rewarded(owner, HARMONY_QUEST))) return UNCHANGED
+            if (mine != null && theirs != null && mine >= target && (theirs < other.target || rewarded(owner, HARMONY_QUEST))) return UNCHANGED
         }
         return result(store.execute(request, BankService.fingerprint("HARMONY_PROGRESS", owner.toString(), branch)) { tx ->
             val profile = Accounts.read(tx, owner)
@@ -132,22 +132,27 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
      * which reports it exactly as before. A request that is already recorded is never skipped, so its replay still
      * returns the original receipt.
      */
-    private fun stored(owner: UUID): YamlConfiguration? =
-        store.get(SqliteProfilePersistence.key(owner))?.let { runCatching { YamlFiles.parse(it) }.getOrNull() }
-
     /** The stored counter, 0 when absent, or null when it is malformed. */
-    private fun count(profile: YamlConfiguration, counter: String): Long? {
+    private fun count(profile: org.bukkit.configuration.ConfigurationSection, counter: String): Long? {
         val raw = profile.get("quest.$counter") ?: return 0
         if (raw !is Int && raw !is Long) return null
         return (raw as Number).toLong().takeIf { it >= 0 }
     }
 
-    private fun rewarded(owner: UUID, quest: String) = store.get("quest_reward/$owner/$quest") != null
+    /** A reward record is never removed, so a positive answer is remembered. */
+    private val rewardedQuests = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
+    private fun rewarded(owner: UUID, quest: String): Boolean {
+        val key = "quest_reward/$owner/$quest"
+        if (key in rewardedQuests) return true
+        return (store.get(key) != null).also { if (it) rewardedQuests.add(key) }
+    }
 
-    /** [counter] already reached [target] and [quest]'s reward is recorded, so counting would change nothing. */
+    /**
+     * [counter] already reached [target] and [quest]'s reward is recorded, so counting would change nothing. The
+     * profile is read from the repository cache, which every transaction here invalidates after committing.
+     */
     private fun settled(owner: UUID, counter: String, target: Long, quest: String): Boolean {
-        val profile = stored(owner) ?: return false
-        val current = count(profile, counter) ?: return false
+        val current = runCatching { players.read(owner) { count(it, counter) } }.getOrNull() ?: return false
         return current >= target && rewarded(owner, quest)
     }
 

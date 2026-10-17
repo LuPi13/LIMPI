@@ -36,9 +36,7 @@ object QuestManager {
      * @return 해당 퀘스트가 완료되었는지 여부
      */
     fun isClearedQuest(player: Player, quest: Quest): Boolean {
-        val config = FileManager.getPlayerData(player)
-        val clearedQuests = config.getStringList("clearedQuests")
-        return clearedQuests.contains(quest.codeName)
+        return FileManager.players.read(player.uniqueId) { it.getStringList("clearedQuests").contains(quest.codeName) }
     }
 
     /**

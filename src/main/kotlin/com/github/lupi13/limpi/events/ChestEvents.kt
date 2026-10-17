@@ -117,7 +117,8 @@ class ChestEvents : Listener {
         /**
          * Commit the window as it is now and keep it open under a fresh record. Used right after something leaves the
          * window onto the ground, so a crash cannot bring that item back into the chest while it also lies in the world.
-         * Items on the cursor are in neither image until the window closes.
+         * An item on the cursor is recorded in the chest image, the same place it goes first on close, so a crash while
+         * it is carried cannot lose it.
          */
         private fun checkpoint(player: Player) {
             val holder = sessions[player.uniqueId] ?: return
@@ -125,7 +126,9 @@ class ChestEvents : Listener {
             try {
                 val inventory = FileManager.delivery.fullInventory(player)
                 val current = inventory.snapshot()
-                val closing = FileManager.chests.closing(holder.session, current, image(holder.inventory))
+                val view = player.openInventory
+                val cursor = if (view.topInventory === holder.inventory) view.cursor else null
+                val closing = FileManager.chests.closing(holder.session, current, withCursor(image(holder.inventory), cursor))
                 inventory.checkpoint(current, requireNotNull(closing.closeCheckpoint))
                 FileManager.chests.complete(closing)
                 val next = FileManager.chests.open(player.uniqueId, current)
@@ -149,6 +152,28 @@ class ChestEvents : Listener {
         }
 
         fun closeAll() = Bukkit.getOnlinePlayers().filter { it.uniqueId in sessions }.forEach { finish(it, closeView = true) }
+
+        /** Merge the carried stack into the chest image (same item first, then an empty slot). Kept as is when it does not fit. */
+        private fun withCursor(image: List<StoredStack?>, cursor: ItemStack?): List<StoredStack?> {
+            if (cursor == null || cursor.isEmpty) return image
+            val payload = PaperItemCodec.payload(cursor)
+            val result = image.toMutableList()
+            var left = cursor.amount
+            for (slot in result.indices) {
+                val stack = result[slot] ?: continue
+                if (stack.payload != payload || stack.count >= stack.limit) continue
+                val moved = minOf(left, stack.limit - stack.count)
+                result[slot] = stack.copy(count = stack.count + moved); left -= moved
+                if (left == 0) return result
+            }
+            for (slot in result.indices) {
+                if (result[slot] != null) continue
+                val moved = minOf(left, cursor.maxStackSize)
+                result[slot] = StoredStack(payload, moved, maxOf(cursor.maxStackSize, moved)); left -= moved
+                if (left == 0) return result
+            }
+            return image
+        }
 
         private fun image(inventory: Inventory): List<StoredStack?> = (0 until inventory.size).map { slot ->
             val item = inventory.getItem(slot)

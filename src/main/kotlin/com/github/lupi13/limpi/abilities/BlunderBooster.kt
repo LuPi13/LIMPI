@@ -105,9 +105,7 @@ object BlunderBooster : Ability(
             override fun tick() {
                 val location = player.location
 
-                if (location.block.type == Material.AIR) {
-                    location.block.type = Material.FIRE
-                }
+                com.github.lupi13.limpi.Functions.igniteBy(player, location.block)
                 ticks++
                 if (ticks > 5) {
                     cancel() // 5틱 후에 실행 중지

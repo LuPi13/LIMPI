@@ -148,7 +148,7 @@ object RoaringFlame : Ability(
         for (x in -1..1) for (y in 0..2) for (z in 1..range) {
             val offset = side.clone().multiply(x).add(Vector(0, y, 0)).add(direction.clone().multiply(z))
             val block = origin.clone().add(sight).add(offset).block
-            if (block.type == Material.AIR) block.type = Material.FIRE
+            com.github.lupi13.limpi.Functions.igniteBy(player, block)
         }
     }
 

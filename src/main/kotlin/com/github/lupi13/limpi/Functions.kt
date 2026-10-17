@@ -31,13 +31,18 @@ class Functions {
             return playerList
         }
 
-        fun toMaterial(string: String): Material {
-            for (material in Material.entries) {
-                if (string.equals(material.name, ignoreCase = true)) {
-                    return material
-                }
-            }
-            return Material.AIR
+        private val materialsByName = Material.entries.associateBy { it.name }
+
+        fun toMaterial(string: String): Material = materialsByName[string.uppercase(Locale.ROOT)] ?: Material.AIR
+
+        /** 능력이 놓는 불도 보호 플러그인이 막을 수 있도록 점화 이벤트를 거친 뒤에만 놓습니다. */
+        fun igniteBy(player: Player, block: org.bukkit.block.Block): Boolean {
+            if (block.type != Material.AIR) return false
+            val event = org.bukkit.event.block.BlockIgniteEvent(block, org.bukkit.event.block.BlockIgniteEvent.IgniteCause.FLINT_AND_STEEL, player)
+            plugin.server.pluginManager.callEvent(event)
+            if (event.isCancelled) return false
+            block.type = Material.FIRE
+            return true
         }
 
 

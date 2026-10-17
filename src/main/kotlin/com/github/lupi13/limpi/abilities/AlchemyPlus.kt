@@ -5,10 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.event.EventHandler
-import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.ItemStack
-import kotlin.random.Random
 
 object AlchemyPlus : Ability(
     grade = Grade.EPIC,
@@ -57,24 +54,7 @@ object AlchemyPlus : Ability(
         val player = event.player
         if (player.ability != this || !event.action.isRightClick || event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return
         if (event.hand != org.bukkit.inventory.EquipmentSlot.HAND && event.hand != org.bukkit.inventory.EquipmentSlot.OFF_HAND) return
-        if (com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
-        val observed = event.item?.takeIf { it.type == Material.COPPER_INGOT && it.amount >= 10 } ?: return
-        val original = com.github.lupi13.limpi.platform.PaperItemCodec.payload(observed)
-        event.setUseItemInHand(org.bukkit.event.Event.Result.DENY)
-        if (!com.github.lupi13.limpi.FileManager.delivery.claim(player)) return
-        val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
-        val slot = if (event.hand == org.bukkit.inventory.EquipmentSlot.HAND) player.inventory.heldItemSlot else 36
-        val source = before[slot] ?: return
-        if (player.ability != this || source.payload != original || source.count < 10) return
-        val policy = com.github.lupi13.limpi.ability.AlchemyPolicy(
-            com.github.lupi13.limpi.ability.AlchemyPolicy.OUTPUTS.associateWith { config!!.getDouble(it) })
-        val outcome = policy.choose(Random.nextDouble())
-        val result = ItemStack(Material.valueOf(outcome.uppercase(java.util.Locale.ROOT)))
-        val terms = com.github.lupi13.limpi.ability.AlchemyTerms(slot, source.payload, outcome,
-            com.github.lupi13.limpi.platform.PaperItemCodec.grant(result))
-        val after = before.toMutableList().apply { this[slot] = if (source.count == 10) null else source.copy(count = source.count - 10) }
-        if (!com.github.lupi13.limpi.FileManager.delivery.remove(player, java.util.UUID.randomUUID(),
-                com.github.lupi13.limpi.ability.AlchemySettlement.KIND, terms.encode(), before, after)) return
+        val outcome = transmute(player, event, config!!) ?: return
         when (outcome) {
             "coal" -> player.playSound(player.location, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.4f, 1.7f)
             "diamond", "netherite_ingot" -> {
@@ -83,6 +63,5 @@ object AlchemyPlus : Ability(
             }
             else -> player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
         }
-        com.github.lupi13.limpi.FileManager.delivery.claim(player, quiet = true)
     }
 }

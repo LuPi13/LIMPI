@@ -27,6 +27,7 @@ data class AlchemyTerms(val slot: Int, val copper: String, val outcome: String, 
     }
 }
 
+/** 연금술은 이제 게임 안에서만 처리합니다. 이전 버전이 남긴 미완료 기록을 복구하려고만 등록해 둡니다. */
 class AlchemySettlement(private val deliveries: DeliveryJournal) : RemovalEffect {
     override fun validate(tx: StateTransaction, record: RemovalRecord) {
         require(record.kind == KIND); Accounts.read(tx, record.evidence.owner)

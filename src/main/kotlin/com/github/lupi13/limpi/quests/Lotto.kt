@@ -16,8 +16,14 @@ object Lotto : Quest(
         .append(Component.text("를 만드세요.", NamedTextColor.WHITE)),
     rewardAbility = AlchemyPlus
 ) {
-    /** The settlement leaves permanent evidence so a crash before the notification cannot lose the unlock. */
+    private val checked = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<java.util.UUID, Boolean>())
+
+    /**
+     * An old ALCHEMY settlement left permanent evidence so a crash before the notification cannot lose the unlock.
+     * New evidence only comes from recovering those records on the first claim, so look once per player per run.
+     */
     fun check(player: Player) {
+        if (!checked.add(player.uniqueId)) return
         val evidence = FileManager.transactions.get("quest_trigger/${player.uniqueId}/lotto") ?: return
         require(java.util.UUID.fromString(evidence).toString() == evidence) { "Invalid lotto settlement evidence" }
         QuestManager.clearQuests(player, this)

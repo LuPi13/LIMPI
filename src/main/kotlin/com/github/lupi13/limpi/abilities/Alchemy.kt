@@ -54,30 +54,33 @@ object Alchemy : Ability(
         val player = event.player
         if (player.ability != this || !event.action.isRightClick || event.useItemInHand() == org.bukkit.event.Event.Result.DENY) return
         if (event.hand != org.bukkit.inventory.EquipmentSlot.HAND && event.hand != org.bukkit.inventory.EquipmentSlot.OFF_HAND) return
-        if (com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
-        val observed = event.item?.takeIf { it.type == Material.COPPER_INGOT && it.amount >= 10 } ?: return
-        val original = com.github.lupi13.limpi.platform.PaperItemCodec.payload(observed)
-        event.setUseItemInHand(org.bukkit.event.Event.Result.DENY)
-        if (!com.github.lupi13.limpi.FileManager.delivery.claim(player)) return
-        val before = com.github.lupi13.limpi.platform.PaperItemCodec.snapshot(player, true)
-        val slot = if (event.hand == org.bukkit.inventory.EquipmentSlot.HAND) player.inventory.heldItemSlot else 36
-        val source = before[slot] ?: return
-        if (player.ability != this || source.payload != original || source.count < 10) return
-        val policy = com.github.lupi13.limpi.ability.AlchemyPolicy(
-            com.github.lupi13.limpi.ability.AlchemyPolicy.OUTPUTS.associateWith { config!!.getDouble(it) })
-        val outcome = policy.choose(Random.nextDouble())
-        val result = ItemStack(Material.valueOf(outcome.uppercase(java.util.Locale.ROOT)))
-        val terms = com.github.lupi13.limpi.ability.AlchemyTerms(slot, source.payload, outcome,
-            com.github.lupi13.limpi.platform.PaperItemCodec.grant(result), lottoEligible = true)
-        val after = before.toMutableList().apply { this[slot] = if (source.count == 10) null else source.copy(count = source.count - 10) }
-        if (!com.github.lupi13.limpi.FileManager.delivery.remove(player, java.util.UUID.randomUUID(),
-                com.github.lupi13.limpi.ability.AlchemySettlement.KIND, terms.encode(), before, after)) return
+        val outcome = transmute(player, event, config!!) ?: return
         if (outcome == "netherite_ingot") com.github.lupi13.limpi.quests.QuestManager.clearQuests(player, com.github.lupi13.limpi.quests.Lotto)
         when (outcome) {
             "coal" -> player.playSound(player.location, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 0.5f, 1.7f)
             "netherite_ingot" -> player.playSound(player.location, Sound.ITEM_ARMOR_EQUIP_NETHERITE, 0.5f, 2.0f)
             else -> player.playSound(player.location, Sound.ENTITY_VILLAGER_WORK_TOOLSMITH, 1.0f, 1.5f)
         }
-        com.github.lupi13.limpi.FileManager.delivery.claim(player, quiet = true)
     }
+}
+
+/**
+ * 연금술 공통: 손에 든 구리 주괴 10개를 무작위 광물 1개로 바꿉니다.
+ * 값싼 물건이라 DB 기록 없이 게임 안에서만 처리합니다. 인벤토리가 가득 차면 결과물을 발밑에 떨어뜨립니다.
+ */
+internal fun transmute(player: org.bukkit.entity.Player, event: PlayerInteractEvent, config: com.github.lupi13.limpi.config.AbilitySettings): String? {
+    if (com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return null
+    val observed = event.item?.takeIf { it.type == Material.COPPER_INGOT && it.amount >= 10 } ?: return null
+    val hand = event.hand ?: return null
+    event.setUseItemInHand(org.bukkit.event.Event.Result.DENY)
+    val held = player.inventory.getItem(hand)
+    if (!held.isSimilar(observed) || held.amount < 10) return null
+    val policy = com.github.lupi13.limpi.ability.AlchemyPolicy(
+        com.github.lupi13.limpi.ability.AlchemyPolicy.OUTPUTS.associateWith { config.getDouble(it) })
+    val outcome = policy.choose(Random.nextDouble())
+    held.amount -= 10
+    player.inventory.setItem(hand, held)
+    val result = ItemStack(Material.valueOf(outcome.uppercase(java.util.Locale.ROOT)))
+    player.inventory.addItem(result).values.forEach { player.world.dropItem(player.location, it) }
+    return outcome
 }

@@ -1,6 +1,7 @@
 package com.github.lupi13.limpi.commands
 
 import com.github.lupi13.limpi.FileManager
+import com.github.lupi13.limpi.abilities.ability
 import com.github.lupi13.limpi.economy.Money
 import com.github.lupi13.limpi.events.MarketEvents
 import com.github.lupi13.limpi.market.*
@@ -34,6 +35,9 @@ class MarketCommands(private val plugin: Plugin) {
                     }
                     val item = sender.inventory.itemInMainHand
                     require(!item.type.isAir) { "손에 아이템을 들고 있어야 합니다." }
+                    // The ability item is regenerated in its slot, so listing it would duplicate it.
+                    require(!com.github.lupi13.limpi.abilities.AbilityManager.active(item) &&
+                        sender.inventory.heldItemSlot != sender.ability?.restrictedSlot) { "능력 아이템은 등록할 수 없습니다." }
                     // The original single-page market held at most 54 listings.
                     require(FileManager.market.available().count { it.state == com.github.lupi13.limpi.market.ListingState.ACTIVE ||
                         it.state == com.github.lupi13.limpi.market.ListingState.ESCROW } < 54) { "장터에 아이템이 가득 찼습니다. (54개 이상은 업데이트 예정)" }

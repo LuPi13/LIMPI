@@ -67,18 +67,19 @@ object ImpactLanding : Ability(
             com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity, codeName, shockDamage)
         }
 
-        // 파티클 효과
-        for (r in 1..(damage / 2).toInt()) {
+        // 파티클 효과 (고리 수는 정책의 상한을 따릅니다)
+        val center = player.location
+        for (r in 1..policy.rings) {
             for (theta in 0 until 360 step 10) {
                 val angle = Math.toRadians(theta.toDouble() + Random.nextDouble(-5.0, 5.0))
                 val x = (r + Random.nextDouble(-0.5, 0.5)) * cos(angle)
                 val z = (r + Random.nextDouble(-0.5, 0.5)) * sin(angle)
-                val loc = player.location.clone().add(x, 0.0, z)
+                val loc = center.clone().add(x, 0.0, z)
 
-                val shock = policy.damage(loc.distance(player.location))
+                val shock = policy.damage(loc.distance(center))
                 player.world.spawnParticle(
                     Particle.SPIT,
-                    player.location,
+                    center,
                     0,
                     x, 0.1, z,
                     shock / 10.0

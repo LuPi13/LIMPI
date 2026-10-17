@@ -272,13 +272,13 @@ object AbilityManager : Listener {
         Axolotl::class.java, Frog::class.java, Tadpole::class.java, Allay::class.java,
         Parrot::class.java, Squid::class.java, GlowSquid::class.java, Snowman::class.java,
         Bat::class.java, SchoolableFish::class.java, Camel::class.java, Sniffer::class.java, Armadillo::class.java,
-        HappyGhast::class.java
+        HappyGhast::class.java, CopperGolem::class.java, SulfurCube::class.java
     )
     val neutral: List<Class<out Damageable>> = listOf(
         Spider::class.java, CaveSpider::class.java, Wolf::class.java, Enderman::class.java,
         IronGolem::class.java, Llama::class.java, TraderLlama::class.java, Panda::class.java,
         Bee::class.java, Goat::class.java, PolarBear::class.java, Dolphin::class.java,
-        PigZombie::class.java
+        PigZombie::class.java, Nautilus::class.java
     )
     val aggressive: List<Class<out Damageable>> = listOf(
         Zombie::class.java, Skeleton::class.java, Creeper::class.java, Slime::class.java,
@@ -289,10 +289,13 @@ object AbilityManager : Listener {
         Evoker::class.java, Vex::class.java, Pillager::class.java, Ravager::class.java, Phantom::class.java,
         Piglin::class.java, PiglinBrute::class.java, Hoglin::class.java, Zoglin::class.java,
         Warden::class.java, Breeze::class.java, Bogged::class.java, Creaking::class.java,
-        EnderDragon::class.java, Wither::class.java
+        EnderDragon::class.java, Wither::class.java, Parched::class.java, ZombieNautilus::class.java,
+        Illusioner::class.java, Giant::class.java
     )
     fun isEnemy(player: Player, entity: Damageable): Boolean {
         if (entity.uniqueId == player.uniqueId || entity.world.uid != player.world.uid) return false
+        // Armor stands and mannequins are decorations, not creatures.
+        if (entity is ArmorStand || entity is Mannequin) return false
         val settings = com.github.lupi13.limpi.combat.EnemySettings.read(FileManager.getPlayerData(player))
         fun sameTeam(name: String?): Boolean = name != null && player.scoreboard.getEntryTeam(player.name)?.hasEntry(name) == true
         if (entity is Tameable && entity.isTamed) {

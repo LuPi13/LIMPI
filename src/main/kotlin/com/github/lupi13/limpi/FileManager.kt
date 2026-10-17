@@ -6,7 +6,6 @@ import com.github.lupi13.limpi.delivery.DeliveryJournal
 import com.github.lupi13.limpi.delivery.DeliveryService
 import com.github.lupi13.limpi.delivery.RemovalJournal
 import com.github.lupi13.limpi.economy.SaleSettlement
-import com.github.lupi13.limpi.economy.ItemExchange
 import com.github.lupi13.limpi.gacha.GachaSettlement
 import com.github.lupi13.limpi.ability.AbilitySelection
 import com.github.lupi13.limpi.ability.AbilityItemUse
@@ -50,7 +49,6 @@ class FileManager {
         private lateinit var abilityShopService: ShopService
         private lateinit var saleService: com.github.lupi13.limpi.economy.SaleService
         private lateinit var removalJournal: RemovalJournal
-        private lateinit var itemExchange: ItemExchange
         private lateinit var gachaSettlement: GachaSettlement
         private lateinit var abilitySelection: AbilitySelection
         private lateinit var abilityTransitions: AbilityTransitions
@@ -75,7 +73,6 @@ class FileManager {
         val abilityShop: ShopService get() = abilityShopService
         val sales: com.github.lupi13.limpi.economy.SaleService get() = saleService
         val removals: RemovalJournal get() = removalJournal
-        val exchanges: ItemExchange get() = itemExchange
         val gacha: GachaSettlement get() = gachaSettlement
         val selections: AbilitySelection get() = abilitySelection
         val transitions: AbilityTransitions get() = abilityTransitions
@@ -128,13 +125,12 @@ class FileManager {
             marketCatalog = MarketCatalog(state)
             marketService = MarketService(state, marketCatalog, deliveryJournal, repository)
             marketEscrow = MarketEscrow(state, marketCatalog)
-            itemExchange = ItemExchange(state, deliveryJournal)
             gachaSettlement = GachaSettlement(state)
             abilitySelection = AbilitySelection(state)
             abilityTransitions = AbilityTransitions(state, repository)
             sugarSettlement = com.github.lupi13.limpi.ability.SugarSettlement(state)
             removalJournal = RemovalJournal(state, repository, mapOf(
-                SaleSettlement.KIND to SaleSettlement, ItemExchange.KIND to itemExchange,
+                SaleSettlement.KIND to SaleSettlement,
                 GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection,
                 AbilityItemUse.KIND to AbilityItemUse(deliveryJournal),
                 com.github.lupi13.limpi.ability.AlchemySettlement.KIND to com.github.lupi13.limpi.ability.AlchemySettlement(deliveryJournal),

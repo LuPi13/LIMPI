@@ -389,7 +389,8 @@ object Transcendence : Ability(
             }
         }.runTaskTimer(plugin, 0L, 1L)
     }
-    override fun release(owner: java.util.UUID) { swordGauge.remove(owner); arrowGauge.remove(owner); transcending.remove(owner); activeSettings.remove(owner); enhancedHits.entries.removeIf { it.value == owner } }
+    override fun resetCooldowns(owner: java.util.UUID) { swordGauge.remove(owner); arrowGauge.remove(owner) }
+    override fun release(owner: java.util.UUID) { transcending.remove(owner); activeSettings.remove(owner); enhancedHits.entries.removeIf { it.value == owner } }
     override fun stop() { swordGauge.clear(); arrowGauge.clear(); transcending.clear(); activeSettings.clear(); enhancedHits.clear() }
 
 }

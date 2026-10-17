@@ -152,6 +152,7 @@ object RoaringFlame : Ability(
         }
     }
 
-    override fun release(owner: java.util.UUID) { lastSneakTime.remove(owner); lastStrikeTime.remove(owner); vector.remove(owner) }
+    override fun release(owner: java.util.UUID) { lastSneakTime.remove(owner); vector.remove(owner) }
+    override fun resetCooldowns(owner: java.util.UUID) { lastStrikeTime.remove(owner) }
     override fun stop() { lastSneakTime.clear(); lastStrikeTime.clear(); vector.clear() }
 }

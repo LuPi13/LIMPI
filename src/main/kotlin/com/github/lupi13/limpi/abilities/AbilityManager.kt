@@ -146,6 +146,7 @@ object AbilityManager : Listener {
     }
 
     fun releaseState(owner: java.util.UUID) = abilities.forEach { it.release(owner) }
+    fun resetState(owner: java.util.UUID) = abilities.forEach { it.release(owner); it.resetCooldowns(owner) }
     fun shutdown() = abilities.forEach { it.stop() }
     @EventHandler fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) = releaseState(event.player.uniqueId)
     @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
@@ -228,7 +229,7 @@ object AbilityManager : Listener {
         val terms = transitionTerms(player, ability)
         if (!FileManager.delivery.transition(player, terms, before)) throw IllegalStateException("Ability transition requires recovery")
         com.github.lupi13.limpi.platform.AbilityRuntime.closeOwner(player.uniqueId, preserveEffect)
-        releaseState(player.uniqueId)
+        resetState(player.uniqueId)
         Functions.resetPlayerAttributes(player)
         if (ability == null) {
             player.sendMessage(Component.text("능력이 제거되었습니다.", NamedTextColor.WHITE))

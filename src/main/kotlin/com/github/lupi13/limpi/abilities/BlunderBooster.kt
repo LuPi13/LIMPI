@@ -225,7 +225,7 @@ object BlunderBooster : Ability(
             if (player.isOnline && !player.isDead && player.ability == this) AbilityManager.applyAbility(player, null)
         })
     }
-    override fun release(owner: java.util.UUID) { energyMap.remove(owner) }
+    override fun resetCooldowns(owner: java.util.UUID) { energyMap.remove(owner) }
     override fun stop() { energyMap.clear() }
 
 }

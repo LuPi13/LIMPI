@@ -174,8 +174,11 @@ object RealHandCannon : Ability(
     @EventHandler(priority = EventPriority.LOWEST)
     fun protectHanging(event: HangingBreakEvent) { if (exploding != null) event.isCancelled = true }
 
-    override fun release(owner: UUID) {
+    override fun resetCooldowns(owner: UUID) {
         lastShot.remove(owner)
+    }
+
+    override fun release(owner: UUID) {
         cannons.values.filter { it.owner == owner }.forEach { it.close() }
     }
 

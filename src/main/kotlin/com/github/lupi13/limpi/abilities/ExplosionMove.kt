@@ -85,14 +85,13 @@ object ExplosionMove : Ability(
         AbilityRuntime.global(1) {
             for (player in plugin.server.onlinePlayers) {
                 if (player.ability === this) magazines.putIfAbsent(player.uniqueId, Magazine())
-                else if (player.uniqueId in magazines) release(player.uniqueId)
+                else if (player.uniqueId in magazines) resetCooldowns(player.uniqueId)
             }
             val max = config!!.getInt("max_charges")
             val chargeTicks = config!!.getInt("charge_ticks")
             for ((owner, magazine) in magazines.entries.toList()) {
                 val player = plugin.server.getPlayer(owner)
-                if (player == null) { release(owner); continue }
-                if (player.isDead || FileManager.delivery.blocked(owner)) continue
+                if (player == null || player.isDead || FileManager.delivery.blocked(owner)) continue
                 if (magazine.count < max) {
                     if (++magazine.ticks >= chargeTicks) {
                         magazine.ticks = 0
@@ -146,6 +145,6 @@ object ExplosionMove : Ability(
         world.playSound(player.location, Sound.ENTITY_GENERIC_EXPLODE, 0.7f, 2f)
     }
 
-    override fun release(owner: UUID) { magazines.remove(owner) }
+    override fun resetCooldowns(owner: UUID) { magazines.remove(owner) }
     override fun stop() { magazines.clear() }
 }

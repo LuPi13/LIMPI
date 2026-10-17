@@ -250,8 +250,11 @@ abstract class ChargeShotAbility(
     }
 
     override fun release(owner: UUID) {
-        lastShot.remove(owner)
         charging.remove(owner)?.effect?.close()
+    }
+
+    override fun resetCooldowns(owner: UUID) {
+        lastShot.remove(owner)
     }
 
     override fun stop() {

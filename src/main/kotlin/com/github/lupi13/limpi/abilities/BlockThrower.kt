@@ -161,7 +161,7 @@ object BlockThrower : Ability(
         location.world?.dropItemNaturally(location, ItemStack(type))
     }
 
-    override fun release(owner: UUID) {
+    override fun resetCooldowns(owner: UUID) {
         lastThrow.remove(owner)
     }
 

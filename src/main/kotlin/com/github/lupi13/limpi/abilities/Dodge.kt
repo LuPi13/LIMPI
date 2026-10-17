@@ -152,7 +152,8 @@ object Dodge : Ability(
         QuestManager.clearQuests(player, DodgeCliche)
     }
 
-    override fun release(owner: java.util.UUID) { velocityMap.remove(owner); lastSneakTime.remove(owner); lastDodgeTime.remove(owner) }
+    override fun release(owner: java.util.UUID) { velocityMap.remove(owner); lastSneakTime.remove(owner) }
+    override fun resetCooldowns(owner: java.util.UUID) { lastDodgeTime.remove(owner) }
     override fun stop() { velocityMap.clear(); lastSneakTime.clear(); lastDodgeTime.clear() }
 
 }

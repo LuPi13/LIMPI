@@ -93,7 +93,11 @@ abstract class DodgeVariant(
         .append(Component.text("초", NamedTextColor.WHITE))
 
     override fun release(owner: UUID) {
-        lastSneakTime.remove(owner); lastDodgeTime.remove(owner); Dodge.velocityMap.remove(owner)
+        lastSneakTime.remove(owner); Dodge.velocityMap.remove(owner)
+    }
+
+    override fun resetCooldowns(owner: UUID) {
+        lastDodgeTime.remove(owner)
     }
 
     override fun stop() {

@@ -138,7 +138,8 @@ object ShieldStrike : Ability(
             plugin.logger.log(java.util.logging.Level.WARNING, "Shield strike quest check failed for ${player.uniqueId}", failure)
         }
     }
-    override fun release(owner: java.util.UUID) { lastSneakTime.remove(owner); lastStrikeTime.remove(owner); vector.remove(owner) }
+    override fun release(owner: java.util.UUID) { lastSneakTime.remove(owner); vector.remove(owner) }
+    override fun resetCooldowns(owner: java.util.UUID) { lastStrikeTime.remove(owner) }
     override fun stop() { lastSneakTime.clear(); lastStrikeTime.clear(); vector.clear() }
 
 }

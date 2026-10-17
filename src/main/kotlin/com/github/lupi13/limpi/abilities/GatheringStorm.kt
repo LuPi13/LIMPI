@@ -301,7 +301,8 @@ object GatheringStorm : Ability(
 
         event.isCancelled = true
     }
-    override fun release(owner: java.util.UUID) { stormCooldown.remove(owner); stormCreatedTick.remove(owner) }
+    override fun release(owner: java.util.UUID) { stormCreatedTick.remove(owner) }
+    override fun resetCooldowns(owner: java.util.UUID) { stormCooldown.remove(owner) }
     override fun stop() { stormCooldown.clear(); stormDuration.clear(); stormCreatedTick.clear() }
 
 }

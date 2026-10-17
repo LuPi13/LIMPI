@@ -82,11 +82,11 @@ abstract class CloakAbility(
         AbilityRuntime.global(1) {
             for (player in plugin.server.onlinePlayers) {
                 if (player.ability === this) gauge.putIfAbsent(player.uniqueId, points("initial_gauge"))
-                else if (player.uniqueId in gauge || player.uniqueId in sessions) release(player.uniqueId)
+                else if (player.uniqueId in gauge || player.uniqueId in sessions) { release(player.uniqueId); resetCooldowns(player.uniqueId) }
             }
             for (owner in gauge.keys.toList()) {
                 val player = plugin.server.getPlayer(owner)
-                if (player == null) { release(owner); continue }
+                if (player == null) continue
                 if (player.isDead || FileManager.delivery.blocked(owner)) continue
                 val session = sessions[owner]
                 if (session == null) {
@@ -217,9 +217,10 @@ abstract class CloakAbility(
 
     override fun release(owner: UUID) {
         sessions.remove(owner)?.effect?.close()
-        gauge.remove(owner)
         lastSneak.remove(owner)
     }
+
+    override fun resetCooldowns(owner: UUID) { gauge.remove(owner) }
 
     override fun stop() {
         sessions.values.toList().forEach { it.effect.close() }

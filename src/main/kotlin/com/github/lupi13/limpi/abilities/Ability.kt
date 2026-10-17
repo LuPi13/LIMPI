@@ -39,7 +39,10 @@ abstract class Ability(
     }
     open fun start() {}
     open fun stop() {}
+    /** Transient per-player state (running effects, held entities). Cleared on quit, death and world change. */
     open fun release(owner: java.util.UUID) {}
+    /** Cooldowns, gauges and magazines. They survive death, world change and rejoining; cleared only when the ability changes. */
+    open fun resetCooldowns(owner: java.util.UUID) {}
 
     /** Metadata is cached for the lifetime of one immutable settings snapshot. */
     protected fun <T> settingsCached(build: () -> T): kotlin.properties.ReadOnlyProperty<Any?, T> =

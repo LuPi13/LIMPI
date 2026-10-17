@@ -38,6 +38,9 @@ class StockTradingService(private val store: StateStore, private val players: Pl
             val previous = holding(data, code)
             val balance = Accounts.balance(data)
             val total = price.times(quantity)
+            // The balance or holding can change between the GUI check and this transaction; answer with the same wording.
+            if (direction == StockTrade.BUY) require(balance.units >= total.units) { "돈이 부족합니다!" }
+            else require(quantity <= previous.count) { "보유 주식이 없습니다!" }
             val nextBalance = when (direction) {
                 StockTrade.BUY -> balance - total
                 StockTrade.SELL -> balance + total

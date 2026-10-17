@@ -40,9 +40,10 @@ class MarketEvents : Listener {
             name.substring(1, name.length - 1).ifBlank { fallback }
         } catch (_: Exception) { fallback }
 
-        fun openMarketGUI(player: Player, requestedPage: Int = 0, expected: Inventory? = null) {
-            val listings = FileManager.market.available().filter { it.state == ListingState.ACTIVE }
-                .sortedBy { it.code }
+        private fun activeListings() = FileManager.market.available().filter { it.state == ListingState.ACTIVE }.sortedBy { it.code }
+
+        fun openMarketGUI(player: Player, requestedPage: Int = 0, expected: Inventory? = null,
+                          listings: List<com.github.lupi13.limpi.market.MarketListing> = activeListings()) {
             val page = Pagination(listings.size, requestedPage)
             val holder = MenuHolder(MenuKind.MARKET, page.page, marketGUIName)
             for ((slot, listing) in listings.subList(page.start, page.end).withIndex()) {
@@ -69,11 +70,14 @@ class MarketEvents : Listener {
             openMenu(plugin, player, holder.inventory, expected)
         }
 
+        /** Every viewer sees the same listings, so read them once for all open market windows. */
         fun reopenMarketGUI() {
+            var listings: List<com.github.lupi13.limpi.market.MarketListing>? = null
             for (player in plugin.server.onlinePlayers) {
                 val top = player.openInventory.topInventory
                 val holder = top.holder as? MenuHolder ?: continue
-                if (holder.kind == MenuKind.MARKET) openMarketGUI(player, holder.page, top)
+                if (holder.kind != MenuKind.MARKET) continue
+                openMarketGUI(player, holder.page, top, listings ?: activeListings().also { listings = it })
             }
         }
 

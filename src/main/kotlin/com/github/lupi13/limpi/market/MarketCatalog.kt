@@ -20,8 +20,15 @@ data class MarketListing(
 
 /** Each listing has a permanent UUID; a reused four-letter code cannot revive an old GUI quote. */
 class MarketCatalog(private val store: StateStore) {
-    fun available(): List<MarketListing> = store.documents("market_code/").map { (key, id) ->
-        requireNotNull(find(UUID.fromString(id))).also { check(key == "market_code/${it.code}") }
+    /** Codes and listings in two range reads instead of one read per listing. */
+    fun available(): List<MarketListing> {
+        val codes = store.documents("market_code/")
+        if (codes.isEmpty()) return emptyList()
+        val payloads = store.documents("market_listing/")
+        return codes.map { (key, id) ->
+            val listing = decode(requireNotNull(payloads[key(UUID.fromString(id))]))
+            listing.also { check(it.id.toString() == id && key == "market_code/${it.code}") }
+        }
     }
     fun listings(): List<MarketListing> = store.documents("market_listing/").map { (key, payload) ->
         decode(payload).also { check(key == key(it.id)) }

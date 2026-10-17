@@ -19,7 +19,9 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
             receipt(owner, quest, ability, flags.first, flags.second)
         })
     }
-    fun harmony(request: UUID, owner: UUID, branch: String): QuestRewardResult {
+    /** Count [amount] (default one) hits of [branch]; completes the quest when both branches are full. */
+    fun harmony(request: UUID, owner: UUID, branch: String, amount: Long = 1): QuestRewardResult {
+        require(amount > 0)
         val counters = com.github.lupi13.limpi.quests.QuestProgressDefinitions.HARMONY.counters
         require(branch in counters.map { it.counter })
         val swordTarget = counters[0].target; val arrowTarget = counters[1].target
@@ -31,7 +33,8 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
             val target = counters.single { it.counter == branch }.target
             if (mine != null && theirs != null && mine >= target && (theirs < other.target || rewarded(owner, HARMONY_QUEST))) return UNCHANGED
         }
-        return result(store.execute(request, BankService.fingerprint("HARMONY_PROGRESS", owner.toString(), branch)) { tx ->
+        val fields = listOf("HARMONY_PROGRESS", owner.toString(), branch) + if (amount == 1L) emptyList() else listOf(amount.toString())
+        return result(store.execute(request, BankService.fingerprint(*fields.toTypedArray())) { tx ->
             val profile = Accounts.read(tx, owner)
             fun count(path: String): Long {
                 val raw = profile.get(path) ?: return 0
@@ -41,7 +44,7 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
             val sword = count("quest.${counters[0].counter}"); val arrow = count("quest.${counters[1].counter}")
             val old = if (branch == counters[0].counter) sword else arrow
             val target = counters.single { it.counter == branch }.target
-            val updated = if (old >= target) old else old + 1
+            val updated = if (old >= target) old else Math.addExact(old, minOf(amount, target - old))
             profile.set("quest.$branch", updated)
             tx.put(SqliteProfilePersistence.key(owner), profile.saveToString())
             val finished = if (branch == counters[0].counter) updated >= swordTarget && arrow >= arrowTarget else sword >= swordTarget && updated >= arrowTarget
@@ -103,15 +106,16 @@ class QuestRewards(private val store: StateStore, private val players: PlayerRep
      * anything. Returns the stored value after the transaction (an existing value above [cap] is kept as is).
      * Replaying [request] never counts twice.
      */
-    fun count(request: UUID, owner: UUID, counter: String, cap: Long): Long {
-        require(counter.matches(Regex("[a-z0-9_]+")) && cap > 0)
-        val committed = store.execute(request, BankService.fingerprint("QUEST_COUNT", owner.toString(), counter, cap.toString())) { tx ->
+    fun count(request: UUID, owner: UUID, counter: String, cap: Long, amount: Long = 1): Long {
+        require(counter.matches(Regex("[a-z0-9_]+")) && cap > 0 && amount > 0)
+        val fields = listOf("QUEST_COUNT", owner.toString(), counter, cap.toString()) + if (amount == 1L) emptyList() else listOf(amount.toString())
+        val committed = store.execute(request, BankService.fingerprint(*fields.toTypedArray())) { tx ->
             val profile = Accounts.read(tx, owner)
             val raw = profile.get("quest.$counter")
             require(raw == null || raw is Int || raw is Long) { "Non-integral quest counter" }
             val old = (raw as Number?)?.toLong() ?: 0L
             require(old >= 0)
-            val updated = if (old >= cap) old else Math.addExact(old, 1L)
+            val updated = if (old >= cap) old else Math.addExact(old, minOf(amount, cap - old))
             if (updated != old) {
                 profile.set("quest.$counter", updated)
                 tx.put(SqliteProfilePersistence.key(owner), profile.saveToString())

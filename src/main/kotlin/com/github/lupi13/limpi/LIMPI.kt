@@ -88,6 +88,8 @@ class LIMPI : JavaPlugin() {
             server.pluginManager.registerEvents(AbilitySelectEvent(), this)
             server.pluginManager.registerEvents(AbilityDictionary(), this)
             AbilityManager.registerAbilities()
+            server.scheduler.runTaskTimer(this, Runnable { com.github.lupi13.limpi.quests.QuestManager.flush() },
+                com.github.lupi13.limpi.quests.QuestManager.FLUSH_TICKS, com.github.lupi13.limpi.quests.QuestManager.FLUSH_TICKS)
             FileManager.delivery.afterClaim = { player ->
                 gachaEvents.recoverApplications(player)
                 com.github.lupi13.limpi.quests.Lotto.check(player)
@@ -134,6 +136,7 @@ class LIMPI : JavaPlugin() {
         SellEvents.closeAll()
         AbilityRuntime.closeAll()
         if (config.getBoolean("EnableAbilitySystem")) AbilityManager.shutdown()
+        com.github.lupi13.limpi.quests.QuestManager.flush()
         server.onlinePlayers.forEach(AbilityRuntime::clearAttributes)
         gacha?.close()
         gacha = null

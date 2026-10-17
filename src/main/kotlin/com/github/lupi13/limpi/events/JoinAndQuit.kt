@@ -38,6 +38,8 @@ class JoinAndQuit: Listener {
 
     @EventHandler
     fun onQuit(event: PlayerQuitEvent) {
+        // Gathered quest counts are written while the profile is still pinned.
+        com.github.lupi13.limpi.quests.QuestManager.flush(event.player.uniqueId)
         FileManager.releasePlayer(event.player)
         FileManager.delivery.release(event.player.uniqueId)
     }

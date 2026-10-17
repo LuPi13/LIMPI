@@ -137,6 +137,20 @@ class QuestRewardsTest {
             assertEquals(Long.MAX_VALUE, YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner))).getLong("quest.lost"))
         }
     }
+    @Test fun `gathered harmony and usage amounts are written at once and capped`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 0\nquest:\n  harmony_sword: 10\n  harmony_arrow: 3\n") }
+            val request = UUID.randomUUID()
+            assertEquals(QuestRewardResult(true, true, false), service(store).harmony(request, owner, "harmony_arrow", 25))
+            assertTrue(service(store).harmony(request, owner, "harmony_arrow", 25).replayed)
+            assertEquals(4, service(store).count(UUID.randomUUID(), owner, "cloak_uses", 30, 4))
+            assertEquals(30, service(store).count(UUID.randomUUID(), owner, "cloak_uses", 30, 100))
+            val data = YamlFiles.parse(store.get(SqliteProfilePersistence.key(owner)))
+            assertEquals(10, data.getLong("quest.harmony_arrow")); assertEquals(30, data.getLong("quest.cloak_uses"))
+            assertEquals(listOf(QuestRewards.HARMONY_QUEST), data.getStringList("clearedQuests"))
+        }
+    }
+
     @Test fun `usage counter counts once per request, caps and never completes a quest`() {
         SqliteStateStore(directory.resolve("state.db")).use { store ->
             store.atomic { it.put(SqliteProfilePersistence.key(owner), "money: 5\nquest:\n  custom: 9\n") }

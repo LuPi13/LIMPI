@@ -52,6 +52,15 @@ class OperationsTest {
             assertNull(snapshot(backup).documents["extension/after_backup"])
         }
     }
+    @Test fun `import names a missing transaction id`() {
+        @Suppress("UNCHECKED_CAST")
+        val data = OperationsYaml.map(snapshot(fixture()).export()) as MutableMap<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        (data["transactions"] as List<MutableMap<String, Any?>>).forEach { it.remove("id") }
+        val failure = assertThrows(IllegalStateException::class.java) { DatabaseSnapshot.import(OperationsYaml.dump(data)) }
+        assertEquals("Missing transaction id", failure.message)
+    }
+
     @Test fun `streamed fingerprint equals the snapshot fingerprint`() {
         val source = fixture()
         ReadOnlyDatabase(source).use { assertEquals(it.snapshot().fingerprint(), it.fingerprint()) }

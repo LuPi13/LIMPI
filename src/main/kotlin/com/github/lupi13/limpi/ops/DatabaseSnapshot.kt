@@ -27,9 +27,9 @@ data class DatabaseSnapshot(val documents: Map<String, String>, val transactions
     companion object {
         fun import(text: String): DatabaseSnapshot {
             val data = OperationsYaml.map(text)
-            require(OperationsYaml.integer(data["formatVersion"], "formatVersion") == 1L)
-            require(OperationsYaml.integer(data["applicationId"], "applicationId") == ReadOnlyDatabase.APPLICATION_ID.toLong())
-            require(OperationsYaml.integer(data["databaseVersion"], "databaseVersion") == 1L)
+            require(OperationsYaml.integer(data["formatVersion"], "formatVersion") == 1L) { "Unsupported export format" }
+            require(OperationsYaml.integer(data["applicationId"], "applicationId") == ReadOnlyDatabase.APPLICATION_ID.toLong()) { "Not a LIMPI export" }
+            require(OperationsYaml.integer(data["databaseVersion"], "databaseVersion") == 1L) { "Unsupported database version" }
             val documents = linkedMapOf<String, String>()
             for (raw in data["documents"] as? List<*> ?: error("Missing documents")) {
                 val item = raw as? Map<*, *> ?: error("Invalid document")
@@ -40,8 +40,9 @@ data class DatabaseSnapshot(val documents: Map<String, String>, val transactions
             val transactions = (data["transactions"] as? List<*> ?: error("Missing transactions")).map { raw ->
                 val item = raw as? Map<*, *> ?: error("Invalid transaction")
                 val keys = item["changedKeys"] as? List<*> ?: error("Missing changedKeys")
-                require(keys.all { it is String } && keys.toSet().size == keys.size)
-                LedgerEntry(UUID.fromString(item["id"] as? String), item["fingerprint"] as? String ?: error("Missing fingerprint"),
+                require(keys.all { it is String } && keys.toSet().size == keys.size) { "Invalid changedKeys" }
+                val id = item["id"] as? String ?: error("Missing transaction id")
+                LedgerEntry(runCatching { UUID.fromString(id) }.getOrElse { error("Invalid transaction id $id") }, item["fingerprint"] as? String ?: error("Missing fingerprint"),
                     item["receipt"] as? String ?: error("Missing receipt"), keys.map { it as String }.toSet(), OperationsYaml.integer(item["createdAt"], "createdAt"))
             }
             return DatabaseSnapshot(documents, transactions).also { require(it.fingerprint() == data["sha256"]) { "Export fingerprint mismatch" } }

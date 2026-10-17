@@ -21,6 +21,14 @@ object AbilityTickets {
         item.itemMeta = meta
         return item
     }
+    /** Shop display copies look the same but are not tickets, so one that escapes the GUI cannot be used. */
+    fun unmark(item: ItemStack): ItemStack {
+        val meta = item.itemMeta
+        meta.persistentDataContainer.remove(kindKey)
+        meta.persistentDataContainer.remove(formatKey)
+        item.itemMeta = meta
+        return item
+    }
     fun identify(item: ItemStack?): String? {
         if (item == null || item.type.isAir || !item.hasItemMeta()) return null
         val data = item.itemMeta.persistentDataContainer

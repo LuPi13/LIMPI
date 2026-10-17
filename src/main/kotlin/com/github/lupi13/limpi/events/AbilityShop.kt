@@ -83,7 +83,8 @@ class AbilityShop : Listener {
             }
             meta!!.lore(lore)
             item.itemMeta = meta
-            return com.github.lupi13.limpi.platform.AbilityTickets.mark(item, grade?.name ?: "GACHA")
+            return if (isShopDisplay) com.github.lupi13.limpi.platform.AbilityTickets.unmark(item)
+                else com.github.lupi13.limpi.platform.AbilityTickets.mark(item, grade?.name ?: "GACHA")
         }
 
         private const val BUNDLE = 10L

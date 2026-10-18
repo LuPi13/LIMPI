@@ -144,8 +144,6 @@ class FileManager {
             for (name in listOf("sellPrice", "shopPrice")) {
                 if (!java.nio.file.Files.exists(financialPath(name))) plugin.saveResource("financial/$name.yml", false)
             }
-            if (java.nio.file.Files.exists(financialPath("shopRatio")))
-                plugin.logger.warning("financial/shopRatio.yml is no longer used; shop prices are read from financial/shopPrice.yml")
             for (name in listOf("misc", "sellPrice", "shopPrice", "stock")) {
                 financial[name] = YamlFiles.read(financialPath(name))
             }

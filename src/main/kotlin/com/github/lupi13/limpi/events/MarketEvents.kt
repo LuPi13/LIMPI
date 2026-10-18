@@ -157,7 +157,7 @@ class MarketEvents : Listener {
             if (failure.reason == MarketFailure.OWN_LISTING) {
                 player.sendMessage(Component.text("자신이 올린 물품은 구매할 수 없습니다.", NamedTextColor.RED)
                     .append(Component.text("\n장터에 올린 아이템을 환수하고 싶다면 ", NamedTextColor.RED))
-                    .append(Component.text("/market remove <code>", NamedTextColor.RED))
+                    .append(Component.text("/financial market remove <코드>", NamedTextColor.RED))
                     .append(Component.text(" 명령어를 사용하세요.", NamedTextColor.RED)))
             } else {
                 player.sendMessage(Component.text(failure.reason.message, NamedTextColor.RED))

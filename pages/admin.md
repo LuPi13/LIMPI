@@ -68,7 +68,7 @@ diamond: 500
 | 명령어 | 권한 | 설명 |
 | --- | --- | --- |
 | `/financial market remove <코드>` | `limpi.financial.admin.market` | 다른 사람이 올린 매물도 내릴 수 있습니다. 아이템은 올린 사람의 미수령함으로 돌아갑니다. |
-| `/financial check inspect [수표 ID]` | `limpi.financial.admin.check` | 손에 든 수표(콘솔은 수표 ID)의 발행 기록을 확인합니다. |
+| `/financial check inspect [수표 UUID]` | `limpi.financial.admin.check` | 손에 든 수표(콘솔은 수표 UUID)의 발행 기록을 확인합니다. |
 
 ## 상자 { #chest }
 
@@ -85,17 +85,17 @@ diamond: 500
 | 명령어 | 권한 | 설명 |
 | --- | --- | --- |
 | `/limpi review` | `limpi.admin.recovery.review` | 모든 플레이어의 확인 대기 기록과, 각각 처리할 명령어 예시를 보여줍니다. **여기서 시작하세요.** |
-| `/limpi delivery <소유자 UUID> [지급 ID]` | `limpi.admin.recovery.delivery` | 아이템 지급 기록을 봅니다. |
-| <code>/limpi delivery resolve &lt;소유자 UUID&gt; &lt;지급 ID&gt; delivered&#124;retry &lt;근거&gt;</code> | `limpi.admin.recovery.delivery` | 지급 판단을 기록합니다. |
-| `/limpi removal <소유자 UUID> [회수 ID]` | `limpi.admin.recovery.removal` | 뽑기권·선택권 사용 등으로 인벤토리에서 아이템을 가져간 기록을 봅니다. |
-| <code>/limpi removal resolve &lt;소유자 UUID&gt; &lt;회수 ID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.removal` | 회수 판단을 기록합니다. |
-| `/limpi transition <소유자 UUID> [전환 ID]` | `limpi.admin.recovery.transition` | 능력 변경에 따른 인벤토리 전환 기록을 봅니다. |
-| <code>/limpi transition resolve &lt;소유자 UUID&gt; &lt;전환 ID&gt; applied&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.transition` | 전환 판단을 기록합니다. |
+| `/limpi delivery <소유자 UUID> [지급 UUID]` | `limpi.admin.recovery.delivery` | 아이템 지급 기록을 봅니다. |
+| <code>/limpi delivery resolve &lt;소유자 UUID&gt; &lt;지급 UUID&gt; delivered&#124;retry &lt;근거&gt;</code> | `limpi.admin.recovery.delivery` | 지급 판단을 기록합니다. |
+| `/limpi removal <소유자 UUID> [회수 UUID]` | `limpi.admin.recovery.removal` | 뽑기권·선택권 사용 등으로 인벤토리에서 아이템을 가져간 기록을 봅니다. |
+| <code>/limpi removal resolve &lt;소유자 UUID&gt; &lt;회수 UUID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.removal` | 회수 판단을 기록합니다. |
+| `/limpi transition <소유자 UUID> [전환 UUID]` | `limpi.admin.recovery.transition` | 능력 변경에 따른 인벤토리 전환 기록을 봅니다. |
+| <code>/limpi transition resolve &lt;소유자 UUID&gt; &lt;전환 UUID&gt; applied&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.transition` | 전환 판단을 기록합니다. |
 | `/limpi escrow <소유자 UUID>` | `limpi.admin.recovery.escrow` | 중단된 장터 등록·회수 기록을 봅니다. |
-| <code>/limpi escrow resolve &lt;소유자 UUID&gt; &lt;매물 ID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.escrow` | 장터 회수 판단을 기록합니다. |
-| <code>/limpi chest resolve &lt;소유자 UUID&gt; &lt;창 기록 ID&gt; before&#124;after &lt;근거&gt;</code> | `limpi.admin.recovery.chest` | 상자 창 기록을 정리합니다. `before`는 상자를 연 시점 내용으로, `after`는 창을 닫으며 기록된 내용으로 확정합니다(닫기 기록이 있을 때만). |
+| <code>/limpi escrow resolve &lt;소유자 UUID&gt; &lt;매물 UUID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.escrow` | 장터 회수 판단을 기록합니다. |
+| <code>/limpi chest resolve &lt;소유자 UUID&gt; &lt;창 기록 UUID&gt; before&#124;after &lt;근거&gt;</code> | `limpi.admin.recovery.chest` | 상자 창 기록을 정리합니다. `before`는 상자를 연 시점 내용으로, `after`는 창을 닫으며 기록된 내용으로 확정합니다(닫기 기록이 있을 때만). |
 | `/limpi sugar <소유자 UUID>` | `limpi.admin.recovery.sugar` | 적용 대기 중인 설탕 사용 결과를 봅니다. |
-| `/limpi sugar void <소유자 UUID> <결과 ID> <근거>` | `limpi.admin.recovery.sugar` | 적용할 수 없는 설탕 결과를 환불 없이 종료합니다. |
+| `/limpi sugar void <소유자 UUID> <결과 UUID> <근거>` | `limpi.admin.recovery.sugar` | 적용할 수 없는 설탕 결과를 환불 없이 종료합니다. |
 
 권한 `limpi.admin.recovery`를 주면 위 복구 명령을 모두 쓸 수 있습니다.
 
@@ -149,17 +149,41 @@ diamond: 500
 
 일반 플레이어 명령어의 권한(`limpi.ability.me`, `limpi.financial.send`, `limpi.chest.open`, `limpi.notice.show` 등)은 모두 기본값이 `true`입니다. 권한 플러그인으로 빼앗으면 해당 명령어가 도움말과 탭 완성에서 사라집니다.
 
-## 설정 파일
+## 설정 파일 { #settings }
 
 서버를 처음 켜면 `plugins/LIMPI` 폴더에 만들어집니다. 고친 뒤 서버를 다시 켜면 적용됩니다(능력 수치는 `/ability reload`로도 적용).
 
 | 파일 | 바꿀 수 있는 것 |
 | --- | --- |
-| `config.yml` | 능력·금융 시스템 켜기/끄기, 첫 소지금과 첫 뽑기권 수, 뽑기 등급 확률, 뽑기권·선택권 가격(`TicketMoneyPrice`, `SelectMoneyPrice`, 원), 판매가 회복 시간(`SellRecoveryHours`), 픽업 주기, 주식 변동 폭, 자동 백업 주기, 상자 시스템 켜기/끄기와 상자 상점 가격, 공지 보관 일수(`NoticeRetentionDays`), 게임 안 도움말의 웹 링크 주소(`HelpUrl`) 등 |
+| `config.yml` | 아래 [config.yml 주요 설정](#config) |
 | `ability/<능력>.yml` | 능력별 세부 수치(피해량, 쿨타임, 범위, 지속 시간 등) |
 | `financial/sellPrice.yml` | 아이템 판매 가격(고정·감소형) |
 | `financial/shopPrice.yml` | 상점에서 파는 아이템과 구매 가격 |
 | `financial/stock.yml` | 주식 종목 |
+
+### config.yml 주요 설정 { #config }
+
+| 설정 | 기본값 | 뜻 |
+| --- | --- | --- |
+| `HelpUrl` | `https://lupi13.github.io/LIMPI/` | 게임 안 도움말과 접속 메시지에 거는 웹 도움말 주소. 비우면 링크를 숨깁니다. |
+| `EnableFinancialSystem` / `EnableAbilitySystem` / `EnableChestSystem` | `true` | 시스템 켜기/끄기 |
+| `InitialMoney` | 1000 | 첫 소지금(원) |
+| `InitialTicket` / `InitialCOMMON` / `InitialRARE` / `InitialEPIC` | 10 / 1 / 1 / 1 | 첫 접속 때 주는 뽑기권·선택권 수 |
+| `TicketMoneyPrice` | 2000 | 뽑기권 가격(원) |
+| `SelectMoneyPrice` | TROLL 1000 ~ MYTHIC 5000 | 등급별 선택권 가격(원) |
+| `LEGENDARYProbability` / `EPICProbability` | | 기본 확률, 천장 증가량·시작 횟수, 픽업 확률 |
+| `TROLLProbability` / `RAREProbability` | 0.01 / 0.3 | TROLL·RARE 확률 |
+| `ForceTroll` | `true` | 뽑기에서 나온 TROLL 능력을 바로 강제 적용할지 |
+| `PickUpChange` / `PickUpSpoiler` | 30 / 3 | 픽업 변경 주기(분), `/ability pickup`에 미리 보여 줄 픽업 수 |
+| `SellRecoveryHours` | 12 | 감소형 판매가의 판매 개수가 절반으로 회복되는 시간 |
+| `StockInterval` | 10 | 주식 변동 주기(분) |
+| `StockMinimumRatio` / `StockMaximumRatio` / `StockStandardDeviation` / `StockPriceDrag` | 0.7 / 1.3 / 0.1 / 0.1 | 주식 변동 폭과 기준 가격으로 돌아오는 정도 |
+| `ChestUnlockPrice` / `ChestUpgradePrice` / `ChestAutoStorePrice` / `ChestEnderPrice` | | 상자 상점 가격([상자](chest.md#shop) 참고) |
+| `NoticeRetentionDays` | 30 | 공지 보관 일수(0 이하면 지우지 않음) |
+| `RecordRetentionDays` | 7 | 서버를 켤 때 이 일수가 지난 **끝난** 기록(완료된 지급·회수·능력 전환·장터 기록, 확정된 뽑기·선택 결과, 입금한 수표, 거래 장부)을 정리합니다(0 이하면 정리하지 않음). 처리 중이거나 확인 대기인 기록, 팔리지 않은 매물, 입금하지 않은 수표는 남깁니다. |
+| `BackupIntervalMinutes` / `BackupKeep` | 60 / 24 | 자동 백업 주기(분)와 남길 개수 |
+| `PlayerDataDirectory` | 빈 값 | 플레이어 저장 파일 위치. 비우면 자동으로 찾습니다. 저장 위치를 바꾼 서버에서만 씁니다. |
+| `DebugTransactionTiming` | `false` | 거래 처리 시간을 서버 로그에 남깁니다(문제 조사용). |
 
 ### 플러그인을 업데이트하면
 
@@ -171,7 +195,7 @@ diamond: 500
 - `config.yml` 문법이 깨져 있거나 들여쓰기가 달라 안전하게 넣을 수 없으면 파일을 건드리지 않고 경고만 남깁니다. 이때도 빠진 설정은 기본값으로 동작합니다.
 - `ability/<능력>.yml`도 서버를 켤 때 빠진 수치를 기본값으로 채웁니다.
 
-## 데이터와 백업
+## 데이터와 백업 { #data }
 
 - 모든 데이터는 `plugins/LIMPI/limpi.sqlite3` 하나에 저장됩니다.
 - 서버를 켤 때와 `BackupIntervalMinutes`(기본 60분)마다 `plugins/LIMPI/backups`에 자동 백업되며, 최근 `BackupKeep`(기본 24)개를 남깁니다.

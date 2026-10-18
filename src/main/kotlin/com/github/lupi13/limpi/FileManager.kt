@@ -52,7 +52,6 @@ class FileManager {
         private lateinit var gachaSettlement: GachaSettlement
         private lateinit var abilitySelection: AbilitySelection
         private lateinit var abilityTransitions: AbilityTransitions
-        private lateinit var sugarSettlement: com.github.lupi13.limpi.ability.SugarSettlement
         private lateinit var initialRewards: InitialRewards
         private lateinit var initialItems: List<com.github.lupi13.limpi.delivery.ItemGrant>
         private lateinit var questRewards: QuestRewards
@@ -76,7 +75,6 @@ class FileManager {
         val gacha: GachaSettlement get() = gachaSettlement
         val selections: AbilitySelection get() = abilitySelection
         val transitions: AbilityTransitions get() = abilityTransitions
-        val sugar: com.github.lupi13.limpi.ability.SugarSettlement get() = sugarSettlement
         val quest: QuestRewards get() = questRewards
         val chests: com.github.lupi13.limpi.chest.ChestService get() = chestService
         val notices: com.github.lupi13.limpi.notice.NoticeBoard get() = noticeBoard
@@ -128,14 +126,12 @@ class FileManager {
             gachaSettlement = GachaSettlement(state)
             abilitySelection = AbilitySelection(state)
             abilityTransitions = AbilityTransitions(state, repository)
-            sugarSettlement = com.github.lupi13.limpi.ability.SugarSettlement(state)
             removalJournal = RemovalJournal(state, repository, mapOf(
                 SaleSettlement.KIND to SaleSettlement,
                 GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection,
                 AbilityItemUse.KIND to AbilityItemUse(deliveryJournal),
                 com.github.lupi13.limpi.ability.AlchemySettlement.KIND to com.github.lupi13.limpi.ability.AlchemySettlement(deliveryJournal),
                 com.github.lupi13.limpi.ability.PickPocketSettlement.KIND to com.github.lupi13.limpi.ability.PickPocketSettlement(deliveryJournal),
-                com.github.lupi13.limpi.ability.SugarSettlement.KIND to sugarSettlement,
             ))
             chestService = com.github.lupi13.limpi.chest.ChestService(state, repository)
             noticeBoard = com.github.lupi13.limpi.notice.NoticeBoard(state)

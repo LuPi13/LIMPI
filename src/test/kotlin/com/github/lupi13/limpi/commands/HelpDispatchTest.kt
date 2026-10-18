@@ -85,7 +85,7 @@ class HelpDispatchTest {
             assertTrue(hub.contains("[관리자 명령어 보기]"), hub.toString())
             val recovery = run(limpi, "help", "admin")
             assertEquals("━━━━━ /limpi 관리자 명령어 ━━━━━ [관리자 명령어]", recovery.first())
-            assertTrue(recovery.any { it.startsWith("/limpi review") } && recovery.any { it.startsWith("/limpi sugar void ") }, recovery.toString())
+            assertTrue(recovery.any { it.startsWith("/limpi review") } && recovery.any { it.startsWith("/limpi chest resolve ") }, recovery.toString())
             assertTrue(recovery.contains("관리자 명령어: https://example.org/LIMPI/admin/#limpi"), recovery.toString())
         }
     }

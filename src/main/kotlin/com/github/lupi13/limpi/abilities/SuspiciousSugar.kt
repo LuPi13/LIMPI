@@ -76,34 +76,4 @@ object SuspiciousSugar : Ability(
             entity.world.getGameRuleValue(Registry.GAME_RULE.getOrThrow(io.papermc.paper.registry.keys.GameRuleKeys.PVP)) != true)) return false
         return true
     }
-
-    /** 이전 버전이 DB에 남긴 미적용 설탕 결과만 적용합니다. 새 사용은 기록을 남기지 않습니다. */
-    fun recover(player: org.bukkit.entity.Player) {
-        if (!player.isOnline || player.isDead || com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
-        val pending = try { com.github.lupi13.limpi.FileManager.sugar.pending(player.uniqueId) } catch (failure: Exception) {
-            // Leave the record for /limpi sugar; an unreadable result must not kick the player on every login.
-            plugin.logger.log(java.util.logging.Level.SEVERE, "Unreadable sugar pending results for ${player.uniqueId}; use /limpi sugar", failure)
-            return
-        }
-        for ((id, frozen) in pending) {
-            val type = org.bukkit.NamespacedKey.fromString(frozen.effect)?.let(Registry.POTION_EFFECT_TYPE::get)
-            if (type == null) {
-                plugin.logger.severe("Sugar result $id for ${player.uniqueId} names unknown effect ${frozen.effect}; kept for /limpi sugar void")
-                continue
-            }
-            val terms = com.github.lupi13.limpi.FileManager.sugar.activate(player.uniqueId, id) ?: continue
-            try {
-                player.addPotionEffect(PotionEffect(type, terms.duration, 0))
-                if (player.world.uid == terms.world) for (target in terms.targets) {
-                    val entity = player.world.getEntity(target) as? LivingEntity ?: continue
-                    if (affected(player, entity, terms.range)) entity.addPotionEffect(PotionEffect(type, terms.duration, 0))
-                }
-                player.world.spawnParticle(Particle.SPIT, player.eyeLocation, 30, 0.0, 0.0, 0.0, 1.0)
-                player.world.playSound(player.location, Sound.ENTITY_WITHER_SHOOT, 0.4f, 2f)
-            } catch (failure: Exception) {
-                // Never replay instant damage/healing after a partly successful live application.
-                plugin.logger.log(java.util.logging.Level.WARNING, "Sugar activation $id for ${player.uniqueId} failed; not replayed", failure)
-            }
-        }
-    }
 }

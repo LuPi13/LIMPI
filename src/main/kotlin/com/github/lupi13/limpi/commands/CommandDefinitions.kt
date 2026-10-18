@@ -84,8 +84,6 @@ object CommandDefinitions {
         route("escrow", "limpi.admin.recovery.escrow", false, 2, 2, "escrow <owner UUID>", "중단된 장터 등록·회수를 조회합니다.", true, short = "장터 회수 조회"),
         route("escrow resolve", "limpi.admin.recovery.escrow", false, 6, Int.MAX_VALUE, "escrow resolve <owner UUID> <매물 UUID> removed|retained <근거>", "오프라인 장터 회수 판단을 기록합니다.", true, mapOf(4 to "removalDecision"), short = "장터 회수 판단 기록"),
         route("chest resolve", "limpi.admin.recovery.chest", false, 6, Int.MAX_VALUE, "chest resolve <owner UUID> <창 기록 UUID> before|after <근거>", "오프라인 상자 창 기록 판단을 기록합니다.", true, mapOf(4 to "chestDecision"), short = "상자 창 기록 판단"),
-        route("sugar", "limpi.admin.recovery.sugar", false, 2, 2, "sugar <owner UUID>", "적용 대기 중인 설탕 결과를 조회합니다.", true, short = "설탕 결과 조회"),
-        route("sugar void", "limpi.admin.recovery.sugar", false, 5, Int.MAX_VALUE, "sugar void <owner UUID> <결과 UUID> <근거>", "적용할 수 없는 설탕 결과를 환불 없이 종료하고 원장을 남깁니다.", true, short = "설탕 결과 종료"),
     ))
     val all: Map<String, CommandIndex> get() = mapOf("ability" to ability, "financial" to financial, "chest" to chest, "notice" to notice)
 }

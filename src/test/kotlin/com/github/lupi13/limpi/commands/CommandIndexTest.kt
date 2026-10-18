@@ -18,7 +18,7 @@ class CommandIndexTest {
         assertEquals("stock", stock.id); assertTrue(2 > stock.maximum)
         assertEquals(6, CommandDefinitions.limpi.resolve(listOf("removal", "resolve"))!!.minimum)
         assertEquals("chest resolve", CommandDefinitions.limpi.resolve(listOf("CHEST", "resolve", "o", "i", "after", "note"))!!.id)
-        assertNull(CommandDefinitions.financial.resolve(listOf("sugar")))
+        assertNull(CommandDefinitions.limpi.resolve(listOf("sugar")))
     }
     @Test fun `console help excludes player actions and includes permitted administrative commands`() {
         val routes = CommandDefinitions.financial.visible(true, false, allow("limpi.financial.admin.stock", "limpi.financial.admin.set"))

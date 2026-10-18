@@ -94,13 +94,11 @@ diamond: 500
 | `/limpi escrow <소유자 UUID>` | `limpi.admin.recovery.escrow` | 중단된 장터 등록·회수 기록을 봅니다. |
 | <code>/limpi escrow resolve &lt;소유자 UUID&gt; &lt;매물 UUID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.escrow` | 장터 회수 판단을 기록합니다. |
 | <code>/limpi chest resolve &lt;소유자 UUID&gt; &lt;창 기록 UUID&gt; before&#124;after &lt;근거&gt;</code> | `limpi.admin.recovery.chest` | 상자 창 기록을 정리합니다. `before`는 상자를 연 시점 내용으로, `after`는 창을 닫으며 기록된 내용으로 확정합니다(닫기 기록이 있을 때만). |
-| `/limpi sugar <소유자 UUID>` | `limpi.admin.recovery.sugar` | 적용 대기 중인 설탕 사용 결과를 봅니다. |
-| `/limpi sugar void <소유자 UUID> <결과 UUID> <근거>` | `limpi.admin.recovery.sugar` | 적용할 수 없는 설탕 결과를 환불 없이 종료합니다. |
 
 권한 `limpi.admin.recovery`를 주면 위 복구 명령을 모두 쓸 수 있습니다.
 
 !!! warning "resolve 전에 확인할 것"
-    - `resolve`/`void`는 **소유자가 오프라인일 때만** 쓸 수 있습니다.
+    - `resolve`는 **소유자가 오프라인일 때만** 쓸 수 있습니다.
     - 서버에 저장된 그 플레이어의 인벤토리를 직접 확인한 뒤, 실제 상태에 맞게 고르세요.
         - `delivered` / `removed` / `applied`: 아이템이 이미 인벤토리에 반영됐음
         - `retry` / `retained`: 반영되지 않았음
@@ -143,7 +141,6 @@ diamond: 500
 | `limpi.admin.recovery.transition` | OP | 능력 전환 복구 |
 | `limpi.admin.recovery.escrow` | OP | 장터 등록·회수 복구 |
 | `limpi.admin.recovery.chest` | OP | 상자 창 기록 복구 |
-| `limpi.admin.recovery.sugar` | OP | 설탕 결과 복구 |
 | `limpi.notice.admin.write` | OP | 공지 등록 |
 | `limpi.notice.admin.delete` | OP | 공지 삭제 |
 

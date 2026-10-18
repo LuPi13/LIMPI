@@ -19,18 +19,16 @@ class PendingReviewsTest {
                 tx.put("removal_pending/$owner/$id", "state: APPLYING")
                 tx.put("ability_transition_pending/$owner/$id", "state: REVIEW\nreason: transition mismatch")
                 tx.put("market_escrow_pending/$owner/$id", "broken: [")
-                tx.put("sugar_pending/$owner/$id", "effect: speed")
                 tx.put("delivery_done/$owner/$id", "state: DONE")
             }
-            val prefixes = listOf("player/", "delivery_pending/", "removal_pending/", "ability_transition_pending/", "market_escrow_pending/", "sugar_pending/", "delivery_done/")
+            val prefixes = listOf("player/", "delivery_pending/", "removal_pending/", "ability_transition_pending/", "market_escrow_pending/", "delivery_done/")
             val before = prefixes.associateWith(store::documents)
             val records = PendingReviews.list(store)
-            assertEquals(5, records.size)
-            assertEquals(setOf("delivery", "removal", "transition", "market", "sugar"), records.map { it.kind }.toSet())
+            assertEquals(4, records.size)
+            assertEquals(setOf("delivery", "removal", "transition", "market"), records.map { it.kind }.toSet())
             assertTrue(records.all { it.name == "사용자" && it.owner == owner && it.id == id.toString() })
             assertEquals("checkpoint mismatch", records.single { it.kind == "delivery" }.reason)
             assertEquals("MALFORMED", records.single { it.kind == "market" }.state)
-            assertTrue(records.single { it.kind == "sugar" }.command.startsWith("/limpi sugar void"))
             assertEquals(before, prefixes.associateWith(store::documents))
         }
     }

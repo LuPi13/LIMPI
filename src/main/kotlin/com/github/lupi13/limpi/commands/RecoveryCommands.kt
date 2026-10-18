@@ -10,7 +10,7 @@ import org.bukkit.plugin.Plugin
 import java.util.Locale
 import java.util.UUID
 
-/** /limpi recovery commands that have no dedicated handler class: review, escrow, chest windows and sugar results. */
+/** /limpi recovery commands that have no dedicated handler class: review, escrow and chest windows. */
 class RecoveryCommands(private val plugin: Plugin) {
     private fun actor(sender: CommandSender) = (sender as? Player)?.uniqueId?.toString() ?: "CONSOLE"
     private fun offline(owner: UUID) = require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 저장 상태를 확인하세요." }
@@ -53,19 +53,5 @@ class RecoveryCommands(private val plugin: Plugin) {
         val request = UUID.randomUUID()
         FileManager.chests.resolve(request, actor(sender), owner, id, applyAfter, args.drop(5).joinToString(" "))
         sender.sendMessage("상자 창 기록 ${id}을(를) ${if (applyAfter) "닫은 뒤" else "열기 전"} 상태로 정리했습니다. 감사 거래: $request")
-    }
-
-    /** sugar <owner> | sugar void <owner> <result> <note> */
-    fun sugar(sender: CommandSender, args: Array<String>) {
-        if (!args[1].equals("void", true)) {
-            val ids = FileManager.sugar.pendingIds(UUID.fromString(args[1]))
-            sender.sendMessage(if (ids.isEmpty()) "적용 대기 중인 설탕 결과가 없습니다." else "적용 대기: ${ids.joinToString()}")
-            return
-        }
-        val owner = UUID.fromString(args[2])
-        require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 결과를 종료하세요." }
-        val request = UUID.randomUUID()
-        FileManager.sugar.void(request, actor(sender), owner, UUID.fromString(args[3]), args.drop(4).joinToString(" "))
-        sender.sendMessage("설탕 결과 ${args[3]}을(를) 종료했습니다. 감사 거래: $request")
     }
 }

@@ -29,7 +29,6 @@ class Limpi(private val plugin: Plugin, private val deliveryCommands: DeliveryCo
                 "transition" -> transitionCommands.execute(sender, args)
                 "escrow" -> recovery.escrow(sender, args)
                 "chest" -> recovery.chest(sender, args)
-                "sugar" -> recovery.sugar(sender, args)
                 else -> error("Unbound limpi command ${route.id}")
             }
         } catch (failure: ChestUnavailable) {

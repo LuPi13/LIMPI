@@ -184,7 +184,7 @@ class SqliteStateStoreTest {
                 tx.put("gacha_result/a/1", "applied"); tx.put("gacha_result/a/2", "waiting"); tx.put("gacha_apply_pending/a/2", "waiting")
                 tx.put("check/1", "state: REDEEMED"); tx.put("check/2", "state: ISSUED")
                 tx.put("market_listing/1", "state: SOLD"); tx.put("market_listing/2", "state: ACTIVE"); tx.put("market_listing/3", "state: RETURNED")
-                tx.put("sugar_result/a/1", "done"); tx.put("ability_selection_result/a/1", "waiting"); tx.put("ability_selection_pending/a/1", "waiting")
+                tx.put("ability_selection_result/a/1", "waiting"); tx.put("ability_selection_pending/a/1", "waiting")
                 "r"
             }
             now = 10_000L
@@ -192,10 +192,10 @@ class SqliteStateStoreTest {
             assertNull(store.get("gacha_result/a/1")); assertEquals("waiting", store.get("gacha_result/a/2"))
             assertNull(store.get("check/1")); assertNotNull(store.get("check/2"))
             assertNull(store.get("market_listing/1")); assertNotNull(store.get("market_listing/2")); assertNull(store.get("market_listing/3"))
-            assertNull(store.get("sugar_result/a/1")); assertNotNull(store.get("ability_selection_result/a/1"))
+            assertNotNull(store.get("ability_selection_result/a/1"))
             // Pending records are never prune candidates.
             assertNotNull(store.get("gacha_apply_pending/a/2")); assertNotNull(store.get("ability_selection_pending/a/1"))
-            assertEquals(PruneResult(5, 1), result)
+            assertEquals(PruneResult(4, 1), result)
         }
     }
 

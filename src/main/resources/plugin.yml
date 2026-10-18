@@ -140,7 +140,6 @@ permissions:
       limpi.admin.recovery.transition: true
       limpi.admin.recovery.escrow: true
       limpi.admin.recovery.chest: true
-      limpi.admin.recovery.sugar: true
   limpi.admin.recovery.review:
     description: List every pending recovery record with its resolve command (/limpi review)
     default: op
@@ -158,7 +157,4 @@ permissions:
     default: op
   limpi.admin.recovery.chest:
     description: Resolve interrupted chest windows while the owner is offline (/limpi chest resolve)
-    default: op
-  limpi.admin.recovery.sugar:
-    description: Inspect and void unresolvable pending sugar results (/limpi sugar)
     default: op

@@ -130,7 +130,6 @@ class FileManager {
                 SaleSettlement.KIND to SaleSettlement,
                 GachaSettlement.KIND to gachaSettlement, AbilitySelection.KIND to abilitySelection,
                 AbilityItemUse.KIND to AbilityItemUse(deliveryJournal),
-                com.github.lupi13.limpi.ability.AlchemySettlement.KIND to com.github.lupi13.limpi.ability.AlchemySettlement(deliveryJournal),
                 com.github.lupi13.limpi.ability.PickPocketSettlement.KIND to com.github.lupi13.limpi.ability.PickPocketSettlement(deliveryJournal),
             ))
             chestService = com.github.lupi13.limpi.chest.ChestService(state, repository)

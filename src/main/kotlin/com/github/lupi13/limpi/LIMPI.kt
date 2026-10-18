@@ -90,10 +90,7 @@ class LIMPI : JavaPlugin() {
             AbilityManager.registerAbilities()
             server.scheduler.runTaskTimer(this, Runnable { com.github.lupi13.limpi.quests.QuestManager.flush() },
                 com.github.lupi13.limpi.quests.QuestManager.FLUSH_TICKS, com.github.lupi13.limpi.quests.QuestManager.FLUSH_TICKS)
-            FileManager.delivery.afterClaim = { player ->
-                gachaEvents.recoverApplications(player)
-                com.github.lupi13.limpi.quests.Lotto.check(player)
-            }
+            FileManager.delivery.afterClaim = { player -> gachaEvents.recoverApplications(player) }
             server.onlinePlayers.forEach { FileManager.delivery.claim(it) }
         }
         logger.info("Done! (time elapsed: ${System.currentTimeMillis() - time} ms)")

@@ -94,9 +94,13 @@ class AbilityShop : Listener {
             return CatalogPrices.price(requireNotNull(plugin.config.get(path)) { "Missing ability shop price $path" }).units
         }
 
-        /** The current product for a code (GACHA or a grade), or null when it is unknown or misconfigured. */
+        /** TROLL 선택권은 팔지 않는다(2.6.0). 이 등급으로 돌아가는 일을 일부러 어렵게 한다. */
+        private val unsold = setOf(Grade.TROLL)
+
+        /** The current product for a code (GACHA or a grade), or null when it is unknown, not sold or misconfigured. */
         fun offer(code: String): ShopOffer? = try {
             val grade = if (code == "GACHA") null else Grade.valueOf(code)
+            if (grade in unsold) return null
             ShopOffer(code, PaperItemCodec.grant(getSelectTicketItem(grade, false, null)), Money(price(code)), BUNDLE)
         } catch (failure: Exception) {
             plugin.logger.warning("Invalid ability shop product $code: ${failure.message}"); null
@@ -107,6 +111,7 @@ class AbilityShop : Listener {
             val holder = MenuHolder(MenuKind.ABILITY_SHOP, 0, abilityShopGUIName, 9)
             val grades = listOf<Grade?>(null) + Grade.entries
             for ((index, grade) in grades.withIndex()) {
+                if (grade in unsold) continue // 다른 상품의 칸은 그대로 둔다.
                 val code = grade?.name ?: "GACHA"
                 val offer = offer(code) ?: continue
                 holder.inventory.setItem(index + 1, getSelectTicketItem(grade, true, player))

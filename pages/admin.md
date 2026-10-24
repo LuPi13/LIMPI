@@ -167,7 +167,7 @@ diamond: 500
 | `InitialMoney` | 1000 | 첫 소지금(원) |
 | `InitialTicket` / `InitialCOMMON` / `InitialRARE` / `InitialEPIC` | 10 / 1 / 1 / 1 | 첫 접속 때 주는 뽑기권·선택권 수 |
 | `TicketMoneyPrice` | 2000 | 뽑기권 가격(원) |
-| `SelectMoneyPrice` | TROLL 1000 ~ MYTHIC 5000 | 등급별 선택권 가격(원) |
+| `SelectMoneyPrice` | COMMON 1500 ~ MYTHIC 5000 | 등급별 선택권 가격(원). TROLL 선택권은 팔지 않음 |
 | `LEGENDARYProbability` / `EPICProbability` | | 기본 확률, 천장 증가량·시작 횟수, 픽업 확률 |
 | `TROLLProbability` / `RAREProbability` | 0.01 / 0.3 | TROLL·RARE 확률 |
 | `ForceTroll` | `true` | 뽑기에서 나온 TROLL 능력을 바로 강제 적용할지 |

@@ -4,6 +4,12 @@ import com.github.lupi13.limpi.config.*
 
 /** Settings of abilities ported from GotchaAbility. */
 object ArcherySpecs {
+    /**
+     * 매의 눈 무작위 추가 아이템에서 뺄 아이템(밸런스 조정용). 판매가 기대값의 절반을 차지하던 네더라이트 블록만 기본으로 뺀다.
+     * 관리자 전용·생존에서 얻을 수 없는 아이템은 이 목록과 상관없이 코드에서 항상 뺀다.
+     */
+    val HAWK_EYE_EXCLUDED = listOf("netherite_block")
+
     val all: Map<String, AbilitySpec> = linkedMapOf(
         "volley_shot" to AbilitySpec(listOf(
             number("spread", 5.0, 0.0, 85.0) // 왼손 일제 사격 화살의 무작위 편차(도, 표준편차)
@@ -19,7 +25,8 @@ object ArcherySpecs {
             number("vertical_range", 8.0, 0.0, 64.0),
             integer("glow_ticks", 200, 1, 72000),
             integer("exp_multiplier", 2, 1, 16),
-            integer("extra_items", 1, 0, 64)
+            integer("extra_items", 1, 0, 64),
+            itemList("excluded_items", HAWK_EYE_EXCLUDED)
         )),
         "hawk_eye_plus" to AbilitySpec(listOf(
             integer("cooldown_ticks", 200, 0, 72000),
@@ -27,7 +34,8 @@ object ArcherySpecs {
             number("vertical_range", 8.0, 0.0, 64.0),
             integer("glow_ticks", 200, 1, 72000),
             integer("exp_multiplier", 2, 1, 16),
-            integer("extra_items", 2, 0, 64)
+            integer("extra_items", 2, 0, 64),
+            itemList("excluded_items", HAWK_EYE_EXCLUDED)
         )),
         "lava_jump" to AbilitySpec(listOf(
             number("launch_speed", 0.75, 0.0, 10.0),

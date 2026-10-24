@@ -30,7 +30,7 @@ import java.util.logging.Level
  * 매의 눈 계열 공통 동작: 검 우클릭으로 주변 무작위 적 하나에 표식(발광)을 남기고,
  * 표식이 남은 적을 직접 처치하면 경험치를 늘리고 무작위 아이템을 추가로 떨어뜨립니다.
  * 추가 전리품은 사망 이벤트의 드롭 목록에만 더하며 인벤토리를 직접 건드리지 않습니다.
- * 설정: cooldown_ticks, horizontal_range, vertical_range, glow_ticks, exp_multiplier, extra_items.
+ * 설정: cooldown_ticks, horizontal_range, vertical_range, glow_ticks, exp_multiplier, extra_items, excluded_items(추가 아이템에서 뺄 아이템).
  */
 abstract class HawkEyeAbility(
     grade: Grade,
@@ -55,7 +55,8 @@ abstract class HawkEyeAbility(
 
     private class Mark(val target: UUID, val effect: AbilityEffect, val settings: com.github.lupi13.limpi.config.AbilitySettings)
 
-    private val candidatesByWorld = java.util.concurrent.ConcurrentHashMap<UUID, List<org.bukkit.inventory.ItemType>>()
+    /** (월드, 설정의 제외 목록) → 후보. 월드의 활성 기능은 로드 중 바뀌지 않고, 설정을 다시 읽으면 목록이 달라진다. */
+    private val candidatesByWorld = java.util.concurrent.ConcurrentHashMap<Pair<UUID, List<String>>, List<org.bukkit.inventory.ItemType>>()
 
     /** 플레이어 → 현재 표식. 발광 효과가 끝나면(시간 만료, 사망, 퇴장 등) 표식도 사라집니다. */
     private val marks: MutableMap<UUID, Mark> = mutableMapOf()
@@ -158,7 +159,7 @@ abstract class HawkEyeAbility(
         val extraCount = config.getInt("extra_items")
         event.droppedExp = (event.droppedExp.toLong() * expMultiplier).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
         // 원래 전리품은 늘리지 않습니다. 드롭 목록에는 몹이 주운 장비나 동물 상자 내용물도 들어 있어 복제가 됩니다.
-        val extras = randomItems(entity.world, extraCount)
+        val extras = randomItems(entity.world, extraCount, config.getItemList("excluded_items"))
         event.drops.addAll(extras)
         if (extras.isNotEmpty()) {
             killer.playSound(killer.location, bonusSound(), 1f, 0.5f)
@@ -181,12 +182,13 @@ abstract class HawkEyeAbility(
     }
 
     /** 관리자 전용·생존에서 얻을 수 없는 아이템을 제외하고, 이 월드에서 활성화된 아이템 중 무작위로 고릅니다(중복 가능). */
-    private fun randomItems(world: World, count: Int): List<ItemStack> {
+    private fun randomItems(world: World, count: Int, configured: List<String>): List<ItemStack> {
         if (count <= 0) return emptyList()
-        // A world's enabled features are fixed while it is loaded, so its candidate list is computed once.
-        val candidates = candidatesByWorld.getOrPut(world.uid) {
+        // A world's enabled features are fixed while it is loaded, so its candidate list is computed once per exclusion list.
+        val candidates = candidatesByWorld.getOrPut(world.uid to configured) {
             Registry.ITEM.filter { type ->
-                type.key.namespace == "minecraft" && type.key.key !in EXCLUDED_ITEMS && EXCLUDED_PATTERNS.none { it.matches(type.key.key) } &&
+                type.key.namespace == "minecraft" && type.key.key !in EXCLUDED_ITEMS && type.key.key !in configured &&
+                    EXCLUDED_PATTERNS.none { it.matches(type.key.key) } &&
                     world.isEnabled(type)
             }
         }

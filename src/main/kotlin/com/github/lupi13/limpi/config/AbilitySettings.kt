@@ -5,10 +5,20 @@ import org.bukkit.configuration.file.YamlConfiguration
 import java.nio.file.Files
 import java.nio.file.Path
 
-enum class SettingType { INTEGER, NUMBER, FLAG }
+enum class SettingType { INTEGER, NUMBER, FLAG, ITEM_LIST }
 data class AbilityField(val key: String, val default: Any, val type: SettingType, val minimum: Double = 0.0, val maximum: Double = Double.MAX_VALUE) {
     fun validate(raw: Any?): Any {
         if (type == SettingType.FLAG) { require(raw is Boolean) { "$key must be true or false" }; return raw }
+        if (type == SettingType.ITEM_LIST) {
+            require(raw is List<*>) { "$key must be a list of item ids" }
+            return raw.map { entry ->
+                require(entry is String) { "$key must contain only item ids" }
+                // "minecraft:netherite_block" and "netherite_block" name the same item.
+                val id = entry.removePrefix("minecraft:")
+                require(id.matches(Regex("[a-z0-9_]+"))) { "$key: invalid item id $entry" }
+                id
+            }.distinct()
+        }
         require(raw is Number) { "$key must be numeric" }
         if (type == SettingType.INTEGER) require(raw is Int || raw is Long) { "$key must be integral" }
         val value = raw.toDouble()
@@ -23,6 +33,8 @@ class AbilitySettings internal constructor(private val values: Map<String, Any>,
     fun getInt(key: String): Int = get(key) as Int
     fun getDouble(key: String): Double = (get(key) as Number).toDouble()
     fun getBoolean(key: String): Boolean = get(key) as Boolean
+    @Suppress("UNCHECKED_CAST")
+    fun getItemList(key: String): List<String> = get(key) as List<String>
     fun asConfiguration(): YamlConfiguration = YamlFiles.parse(yaml)
 }
 
@@ -68,3 +80,5 @@ class AbilitySpec(val fields: List<AbilityField>, private val check: (AbilitySet
 fun integer(key: String, default: Int, minimum: Int = 0, maximum: Int = Int.MAX_VALUE) = AbilityField(key, default, SettingType.INTEGER, minimum.toDouble(), maximum.toDouble())
 fun number(key: String, default: Double, minimum: Double = 0.0, maximum: Double = Float.MAX_VALUE.toDouble() / 4) = AbilityField(key, default, SettingType.NUMBER, minimum, maximum)
 fun flag(key: String, default: Boolean) = AbilityField(key, default, SettingType.FLAG)
+/** Lowercase vanilla item ids without namespace, such as `netherite_block`. */
+fun itemList(key: String, default: List<String>) = AbilityField(key, default, SettingType.ITEM_LIST)

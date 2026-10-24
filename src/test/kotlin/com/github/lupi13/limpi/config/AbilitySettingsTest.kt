@@ -20,7 +20,20 @@ class AbilitySettingsTest {
                 SettingType.INTEGER -> assertEquals((field.default as Number).toInt(), settings.getInt(field.key), code)
                 SettingType.NUMBER -> assertEquals((field.default as Number).toDouble(), settings.getDouble(field.key), code)
                 SettingType.FLAG -> assertEquals(field.default, settings.getBoolean(field.key), code)
+                SettingType.ITEM_LIST -> assertEquals(field.default, settings.getItemList(field.key), code)
             }
+        }
+    }
+    @Test fun `hawk eye exclusions default to netherite block and accept namespaced ids but not garbage`() {
+        val spec = AbilitySpecs.all.getValue("hawk_eye_plus")
+        assertEquals(listOf("netherite_block"), spec.load(file("cooldown_ticks: 200\n")).getItemList("excluded_items"))
+        assertEquals(listOf("netherite_block", "elytra"),
+            spec.load(file("excluded_items: [minecraft:netherite_block, elytra, elytra]\n")).getItemList("excluded_items"))
+        assertEquals(emptyList<String>(), spec.load(file("excluded_items: []\n")).getItemList("excluded_items"))
+        for (text in listOf("excluded_items: netherite_block\n", "excluded_items: [Netherite Block]\n", "excluded_items: [1]\n")) {
+            val path = file(text)
+            assertThrows(IllegalArgumentException::class.java) { spec.load(path) }
+            assertEquals(text, Files.readString(path))
         }
     }
     @Test fun `partial config adds only missing fields while preserving zero false and unknown values`() {

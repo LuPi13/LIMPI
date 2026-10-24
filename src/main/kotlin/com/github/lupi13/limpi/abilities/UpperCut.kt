@@ -9,7 +9,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.util.Vector
 
 object UpperCut : Ability(
-    grade = Grade.RARE,
+    grade = Grade.COMMON,
     displayName = Component.text("어퍼컷", NamedTextColor.DARK_BLUE),
     codeName = "upper_cut",
     material = Material.IRON_GOLEM_SPAWN_EGG,

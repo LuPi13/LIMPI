@@ -12,7 +12,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 
 object DefenseAllIn : Ability(
-    grade = Grade.RARE,
+    grade = Grade.EPIC,
     displayName = Component.text("아픈 건 싫으니까 방어력에 올인하려고 합니다.", NamedTextColor.LIGHT_PURPLE),
     codeName = "defense_all_in",
     material = Material.NETHERITE_CHESTPLATE,

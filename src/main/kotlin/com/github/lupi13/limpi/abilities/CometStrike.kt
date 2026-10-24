@@ -212,6 +212,7 @@ object CometStrike : Ability(
                                 }
                                 else {
                                     com.github.lupi13.limpi.platform.AbilityDamage.hit(player, player, player.ability!!.codeName, damage, self = true)
+                                    dropHands(player)
                                 }
 
                                 player.world.spawnParticle(
@@ -254,4 +255,15 @@ object CometStrike : Ability(
     override fun resetCooldowns(owner: java.util.UUID) { lastStrikeTime.remove(owner) }
     override fun stop() { lastSneakTime.clear(); lastStrikeTime.clear() }
 
+    /** 타이탄은 착지 충격에 양손의 아이템을 놓친다. 능력 고정 아이템은 놓치지 않는다. */
+    private fun dropHands(player: Player) {
+        if (player.isDead || !player.isOnline || com.github.lupi13.limpi.FileManager.delivery.blocked(player.uniqueId)) return
+        val inventory = player.inventory
+        for (slot in listOf(org.bukkit.inventory.EquipmentSlot.HAND, org.bukkit.inventory.EquipmentSlot.OFF_HAND)) {
+            val item = inventory.getItem(slot)
+            if (item.isEmpty || AbilityManager.activeItems.any { it.isSimilar(item) }) continue
+            inventory.setItem(slot, null)
+            player.world.dropItemNaturally(player.location, item)
+        }
+    }
 }

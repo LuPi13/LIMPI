@@ -25,6 +25,9 @@ object ImpactPolicy {
         }
     }
 
+    /** Vanilla falling speed limit (about 3.92 blocks/tick). */
+    val terminalSpeed: Double get() = speeds[TICKS]
+
     fun fallHeight(speed: Double): Double {
         if (speed.isNaN() || speed <= 0.0) return 0.0
         val last = speeds[TICKS]

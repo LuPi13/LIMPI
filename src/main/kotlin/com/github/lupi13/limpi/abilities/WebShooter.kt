@@ -1,6 +1,7 @@
 package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.ability.ImpactPolicy
+import com.github.lupi13.limpi.ability.ImpactTracker
 import com.github.lupi13.limpi.platform.normalizeSafely
 
 import fr.skytasul.guardianbeam.Laser
@@ -19,16 +20,15 @@ import org.bukkit.entity.Damageable
 import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.BoundingBox
 import org.bukkit.util.Vector
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
-import kotlin.math.sign
-import kotlin.math.sqrt
 import kotlin.random.Random
 
 object WebShooter : Ability(
@@ -314,67 +314,52 @@ object WebShooter : Ability(
             }
         }
     }
-    val impactTracked = mutableSetOf<java.util.UUID>()
+    private val impactTrackers = mutableMapOf<java.util.UUID, Pair<ImpactTracker, com.github.lupi13.limpi.platform.AbilityEffect>>()
 
     /**
      * 줄에 끌려가는 동안과 줄을 놓은 뒤 첫 착지까지, 땅·벽 충돌 피해를 실제 이동 속도로 정한다.
-     * 플레이어 이동은 클라이언트가 정하므로 player.velocity 대신 틱마다 위치 차이를 잰다.
+     * 플레이어 이동은 클라이언트가 정하므로 player.velocity 대신 이동 패킷(클라이언트 1틱)마다 위치 차이를 잰다.
+     * 서버 틱마다 재면 한 틱에 패킷 두 개가 도착할 때 속도가 두 배로 잡힌다.
      * 땅은 낙하 거리를 넘겨 바닐라 낙하 피해 규칙(블록, 방어구, 마법 부여)을 그대로 쓰고, 벽·천장은 FLY_INTO_WALL로 준다.
      */
     private fun trackImpact(player: Player) {
-        if (!impactTracked.add(player.uniqueId)) return
-        object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
-            var last = player.location
-            var previous: Vector? = null
-            val blocked = IntArray(3) // 지난 틱에 막혀 있던 방향(x, y, z)
-            init { setup {
-                own { impactTracked.remove(player.uniqueId) }
-            } }
-            override fun tick() {
-                val attached = isMoving.contains(player.uniqueId)
-                val location = player.location
-                if (player.isDead || !player.isOnline || location.world != last.world) { cancel(); return }
-                if (player.isGliding || player.isFlying || player.isInsideVehicle || player.isInWater || player.isInLava || player.isClimbing
-                    || player.gameMode == GameMode.CREATIVE || player.gameMode == GameMode.SPECTATOR) {
-                    // 바닐라가 낙하를 따로 처리하는 상태: 줄을 놓았으면 끝내고, 매달려 있으면 측정만 다시 시작한다.
-                    if (!attached) { cancel(); return }
-                    last = location; previous = null; blocked.fill(0)
-                    return
-                }
-
-                val moved = location.toVector().subtract(last.toVector())
-                last = location
-                if (moved.lengthSquared() > 100.0) { previous = null; blocked.fill(0); return } // 순간이동
-
-                val safe = player.getAttribute(Attribute.SAFE_FALL_DISTANCE)?.value ?: 3.0
-                val multiplier = config!!.getDouble("impactDamageMultiplier")
-                previous?.let { wallImpact(player, it, blocked, safe, multiplier) }
-                previous = moved
-
-                if (player.isOnGround) {
-                    if (!attached) cancel()
-                    return
-                }
-                // 올라가는 중에는 0, 내려가는 중에는 지금 아래로 떨어지는 속도에 닿는 자유낙하 높이
-                player.fallDistance = if (moved.y < 0) ImpactPolicy.fallDistance(-moved.y, safe, multiplier).toFloat() else 0f
-            }
-        }.runTaskTimer(plugin, 1L, 1L)
+        if (impactTrackers.containsKey(player.uniqueId)) return
+        val effect = com.github.lupi13.limpi.platform.AbilityRuntime.begin(player, codeName)
+        effect.own { impactTrackers.remove(player.uniqueId) }
+        impactTrackers[player.uniqueId] = ImpactTracker() to effect
     }
 
-    /** 지난 틱의 이동 방향에 막 블록이 생겼으면, 그 방향 속도를 잃은 만큼 피해를 준다. 바닥은 낙하 피해가 맡는다. */
-    private fun wallImpact(player: Player, before: Vector, blocked: IntArray, safe: Double, multiplier: Double) {
-        val box = player.boundingBox
-        val speeds = doubleArrayOf(before.x, before.y, before.z)
-        var lost = 0.0
-        for (axis in 0..2) {
-            val speed = speeds[axis]
-            val direction = if (abs(speed) < 1.0e-3 || (axis == 1 && speed < 0)) 0 else sign(speed).toInt()
-            val now = if (direction != 0 && touches(player, box, axis, direction)) direction else 0
-            if (now != 0 && blocked[axis] != now) lost += speed * speed
-            blocked[axis] = now
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onImpactMove(event: PlayerMoveEvent) {
+        val player = event.player
+        val (tracker, effect) = impactTrackers[player.uniqueId] ?: return
+        if (!effect.live()) { effect.close(); return }
+        val attached = isMoving.contains(player.uniqueId)
+        if (player.isGliding || player.isFlying || player.isInsideVehicle || player.isInWater || player.isInLava || player.isClimbing
+            || player.gameMode == GameMode.CREATIVE || player.gameMode == GameMode.SPECTATOR) {
+            // 바닐라가 낙하를 따로 처리하는 상태: 줄을 놓았으면 끝내고, 매달려 있으면 측정만 다시 시작한다.
+            if (attached) tracker.reset() else effect.close()
+            return
         }
-        val damage = ImpactPolicy.impactDamage(sqrt(lost), safe, multiplier)
+        val from = event.from; val to = event.to
+        if (from.world != to.world) { tracker.reset(); return }
+        val moved = to.toVector().subtract(from.toVector())
+        if (moved.lengthSquared() > 100.0) { tracker.reset(); return } // 순간이동
+
+        val half = player.width / 2
+        val box = BoundingBox(to.x - half, to.y, to.z - half, to.x + half, to.y + player.height, to.z + half)
+        val sample = tracker.sample(moved, config!!.getDouble("maxVelocity")) { axis, direction -> touches(player, box, axis, direction) }
+        val safe = player.getAttribute(Attribute.SAFE_FALL_DISTANCE)?.value ?: 3.0
+        val multiplier = config!!.getDouble("impactDamageMultiplier")
+        val damage = ImpactPolicy.impactDamage(sample.wallSpeed, safe, multiplier)
         if (damage > 0.0) player.damage(damage, DamageSource.builder(DamageType.FLY_INTO_WALL).build())
+
+        if (player.isOnGround) {
+            if (!attached) effect.close()
+            return
+        }
+        // 올라가는 중에는 0, 내려가는 중에는 아래로 떨어지는 속도에 닿는 자유낙하 높이
+        player.fallDistance = ImpactPolicy.fallDistance(sample.fallSpeed, safe, multiplier).toFloat()
     }
 
     private fun touches(player: Player, box: BoundingBox, axis: Int, direction: Int): Boolean {
@@ -387,7 +372,7 @@ object WebShooter : Ability(
         return player.world.hasCollisionsIn(probe)
     }
 
-    override fun release(owner: java.util.UUID) { isMoving.remove(owner); impactTracked.remove(owner) }
-    override fun stop() { isMoving.clear(); impactTracked.clear() }
+    override fun release(owner: java.util.UUID) { isMoving.remove(owner); impactTrackers.remove(owner)?.second?.close() }
+    override fun stop() { isMoving.clear(); impactTrackers.values.toList().forEach { it.second.close() }; impactTrackers.clear() }
 
 }

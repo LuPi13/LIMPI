@@ -174,7 +174,8 @@ diamond: 500
 | `PickUpChange` / `PickUpSpoiler` | 30 / 3 | 픽업 변경 주기(분), `/ability pickup`에 미리 보여 줄 픽업 수 |
 | `SellRecoveryHours` | 12 | 감소형 판매가의 판매 개수가 절반으로 회복되는 시간 |
 | `StockInterval` | 10 | 주식 변동 주기(분) |
-| `StockMinimumRatio` / `StockMaximumRatio` / `StockStandardDeviation` / `StockPriceDrag` | 0.7 / 1.3 / 0.1 / 0.1 | 주식 변동 폭과 기준 가격으로 돌아오는 정도 |
+| `StockVolatility` / `StockReversion` | 0.05 / 0.02 | 주식 1회 변동 폭(로그 가격 표준 편차)과 기준 가격으로 돌아오는 비율. 기본값이면 대부분 기준 가격의 0.5~1.5배 사이 |
+| `StockFeePercent` | 3 | 주식 매수·매도 수수료(%) |
 | `ChestUnlockPrice` / `ChestUpgradePrice` / `ChestAutoStorePrice` / `ChestEnderPrice` | | 상자 상점 가격([상자](chest.md#shop) 참고) |
 | `NoticeRetentionDays` | 30 | 공지 보관 일수(0 이하면 지우지 않음) |
 | `RecordRetentionDays` | 7 | 서버를 켤 때 이 일수가 지난 **끝난** 기록(완료된 지급·회수·능력 전환·장터 기록, 확정된 뽑기·선택 결과, 입금한 수표, 거래 장부)을 정리합니다(0 이하면 정리하지 않음). 처리 중이거나 확인 대기인 기록, 팔리지 않은 매물, 입금하지 않은 수표는 남깁니다. |

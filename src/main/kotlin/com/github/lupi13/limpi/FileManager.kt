@@ -103,7 +103,7 @@ class FileManager {
             pruneRecords(owner)
             repository = CachedPlayerRepository(SqliteProfilePersistence(state))
             bankService = BankService(state, repository)
-            stockTrading = com.github.lupi13.limpi.stock.StockTradingService(state, repository) { code ->
+            stockTrading = com.github.lupi13.limpi.stock.StockTradingService(state, repository, { owner.config.getInt("StockFeePercent") }) { code ->
                 val data = financial.getValue("stock")
                 if (code in com.github.lupi13.limpi.stock.StockCatalog.codes(data)) com.github.lupi13.limpi.stock.StockCatalog.price(data, code) else null
             }

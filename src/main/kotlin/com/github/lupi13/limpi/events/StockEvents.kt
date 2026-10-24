@@ -54,10 +54,8 @@ class StockEvents : Listener {
             StockCatalog.price(data, code, field)
 
         private fun policy() = StockPricePolicy(
-            plugin.config.getDouble("StockMinimumRatio"),
-            plugin.config.getDouble("StockMaximumRatio"),
-            plugin.config.getDouble("StockStandardDeviation"),
-            plugin.config.getDouble("StockPriceDrag"),
+            plugin.config.getDouble("StockVolatility"),
+            plugin.config.getDouble("StockReversion"),
         )
 
         fun stockFlow() {
@@ -81,7 +79,7 @@ class StockEvents : Listener {
                         val old = codes(stocks).associateWith { price(stocks, it).units }
                         val updated = old.mapValues { (code, current) ->
                             settings.next(price(stocks, code, "initialPrice").units, current,
-                                random.nextGaussian(1.0, settings.standardDeviation))
+                                random.nextGaussian())
                         }
                         for ((code, current) in updated) {
                             stocks.set("$code.previousPrice", old.getValue(code))
@@ -261,7 +259,11 @@ class StockEvents : Listener {
                         .append(Component.text("원", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false),
                     Component.text("좌클릭하여 매수, 우클릭하여 매도합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
                     Component.text("Shift를 누르면 100주/전량 거래합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
-                ))
+                ) + listOfNotNull(plugin.config.getInt("StockFeePercent").takeIf { it > 0 }?.let { fee ->
+                    Component.text("매수·매도 시 거래 금액의 ", NamedTextColor.WHITE)
+                        .append(Component.text("$fee%", NamedTextColor.GREEN))
+                        .append(Component.text("를 수수료로 냅니다.", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false)
+                }))
                 for (itemFlag in ItemFlag.entries) meta.addItemFlags(itemFlag)
                 item.itemMeta = meta
                 inventory.setItem(slot, item)
@@ -308,17 +310,21 @@ class StockEvents : Listener {
             val balance = runCatching { Accounts.balance(profile) }.getOrNull()
             require(balance != null) { "계좌 데이터에 오류가 있습니다. 관리자에게 확인을 요청하세요." }
             val count = if (event.isLeftClick) {
-                minOf(if (event.isShiftClick) 100L else 1L, balance.units / current.units)
+                var affordable = minOf(if (event.isShiftClick) 100L else 1L, balance.units / current.units)
+                while (affordable > 0 && trading.purchaseCost(current, affordable).units > balance.units) affordable--
+                affordable
             } else {
                 minOf(if (event.isShiftClick) 100L else 1L, trading.holding(profile, quote.code).count)
             }
             require(count > 0) { if (event.isLeftClick) "돈이 부족합니다!" else "보유 주식이 없습니다!" }
-            trading.trade(java.util.UUID.randomUUID(), player.uniqueId, quote.code, current, count,
+            val result = trading.trade(java.util.UUID.randomUUID(), player.uniqueId, quote.code, current, count,
                 if (event.isLeftClick) StockTrade.BUY else StockTrade.SELL)
             player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-            player.sendMessage(Component.text("${data.getString("${quote.code}.name")} (${quote.code})", NamedTextColor.AQUA)
+            var done = Component.text("${data.getString("${quote.code}.name")} (${quote.code})", NamedTextColor.AQUA)
                 .append(Component.text(" $count", NamedTextColor.GREEN))
-                .append(Component.text(if (event.isLeftClick) "주 매수 완료." else "주 매도 완료.", NamedTextColor.WHITE)))
+                .append(Component.text(if (event.isLeftClick) "주 매수 완료." else "주 매도 완료.", NamedTextColor.WHITE))
+            if (result.fee.units > 0) done = done.append(Component.text(" (수수료 ${result.fee.units}원)", NamedTextColor.GRAY))
+            player.sendMessage(done)
         } catch (failure: IllegalArgumentException) {
             player.sendMessage(Component.text(failure.message ?: "거래 조건이 유효하지 않습니다.", NamedTextColor.RED))
             player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1.0f, 2.0f)

@@ -5,19 +5,22 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class StockPolicyTest {
-    private val policy = StockPricePolicy(0.7, 1.3, 0.1, 0.1)
+    private val policy = StockPricePolicy(0.05, 0.02)
 
-    @Test fun `mean reversion uses real ratios rather than integer division`() {
-        assertEquals(52L, policy.next(100, 50, 1.0))
-        assertEquals(142L, policy.next(100, 150, 1.0))
+    @Test fun `mean reversion pulls the log price toward the initial price`() {
+        // ln 50 + 0.02 × ln 2 → 50 × 2^0.02 = 50.70
+        assertEquals(51L, policy.next(100, 50, 0.0))
+        // 200 × 0.5^0.02 = 197.24
+        assertEquals(197L, policy.next(100, 200, 0.0))
+        assertEquals(100L, policy.next(100, 100, 0.0))
+        // A one-sigma step is the same ratio up or down: ×e^0.05 or ÷e^0.05.
+        assertEquals(1051L, policy.next(1000, 1000, 1.0))
+        assertEquals(951L, policy.next(1000, 1000, -1.0))
     }
 
-    @Test fun `the final multiplier is bounded even for extreme random samples`() {
-        assertEquals(70L, policy.next(100, 100, -1_000_000.0))
-        assertEquals(130L, policy.next(100, 100, 1_000_000.0))
-    }
-
-    @Test fun `prices stay positive and never overflow Long`() {
+    @Test fun `prices stay positive and never overflow Long even for extreme samples`() {
+        assertEquals(1L, policy.next(100, 100, -1_000_000.0))
+        assertEquals(Long.MAX_VALUE, policy.next(100, 100, 1_000_000.0))
         assertEquals(1L, policy.next(1, 1, -100.0))
         assertEquals(Long.MAX_VALUE, policy.next(Long.MAX_VALUE, Long.MAX_VALUE, 100.0))
         assertThrows(IllegalArgumentException::class.java) { policy.next(0, 100, 1.0) }
@@ -25,12 +28,25 @@ class StockPolicyTest {
         assertThrows(IllegalArgumentException::class.java) { policy.next(100, 100, Double.NaN) }
     }
 
+    @Test fun `default settings keep the price mostly within half and one and a half times the initial price`() {
+        assertEquals(0.2513, policy.stationaryDeviation, 1e-4)
+        val random = java.util.Random(7)
+        var price = 10_000L
+        var inside = 0; var total = 0
+        repeat(200_000) { step ->
+            price = policy.next(10_000, price, random.nextGaussian())
+            if (step >= 1_000) { total++; if (price in 5_000..15_000) inside++ }
+        }
+        // About 94% of the time (log-normal, deviation 0.25); never collapses to 1 or explodes.
+        assertTrue(inside.toDouble() / total in 0.90..0.97, "${inside.toDouble() / total}")
+    }
+
     @Test fun `invalid settings fail before starting the scheduler`() {
-        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(0.0, 1.3, 0.1, 0.1) }
-        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(1.3, 0.7, 0.1, 0.1) }
-        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(0.7, 1.3, -0.1, 0.1) }
-        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(0.7, 1.3, 0.1, 1.1) }
-        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(Double.NaN, 1.3, 0.1, 0.1) }
+        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(-0.1, 0.02) }
+        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(0.05, 1.1) }
+        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(0.05, -0.1) }
+        assertThrows(IllegalArgumentException::class.java) { StockPricePolicy(Double.NaN, 0.02) }
+        assertEquals(Double.POSITIVE_INFINITY, StockPricePolicy(0.05, 0.0).stationaryDeviation)
     }
 
     @Test fun `sale releases acquisition cost independently of sale price`() {

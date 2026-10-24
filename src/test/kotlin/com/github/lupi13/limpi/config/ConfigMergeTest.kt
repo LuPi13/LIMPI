@@ -14,9 +14,15 @@ class ConfigMergeTest {
     private fun lines(text: String) = text.split('\n')
     private fun without(text: String, vararg removed: String) = lines(text).filterNot { line -> removed.any { line.startsWith(it) } }.joinToString("\n")
 
-    /** 2.0.0 replaced these (shop ratio, emerald ticket prices); an upgraded file keeps them, unused and untouched. */
+    /**
+     * 2.0.0 replaced shop ratio and emerald ticket prices; 2.6.0 replaced the stock ratio model (min/max multiplier,
+     * deviation and drag) with log mean reversion. An upgraded file keeps them, unused and untouched.
+     */
     private val replaced = listOf("DefaultShopRatio: 5  # 기본 상점 비율(미사용)", "TicketPrice: 20  # 뽑기권 가격(에메랄드)", "SelectPrice:  # 능력 선택권 가격(에메랄드)",
-        "  TROLL: 10", "  COMMON: 15", "  RARE: 20", "  EPIC: 30", "  LEGENDARY: 40", "  MYTHIC: 50")
+        "  TROLL: 10", "  COMMON: 15", "  RARE: 20", "  EPIC: 30", "  LEGENDARY: 40", "  MYTHIC: 50",
+        "StockMinimumRatio: 0.7  # 주식의 변동 최소 배율", "StockMaximumRatio: 1.3  # 주식의 변동 최대 배율",
+        "StockStandardDeviation: 0.1  # 주식 변동 표준 편차(추천: (최대배율 - 최소배율) / 5)",
+        "StockPriceDrag: 0.1  # 주식의 가격 회귀율, 반드시 1 이하로 할 것, 0으로 두면 중앙복귀 조정이 없으며 가격이 0으로 수렴 또는 무한대로 발산할 수 있음")
     private fun withoutReplaced(text: String): String {
         val result = lines(text).toMutableList()
         for (line in replaced) result.removeAt(result.indexOf(line).also { assertTrue(it >= 0, line) })
@@ -30,13 +36,14 @@ class ConfigMergeTest {
     @Test fun `every earlier shipped config is upgraded to the current template exactly`() {
         val chest = listOf("EnableChestSystem", "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice")
         val tickets = listOf("TicketMoneyPrice", "SelectMoneyPrice")
+        val stock = listOf("StockVolatility", "StockReversion", "StockFeePercent")
         val history = mapOf(
-            "1.4.0.yml" to listOf("SellRecoveryHours") + tickets,
-            "1.1.1.yml" to listOf("SellRecoveryHours") + tickets + "NoticeRetentionDays",
-            "before-816e68c.yml" to listOf("SellRecoveryHours") + tickets + chest + "NoticeRetentionDays",
-            "before-ca07fea.yml" to listOf("HelpUrl", "SellRecoveryHours") + tickets + chest + "NoticeRetentionDays",
-            "before-4722e13.yml" to listOf("HelpUrl", "SellRecoveryHours", "BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") + tickets + chest + "NoticeRetentionDays",
-            "before-803fc3f.yml" to listOf("HelpUrl", "SellRecoveryHours", "RecordRetentionDays", "BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") +
+            "1.4.0.yml" to listOf("SellRecoveryHours") + stock + tickets,
+            "1.1.1.yml" to listOf("SellRecoveryHours") + stock + tickets + "NoticeRetentionDays",
+            "before-816e68c.yml" to listOf("SellRecoveryHours") + stock + tickets + chest + "NoticeRetentionDays",
+            "before-ca07fea.yml" to listOf("HelpUrl", "SellRecoveryHours") + stock + tickets + chest + "NoticeRetentionDays",
+            "before-4722e13.yml" to listOf("HelpUrl", "SellRecoveryHours") + stock + listOf("BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") + tickets + chest + "NoticeRetentionDays",
+            "before-803fc3f.yml" to listOf("HelpUrl", "SellRecoveryHours") + stock + listOf("RecordRetentionDays", "BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") +
                 tickets + chest + "NoticeRetentionDays",
         )
         for ((name, added) in history) {

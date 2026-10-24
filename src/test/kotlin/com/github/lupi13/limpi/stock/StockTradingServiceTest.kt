@@ -134,6 +134,31 @@ class StockTradingServiceTest {
         }
     }
 
+    @Test fun `fees are charged on both sides, rounded down, and counted in cost basis and profit`() = withTrading { store, players, _ ->
+        val data = players.snapshot(owner); data.set("money", 1000); players.save(owner, data)
+        val buying = StockTradingService(store, players, { 3 }) { Money(101) }
+        assertEquals(Money(208), buying.purchaseCost(Money(101), 2))
+        // 202원어치 매수: 수수료 floor(6.06) = 6원.
+        val bought = buying.trade(UUID.randomUUID(), owner, "ABCD", Money(101), 2, StockTrade.BUY)
+        assertEquals(6L, bought.fee.units); assertEquals(792L, players.profile(owner).balance)
+        assertEquals(208L, bought.holding.costBasis.units)
+        // 300원어치 매도: 수수료 9원, 입금 291원, 손익 = 291 - 208.
+        val sold = StockTradingService(store, players, { 3 }) { Money(150) }.trade(UUID.randomUUID(), owner, "ABCD", Money(150), 2, StockTrade.SELL)
+        assertEquals(9L, sold.fee.units); assertEquals(1083L, players.profile(owner).balance)
+        assertEquals(83L, players.snapshot(owner).getLong("stock.ABCD.realizedProfit"))
+    }
+
+    @Test fun `the fee must fit in the balance and an invalid fee rate changes nothing`() = withTrading { store, players, _ ->
+        val data = players.snapshot(owner); data.set("money", 205); players.save(owner, data)
+        assertThrows(IllegalArgumentException::class.java) {
+            StockTradingService(store, players, { 3 }) { Money(100) }.trade(UUID.randomUUID(), owner, "ABCD", Money(100), 2, StockTrade.BUY)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            StockTradingService(store, players, { 101 }) { Money(100) }.trade(UUID.randomUUID(), owner, "ABCD", Money(100), 1, StockTrade.BUY)
+        }
+        assertEquals(205L, players.profile(owner).balance); assertFalse(players.snapshot(owner).contains("stock.ABCD"))
+    }
+
     @Test fun `signed realized losses and profit overflow remain atomic`() = withTrading { store, players, trading ->
         trading.buy()
         service(store, players, 50).trade(UUID.randomUUID(), owner, "ABCD", Money(50), 1, StockTrade.SELL)

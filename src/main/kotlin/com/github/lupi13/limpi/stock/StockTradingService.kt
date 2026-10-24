@@ -12,10 +12,17 @@ import java.util.UUID
 
 enum class StockTrade { BUY, SELL }
 data class StockTradeResult(val balance: Money, val holding: StockHolding, val total: Money,
-    val transaction: UUID, val replayed: Boolean)
+    val transaction: UUID, val replayed: Boolean, val fee: Money = Money(0))
 
+/** [feePercent] is charged on both purchases (added to the payment) and sales (taken from the proceeds). */
 class StockTradingService(private val store: StateStore, private val players: PlayerRepository,
-                          private val quote: (String) -> Money?) {
+                          private val feePercent: () -> Int = { 0 }, private val quote: (String) -> Money?) {
+    /** What a purchase of [quantity] at [price] costs including the fee. */
+    fun purchaseCost(price: Money, quantity: Long, percent: Int = feePercent()): Money {
+        val total = price.times(quantity)
+        return total + total.fee(percent)
+    }
+
     fun holding(data: FileConfiguration, code: String): StockHolding {
         require(code.matches(Regex("[0-9A-Z]{4}")))
         require(data.get("stock") == null || data.get("stock") is ConfigurationSection) { "Invalid stock portfolio" }
@@ -31,28 +38,31 @@ class StockTradingService(private val store: StateStore, private val players: Pl
 
     fun trade(request: UUID, owner: UUID, code: String, price: Money, quantity: Long, direction: StockTrade): StockTradeResult {
         require(code.matches(Regex("[0-9A-Z]{4}")) && price.units > 0 && quantity > 0)
+        val percent = feePercent()
+        require(percent in 0..100) { "Invalid stock fee $percent" }
         val committed = store.execute(request, BankService.fingerprint("STOCK_TRADE", owner.toString(), code,
-            price.units.toString(), quantity.toString(), direction.name)) { tx ->
+            price.units.toString(), quantity.toString(), direction.name, percent.toString())) { tx ->
             require(quote(code) == price) { "가격이 변경되었거나 종목이 삭제되었습니다. 새 화면을 확인하세요." }
             val data = Accounts.read(tx, owner)
             val previous = holding(data, code)
             val balance = Accounts.balance(data)
             val total = price.times(quantity)
+            val fee = total.fee(percent)
             // The balance or holding can change between the GUI check and this transaction; answer with the same wording.
-            if (direction == StockTrade.BUY) require(balance.units >= total.units) { "돈이 부족합니다!" }
+            if (direction == StockTrade.BUY) require(balance.units >= (total + fee).units) { "돈이 부족합니다!" }
             else require(quantity <= previous.count) { "보유 주식이 없습니다!" }
             val nextBalance = when (direction) {
-                StockTrade.BUY -> balance - total
-                StockTrade.SELL -> balance + total
+                StockTrade.BUY -> balance - total - fee
+                StockTrade.SELL -> balance + (total - fee)
             }
             val nextHolding = when (direction) {
-                StockTrade.BUY -> previous.buy(price, quantity)
+                StockTrade.BUY -> previous.buy(price, quantity, fee)
                 StockTrade.SELL -> previous.sell(quantity)
             }
             val rawProfit = data.get("stock.$code.realizedProfit")
             require(rawProfit == null || rawProfit is Int || rawProfit is Long) { "Invalid integral realized profit" }
             val previousProfit = (rawProfit as? Number)?.toLong() ?: 0L
-            val profit = if (direction == StockTrade.SELL) Math.subtractExact(total.units, (previous.costBasis - nextHolding.costBasis).units) else 0L
+            val profit = if (direction == StockTrade.SELL) Math.subtractExact((total - fee).units, (previous.costBasis - nextHolding.costBasis).units) else 0L
             val nextProfit = Math.addExact(previousProfit, profit)
             data.set("stock.$code.count", nextHolding.count)
             data.set("stock.$code.costBasis", nextHolding.costBasis.units)
@@ -62,6 +72,7 @@ class StockTradingService(private val store: StateStore, private val players: Pl
             YamlConfiguration().apply {
                 set("schemaVersion", 1); set("actor", owner.toString()); set("code", code); set("price", price.units)
                 set("quantity", quantity); set("direction", direction.name); set("total", total.units)
+                set("feePercent", percent); set("fee", fee.units)
                 set("before.balance", balance.units); set("before.count", previous.count); set("before.costBasis", previous.costBasis.units)
                 set("after.balance", nextBalance.units); set("after.count", nextHolding.count); set("after.costBasis", nextHolding.costBasis.units)
                 set("before.realizedProfit", previousProfit); set("profit", profit); set("after.realizedProfit", nextProfit)
@@ -71,6 +82,6 @@ class StockTradingService(private val store: StateStore, private val players: Pl
         val receipt = YamlFiles.parse(committed.entry.receipt)
         return StockTradeResult(Money(receipt.getLong("after.balance")),
             StockHolding(receipt.getLong("after.count"), Money(receipt.getLong("after.costBasis"))),
-            Money(receipt.getLong("total")), request, committed.replayed)
+            Money(receipt.getLong("total")), request, committed.replayed, Money(receipt.getLong("fee")))
     }
 }

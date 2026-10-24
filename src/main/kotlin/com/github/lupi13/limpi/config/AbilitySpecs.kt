@@ -15,7 +15,8 @@ object AbilitySpecs {
             number("maxVelocity", 1.0, 0.000001, 64.0),
             number("damageAmplifier", 8.0),
             number("knockbackAmplifier", 3.0, 0.0, 64.0),
-            number("liquidDragCoefficient", 0.3, 0.0, 64.0)
+            number("liquidDragCoefficient", 0.3, 0.0, 64.0),
+            number("impactDamageMultiplier", 1.0, 0.0, 64.0)
         )),
         "water_melee_boost" to AbilitySpec(listOf(
             number("damageBoost", 1.5)

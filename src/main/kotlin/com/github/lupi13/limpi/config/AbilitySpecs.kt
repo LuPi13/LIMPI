@@ -88,7 +88,8 @@ object AbilitySpecs {
         "killing_dice" to AbilitySpec(listOf(
             number("damageReduction", 0.5, 0.0, 1.0),
             number("instantKillDegree", 2.0, 0.000001),
-            integer("KillDelay", 10)
+            integer("KillDelay", 10),
+            number("referenceHealth", 40.0, 0.000001) // 최대 체력이 이보다 큰 대상은 즉사 확률이 (이 값 ÷ 최대 체력)배
         )),
         "judgement_ray" to AbilitySpec(listOf(
             integer("shootingDelayTicks", 60),

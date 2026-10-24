@@ -47,7 +47,12 @@ object KillingDice : Ability(
                 .append(Component.text(" = ", NamedTextColor.WHITE))
                 .append(Component.text(String.format("%.2f", (0.7).pow(config!!.getDouble("instantKillDegree"))), NamedTextColor.GREEN))
                 .append(Component.text("(=${String.format("%.2f", (0.7).pow(config!!.getDouble("instantKillDegree")) * 100)}%)", NamedTextColor.WHITE))
-                .append(Component.text("입니다.", NamedTextColor.WHITE))
+                .append(Component.text("입니다.", NamedTextColor.WHITE)),
+            Component.text("최대 체력이 ", NamedTextColor.WHITE)
+                .append(Component.text(config!!.getDouble("referenceHealth"), NamedTextColor.GREEN))
+                .append(Component.text("보다 많은 대상은 확률이 (", NamedTextColor.WHITE))
+                .append(Component.text(config!!.getDouble("referenceHealth"), NamedTextColor.GREEN))
+                .append(Component.text(" ÷ 최대 체력)배가 됩니다.", NamedTextColor.WHITE))
         )
     }
 
@@ -61,7 +66,8 @@ object KillingDice : Ability(
         if (target.isDead || !target.isValid) return
 
         // 대상의 잃은 체력에 비례하여 즉사 확률 계산
-        val instantKillProbability = ((1 - target.health / target.getAttribute(Attribute.MAX_HEALTH)!!.value).coerceIn(0.0, 1.0).pow(config!!.getDouble("instantKillDegree")))
+        val instantKillProbability = com.github.lupi13.limpi.ability.ExecutionChance.of(target.health,
+            target.getAttribute(Attribute.MAX_HEALTH)!!.value, config!!.getDouble("instantKillDegree"), config!!.getDouble("referenceHealth"))
         val killDelay = config!!.getInt("KillDelay")
         if (Random.nextDouble() <= instantKillProbability) {
             player.world.playSound(target.location, Sound.ENTITY_VEX_DEATH, 1.0F, 2.0F)

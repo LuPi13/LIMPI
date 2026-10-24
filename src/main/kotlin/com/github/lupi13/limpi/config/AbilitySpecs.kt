@@ -194,7 +194,7 @@ object AbilitySpecs {
             number("netherite_ingot", 0.001, 0.0, 1.0)
         )) { settings -> require(listOf("coal", "iron_nugget", "iron_ingot", "gold_nugget", "gold_ingot", "redstone", "lapis_lazuli", "emerald", "diamond", "netherite_ingot").sumOf(settings::getDouble).let { kotlin.math.abs(it - 1.0) <= 1.0e-9 }) { "Alchemy probabilities must sum to 1" } },
         "adaptive_defense" to AbilitySpec(listOf(
-            number("damage_reduction", 0.8, 0.0, 1.0)
+            number("damage_reduction", 0.85, 0.0, 1.0)
         ))
     ) + com.github.lupi13.limpi.config.specs.DodgeFamilySpecs.all + com.github.lupi13.limpi.config.specs.SmithAndShieldSpecs.all +
         com.github.lupi13.limpi.config.specs.CloakSpecs.all + com.github.lupi13.limpi.config.specs.StealthSpecs.all +

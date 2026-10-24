@@ -14,16 +14,33 @@ stone: 3
 cobbled_deepslate: 3
 netherrack: 3
 sandstone: 5
+red_sandstone: 5
 stone_bricks: 5
+andesite: 3
+diorite: 3
+granite: 3
+tuff: 5
+blackstone: 5
+basalt: 5
+bricks: 10
+nether_bricks: 10
+mud: 5
+mud_bricks: 5
+moss_block: 10
+quartz_block: 40
+prismarine: 30
+purpur_block: 15
+glowstone: 40
+sea_lantern: 90
 glass: 5
 clay: 10
 terracotta: 8
 snow_block: 5
 ice: 10
-packed_ice: 30
 end_stone: 10
 obsidian: 30
-white_wool: 10
+white_wool: 10  # 색은 염료로 물들인다
+# 콘크리트 가루는 염료로 다시 물들일 수 없어 16색을 모두 판다
 white_concrete_powder: 5
 light_gray_concrete_powder: 5
 gray_concrete_powder: 5
@@ -54,6 +71,24 @@ pale_oak_log: 15
 crimson_stem: 15
 warped_stem: 15
 
+# --- 염료(양털·유리·테라코타를 원하는 색으로) ---
+white_dye: 10
+light_gray_dye: 10
+gray_dye: 10
+black_dye: 10
+brown_dye: 10
+red_dye: 10
+orange_dye: 10
+yellow_dye: 10
+lime_dye: 10
+green_dye: 10
+cyan_dye: 10
+light_blue_dye: 10
+blue_dye: 10
+purple_dye: 10
+magenta_dye: 10
+pink_dye: 10
+
 # --- 자원 ---
 coal: 15
 iron_ingot: 30
@@ -70,6 +105,32 @@ bone: 10
 gunpowder: 30
 slime_ball: 15
 leather: 10
-blaze_rod: 45
-ender_pearl: 60
+blaze_rod: 120  # 2.6.0: 엔더의 눈 12개 ≈ 2,500원(약 15분)
+ender_pearl: 150
+
+# --- 생활·농사 ---
+bread: 15
+torch: 4
+arrow: 5
+flint: 5
+firework_rocket: 15
+sugar_cane: 10
+bamboo: 5
+nether_wart: 15
+wheat_seeds: 5
+beetroot_seeds: 5
+pumpkin_seeds: 10
+melon_seeds: 10
+carrot: 10
+potato: 10
+oak_sapling: 10
+spruce_sapling: 10
+birch_sapling: 10
+jungle_sapling: 10
+acacia_sapling: 10
+dark_oak_sapling: 10
+cherry_sapling: 10
+pale_oak_sapling: 10
+mangrove_propagule: 10
+experience_bottle: 100  # 비싸게: 30레벨 ≈ 200병 ≈ 2만 원
 # 팔지 않음: 에메랄드(뽑기는 돈으로 결제), 네더라이트, 탐험 전리품

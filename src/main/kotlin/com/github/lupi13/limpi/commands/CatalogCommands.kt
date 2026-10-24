@@ -6,6 +6,7 @@ import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.economy.*
 import com.github.lupi13.limpi.events.SellEvents
 import com.github.lupi13.limpi.events.ShopEvents
+import com.github.lupi13.limpi.platform.ItemNames
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
@@ -61,14 +62,14 @@ class CatalogCommands(private val plugin: Plugin) {
             if (kind == "sell") FileManager.saveSellPrice() else FileManager.saveShopPrice()
             val label = if (kind == "sell") "판매가격" else "구매가격"
             sender.sendMessage(when {
-                value == null -> Component.text(name, NamedTextColor.YELLOW)
+                value == null -> Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material))
                     .append(Component.text("의 ${label}을 삭제했습니다.", NamedTextColor.WHITE))
-                value is Map<*, *> -> Component.text(name, NamedTextColor.YELLOW)
+                value is Map<*, *> -> Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material))
                     .append(Component.text("의 판매가격을 ", NamedTextColor.WHITE)).append(moneyDisplay(value["price"] as Long))
                     .append(Component.text("원에서 ", NamedTextColor.WHITE)).append(moneyDisplay(value["half"] as Long))
                     .append(Component.text("개마다 절반, 최저 ", NamedTextColor.WHITE)).append(moneyDisplay(value["floor"] as Long))
                     .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE))
-                else -> Component.text(name, NamedTextColor.YELLOW)
+                else -> Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material))
                     .append(Component.text("의 ${label}을 ", NamedTextColor.WHITE))
                     .append(moneyDisplay(value as Long))
                     .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE))
@@ -107,7 +108,7 @@ class CatalogCommands(private val plugin: Plugin) {
         val rule = catalog.rule(name)
         val now = System.currentTimeMillis()
         val one = catalog.quote(listOf(SaleLine(0, name, 1)), FileManager.sales.counters(sender.uniqueId), now, SellEvents.recoveryMillis()).total
-        val message = Component.text(name, NamedTextColor.YELLOW).append(Component.text("의 현재 판매가격: ", NamedTextColor.WHITE))
+        val message = Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material)).append(Component.text("의 현재 판매가격: ", NamedTextColor.WHITE))
             .append(moneyDisplay(one.units)).append(Component.text("원", NamedTextColor.WHITE))
         val base = if (rule is SellRule.Same) SellRule.parse(FileManager.getSellPriceConfig().get(rule.base)) else rule
         sender.sendMessage(if (base is SellRule.Decaying) message.append(Component.text(

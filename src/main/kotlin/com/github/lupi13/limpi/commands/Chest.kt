@@ -69,7 +69,10 @@ class Chest(private val plugin: Plugin, private val enabled: Boolean) : CommandE
         val used = state.slots.filterNotNull()
         sender.sendMessage("$name($owner): ${state.rows}줄(${state.rows * 9}칸), ${used.size}칸 사용, " +
             "자동 저장 ${if (!state.autoOwned) "미구매" else if (state.autoEnabled) "켜짐" else "꺼짐"}, 엔더화 ${if (state.ender) "구매" else "미구매"}")
-        used.groupBy { runCatching { PaperItemCodec.item(it.payload, 1).type.name }.getOrDefault("UNKNOWN") }
-            .forEach { (type, stacks) -> sender.sendMessage("  $type x${stacks.sumOf { it.count }}") }
+        used.groupBy { runCatching { PaperItemCodec.item(it.payload, 1).type }.getOrNull() }
+            .forEach { (type, stacks) ->
+                val label = type?.let(com.github.lupi13.limpi.platform.ItemNames::of) ?: Component.text("UNKNOWN")
+                sender.sendMessage(Component.text("  ").append(label).append(Component.text(" x${stacks.sumOf { it.count }}")))
+            }
     }
 }

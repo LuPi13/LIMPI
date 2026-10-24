@@ -43,7 +43,7 @@ class MarketCommands(private val plugin: Plugin) {
                         it.state == com.github.lupi13.limpi.market.ListingState.ESCROW } < 54) { "장터에 아이템이 가득 찼습니다. (54개 이상은 업데이트 예정)" }
                     val name = MarketEvents.itemName(item, item.type.name)
                     if (!FileManager.delivery.register(sender, request, code, name, Money(units))) return true
-                    sender.sendMessage(Component.text(name, NamedTextColor.GREEN)
+                    sender.sendMessage(Component.text("", NamedTextColor.GREEN).append(com.github.lupi13.limpi.platform.ItemNames.of(item))
                         .append(Component.text("을(를) 장터에 추가했습니다.", NamedTextColor.WHITE)))
                     FileManager.delivery.claim(sender, quiet = true)
                 }
@@ -57,7 +57,8 @@ class MarketCommands(private val plugin: Plugin) {
                     }
                     // The item is never destroyed: it returns to the owner's claim storage.
                     FileManager.marketTrades.withdraw(request, owner, listing.id, sender.uniqueId.toString())
-                    sender.sendMessage(Component.text(listing.name, NamedTextColor.GREEN)
+                    sender.sendMessage(Component.text("", NamedTextColor.GREEN)
+                        .append(com.github.lupi13.limpi.platform.ItemNames.of(listing.item.payload, listing.name))
                         .append(Component.text("을(를) 장터에서 삭제했습니다.", NamedTextColor.WHITE)))
                     if (owner == sender.uniqueId) FileManager.delivery.claim(sender, quiet = true)
                 }

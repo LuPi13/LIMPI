@@ -110,7 +110,9 @@ class MarketEvents : Listener {
         try {
             val listing = FileManager.market.find(quote.id)
             if (listing == null || listing.state != ListingState.ACTIVE || listing.price.units != quote.price) throw MarketException(MarketFailure.STALE_QUOTE)
-            val label = "${itemName(PaperItemCodec.item(listing.item.payload, 1))}(${listing.code})"
+            val label = Component.text("", NamedTextColor.AQUA)
+                .append(com.github.lupi13.limpi.platform.ItemNames.of(listing.item.payload, listing.name))
+                .append(Component.text("(${listing.code})"))
             if (event.isLeftClick) {
                 if (!FileManager.delivery.claim(player)) return
                 val balance = EconomyText.balance(player.uniqueId)
@@ -123,13 +125,13 @@ class MarketEvents : Listener {
                 }
                 val receipt = FileManager.marketTrades.buy(transaction, player.uniqueId, quote.id, quote.price)
                 player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-                player.sendMessage(Component.text(label, NamedTextColor.AQUA)
+                player.sendMessage(label
                     .append(Component.text("을(를) 구매했습니다.", NamedTextColor.WHITE)))
                 plugin.server.getPlayer(receipt.seller)?.let { seller ->
                     seller.playSound(seller, Sound.BLOCK_CHAIN_BREAK, 1F, 1.3F)
                     seller.sendMessage(playerDisplay(player)
                         .append(Component.text("님이 ", NamedTextColor.WHITE))
-                        .append(Component.text(label, NamedTextColor.AQUA))
+                        .append(label)
                         .append(Component.text("을(를) 구매했습니다.", NamedTextColor.WHITE)))
                     seller.sendMessage(Component.text("판매 수수료 5%(", NamedTextColor.WHITE)
                         .append(moneyDisplay(receipt.fee))
@@ -142,11 +144,11 @@ class MarketEvents : Listener {
                 plugin.server.getPlayer(listing.seller)?.sendMessage(Component.text(getRandomPrefix(), NamedTextColor.WHITE)
                     .append(playerDisplay(player))
                     .append(Component.text("님이 ", NamedTextColor.WHITE))
-                    .append(Component.text(label, NamedTextColor.AQUA))
+                    .append(label)
                     .append(Component.text("을(를) 깎아달라고 조릅니다.", NamedTextColor.WHITE)))
                 player.sendMessage(playerDisplay(listing.sellerName)
                     .append(Component.text("님에게 ", NamedTextColor.WHITE))
-                    .append(Component.text(label, NamedTextColor.AQUA))
+                    .append(label)
                     .append(Component.text("을(를) 깎아달라고 졸랐습니다.", NamedTextColor.WHITE)))
             }
         } catch (failure: BankException) {

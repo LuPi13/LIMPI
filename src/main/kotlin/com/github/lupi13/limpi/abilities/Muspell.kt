@@ -189,7 +189,9 @@ object Muspell : Ability(
 
                     val entities = world.getNearbyEntities(hitLocation, damageRange*2, damageRange*2, damageRange*2)
                     entities.removeIf { it !is Damageable || !AbilityManager.isEnemy(player, it) }
-                    entities.removeIf { it.location.distance(hitLocation) > damageRange }
+                    // 거리는 몸 중심이 아니라 판정 상자 표면까지 잰다. 근접 신관 거리 안이면 직접 맞은 것과 같은 피해이고, 큰 몹도 손해 보지 않는다.
+                    val surface = { entity: org.bukkit.entity.Entity -> com.github.lupi13.limpi.ability.HomingPolicy.surfaceDistance(entity.boundingBox, hitPosition) }
+                    entities.removeIf { surface(it) > damageRange }
 
                     for (entity in entities) {
                         // 불을 먼저 붙여야 이 피해로 죽은 동물이 익힌 고기를 떨어뜨린다(바닐라는 죽는 순간 불타는지로 정한다).
@@ -197,7 +199,7 @@ object Muspell : Ability(
                         val previousFire = entity.fireTicks
                         entity.fireTicks = maxOf(previousFire, fireTicks)
                         if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity as Damageable, codeName,
-                                damage / entity.boundingBox.center.subtract(hitLocation.toVector()).length().coerceIn(1.0, damageRange.coerceAtLeast(1.0)))) {
+                                damage / surface(entity).coerceIn(1.0, damageRange.coerceAtLeast(1.0)))) {
                             if (entity.isValid) entity.fireTicks = previousFire
                         }
                     }

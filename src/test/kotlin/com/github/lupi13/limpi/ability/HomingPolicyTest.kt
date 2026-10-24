@@ -33,6 +33,14 @@ class HomingPolicyTest {
         assertEquals(0.0, HomingPolicy.angle(forward, HomingPolicy.steer(forward, Vector(0, 0, -1), forward, deg(4.0), deg(45.0), 1.0)), 1e-9)
     }
 
+    @Test fun `surface distance is zero inside and measured to the nearest face or edge outside`() {
+        val box = org.bukkit.util.BoundingBox(-0.3, 0.0, -0.3, 0.3, 1.8, 0.3)
+        assertEquals(0.0, HomingPolicy.surfaceDistance(box, Vector(0.0, 1.0, 0.0)))
+        // 근접 신관 1블록 밖에서 터져도 표면까지 1 → 피해 감소 없음(중심 기준이면 1.3).
+        assertEquals(1.0, HomingPolicy.surfaceDistance(box, Vector(1.3, 1.0, 0.0)), 1e-9)
+        assertEquals(Math.sqrt(2.0), HomingPolicy.surfaceDistance(box, Vector(1.3, 2.8, 0.0)), 1e-9)
+    }
+
     @Test fun `lead point follows the target velocity up to the lead limit`() {
         val point = HomingPolicy.leadPoint(Vector(0, 0, 0), Vector(0, 0, 15), Vector(0.2, 0.0, 0.0), 1.5, 20.0)
         assertEquals(Vector(2.0, 0.0, 15.0).distance(point), 0.0, 1e-9)

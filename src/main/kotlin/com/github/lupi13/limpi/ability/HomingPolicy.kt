@@ -42,6 +42,14 @@ object HomingPolicy {
         return direction.multiply(speed)
     }
 
+    /** [point]에서 [box] 표면까지의 거리. 안에 있으면 0. */
+    fun surfaceDistance(box: org.bukkit.util.BoundingBox, point: Vector): Double {
+        val x = point.x.coerceIn(box.minX, box.maxX)
+        val y = point.y.coerceIn(box.minY, box.maxY)
+        val z = point.z.coerceIn(box.minZ, box.maxZ)
+        return Vector(x, y, z).distance(point)
+    }
+
     /** 목표가 [targetVelocity](블록/틱)로 움직일 때 [speed]로 날아가 만날 지점을 겨냥한다. 예측 시간은 [maxLeadTicks]까지. */
     fun leadPoint(from: Vector, target: Vector, targetVelocity: Vector, speed: Double, maxLeadTicks: Double): Vector {
         val ticks = (target.distance(from) / speed).coerceAtMost(maxLeadTicks)

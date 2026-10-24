@@ -5,17 +5,18 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class StockPolicyTest {
-    private val policy = StockPricePolicy(0.05, 0.02)
+    /** config.yml defaults. */
+    private val policy = StockPricePolicy(0.025, 0.005)
 
     @Test fun `mean reversion pulls the log price toward the initial price`() {
-        // ln 50 + 0.02 × ln 2 → 50 × 2^0.02 = 50.70
-        assertEquals(51L, policy.next(100, 50, 0.0))
-        // 200 × 0.5^0.02 = 197.24
-        assertEquals(197L, policy.next(100, 200, 0.0))
+        // ln 5000 + 0.005 × ln 2 → 5000 × 2^0.005 = 5017.36
+        assertEquals(5017L, policy.next(10_000, 5_000, 0.0))
+        // 20000 × 0.5^0.005 = 19930.87
+        assertEquals(19931L, policy.next(10_000, 20_000, 0.0))
         assertEquals(100L, policy.next(100, 100, 0.0))
-        // A one-sigma step is the same ratio up or down: ×e^0.05 or ÷e^0.05.
-        assertEquals(1051L, policy.next(1000, 1000, 1.0))
-        assertEquals(951L, policy.next(1000, 1000, -1.0))
+        // A one-sigma step is the same ratio up or down: ×e^0.025 or ÷e^0.025.
+        assertEquals(1025L, policy.next(1000, 1000, 1.0))
+        assertEquals(975L, policy.next(1000, 1000, -1.0))
     }
 
     @Test fun `prices stay positive and never overflow Long even for extreme samples`() {
@@ -29,13 +30,13 @@ class StockPolicyTest {
     }
 
     @Test fun `default settings keep the price mostly within half and one and a half times the initial price`() {
-        assertEquals(0.2513, policy.stationaryDeviation, 1e-4)
+        assertEquals(0.2503, policy.stationaryDeviation, 1e-4)
         val random = java.util.Random(7)
         var price = 10_000L
         var inside = 0; var total = 0
-        repeat(200_000) { step ->
+        repeat(400_000) { step ->
             price = policy.next(10_000, price, random.nextGaussian())
-            if (step >= 1_000) { total++; if (price in 5_000..15_000) inside++ }
+            if (step >= 2_000) { total++; if (price in 5_000..15_000) inside++ }
         }
         // About 94% of the time (log-normal, deviation 0.25); never collapses to 1 or explodes.
         assertTrue(inside.toDouble() / total in 0.90..0.97, "${inside.toDouble() / total}")

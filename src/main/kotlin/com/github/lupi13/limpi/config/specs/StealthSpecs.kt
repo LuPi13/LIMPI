@@ -32,5 +32,8 @@ object StealthSpecs {
                 "window_ms/50 + counter_delay_ticks must be shorter than stance_ticks"
             }
         },
+        "pick_pocket" to AbilitySpec(listOf(
+            integer("cooldown_ticks", 200, 0, 72_000), // 낚아채기에 성공한 뒤 다시 낚아챌 수 있을 때까지
+        )),
     )
 }

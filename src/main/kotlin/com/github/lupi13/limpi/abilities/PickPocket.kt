@@ -28,8 +28,17 @@ object PickPocket : Ability(
         Component.text("낚싯대", NamedTextColor.YELLOW).append(Component.text("로 엔티티를 당길 때, 해당 대상의", NamedTextColor.WHITE)),
         Component.text("인벤토리에서 무작위 아이템을 하나 낚아챕니다.", NamedTextColor.WHITE)
     ),
+    needFile = true
 ) {
+    override val details: List<Component> by settingsCached {
+        description + Component.text("쿨타임: ", NamedTextColor.WHITE)
+            .append(Component.text("${config!!.getInt("cooldown_ticks") / 20.0}", NamedTextColor.GREEN))
+            .append(Component.text("초", NamedTextColor.WHITE))
+    }
+
     private val processed = linkedSetOf<UUID>()
+    /** 낚아채기에 성공한 시각과 그때의 쿨타임(ms). 능력이 바뀔 때만 지웁니다. */
+    private val lastSteal = mutableMapOf<UUID, Pair<Long, Int>>()
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onCatch(event: PlayerFishEvent) {
@@ -37,6 +46,12 @@ object PickPocket : Ability(
         val player = event.player
         val target = event.caught as? LivingEntity ?: return
         if (player.ability != this || !eligible(player, target)) return
+        lastSteal[player.uniqueId]?.let { (at, cooldown) ->
+            if (System.currentTimeMillis() - at < cooldown) {
+                AbilityManager.showCooldown(player, cooldown, at)
+                return
+            }
+        }
         val hook = event.hook.uniqueId
         if (!processed.add(hook)) return
         while (processed.size > 256) processed.remove(processed.first())
@@ -50,8 +65,8 @@ object PickPocket : Ability(
                 val victim = world.getEntity(targetId) as? LivingEntity ?: return
                 if (!eligible(player, victim)) return
                 try {
-                    if (victim is Player) stealPlayer(player, victim, hook)
-                    else stealEntity(player, victim, position)
+                    val stolen = if (victim is Player) stealPlayer(player, victim, hook) else stealEntity(player, victim, position)
+                    if (stolen) lastSteal[player.uniqueId] = System.currentTimeMillis() to this@PickPocket.config!!.getInt("cooldown_ticks") * 50
                 } catch (failure: Exception) {
                     plugin.logger.log(Level.WARNING, "Pick pocket $hook from $targetId failed", failure)
                 }
@@ -71,40 +86,42 @@ object PickPocket : Ability(
     private fun protected(item: ItemStack?): Boolean = item == null || item.type.isAir ||
         AbilityManager.activeItems.any { it.isSimilar(item) } || EntityThrower.isRestrictHand(item)
 
-    private fun stealPlayer(player: Player, victim: Player, hook: UUID) {
+    private fun stealPlayer(player: Player, victim: Player, hook: UUID): Boolean {
         val id = UUID.nameUUIDFromBytes("pick-pocket:$hook:${victim.uniqueId}:${player.uniqueId}".toByteArray(Charsets.UTF_8))
-        if (FileManager.removals.find(victim.uniqueId, id) != null) return
-        if (!FileManager.delivery.claim(player) || !FileManager.delivery.claim(victim)) return
-        if (player.ability != this || !eligible(player, victim)) return
+        if (FileManager.removals.find(victim.uniqueId, id) != null) return false
+        if (!FileManager.delivery.claim(player) || !FileManager.delivery.claim(victim)) return false
+        if (player.ability != this || !eligible(player, victim)) return false
         val before = PaperItemCodec.snapshot(victim, includeOffHand = true, includeArmor = true)
         val candidates = before.indices.filter { slot ->
             val stack = before[slot] ?: return@filter false
             slot != victim.ability?.restrictedSlot && !protected(PaperItemCodec.item(stack.payload, stack.count))
         }
-        val slot = candidates.randomOrNull() ?: return
+        val slot = candidates.randomOrNull() ?: return false
         val terms = PickPocketTerms(player.uniqueId, slot, requireNotNull(before[slot]))
         val after = before.toMutableList().apply { this[slot] = null }
-        if (!FileManager.delivery.remove(victim, id, PickPocketSettlement.KIND, terms.encode(), before, after, claimed = true)) return
+        if (!FileManager.delivery.remove(victim, id, PickPocketSettlement.KIND, terms.encode(), before, after, claimed = true)) return false
         FileManager.delivery.claim(player, quiet = true)
+        return true
     }
 
-    private fun stealEntity(player: Player, victim: LivingEntity, position: org.bukkit.Location) {
+    private fun stealEntity(player: Player, victim: LivingEntity, position: org.bukkit.Location): Boolean {
         val inventory: Inventory? = when (victim) {
             is AbstractHorse -> victim.inventory
             is Villager -> victim.inventory
             else -> null
         }
         if (inventory != null) {
-            val slot = inventory.contents.indices.filter { !protected(inventory.getItem(it)) }.randomOrNull() ?: return
+            val slot = inventory.contents.indices.filter { !protected(inventory.getItem(it)) }.randomOrNull() ?: return false
             val original = requireNotNull(inventory.getItem(slot)).clone()
             transferWorldItem(player, position, original, { inventory.setItem(slot, null) }, { inventory.setItem(slot, original) })
         } else {
-            val equipment = victim.equipment ?: return
+            val equipment = victim.equipment ?: return false
             val slots = listOf(EquipmentSlot.HAND, EquipmentSlot.OFF_HAND, EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD)
-            val slot = slots.filter { !protected(equipment.getItem(it)) }.randomOrNull() ?: return
+            val slot = slots.filter { !protected(equipment.getItem(it)) }.randomOrNull() ?: return false
             val original = equipment.getItem(slot).clone()
             transferWorldItem(player, position, original, { equipment.setItem(slot, null) }, { equipment.setItem(slot, original) })
         }
+        return true
     }
 
     /** NPC inventory and its dropped item both remain world state; never mint a DB delivery from unsaved world state. */
@@ -122,5 +139,6 @@ object PickPocket : Ability(
         }
     }
 
-    override fun stop() { processed.clear() }
+    override fun resetCooldowns(owner: UUID) { lastSteal.remove(owner) }
+    override fun stop() { processed.clear(); lastSteal.clear() }
 }

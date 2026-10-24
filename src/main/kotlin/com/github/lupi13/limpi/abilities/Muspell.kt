@@ -18,7 +18,6 @@ import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import kotlin.math.acos
 
 object Muspell : Ability(
     grade = Grade.EPIC,
@@ -77,8 +76,11 @@ object Muspell : Ability(
         val velocity = config!!.getDouble("velocity")
         val fireTicks = config!!.getInt("fire_ticks")
         val trackSearchDistance = config!!.getDouble("track_search_distance")
-        val trackSearchAngle = config!!.getDouble("track_search_angle")
-        val trackingCoefficient = config!!.getDouble("tracking_coefficient")
+        val trackSearchAngle = Math.toRadians(config!!.getDouble("track_search_angle"))
+        val maxTurn = Math.toRadians(config!!.getDouble("max_turn_per_tick"))
+        val maxTotalTurn = Math.toRadians(config!!.getDouble("max_total_turn"))
+        val proximityFuse = config!!.getDouble("proximity_fuse")
+        val maxLeadTicks = config!!.getDouble("max_lead_ticks")
 
         object: com.github.lupi13.limpi.platform.AbilityRunnable(player, codeName) {
             val fireball = spawn(player.eyeLocation, Marker::class.java) { marker ->
@@ -87,83 +89,75 @@ object Muspell : Ability(
             }
             var tick = 0
             var trackTarget: Damageable? = null
-            var movingVector = player.location.direction.multiply(velocity)
+            /** 추적 대상의 지난 틱 중심(속도 추정용). 대상이 바뀌면 지운다. */
+            var lastTargetCenter: org.bukkit.util.Vector? = null
+            /** 발사 방향. 진행 방향은 여기서 max_total_turn 이상 꺾이지 않는다(유턴 없음). */
+            val launch = player.location.direction.normalizeSafely()
+            var movingVector = launch.clone().multiply(velocity)
+
+            /** 벽에 가리지 않았는지. */
+            fun visible(to: org.bukkit.util.Vector): Boolean {
+                val offset = to.clone().subtract(fireball.location.toVector())
+                if (offset.lengthSquared() == 0.0) return true
+                return world.rayTraceBlocks(fireball.location, offset.clone().normalizeSafely(), offset.length(),
+                    FluidCollisionMode.NEVER, true)?.hitBlock == null
+            }
+
             override fun tick() {
                 if (!fireball.isValid || fireball.world.uid != world.uid) { cancel(); return }
-                if (trackTarget?.let { !it.isValid || it.isDead || it.world.uid != world.uid } == true) trackTarget = null
-                // 추적 목표 탐색
-                // 5틱마다 탐색
+                if (trackTarget?.let { !it.isValid || it.isDead || it.world.uid != world.uid } == true) { trackTarget = null; lastTargetCenter = null }
                 /*
-                * 추적 대상 탐색 알고리즘
-                * 1. 투사체가 진행하는 방향으로 distance / 2.0 만큼 떨어진 위치에서
-                *    getNearbyEntities(distance, distance, distance)를 통해 주변 엔티티를 탐색합니다.
-                * 2. 탐색된 엔티티 중 isEnemy()가 true인 엔티티를 필터링합니다.
-                * 3. 필터링된 엔티티 중, 투사체가 있는 위치로부터 distance 이내에 있는 엔티티를 필터링합니다.
-                * 5. 필터링된 엔티티들에 대해, 투사체의 진행 방향 벡터와 엔티티의 위치 벡터 사이의 각도를 계산합니다.
-                * 6. 목적합수: 필터링된 엔티티들에 대해, 투사체벡터와 투사체-엔티티 벡터를 외적합니다.
-                *             목적함수의 값이 가장 작은 엔티티를 추적 대상으로 선택합니다.
+                 * 추적 대상 탐색(5틱마다, 대상이 있어도 더 나은 대상으로 바꿀 수 있음)
+                 * 1. 진행 방향으로 탐색 거리의 절반만큼 앞을 중심으로 주변 적을 모은다.
+                 * 2. 탐색 거리 이내, 진행 방향에서 track_search_angle 이내, 발사 방향에서 max_total_turn 이내(갈 수 있는 곳),
+                 *    벽에 가리지 않은 적만 남긴다.
+                 * 3. 비행선에서 가장 가까운 적(진행 방향과 적 방향 벡터의 외적 크기가 가장 작은 적)을 고른다.
                  */
-                if ((tick % 5 == 0) && trackTarget == null) {
-                    val trackSearchLocation = fireball.location.clone().add(movingVector.clone().multiply(trackSearchDistance / 2))
+                if (tick % 5 == 0) {
+                    val direction = movingVector.clone().normalizeSafely()
+                    val trackSearchLocation = fireball.location.clone().add(direction.clone().multiply(trackSearchDistance / 2))
                     val entities = trackSearchLocation.getNearbyEntities(trackSearchDistance, trackSearchDistance, trackSearchDistance)
-
                     entities.removeIf { it !is Damageable || !AbilityManager.isEnemy(player, it) }
                     entities.removeIf { it.boundingBox.center.distance(fireball.location.toVector()) > trackSearchDistance }
 
-
                     var best: Damageable? = null
                     var bestValue = Double.MAX_VALUE
-
                     for (entity in entities) {
                         val entityVector = entity.boundingBox.center.subtract(fireball.location.toVector())
                         if (entityVector.lengthSquared() == 0.0) { best = entity as Damageable; break }
-                        val angle = acos(movingVector.clone().normalizeSafely().dot(entityVector.clone().normalizeSafely()).coerceIn(-1.0, 1.0))
-                        if (angle > Math.toRadians(trackSearchAngle)) continue
-
-                        // rayTrace를 통해 벽 등에 가려지지 않는지 확인
-                        val rayTraceBlock = world.rayTraceBlocks(
-                            fireball.location,
-                            entityVector.clone().normalizeSafely(),
-                            entityVector.length(),
-                            FluidCollisionMode.NEVER,
-                            true
-                        )
-                        if (rayTraceBlock != null && rayTraceBlock.hitBlock != null) continue
-
-                        val crossValue = (movingVector.clone().crossProduct(entityVector.clone())).length()
-
+                        if (com.github.lupi13.limpi.ability.HomingPolicy.angle(direction, entityVector) > trackSearchAngle) continue
+                        if (com.github.lupi13.limpi.ability.HomingPolicy.angle(launch, entityVector) > maxTotalTurn) continue
+                        if (!visible(entity.boundingBox.center)) continue
+                        val crossValue = direction.clone().crossProduct(entityVector).length()
                         if (crossValue < bestValue) {
                             best = entity as Damageable
                             bestValue = crossValue
                         }
                     }
-
+                    if (best?.uniqueId != trackTarget?.uniqueId) lastTargetCenter = null
                     trackTarget = best
                 }
 
-                // 추적 대상과 각도가 90도 이상(dotProduct)이면 추적 대상 초기화
-                if (trackTarget != null && trackTarget!!.world != world) trackTarget = null
-                if (trackTarget != null) {
-                    val targetVector = trackTarget!!.boundingBox.center.subtract(fireball.location.toVector())
-                    if (movingVector.clone().normalizeSafely().dot(targetVector.clone().normalizeSafely()) < 0) {
-                        trackTarget = null
-                    }
+                // 대상이 진행 방향 뒤쪽이 되면(지나치면) 추적을 그만둔다. 되돌아가지 않는다.
+                trackTarget?.let { current ->
+                    val targetVector = current.boundingBox.center.subtract(fireball.location.toVector())
+                    if (movingVector.dot(targetVector) < 0) { trackTarget = null; lastTargetCenter = null }
                 }
 
-                // 추적 대상 죽으면 추적 대상 초기화
-                if (trackTarget != null && (trackTarget!!.isDead || !trackTarget!!.isValid)) {
-                    trackTarget = null
+                // 조향: 대상의 이동을 예측한 지점으로, 틱당 max_turn_per_tick까지, 발사 방향에서 max_total_turn까지
+                val target = trackTarget
+                val desired = target?.let {
+                    val center = it.boundingBox.center
+                    val targetVelocity = lastTargetCenter?.let { last -> center.clone().subtract(last) } ?: org.bukkit.util.Vector()
+                    lastTargetCenter = center.clone()
+                    com.github.lupi13.limpi.ability.HomingPolicy.leadPoint(fireball.location.toVector(), center, targetVelocity, velocity, maxLeadTicks)
+                        .subtract(fireball.location.toVector())
                 }
+                movingVector = com.github.lupi13.limpi.ability.HomingPolicy.steer(movingVector, desired, launch, maxTurn, maxTotalTurn, velocity)
 
-
-                // trackTarget이 null이 아니면 추적
-                if (trackTarget != null) {
-                    val normalizedTargetVector = trackTarget!!.boundingBox.center.subtract(fireball.location.toVector()).normalizeSafely()
-                    val previousDirection = movingVector.clone()
-                    movingVector.add(normalizedTargetVector.multiply(trackingCoefficient))
-                    movingVector.normalizeSafely().multiply(velocity)
-                    if (movingVector.lengthSquared() == 0.0) movingVector.copy(previousDirection)
-                }
+                // 근접 신관: 이번 틱 이동 경로가 추적 대상에게 proximity_fuse 이내로 지나가면 그 지점에서 터진다.
+                val fuse = target?.boundingBox?.clone()?.expand(proximityFuse)
+                    ?.rayTrace(fireball.location.toVector(), movingVector.clone().normalizeSafely(), velocity)
 
                 // 피격 계산
                 val rayTrace = world.rayTrace(
@@ -177,12 +171,16 @@ object Muspell : Ability(
                     { it.type == Material.WATER || !it.isPassable }
                 )
 
-                // 히트 판정
-                if (rayTrace != null) {
-                    val hitLocation = rayTrace.hitPosition.toLocation(world)
+                // 히트 판정: 직접 맞음(블록·엔티티)과 근접 신관 중 더 가까운 지점. 벽이 더 가까우면 벽에서 터진다.
+                val origin = fireball.location.toVector()
+                val direct = rayTrace?.hitPosition
+                val fused = fuse?.hitPosition?.takeIf { direct == null || it.distanceSquared(origin) < direct.distanceSquared(origin) }
+                val hitPosition = fused ?: direct
+                if (hitPosition != null) {
+                    val hitLocation = hitPosition.toLocation(world)
 
                     // 물에 닿으면 제거
-                    if (rayTrace.hitBlock != null && rayTrace.hitBlock!!.type == Material.WATER) {
+                    if (fused == null && rayTrace?.hitBlock?.type == Material.WATER) {
                         tick = lifetime // 종료
                         fireball.remove()
                         cancel()
@@ -194,9 +192,13 @@ object Muspell : Ability(
                     entities.removeIf { it.location.distance(hitLocation) > damageRange }
 
                     for (entity in entities) {
-                        if (com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity as Damageable, codeName,
+                        // 불을 먼저 붙여야 이 피해로 죽은 동물이 익힌 고기를 떨어뜨린다(바닐라는 죽는 순간 불타는지로 정한다).
+                        // 피해가 거부되면(아군·보호·취소) 불도 되돌린다.
+                        val previousFire = entity.fireTicks
+                        entity.fireTicks = maxOf(previousFire, fireTicks)
+                        if (!com.github.lupi13.limpi.platform.AbilityDamage.hit(player, entity as Damageable, codeName,
                                 damage / entity.boundingBox.center.subtract(hitLocation.toVector()).length().coerceIn(1.0, damageRange.coerceAtLeast(1.0)))) {
-                            entity.fireTicks = fireTicks
+                            if (entity.isValid) entity.fireTicks = previousFire
                         }
                     }
                     world.spawnParticle(

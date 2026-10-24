@@ -71,8 +71,11 @@ object AbilitySpecs {
             integer("fire_ticks", 100),
             number("velocity", 1.5, 0.000001, 64.0),
             number("track_search_distance", 40.0, 0.000001, 128.0),
-            number("track_search_angle", 15.0, 0.0, 180.0),
-            number("tracking_coefficient", 0.2, 0.0, 64.0)
+            number("track_search_angle", 25.0, 0.0, 180.0), // 진행 방향에서 이 각도 안의 적만 추적
+            number("max_turn_per_tick", 4.0, 0.0, 180.0), // 한 틱에 꺾이는 최대 각도
+            number("max_total_turn", 45.0, 0.0, 180.0), // 발사 방향에서 꺾일 수 있는 최대 각도(유턴 방지)
+            number("proximity_fuse", 1.0, 0.0, 16.0), // 추적 대상에게 이 거리 안으로 지나가면 폭발
+            number("max_lead_ticks", 20.0, 0.0, 200.0) // 대상 이동 예측 시간 상한(틱)
         )),
         "long_throw" to AbilitySpec(listOf(
             number("item", 2.0),

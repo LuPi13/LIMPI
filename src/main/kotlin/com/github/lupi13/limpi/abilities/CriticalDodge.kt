@@ -61,7 +61,7 @@ object CriticalDodge : DodgeVariant(
         if (!armed.remove(player.uniqueId)) return
         if (!dodgedWithin(player.uniqueId, config!!.getInt("window"))) return
         event.damage *= config!!.getDouble("damage_multiplier")
-        player.world.playSound(player.location, Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, SoundCategory.PLAYERS, 0.5f, 1.5f)
+        player.world.playSound(player.location, Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, SoundCategory.PLAYERS, 0.3f, 1.5f)
         pending = event
     }
 

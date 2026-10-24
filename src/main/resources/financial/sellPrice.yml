@@ -18,11 +18,8 @@ raw_gold: 12
 raw_gold_block: 108
 raw_copper: 2
 raw_copper_block: 18
-coal: 3
-coal_block: 27
-lapis_lazuli: 3
-lapis_block: 27
 quartz: 2
+quartz_block: 8
 ancient_debris: 400
 netherite_scrap: 400
 netherite_ingot: 1700
@@ -36,6 +33,18 @@ heart_of_the_sea: 300
 heavy_core: 300
 echo_shard: 100
 sniffer_egg: 100
+dragon_head: 500
+sponge: 50
+wet_sponge: 50
+iron_horse_armor: 30
+golden_horse_armor: 30
+diamond_horse_armor: 100
+music_disc_otherside: 200
+music_disc_pigstep: 300
+music_disc_relic: 200
+music_disc_creator: 200
+music_disc_creator_music_box: 150
+music_disc_precipice: 200
 disc_fragment_5: 10
 netherite_upgrade_smithing_template: 300  # 다이아 7개(840원)로 복제 가능하므로 그보다 싸게
 sentry_armor_trim_smithing_template: 150
@@ -56,6 +65,29 @@ raiser_armor_trim_smithing_template: 150
 host_armor_trim_smithing_template: 150
 flow_armor_trim_smithing_template: 150
 bolt_armor_trim_smithing_template: 150
+angler_pottery_sherd: 20
+archer_pottery_sherd: 20
+arms_up_pottery_sherd: 20
+blade_pottery_sherd: 20
+brewer_pottery_sherd: 20
+burn_pottery_sherd: 20
+danger_pottery_sherd: 20
+explorer_pottery_sherd: 20
+flow_pottery_sherd: 20
+friend_pottery_sherd: 20
+guster_pottery_sherd: 20
+heart_pottery_sherd: 20
+heartbreak_pottery_sherd: 20
+howl_pottery_sherd: 20
+miner_pottery_sherd: 20
+mourner_pottery_sherd: 20
+plenty_pottery_sherd: 20
+prize_pottery_sherd: 20
+scrape_pottery_sherd: 20
+sheaf_pottery_sherd: 20
+shelter_pottery_sherd: 20
+skull_pottery_sherd: 20
+snort_pottery_sherd: 20
 
 # --- 희귀 드롭(손으로 몇 개 → 높게, 농장 → 바닥) ---
 totem_of_undying: {price: 300, half: 5, floor: 30}       # 습격 / 습격 농장
@@ -93,14 +125,51 @@ prismarine_shard: {price: 3, half: 64, floor: 1}
 prismarine_crystals: {price: 3, half: 64, floor: 1}
 amethyst_shard: {price: 2, half: 64, floor: 1}
 amethyst_block: {same: amethyst_shard, count: 4}
+honeycomb_block: {same: honeycomb, count: 4}
+honey_bottle: {price: 5, half: 32, floor: 1}
+honey_block: {same: honey_bottle, count: 4}
+ink_sac: {price: 3, half: 64, floor: 1}
+rabbit_foot: {price: 10, half: 16, floor: 1}
+turtle_scute: {price: 20, half: 16, floor: 2}
+armadillo_scute: {price: 10, half: 32, floor: 1}
+dragon_breath: {price: 20, half: 16, floor: 1}           # 엔더 드래곤 재소환
+ominous_bottle: {price: 20, half: 8, floor: 2}           # 습격 농장
+resin_clump: {price: 3, half: 64, floor: 1}              # 삐걱괴물 심장
+resin_block: {same: resin_clump, count: 9}
+torchflower_seeds: {price: 30, half: 8, floor: 2}        # 스니퍼(번식 가능)
+pitcher_pod: {price: 30, half: 8, floor: 2}
+goat_horn: {price: 30, half: 5, floor: 5}
+zombie_head: {price: 100, half: 3, floor: 10}            # 충전된 크리퍼
+skeleton_skull: {price: 100, half: 3, floor: 10}
+creeper_head: {price: 100, half: 3, floor: 10}
+piglin_head: {price: 100, half: 3, floor: 10}
+# 크리퍼를 스켈레톤이 처치(농장 가능)
+music_disc_13: {price: 50, half: 3, floor: 5}
+music_disc_cat: {price: 50, half: 3, floor: 5}
+music_disc_blocks: {price: 50, half: 3, floor: 5}
+music_disc_chirp: {price: 50, half: 3, floor: 5}
+music_disc_far: {price: 50, half: 3, floor: 5}
+music_disc_mall: {price: 50, half: 3, floor: 5}
+music_disc_mellohi: {price: 50, half: 3, floor: 5}
+music_disc_stal: {price: 50, half: 3, floor: 5}
+music_disc_strad: {price: 50, half: 3, floor: 5}
+music_disc_ward: {price: 50, half: 3, floor: 5}
+music_disc_11: {price: 50, half: 3, floor: 5}
+music_disc_wait: {price: 50, half: 3, floor: 5}
+music_disc_tears: {price: 200, half: 3, floor: 20}       # 되받아친 화염구로 가스트 처치
+music_disc_lava_chicken: {price: 200, half: 3, floor: 20} # 치킨 조키
 
 # --- 제련·농장 겸용 금속(직접 캔 원석을 녹인 양은 높게) ---
-iron_ingot: {price: 8, half: 64, floor: 2}               # 철 농장
+iron_ingot: {price: 8, half: 64, floor: 1}               # 철 농장
 iron_block: {same: iron_ingot, count: 9}
 gold_ingot: {price: 12, half: 64, floor: 1}              # 피글린 금 농장
 gold_block: {same: gold_ingot, count: 9}
 copper_ingot: {price: 2, half: 64, floor: 1}             # 드라운드 농장
 copper_block: {same: copper_ingot, count: 9}
+coal: {price: 3, half: 256, floor: 1}                    # 채굴 + 위더 스켈레톤 농장
+coal_block: {same: coal, count: 9}
+lapis_lazuli: {price: 3, half: 256, floor: 1}            # 채굴 + 성직자 주민 거래
+lapis_block: {same: lapis_lazuli, count: 9}
 redstone: {price: 2, half: 256, floor: 1}                # 채굴 + 마녀 농장
 redstone_block: {same: redstone, count: 9}
 glowstone_dust: {price: 3, half: 64, floor: 1}
@@ -118,6 +187,17 @@ cherry_log: {price: 5, half: 256, floor: 1}
 pale_oak_log: {price: 5, half: 256, floor: 1}
 crimson_stem: {price: 5, half: 256, floor: 1}
 warped_stem: {price: 5, half: 256, floor: 1}
+stripped_oak_log: {same: oak_log, count: 1}
+stripped_spruce_log: {same: spruce_log, count: 1}
+stripped_birch_log: {same: birch_log, count: 1}
+stripped_jungle_log: {same: jungle_log, count: 1}
+stripped_acacia_log: {same: acacia_log, count: 1}
+stripped_dark_oak_log: {same: dark_oak_log, count: 1}
+stripped_mangrove_log: {same: mangrove_log, count: 1}
+stripped_cherry_log: {same: cherry_log, count: 1}
+stripped_pale_oak_log: {same: pale_oak_log, count: 1}
+stripped_crimson_stem: {same: crimson_stem, count: 1}
+stripped_warped_stem: {same: warped_stem, count: 1}
 wheat: {price: 2, half: 256, floor: 1}
 hay_block: {same: wheat, count: 9}
 carrot: {price: 2, half: 256, floor: 1}
@@ -126,8 +206,10 @@ beetroot: {price: 2, half: 256, floor: 1}
 sugar_cane: {price: 2, half: 256, floor: 1}
 cocoa_beans: {price: 2, half: 256, floor: 1}
 nether_wart: {price: 2, half: 256, floor: 1}
+nether_wart_block: {same: nether_wart, count: 9}
 pumpkin: {price: 3, half: 128, floor: 1}
 melon: {price: 3, half: 128, floor: 1}
 
 # 0원(목록에 없음): 흙·돌·모래·자갈·네더랙, 대나무, 다시마, 선인장, 수박 조각,
 #   썩은 살점, 화살, 깃털, 달걀, 금 조각, 가공품(장비·도구·황금 사과·인첸트 책 등)
+# 2.6.0: 석탄·청금석을 감소형으로, 철 주괴 바닥 2 → 1, 압축 블록·껍질 벗긴 원목·희귀 전리품 추가

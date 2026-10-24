@@ -16,8 +16,10 @@ object LetsBoom : Ability(
     material = Material.TNT,
     description = listOf(
         Component.text("죽으면 3초 후 6번의 큰 폭발을 일으킵니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false),
-        Component.text("지형을 파괴하지는 않습니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+        Component.text("지형을 파괴하지는 않지만, 주변의 아이템은 모두 사라집니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
 ) {
+    /** 폭발 위력(4)의 영향 반경. 이 안의 떨어진 아이템을 폭발마다 없앤다. */
+    private const val ITEM_CLEAR_RADIUS = 8.0
 
 
     private var exploding: java.util.UUID? = null
@@ -25,9 +27,10 @@ object LetsBoom : Ability(
     fun filterExplosion(event: org.bukkit.event.entity.EntityDamageEvent) {
         val owner = exploding ?: return
         val target = event.entity
-        val player = plugin.server.getPlayer(owner)
-        if (player == null || target !is org.bukkit.entity.LivingEntity || target.uniqueId == owner ||
-            !com.github.lupi13.limpi.abilities.AbilityManager.isEnemy(player, target)) event.isCancelled = true
+        // 아군을 포함한 모든 생명체와 떨어진 아이템이 피해를 입는다. 장식(갑옷 거치대·마네킹)과 그 밖의 엔티티는 보호한다.
+        if (target is org.bukkit.entity.Item) return
+        if (target !is org.bukkit.entity.LivingEntity || target.uniqueId == owner ||
+            target is org.bukkit.entity.ArmorStand || target is org.bukkit.entity.Mannequin) event.isCancelled = true
     }
     @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
     fun protectHanging(event: org.bukkit.event.hanging.HangingBreakEvent) { if (exploding != null) event.isCancelled = true }
@@ -56,9 +59,11 @@ object LetsBoom : Ability(
                 }
                 if ((timer % 10 == 0) && (timer >= 60)) {
                     // The owner is dead, so AbilityDamage.hit cannot be used. Filter the synchronous explosion instead:
-                    // only enemies are hurt; drops (including the owner's death pile), frames and allies are protected.
+                    // every creature (allies included) is hurt and nearby drops (including the owner's death pile) are removed;
+                    // frames, armor stands and other entities are protected.
                     exploding = player.uniqueId
                     try { location.world.createExplosion(player, location, 4.0f, false, false, true) } finally { exploding = null }
+                    location.getNearbyEntitiesByType(org.bukkit.entity.Item::class.java, ITEM_CLEAR_RADIUS).forEach { it.remove() }
                     location.world.spawnParticle(Particle.EXPLOSION, location, 30, 2.5, 2.5, 2.5, 2.0)
                     location.world.spawnParticle(Particle.FLASH, location, 10, 2.0, 2.0, 2.0,2.0, org.bukkit.Color.WHITE)
                 }

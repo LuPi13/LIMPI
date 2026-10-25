@@ -56,6 +56,7 @@ class FileManager {
         private lateinit var initialItems: List<com.github.lupi13.limpi.delivery.ItemGrant>
         private lateinit var questRewards: QuestRewards
         private lateinit var chestService: com.github.lupi13.limpi.chest.ChestService
+        private lateinit var estateService: com.github.lupi13.limpi.estate.EstateService
         private lateinit var noticeBoard: com.github.lupi13.limpi.notice.NoticeBoard
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
@@ -77,6 +78,7 @@ class FileManager {
         val transitions: AbilityTransitions get() = abilityTransitions
         val quest: QuestRewards get() = questRewards
         val chests: com.github.lupi13.limpi.chest.ChestService get() = chestService
+        val estates: com.github.lupi13.limpi.estate.EstateService get() = estateService
         val notices: com.github.lupi13.limpi.notice.NoticeBoard get() = noticeBoard
 
         /** Finished delivery/removal/transition/escrow records and their ledger rows are only kept for RecordRetentionDays. */
@@ -133,6 +135,8 @@ class FileManager {
                 com.github.lupi13.limpi.ability.PickPocketSettlement.KIND to com.github.lupi13.limpi.ability.PickPocketSettlement(deliveryJournal),
             ))
             chestService = com.github.lupi13.limpi.chest.ChestService(state, repository)
+            estateService = com.github.lupi13.limpi.estate.EstateService(state, repository)
+            estateService.damaged().keys.forEach { owner.logger.warning("Estate record $it cannot be read; it is not protected and estate purchases are paused (see /limpi review)") }
             noticeBoard = com.github.lupi13.limpi.notice.NoticeBoard(state)
             com.github.lupi13.limpi.commands.Notice.prune(owner)
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal, abilityTransitions, chestService)

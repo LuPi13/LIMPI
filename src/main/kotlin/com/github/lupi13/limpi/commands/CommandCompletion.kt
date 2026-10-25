@@ -32,6 +32,10 @@ open class CommandCompletion(private val plugin: Plugin, private val index: Comm
                     "transitionDecision" -> listOf("applied", "retained")
                     "toggle" -> listOf("on", "off")
                     "chestDecision" -> listOf("before", "after")
+                    "estates" -> (sender as? Player)?.let { player ->
+                        (FileManager.estates.owned(player.uniqueId) + FileManager.estates.shared(player.uniqueId)).map { it.name }
+                    }.orEmpty()
+                    "estateRefund" -> listOf("refund", "keep")
                     else -> emptyList()
                 }
             }

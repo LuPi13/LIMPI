@@ -1,5 +1,6 @@
 package com.github.lupi13.limpi.recovery
 
+import com.github.lupi13.limpi.estate.EstateDocuments
 import com.github.lupi13.limpi.storage.StateStore
 import com.github.lupi13.limpi.storage.YamlFiles
 import java.util.UUID
@@ -11,7 +12,7 @@ data class PendingReview(val owner: UUID?, val name: String, val kind: String, v
 object PendingReviews {
     fun list(store: StateStore): List<PendingReview> {
         val names = mutableMapOf<UUID, String>()
-        return KINDS.flatMap { (prefix, kind) ->
+        return (KINDS.flatMap { (prefix, kind) ->
             store.documents("$prefix/").map { (key, payload) ->
                 val parts = key.split('/')
                 val owner = parts.getOrNull(1)?.let { runCatching { UUID.fromString(it) }.getOrNull() }
@@ -42,8 +43,21 @@ object PendingReviews {
                 }
                 PendingReview(owner, name, kind, id, state, reason, command)
             }
-        }.sortedWith(compareBy({ it.owner?.toString().orEmpty() }, { it.kind }, { it.id }))
+        } + damagedEstates(store, names)).sortedWith(compareBy({ it.owner?.toString().orEmpty() }, { it.kind }, { it.id }))
     }
+    /** Estate documents that cannot be read are not protected until an administrator restores or discards them. */
+    private fun damagedEstates(store: StateStore, names: MutableMap<UUID, String>): List<PendingReview> =
+        store.documents(EstateDocuments.PREFIX).filter { (key, payload) -> runCatching { EstateDocuments.decode(key, payload) }.isFailure }
+            .map { (key, payload) ->
+                val id = key.removePrefix(EstateDocuments.PREFIX)
+                val owner = EstateDocuments.ownerOf(payload)
+                val name = owner?.let { uuid -> names.getOrPut(uuid) {
+                    runCatching { YamlFiles.parse(store.get("player/$uuid")).getString("name") }.getOrNull() ?: "이름 없음"
+                } } ?: "소유자 형식 오류"
+                PendingReview(owner, name, "estate", id, "MALFORMED", "사유지 기록 형식 오류: 이 구역은 보호되지 않고 새 사유지 구매가 멈춥니다",
+                    "/limpi estate discard $id <근거> (DB 백업에서 복원할 수 없을 때)")
+            }
+
     private val KINDS = linkedMapOf("delivery_pending" to "delivery", "removal_pending" to "removal",
         "ability_transition_pending" to "transition", "market_escrow_pending" to "market",
         "chest_session" to "chest")

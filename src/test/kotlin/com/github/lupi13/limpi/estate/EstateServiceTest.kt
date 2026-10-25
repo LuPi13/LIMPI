@@ -131,6 +131,9 @@ class EstateServiceTest {
         assertEquals(good, service.at(world, 0, 0, 0)) // the rest is still protected
         assertThrows(EstateUnavailable::class.java) { service.quote(other, box(5, 5, 5, 5, 5, 5), "world", settings) }
         assertThrows(EstateUnavailable::class.java) { service.requireUsable(owner) }
+        val review = com.github.lupi13.limpi.recovery.PendingReviews.list(store).single { it.kind == "estate" }
+        assertEquals(owner, review.owner); assertEquals(broken.toString(), review.id)
+        assertTrue(review.command.startsWith("/limpi estate discard $broken"))
         assertThrows(EstateUnavailable::class.java) { service.discard(UUID.randomUUID(), "admin", good.id, "정상") }
         val request = UUID.randomUUID()
         service.discard(request, "admin", broken, "백업 확인")

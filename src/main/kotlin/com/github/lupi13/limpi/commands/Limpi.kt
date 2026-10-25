@@ -29,8 +29,11 @@ class Limpi(private val plugin: Plugin, private val deliveryCommands: DeliveryCo
                 "transition" -> transitionCommands.execute(sender, args)
                 "escrow" -> recovery.escrow(sender, args)
                 "chest" -> recovery.chest(sender, args)
+                "estate" -> recovery.estate(sender, args)
                 else -> error("Unbound limpi command ${route.id}")
             }
+        } catch (failure: com.github.lupi13.limpi.estate.EstateUnavailable) {
+            sender.sendMessage(Component.text(failure.message ?: "사유지 기록을 처리할 수 없습니다.", NamedTextColor.RED))
         } catch (failure: ChestUnavailable) {
             sender.sendMessage(Component.text(failure.message ?: "상자를 사용할 수 없습니다.", NamedTextColor.RED))
         } catch (failure: IllegalArgumentException) {
@@ -51,7 +54,7 @@ class Limpi(private val plugin: Plugin, private val deliveryCommands: DeliveryCo
     }
 
     companion object {
-        val SYSTEMS = listOf("ability" to "능력·뽑기·퀘스트", "financial" to "계좌·수표·상점·장터·주식", "chest" to "개인 상자", "notice" to "공지")
+        val SYSTEMS = listOf("ability" to "능력·뽑기·퀘스트", "financial" to "계좌·수표·상점·장터·주식", "chest" to "개인 상자", "estate" to "사유지", "notice" to "공지")
 
         fun lines(web: List<WebHelp.Link>): List<Component> = listOf(CommandHelp.header("LIMPI 도움말", web)) + SYSTEMS.map { (root, text) ->
             Component.text("/$root help", NamedTextColor.GREEN).append(Component.text(" - $text", NamedTextColor.GRAY))

@@ -15,7 +15,7 @@ import org.bukkit.plugin.Plugin
  * (config HelpUrl) and in dedicated commands such as /ability rates. Administrative commands are under /<root> help admin.
  */
 object CommandHelp {
-    val ALIASES = mapOf("ability" to listOf("ab"), "financial" to listOf("fi", "fc"), "chest" to listOf("ch"), "notice" to listOf("no", "nt"))
+    val ALIASES = mapOf("ability" to listOf("ab"), "financial" to listOf("fi", "fc"), "chest" to listOf("ch"), "estate" to listOf("es"), "notice" to listOf("no", "nt"))
 
     fun show(plugin: Plugin, sender: CommandSender, root: String, index: CommandIndex, enabled: Boolean, admin: Boolean) {
         val web = WebHelp.links(plugin, sender, root)

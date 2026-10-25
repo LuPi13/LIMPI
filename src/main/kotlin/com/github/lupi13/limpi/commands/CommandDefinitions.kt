@@ -61,6 +61,23 @@ object CommandDefinitions {
         route("auto", "limpi.chest.auto", true, 1, 2, "auto [on|off]", "자동 저장을 켜거나 끕니다. 생략하면 전환합니다.", suggestions = mapOf(1 to "toggle"), short = "자동 저장 켜기/끄기"),
         route("inspect", "limpi.chest.admin.inspect", false, 2, 2, "inspect <플레이어>", "상자 크기·기능·내용물과 미해결 창 기록을 조회합니다.", true, mapOf(1 to "players"), short = "상자 조회"),
     ))
+    val estate = CommandIndex(listOf(
+        route("help", null, false, 1, 1, "help", "사용 가능한 사유지 명령을 확인합니다.", true, short = "명령어 사용법"),
+        route("help admin", null, false, 2, 2, "help admin", "사용 가능한 관리자 명령을 확인합니다.", true, short = "관리자 명령어", adminHelp = true),
+        route("select", "limpi.estate.buy", true, 1, 1, "select", "구역 선택 모드를 켜거나 끕니다. 켜면 빈손 좌클릭·우클릭으로 두 좌표를 정합니다.", short = "구역 선택 모드"),
+        route("sky", "limpi.estate.buy", true, 1, 1, "sky", "선택한 구역의 위쪽을 하늘 끝까지 넓히거나 되돌립니다.", short = "하늘까지 포함 전환"),
+        route("accept", "limpi.estate.buy", true, 2, 2, "accept <사유지이름>", "견적을 확인한 구역을 이 이름으로 구매합니다.", short = "구매 확정"),
+        route("deny", "limpi.estate.buy", true, 1, 1, "deny", "진행 중인 구매를 취소합니다.", short = "구매 취소"),
+        route("overlaps", "limpi.estate.buy", true, 1, 1, "overlaps", "선택한 구역이 다른 사유지와 겹친 부분을 보여줍니다.", short = "겹친 부분 보기"),
+        route("show", "limpi.estate.info", true, 1, 2, "show [사유지이름]", "사유지 테두리를 보여줍니다. 이름을 생략하면 구매 중인 구역을 보여줍니다.", true, mapOf(1 to "estates"), short = "구역 테두리 보기"),
+        route("list", "limpi.estate.info", true, 1, 1, "list", "내 사유지와 공유받은 사유지를 확인합니다.", true, short = "내 사유지 목록"),
+        route("where", "limpi.estate.info", true, 1, 1, "where", "지금 서 있는 곳의 사유지 주인을 확인합니다.", true, short = "현재 위치 확인"),
+        route("sell", "limpi.estate.sell", true, 2, 3, "sell <사유지이름>", "사유지를 매각하고 구매가의 일부를 돌려받습니다.", true, mapOf(1 to "estates"), short = "사유지 매각"),
+        route("trust", "limpi.estate.trust", true, 3, 3, "trust <사유지이름> <플레이어>", "플레이어가 내 사유지에서 건축할 수 있게 합니다.", true, mapOf(1 to "estates", 2 to "players"), short = "건축 권한 공유"),
+        route("untrust", "limpi.estate.trust", true, 3, 3, "untrust <사유지이름> <플레이어>", "공유한 건축 권한을 거둡니다.", true, mapOf(1 to "estates", 2 to "players"), short = "건축 권한 회수"),
+        route("inspect", "limpi.estate.admin.inspect", false, 2, 2, "inspect <플레이어>", "플레이어의 사유지와 손상된 사유지 기록을 조회합니다.", true, mapOf(1 to "players"), short = "사유지 조회"),
+        route("remove", "limpi.estate.admin.remove", false, 5, Int.MAX_VALUE, "remove <플레이어> <사유지이름> refund|keep <근거>", "사유지를 회수하고 원장에 근거를 남깁니다. refund면 매각과 같은 금액을 돌려줍니다.", true, mapOf(1 to "players", 3 to "estateRefund"), short = "사유지 강제 회수"),
+    ))
     val notice = CommandIndex(listOf(
         route("help", null, false, 1, 1, "help", "사용 가능한 공지 명령을 확인합니다.", true, short = "명령어 사용법"),
         route("help admin", null, false, 2, 2, "help admin", "사용 가능한 관리자 명령을 확인합니다.", true, short = "관리자 명령어", adminHelp = true),
@@ -83,7 +100,8 @@ object CommandDefinitions {
         route("transition resolve", "limpi.admin.recovery.transition", false, 6, Int.MAX_VALUE, "transition resolve <owner UUID> <전환 UUID> applied|retained <근거>", "오프라인 전환 판단을 기록합니다.", true, mapOf(4 to "transitionDecision"), short = "전환 판단 기록"),
         route("escrow", "limpi.admin.recovery.escrow", false, 2, 2, "escrow <owner UUID>", "중단된 장터 등록·회수를 조회합니다.", true, short = "장터 회수 조회"),
         route("escrow resolve", "limpi.admin.recovery.escrow", false, 6, Int.MAX_VALUE, "escrow resolve <owner UUID> <매물 UUID> removed|retained <근거>", "오프라인 장터 회수 판단을 기록합니다.", true, mapOf(4 to "removalDecision"), short = "장터 회수 판단 기록"),
+        route("estate discard", "limpi.admin.recovery.estate", false, 4, Int.MAX_VALUE, "estate discard <사유지 기록 UUID> <근거>", "읽을 수 없는 사유지 기록을 원장에 보관하고 지웁니다.", true, short = "손상 사유지 기록 정리"),
         route("chest resolve", "limpi.admin.recovery.chest", false, 6, Int.MAX_VALUE, "chest resolve <owner UUID> <창 기록 UUID> before|after <근거>", "오프라인 상자 창 기록 판단을 기록합니다.", true, mapOf(4 to "chestDecision"), short = "상자 창 기록 판단"),
     ))
-    val all: Map<String, CommandIndex> get() = mapOf("ability" to ability, "financial" to financial, "chest" to chest, "notice" to notice)
+    val all: Map<String, CommandIndex> get() = mapOf("ability" to ability, "financial" to financial, "chest" to chest, "estate" to estate, "notice" to notice)
 }

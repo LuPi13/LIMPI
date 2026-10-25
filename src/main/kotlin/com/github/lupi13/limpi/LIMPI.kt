@@ -70,6 +70,10 @@ class LIMPI : JavaPlugin() {
         // Always registered: an unlocked chest stays usable (and recoverable) even when the chest system is off.
         server.pluginManager.registerEvents(ChestEvents(), this)
         FileManager.delivery.beforeInventoryOperation = { ChestEvents.finish(it, closeView = true) }
+        // Always registered: bought estates stay protected (and viewable, sellable) even when the estate system is off.
+        server.pluginManager.registerEvents(EstateGuard(), this)
+        server.pluginManager.registerEvents(EstateEvents(), this)
+        EstateEvents.startNotice()
         if (config.getBoolean("EnableFinancialSystem")) {
             server.pluginManager.registerEvents(checks, this)
             server.pluginManager.registerEvents(SellEvents(), this)
@@ -105,6 +109,8 @@ class LIMPI : JavaPlugin() {
         getCommand("ability")!!.tabCompleter = AbilityTab(this)
         getCommand("chest")!!.setExecutor(com.github.lupi13.limpi.commands.Chest(this, config.getBoolean("EnableChestSystem")))
         getCommand("chest")!!.tabCompleter = com.github.lupi13.limpi.commands.ChestTab(this)
+        getCommand("estate")!!.setExecutor(com.github.lupi13.limpi.commands.Estate(this, config.getBoolean("EnableEstateSystem")))
+        getCommand("estate")!!.tabCompleter = com.github.lupi13.limpi.commands.EstateTab(this)
         getCommand("notice")!!.setExecutor(com.github.lupi13.limpi.commands.Notice(this))
         getCommand("notice")!!.tabCompleter = com.github.lupi13.limpi.commands.NoticeTab(this)
         getCommand("limpi")!!.setExecutor(com.github.lupi13.limpi.commands.Limpi(this, DeliveryCommands(FileManager.deliveries, FileManager.delivery, this),
@@ -130,6 +136,7 @@ class LIMPI : JavaPlugin() {
         backups = null
         StockEvents.stop()
         ChestEvents.closeAll()
+        EstateEvents.stop()
         SellEvents.closeAll()
         AbilityRuntime.closeAll()
         if (config.getBoolean("EnableAbilitySystem")) AbilityManager.shutdown()

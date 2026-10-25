@@ -42,6 +42,14 @@ class RecoveryCommands(private val plugin: Plugin) {
         pending.forEach { sender.sendMessage(Component.text("${it.listing}: ${it.state} / ${it.reason ?: "등록 중"}", NamedTextColor.WHITE)) }
     }
 
+    /** estate discard <estate id> <note>: an estate document that cannot be read; the payload stays in the ledger. */
+    fun estate(sender: CommandSender, args: Array<String>) {
+        val id = UUID.fromString(args[2])
+        val request = UUID.randomUUID()
+        FileManager.estates.discard(request, actor(sender), id, args.drop(3).joinToString(" "))
+        sender.sendMessage("사유지 기록 ${id}을(를) 정리했습니다. 원본은 감사 거래에 보관했습니다: $request")
+    }
+
     /** chest resolve <owner> <window> before|after <note> */
     fun chest(sender: CommandSender, args: Array<String>) {
         val owner = UUID.fromString(args[2]); val id = UUID.fromString(args[3])

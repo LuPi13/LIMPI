@@ -81,7 +81,7 @@ class CommandHelpTest {
         val adminLines = CommandHelp.lines("limpi", CommandDefinitions.limpi, true, true, false, admin, web).map(::plain)
         assertEquals("━━━━━ /limpi 관리자 명령어 ━━━━━ [관리자 명령어]", adminLines[0])
         for (command in listOf("review", "delivery", "delivery resolve", "removal", "removal resolve", "transition", "transition resolve",
-                "escrow", "escrow resolve", "chest resolve"))
+                "escrow", "escrow resolve", "estate discard", "chest resolve"))
             assertTrue(adminLines.any { it.startsWith("/limpi $command ") }, command)
         assertEquals("[일반 명령어 보기]", adminLines.last())
         assertTrue(CommandDefinitions.limpi.routes.filter { it.path.first() != "help" }.all { it.recovery && it.permission!!.startsWith("limpi.admin.recovery.") })

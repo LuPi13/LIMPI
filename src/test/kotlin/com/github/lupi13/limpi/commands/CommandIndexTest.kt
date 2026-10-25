@@ -65,7 +65,7 @@ class CommandIndexTest {
             }
         }
         val permissions = descriptor.getConfigurationSection("permissions")!!.getKeys(false)
-        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes + CommandDefinitions.notice.routes + CommandDefinitions.limpi.routes) {
+        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes + CommandDefinitions.estate.routes + CommandDefinitions.notice.routes + CommandDefinitions.limpi.routes) {
             route.permission?.let { assertTrue(it in permissions, "Missing declared permission $it") }
         }
     }
@@ -98,6 +98,17 @@ class CommandIndexTest {
         assertEquals(listOf("on", "off"), CommandDefinitions.chest.complete(listOf("auto", ""), true, true, { true }) { if (it == "toggle") listOf("on", "off") else emptyList() })
         assertTrue(CommandDefinitions.chest.visible(true, false) { true }.none { it.id in setOf("open", "shop", "auto") })
     }
+    @Test fun `estate protection management stays available when the estate system is off while buying stops`() {
+        val index = CommandDefinitions.estate
+        val off = index.visible(false, true) { true }.map { it.id }
+        assertTrue(off.containsAll(listOf("help", "show", "list", "where", "sell", "trust", "untrust", "inspect", "remove")))
+        assertTrue(off.none { it in setOf("select", "sky", "accept", "deny", "overlaps") })
+        assertEquals(listOf("refund", "keep"), index.complete(listOf("remove", "p", "home", ""), true, false, { true }) { if (it == "estateRefund") listOf("refund", "keep") else emptyList() })
+        // The confirm button adds the shown refund as a hidden third argument.
+        assertEquals(3, index.resolve(listOf("sell", "home", "50"))!!.maximum)
+        assertTrue(index.visible(true, false) { true }.map { it.id }.containsAll(listOf("inspect", "remove")))
+        assertTrue(index.visible(true, false) { true }.none { it.id in setOf("select", "accept", "sell", "trust") })
+    }
     @Test fun `notice reading is open to everyone and console while writing and deleting stay admin`() {
         val index = CommandDefinitions.notice
         assertEquals(listOf("help", "show", "list"), index.visible(true, false) { !it.contains(".admin.") }.map { it.id })
@@ -117,7 +128,7 @@ class CommandIndexTest {
             org.bukkit.configuration.file.YamlConfiguration().apply { loadFromString(stream.readBytes().toString(Charsets.UTF_8)) }
         }
         val aliases = descriptor.getConfigurationSection("commands")!!.getKeys(false).associateWith { descriptor.getList("commands.$it.aliases").orEmpty() }
-        assertEquals(mapOf("financial" to listOf("fi", "fc"), "ability" to listOf("ab"), "chest" to listOf("ch"), "notice" to listOf("no", "nt"), "limpi" to emptyList<Any>()), aliases)
+        assertEquals(mapOf("financial" to listOf("fi", "fc"), "ability" to listOf("ab"), "chest" to listOf("ch"), "estate" to listOf("es"), "notice" to listOf("no", "nt"), "limpi" to emptyList<Any>()), aliases)
         assertEquals(CommandHelp.ALIASES, aliases.filterValues { it.isNotEmpty() }.mapValues { (_, list) -> list.map { it as String } })
     }
 }

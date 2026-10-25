@@ -59,6 +59,16 @@ ChestAutoStorePrice: 50000  # 자동 저장 가격
 ChestEnderPrice: 1000000  # 엔더화(죽어도 상자 아이템을 떨어뜨리지 않음) 가격
 #=== Chest System Configuration End ===#
 
+#=== Estate System Configuration ===#
+EnableEstateSystem: true  # 사유지 시스템 활성화 여부. 꺼도 이미 산 사유지의 보호·조회·매각·공유와 관리자 명령은 동작(새 구매만 중지). 구매는 금융 시스템도 필요
+EstatePricePerBlock: 4  # 사유지 블록 1칸당 구매 가격(원), 0 이상 정수
+EstateRefundPercent: 50  # 매각 시 돌려받는 비율(구매 때 낸 금액의 %), 0~100 정수
+EstateMaxWidth: 128  # 한 구역의 최대 가로(X)·세로(Z) 길이(칸), 1~1024 정수
+EstateMaxHeight: 0  # 한 구역의 최대 높이(칸), 0이면 제한 없음
+EstateMaxCount: 10  # 1인당 최대 사유지 개수, 0 이상 정수
+EstateWorlds: []  # 사유지를 살 수 있는 월드 이름 목록(예: [world, world_nether]). 비어 있으면 모든 월드
+#=== Estate System Configuration End ===#
+
 #=== Notice Configuration ===#
 NoticeRetentionDays: 30  # 서버 시작 시와 공지 등록 시 이 일수보다 오래된 공지를 삭제 (0 이하면 삭제 안 함)
 #=== Notice Configuration End ===#

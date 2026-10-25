@@ -21,6 +21,11 @@ commands:
     usage: 잘못된 사용법이거나, config.yml에서 chest 시스템이 비활성화 되어 있습니다.
     aliases: [ch]
 
+  estate:
+    description: command about buying and protecting land
+    usage: 잘못된 사용법입니다. /estate help를 확인하세요.
+    aliases: [es]
+
   notice:
     description: command about server notices
     usage: 잘못된 사용법입니다. /notice help를 확인하세요.
@@ -130,6 +135,27 @@ permissions:
   limpi.chest.admin.inspect:
     description: Inspect any player's chest and unresolved chest windows
     default: op
+  limpi.estate.buy:
+    description: Select and buy an estate
+    default: true
+  limpi.estate.info:
+    description: List your estates, show their edges and check who owns where you stand
+    default: true
+  limpi.estate.sell:
+    description: Sell your estate for part of its price
+    default: true
+  limpi.estate.trust:
+    description: Let other players build in your estate
+    default: true
+  limpi.estate.admin.inspect:
+    description: Inspect any player's estates and damaged estate records
+    default: op
+  limpi.estate.admin.remove:
+    description: Remove any estate with an optional refund and a recorded reason
+    default: op
+  limpi.estate.admin.bypass:
+    description: Build and use blocks in every estate
+    default: op
   limpi.admin.recovery:
     description: Every /limpi recovery command
     default: op
@@ -140,6 +166,7 @@ permissions:
       limpi.admin.recovery.transition: true
       limpi.admin.recovery.escrow: true
       limpi.admin.recovery.chest: true
+      limpi.admin.recovery.estate: true
   limpi.admin.recovery.review:
     description: List every pending recovery record with its resolve command (/limpi review)
     default: op
@@ -157,4 +184,7 @@ permissions:
     default: op
   limpi.admin.recovery.chest:
     description: Resolve interrupted chest windows while the owner is offline (/limpi chest resolve)
+    default: op
+  limpi.admin.recovery.estate:
+    description: Discard an estate record that cannot be read, keeping it in the ledger (/limpi estate discard)
     default: op

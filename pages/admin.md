@@ -2,7 +2,7 @@
 
 서버 관리자용 명령어입니다. 아래 권한은 기본적으로 **OP에게만** 주어집니다. 게임 안에서는 `/<명령어> help admin`(예: `/financial help admin`)으로 관리자 명령어를 따로 볼 수 있고, 그 첫 줄의 **[관리자 명령어]**를 누르면 이 페이지가 열립니다. 중단된 거래를 정리하는 복구 명령은 모두 `/limpi` 아래에 있습니다([거래 복구](#limpi)).
 
-일반 플레이어 명령어는 [능력](ability.md), [금융](financial.md), [상자](chest.md), [공지](notice.md) 페이지를 보세요.
+일반 플레이어 명령어는 [능력](ability.md), [금융](financial.md), [상자](chest.md), [사유지](estate.md), [공지](notice.md) 페이지를 보세요.
 
 ## 능력 { #ability }
 
@@ -78,6 +78,17 @@ diamond: 500
 
 `config.yml`의 `EnableChestSystem`을 꺼도 이미 해금한 상자는 `/chest`로 열 수 있습니다. 구매, 자동 저장, 죽었을 때 떨어뜨리기는 멈춥니다. 상자 구매에는 금융 시스템도 켜져 있어야 합니다.
 
+## 사유지 { #estate }
+
+| 명령어 | 권한 | 설명 |
+| --- | --- | --- |
+| `/estate inspect <플레이어>` | `limpi.estate.admin.inspect` | 플레이어의 사유지(이름·ID·월드·좌표·크기·구매가·공유)와 손상된 사유지 기록을 봅니다. 오프라인 플레이어도 됩니다. |
+| <code>/estate remove &lt;플레이어&gt; &lt;사유지이름&gt; refund&#124;keep &lt;근거&gt;</code> | `limpi.estate.admin.remove` | 사유지를 회수합니다. `refund`면 매각과 같은 금액(기본 구매가의 50%)을 주인에게 돌려주고, `keep`이면 돌려주지 않습니다. 근거는 거래 장부에 남습니다. |
+
+- `limpi.estate.admin.bypass`(기본 OP)가 있으면 모든 사유지에서 건축·사용할 수 있습니다. **OP는 기본으로 보호를 받지 않으므로**, 보호를 시험할 때는 OP가 아닌 계정을 쓰세요.
+- `config.yml`의 `EnableEstateSystem`을 꺼도 이미 산 사유지의 보호, 목록·테두리 보기, 매각, 공유, 관리자 명령은 그대로 됩니다. 새 구매만 멈춥니다. 구매에는 금융 시스템도 켜져 있어야 합니다.
+- 사유지 기록이 손상되어 읽을 수 없으면 그 구역은 보호되지 않고, 모든 플레이어의 새 사유지 구매가 멈추며, 그 주인은 사유지 명령을 쓸 수 없습니다. `/limpi review`에 표시됩니다. 가능하면 DB 백업에서 복원하고, 복원할 수 없으면 [`/limpi estate discard`](#limpi)로 정리합니다.
+
 ## 거래 복구 `/limpi` { #limpi }
 
 돈·아이템 거래 도중 서버가 꺼지거나 오류가 나면, 기록이 **확인 대기** 상태로 남습니다. 대부분은 플레이어가 다시 접속할 때 자동으로 정리되고, 자동으로 판단할 수 없는 것만 관리자가 처리합니다. 게임 안에서는 `/limpi help admin`으로 이 명령들을 볼 수 있습니다. 시스템을 꺼도 쓸 수 있고, 콘솔에서도 됩니다.
@@ -93,6 +104,7 @@ diamond: 500
 | <code>/limpi transition resolve &lt;소유자 UUID&gt; &lt;전환 UUID&gt; applied&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.transition` | 전환 판단을 기록합니다. |
 | `/limpi escrow <소유자 UUID>` | `limpi.admin.recovery.escrow` | 중단된 장터 등록·회수 기록을 봅니다. |
 | <code>/limpi escrow resolve &lt;소유자 UUID&gt; &lt;매물 UUID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.escrow` | 장터 회수 판단을 기록합니다. |
+| `/limpi estate discard <사유지 기록 UUID> <근거>` | `limpi.admin.recovery.estate` | 읽을 수 없는 사유지 기록을 지웁니다. 원래 내용은 거래 장부에 그대로 보관합니다. 정상 기록은 지울 수 없습니다(`/estate remove` 사용). |
 | <code>/limpi chest resolve &lt;소유자 UUID&gt; &lt;창 기록 UUID&gt; before&#124;after &lt;근거&gt;</code> | `limpi.admin.recovery.chest` | 상자 창 기록을 정리합니다. `before`는 상자를 연 시점 내용으로, `after`는 창을 닫으며 기록된 내용으로 확정합니다(닫기 기록이 있을 때만). |
 
 권한 `limpi.admin.recovery`를 주면 위 복구 명령을 모두 쓸 수 있습니다.
@@ -134,6 +146,9 @@ diamond: 500
 | `limpi.financial.admin.market` | OP | 다른 사람의 장터 매물 내리기 |
 | `limpi.financial.admin.check` | OP | 수표 기록 확인 |
 | `limpi.chest.admin.inspect` | OP | 상자 조회 |
+| `limpi.estate.admin.inspect` | OP | 사유지 조회 |
+| `limpi.estate.admin.remove` | OP | 사유지 회수 |
+| `limpi.estate.admin.bypass` | OP | 모든 사유지에서 건축·사용 |
 | `limpi.admin.recovery` | OP | 아래 복구 권한 전부 |
 | `limpi.admin.recovery.review` | OP | `/limpi review` |
 | `limpi.admin.recovery.delivery` | OP | 지급 복구 |
@@ -141,6 +156,7 @@ diamond: 500
 | `limpi.admin.recovery.transition` | OP | 능력 전환 복구 |
 | `limpi.admin.recovery.escrow` | OP | 장터 등록·회수 복구 |
 | `limpi.admin.recovery.chest` | OP | 상자 창 기록 복구 |
+| `limpi.admin.recovery.estate` | OP | 손상된 사유지 기록 정리 |
 | `limpi.notice.admin.write` | OP | 공지 등록 |
 | `limpi.notice.admin.delete` | OP | 공지 삭제 |
 
@@ -163,7 +179,7 @@ diamond: 500
 | 설정 | 기본값 | 뜻 |
 | --- | --- | --- |
 | `HelpUrl` | `https://lupi13.github.io/LIMPI/` | 게임 안 도움말과 접속 메시지에 거는 웹 도움말 주소. 비우면 링크를 숨깁니다. |
-| `EnableFinancialSystem` / `EnableAbilitySystem` / `EnableChestSystem` | `true` | 시스템 켜기/끄기 |
+| `EnableFinancialSystem` / `EnableAbilitySystem` / `EnableChestSystem` / `EnableEstateSystem` | `true` | 시스템 켜기/끄기 |
 | `InitialMoney` | 1000 | 첫 소지금(원) |
 | `InitialTicket` / `InitialCOMMON` / `InitialRARE` / `InitialEPIC` | 10 / 1 / 1 / 1 | 첫 접속 때 주는 뽑기권·선택권 수 |
 | `TicketMoneyPrice` | 2000 | 뽑기권 가격(원) |
@@ -177,6 +193,11 @@ diamond: 500
 | `StockVolatility` / `StockReversion` | 0.025 / 0.005 | 주식 1회 변동 폭(로그 가격 표준 편차)과 기준 가격으로 돌아오는 비율. 기본값이면 대부분 기준 가격의 0.5~1.5배 사이 |
 | `StockFeePercent` | 3 | 주식 매수·매도 수수료(%) |
 | `ChestUnlockPrice` / `ChestUpgradePrice` / `ChestAutoStorePrice` / `ChestEnderPrice` | | 상자 상점 가격([상자](chest.md#shop) 참고) |
+| `EstatePricePerBlock` | 4 | 사유지 블록 1칸당 가격(원) |
+| `EstateRefundPercent` | 50 | 매각할 때 돌려주는 비율(구매 때 낸 금액의 %) |
+| `EstateMaxWidth` / `EstateMaxHeight` | 128 / 0 | 한 구역의 최대 가로·세로(1~1024), 최대 높이(0이면 제한 없음) |
+| `EstateMaxCount` | 10 | 1인당 최대 사유지 개수 |
+| `EstateWorlds` | `[]` | 사유지를 살 수 있는 월드 이름 목록. 비어 있으면 모든 월드 |
 | `NoticeRetentionDays` | 30 | 공지 보관 일수(0 이하면 지우지 않음) |
 | `RecordRetentionDays` | 7 | 서버를 켤 때 이 일수가 지난 **끝난** 기록(완료된 지급·회수·능력 전환·장터 기록, 확정된 뽑기·선택 결과, 입금한 수표, 거래 장부)을 정리합니다(0 이하면 정리하지 않음). 처리 중이거나 확인 대기인 기록, 팔리지 않은 매물, 입금하지 않은 수표는 남깁니다. |
 | `BackupIntervalMinutes` / `BackupKeep` | 60 / 24 | 자동 백업 주기(분)와 남길 개수 |

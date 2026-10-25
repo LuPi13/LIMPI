@@ -7,6 +7,7 @@
 | [능력](ability.md) | `/ability help` (`/ab help`) | 능력, 뽑기, 선택권, 도감, 천장·픽업, 퀘스트, 적 범위 |
 | [금융](financial.md) | `/financial help` (`/fi help`, `/fc help`) | 계좌, 송금, 수표, 판매·상점, 장터, 미수령함, 주식 |
 | [상자](chest.md) | `/chest help` (`/ch help`) | 돈으로 사는 개인 상자, 자동 저장, 엔더화 |
+| [사유지](estate.md) | `/estate help` (`/es help`) | 땅 구매·보호·공유·매각 |
 | [공지](notice.md) | `/notice help` (`/no help`, `/nt help`) | 서버 공지 보기, 지난 공지 다시 보기 |
 
 ## 빠른 참조
@@ -52,6 +53,22 @@
 | `/chest` (`open`) | 내 상자 열기 |
 | `/chest shop` | 상자 상점 |
 | <code>/chest auto [on&#124;off]</code> | 자동 저장 켜기/끄기 |
+
+### 사유지
+
+| 명령어 | 하는 일 |
+| --- | --- |
+| `/estate select` | 구역 선택 모드(빈손 좌클릭·우클릭) |
+| `/estate sky` | 하늘까지 포함 전환 |
+| `/estate accept <사유지이름>` | 구매 확정 |
+| `/estate deny` | 구매 취소 |
+| `/estate overlaps` | 겹친 부분 보기 |
+| `/estate show [사유지이름]` | 구역 테두리 보기 |
+| `/estate list` | 내 사유지 목록 |
+| `/estate where` | 현재 위치 확인 |
+| `/estate sell <사유지이름>` | 사유지 매각 |
+| `/estate trust <사유지이름> <플레이어>` | 건축 권한 공유 |
+| `/estate untrust <사유지이름> <플레이어>` | 건축 권한 회수 |
 
 ### 공지
 

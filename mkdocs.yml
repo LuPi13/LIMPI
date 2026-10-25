@@ -13,6 +13,7 @@ nav:
       - 능력: ability.md
       - 금융: financial.md
       - 상자: chest.md
+      - 사유지: estate.md
       - 공지: notice.md
   - 관리자 명령어: admin.md
 

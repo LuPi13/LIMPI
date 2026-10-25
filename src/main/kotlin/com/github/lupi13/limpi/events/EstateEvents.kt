@@ -225,7 +225,7 @@ class EstateEvents : Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onSelect(event: PlayerInteractEvent) {
-        if (event.hand != EquipmentSlot.HAND || event.item != null) return
+        if (event.hand != EquipmentSlot.HAND || event.item?.type?.isAir == false) return
         val left = event.action == Action.LEFT_CLICK_BLOCK
         if (!left && event.action != Action.RIGHT_CLICK_BLOCK) return
         val player = event.player

@@ -59,7 +59,7 @@
 | 명령어 | 하는 일 |
 | --- | --- |
 | `/estate select` | 구역 선택 모드(빈손 좌클릭·우클릭) |
-| `/estate sky` | 하늘까지 포함 전환 |
+| `/estate full` | Y축 전체 포함 전환 |
 | `/estate accept <사유지이름>` | 구매 확정 |
 | `/estate deny` | 구매 취소 |
 | `/estate overlaps` | 겹친 부분 보기 |

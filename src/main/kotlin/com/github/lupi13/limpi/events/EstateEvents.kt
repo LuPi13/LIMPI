@@ -36,7 +36,7 @@ class EstateEvents : Listener {
         var active = false
         var first: Point? = null
         var second: Point? = null
-        var sky = false
+        var full = false
         var quote: Quote? = null
         var overlaps: List<EstateRegion> = emptyList()
     }
@@ -71,12 +71,12 @@ class EstateEvents : Listener {
             else player.sendMessage(Component.text("구역 선택 모드가 꺼졌습니다.", NamedTextColor.WHITE))
         }
 
-        fun toggleSky(player: Player) {
+        fun toggleFull(player: Player) {
             val selection = selections[player.uniqueId]
             if (selection?.first == null || selection.second == null) {
                 player.sendMessage(Component.text("지금은 이용할 수 없습니다.", NamedTextColor.RED)); return
             }
-            selection.sky = !selection.sky
+            selection.full = !selection.full
             quote(player, selection)
         }
 
@@ -88,7 +88,8 @@ class EstateEvents : Listener {
                 player.sendMessage(Component.text("두 좌표가 서로 다른 월드에 있습니다.", NamedTextColor.RED)); return
             }
             var region = EstateRegion.of(first.world, first.x, first.y, first.z, second.x, second.y, second.z)
-            if (selection.sky) Bukkit.getWorld(first.world)?.let { region = region.withHeight(region.minY, it.maxHeight - 1) }
+            // Whole column: nothing above or below the chosen square is left to someone else.
+            if (selection.full) Bukkit.getWorld(first.world)?.let { region = region.withHeight(it.minHeight, it.maxHeight - 1) }
             show(player, listOf(region))
             val settings = settings() ?: run {
                 player.sendMessage(Component.text("사유지 설정에 오류가 있어 지금은 구매할 수 없습니다.", NamedTextColor.RED)); return
@@ -119,7 +120,7 @@ class EstateEvents : Listener {
                 .append(Component.text(" "))
                 .append(button("[구역 보기]", NamedTextColor.LIGHT_PURPLE, "/estate show", ClickEvent.runCommand("/estate show")))
                 .append(Component.text(" "))
-                .append(button(if (selection.sky) "[하늘 포함 해제]" else "[하늘까지 포함]", NamedTextColor.AQUA, "/estate sky", ClickEvent.runCommand("/estate sky"))))
+                .append(button(if (selection.full) "[Y축 전체 해제]" else "[Y축 전체 포함]", NamedTextColor.AQUA, "/estate full", ClickEvent.runCommand("/estate full"))))
         }
 
         fun accept(player: Player, name: String) {
@@ -175,7 +176,7 @@ class EstateEvents : Listener {
         private fun draw(player: Player, region: EstateRegion) {
             val x1 = region.minX.toDouble(); val y1 = region.minY.toDouble(); val z1 = region.minZ.toDouble()
             val x2 = region.maxX + 1.0; val y2 = region.maxY + 1.0; val z2 = region.maxZ + 1.0
-            // Fixed budget per box: long sky-high edges get sparser points instead of more packets.
+            // Fixed budget per box: long full-height edges get sparser points instead of more packets.
             val step = maxOf(0.5, 4.0 * (region.width + region.depth + region.height) / MAX_POINTS)
             val eye = player.location
             fun line(ax: Double, ay: Double, az: Double, bx: Double, by: Double, bz: Double) {

@@ -65,7 +65,7 @@ object CommandDefinitions {
         route("help", null, false, 1, 1, "help", "사용 가능한 사유지 명령을 확인합니다.", true, short = "명령어 사용법"),
         route("help admin", null, false, 2, 2, "help admin", "사용 가능한 관리자 명령을 확인합니다.", true, short = "관리자 명령어", adminHelp = true),
         route("select", "limpi.estate.buy", true, 1, 1, "select", "구역 선택 모드를 켜거나 끕니다. 켜면 빈손 좌클릭·우클릭으로 두 좌표를 정합니다.", short = "구역 선택 모드"),
-        route("sky", "limpi.estate.buy", true, 1, 1, "sky", "선택한 구역의 위쪽을 하늘 끝까지 넓히거나 되돌립니다.", short = "하늘까지 포함 전환"),
+        route("full", "limpi.estate.buy", true, 1, 1, "full", "선택한 구역을 월드 맨 아래부터 맨 위까지(Y축 전체) 넓히거나 되돌립니다.", short = "Y축 전체 포함 전환"),
         route("accept", "limpi.estate.buy", true, 2, 2, "accept <사유지이름>", "견적을 확인한 구역을 이 이름으로 구매합니다.", short = "구매 확정"),
         route("deny", "limpi.estate.buy", true, 1, 1, "deny", "진행 중인 구매를 취소합니다.", short = "구매 취소"),
         route("overlaps", "limpi.estate.buy", true, 1, 1, "overlaps", "선택한 구역이 다른 사유지와 겹친 부분을 보여줍니다.", short = "겹친 부분 보기"),

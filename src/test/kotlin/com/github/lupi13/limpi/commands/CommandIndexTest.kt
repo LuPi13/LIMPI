@@ -102,7 +102,7 @@ class CommandIndexTest {
         val index = CommandDefinitions.estate
         val off = index.visible(false, true) { true }.map { it.id }
         assertTrue(off.containsAll(listOf("help", "show", "list", "where", "sell", "trust", "untrust", "inspect", "remove")))
-        assertTrue(off.none { it in setOf("select", "sky", "accept", "deny", "overlaps") })
+        assertTrue(off.none { it in setOf("select", "full", "accept", "deny", "overlaps") })
         assertEquals(listOf("refund", "keep"), index.complete(listOf("remove", "p", "home", ""), true, false, { true }) { if (it == "estateRefund") listOf("refund", "keep") else emptyList() })
         // The confirm button adds the shown refund as a hidden third argument.
         assertEquals(3, index.resolve(listOf("sell", "home", "50"))!!.maximum)

@@ -24,7 +24,7 @@ class Estate(private val plugin: Plugin, private val enabled: Boolean) : Command
             when (route.id) {
                 "help", "help admin" -> CommandHelp.show(plugin, sender, "estate", CommandDefinitions.estate, enabled, admin = route.adminHelp)
                 "select" -> EstateEvents.toggle(sender as Player)
-                "sky" -> EstateEvents.toggleSky(sender as Player)
+                "full" -> EstateEvents.toggleFull(sender as Player)
                 "accept" -> {
                     if (!plugin.config.getBoolean("EnableFinancialSystem")) throw EstateUnavailable("금융 시스템이 꺼져 있어 지금은 구매할 수 없습니다.")
                     EstateEvents.accept(sender as Player, args[1])

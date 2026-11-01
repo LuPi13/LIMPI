@@ -16,7 +16,8 @@ object QuestManager {
         ExpAbsorber, DoEndermansDreamOfFreeingEnd, UndeadCooperation, LineBetweenSwordAndArrow,
         DodgeMaster, YourDodge, EnoughDodge, ShouldDodge, DodgeCliche, ColdDodge,
         PerfectDistance, FireStrike, MasterSmith, MoebiusReactor, IntoTheDark,
-        GiveAll, NogadaKing, TriggerFinger, NoHurt, BoldForBoom, LightTime, DarkTime, Lotto, WhyDidYouDoThat
+        GiveAll, NogadaKing, TriggerFinger, NoHurt, BoldForBoom, LightTime, DarkTime, Lotto, WhyDidYouDoThat,
+        MachineVsZombie
     )
 
 

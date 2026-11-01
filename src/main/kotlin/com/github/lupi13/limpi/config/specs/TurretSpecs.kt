@@ -1,6 +1,8 @@
 package com.github.lupi13.limpi.config.specs
 
 import com.github.lupi13.limpi.config.*
+import com.github.lupi13.limpi.turret.CopperTurretKind
+import com.github.lupi13.limpi.turret.GoldTurretKind
 import com.github.lupi13.limpi.turret.IronTurretKind
 import com.github.lupi13.limpi.turret.TurretKind
 
@@ -17,6 +19,7 @@ object TurretSpecs {
     fun prefix(kinds: List<TurretKind>, kind: TurretKind): String = if (kinds.size == 1) "" else kind.id
 
     val all: Map<String, AbilitySpec> = linkedMapOf(
-        "turret" to spec(listOf(IronTurretKind))
+        "turret" to spec(listOf(IronTurretKind)),
+        "guard_expert" to spec(listOf(IronTurretKind, CopperTurretKind, GoldTurretKind))
     )
 }

@@ -19,6 +19,8 @@ object Turret : TurretAbility(
 ) {
     override val kinds: List<TurretKind> = listOf(IronTurretKind)
 
+    override val relatedQuest: List<com.github.lupi13.limpi.quests.Quest> by lazy { listOf(com.github.lupi13.limpi.quests.MachineVsZombie) }
+
     override val details: List<Component> by settingsCached {
         val stats = stats(IronTurretKind)
         fun white(text: String) = Component.text(text, NamedTextColor.WHITE)

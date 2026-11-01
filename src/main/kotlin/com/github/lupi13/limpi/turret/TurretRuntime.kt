@@ -67,19 +67,30 @@ object TurretRuntime : Listener {
         val ability: String,
         val effect: AbilityEffect,
     ) {
-        var lastShot: Int = Int.MIN_VALUE / 2
+        /** 충전식 발사([TurretCharge]). 처음에는 가득 차 있어 적이 보이면 바로 쏩니다. */
+        var charge: Double = stats.fireIntervalTicks.toDouble()
+        /** 맞닿은 지원 포탑(금)을 반영한 공격 속도. 검색 주기마다 다시 셉니다. */
+        var speed: Double = 1.0
         var lastSearch: Int = Int.MIN_VALUE / 2
         /** 마지막 검색에서 고른 표적. 쏠 때마다 아직 쏠 수 있는지 다시 확인합니다. */
         var target: LivingEntity? = null
         val id: UUID get() = entity.uniqueId
+        /** 포탑이 차지한 칸(셜커는 움직이지 않음). */
+        val block: BlockKey = BlockKey.of(entity.location)
         /** 투사체가 나가는 중심점. */
         fun center(): Location = entity.location.add(0.0, 0.5, 0.0)
     }
 
     /** 날아가는 투사체에서 쏜 포탑을 찾지 못할 때(포탑이 먼저 사라짐)를 위해 필요한 값을 따로 둡니다. */
-    class Shot(val turret: UUID, val kind: TurretKind, val ability: String, val damage: Double)
+    class Shot(val turret: UUID, val kind: TurretKind, val ability: String, val stats: TurretStats)
+
+    data class BlockKey(val world: UUID, val x: Int, val y: Int, val z: Int) {
+        fun offset(dx: Int, dy: Int, dz: Int) = BlockKey(world, x + dx, y + dy, z + dz)
+        companion object { fun of(at: Location) = BlockKey(at.world.uid, at.blockX, at.blockY, at.blockZ) }
+    }
 
     private val turrets = HashMap<UUID, PlacedTurret>()
+    private val byBlock = HashMap<BlockKey, UUID>()
     private val shots = HashMap<UUID, Shot>()
     private val locks = TargetLocks()
 
@@ -123,8 +134,10 @@ object TurretRuntime : Listener {
         val effect = try { AbilityRuntime.begin(owner, ability) } catch (failure: Exception) { entity.remove(); throw failure }
         val turret = PlacedTurret(entity, owner.uniqueId, kind, stats, ability, effect)
         turrets[turret.id] = turret
+        byBlock[turret.block] = turret.id
         effect.own {
             turrets.remove(turret.id)
+            if (byBlock[turret.block] == turret.id) byBlock.remove(turret.block)
             locks.release(turret.id)
             turret.target = null
             if (entity.isValid) { breakSound(entity.location); entity.remove() } // 죽지 않고 사라질 때(주인 퇴장 등)
@@ -142,25 +155,45 @@ object TurretRuntime : Listener {
     }
 
     /**
-     * 매 틱: 주변 검색은 [SEARCH_INTERVAL_TICKS]마다만(부하), 발사는 [TurretStats.fireIntervalTicks]마다 검색해 둔 표적이
-     * 아직 쏠 수 있으면 쏩니다. 예전에는 검색 주기에 맞춰서만 쏴 발사 간격이 10틱보다 짧아지지 않았습니다.
+     * 매 틱: 주변 검색과 맞닿은 지원 포탑 확인은 [SEARCH_INTERVAL_TICKS]마다만(부하), 발사는 충전식([TurretCharge])으로
+     * 공격 속도만큼 충전해 간격이 차면 검색해 둔 표적이 아직 쏠 수 있을 때 쏩니다. 지원 포탑(금)은 아무것도 하지 않습니다.
      */
     private fun tick(turret: PlacedTurret) {
         val entity = turret.entity
         if (!entity.isValid || entity.isDead) { turret.effect.close(); return }
+        if (!turret.kind.attacks) return
         val owner = Bukkit.getPlayer(turret.owner) ?: return
         val now = Bukkit.getCurrentTick()
+        val interval = turret.stats.fireIntervalTicks
         if (TurretSchedule.due(now, turret.lastSearch, SEARCH_INTERVAL_TICKS.toInt())) {
             turret.lastSearch = now
             holdLockedMobs(turret)
+            turret.speed = TurretCharge.speed(supportBonuses(turret))
             turret.target = findTarget(turret, owner)
         }
-        if (!TurretSchedule.due(now, turret.lastShot, turret.stats.fireIntervalTicks)) return
+        turret.charge = TurretCharge.fill(turret.charge, turret.speed, interval)
+        if (!TurretCharge.ready(turret.charge, interval)) return
         val target = turret.target ?: return
         if (!shootable(turret, owner, target)) { turret.target = null; return }
-        turret.lastShot = now
+        turret.charge = TurretCharge.spend(turret.charge, interval)
         face(turret, target)
         turret.kind.fire(turret, target)
+    }
+
+    /** 맞닿은 여섯 면의 지원 포탑이 주는 속도 몫. 지원 포탑 주인이 이 포탑 주인 본인이거나 같은 팀일 때만. */
+    private fun supportBonuses(turret: PlacedTurret): List<Double> = TURRET_NEIGHBOR_OFFSETS.mapNotNull { (dx, dy, dz) ->
+        val neighbor = byBlock[turret.block.offset(dx, dy, dz)]?.let(turrets::get) ?: return@mapNotNull null
+        val bonus = neighbor.kind.speedBonus(neighbor.stats)
+        if (bonus <= 0.0 || !neighbor.entity.isValid || neighbor.entity.isDead) return@mapNotNull null
+        val supporter = Bukkit.getPlayer(neighbor.owner) ?: return@mapNotNull null
+        if (!AbilityManager.alliedOwner(supporter, turret.owner)) return@mapNotNull null
+        bonus
+    }
+
+    /** 사거리 안에서 쏠 수 있는 적 전부(범위 공격 포탑용). */
+    fun enemiesInRange(turret: PlacedTurret, owner: Player): List<LivingEntity> {
+        val center = turret.center()
+        return center.world.getNearbyLivingEntities(center, turret.stats.range).filter { shootable(turret, owner, it) }
     }
 
     /** 쏘기 전에 머리를 표적 쪽으로 돌립니다. */
@@ -199,7 +232,7 @@ object TurretRuntime : Listener {
         val pitch = Math.toRadians(TurretAim.pitch(distance, aim.y, turret.kind.speed))
         val flat = if (distance < 1.0e-6) Vector(0.0, 0.0, 0.0) else horizontal.normalize()
         val direction = flat.multiply(cos(pitch)).add(Vector(0.0, sin(pitch), 0.0)).normalize()
-        val shot = Shot(turret.id, turret.kind, turret.ability, turret.stats.damage)
+        val shot = Shot(turret.id, turret.kind, turret.ability, turret.stats)
         // 붙어 있는 적(근접 공격 중인 좀비 등): 투사체가 적의 판정 상자 안에서 출발하면 맞지 않고 뒤로 빠져나가므로,
         // 첫 틱에 닿을 거리면 투사체 없이 바로 맞힙니다.
         val box = target.boundingBox.clone().expand(0.2)
@@ -240,12 +273,52 @@ object TurretRuntime : Listener {
         if (shot != null) strike(shot, owner, hit, at)
     }
 
-    /** 명중: 탄 조각 파티클, 종류의 피해, 피해가 들어간 공격적인 몹은 이 포탑에 고정. */
-    private fun strike(shot: Shot, owner: Player, target: org.bukkit.entity.Damageable, at: Location) {
-        at.world.spawnParticle(Particle.ITEM, at, 6, 0.1, 0.1, 0.1, 0.05, ItemStack(shot.kind.ammo))
-        val accepted = shot.kind.onHit(shot, owner, target)
-        if (accepted && target is Mob && target is Enemy && !target.isDead) aggro(target, shot.turret)
+    /** 명중: 종류의 연출과 피해, 피해가 들어간 공격적인 몹은 이 포탑에 고정, 포탑으로 쓰러뜨린 좀비는 퀘스트에 기록. */
+    fun strike(shot: Shot, owner: Player, target: org.bukkit.entity.Damageable, at: Location) {
+        shot.kind.hitEffect(at)
+        striking = owner.uniqueId
+        val accepted = try { shot.kind.onHit(shot, owner, target) } finally { striking = null }
+        if (!accepted) return
+        if (target.isDead) { zombieKilled(owner, target); return }
+        if (target is Mob && target is Enemy) aggro(target, shot.turret)
     }
+
+    // ---- 퀘스트: 기계 vs 좀비 ----
+
+    /** 포탑 피해를 주는 동안의 주인. 이때 받은 피해는 포탑의 피해라 좀비를 더럽히지 않습니다. */
+    private var striking: UUID? = null
+    /** 주인이 포탑 말고 다른 방법으로 피해를 준 좀비 → 그 주인들. */
+    private val tainted = HashMap<UUID, MutableSet<UUID>>()
+    private val zombieKills = HashMap<UUID, KillWindow>()
+    private const val ZOMBIE_WINDOW_TICKS = 1200
+    private const val ZOMBIE_TARGET = 10
+
+    /** 좀비 계열(좀비·허스크·드라운드·좀비 주민, 아기 포함). 좀비 피글린은 제외합니다. */
+    private fun zombie(entity: Entity): Boolean = entity is org.bukkit.entity.Zombie && entity !is org.bukkit.entity.PigZombie
+
+    private fun zombieKilled(owner: Player, target: Entity) {
+        if (!zombie(target) || tainted[target.uniqueId]?.contains(owner.uniqueId) == true) return
+        if (zombieKills.getOrPut(owner.uniqueId) { KillWindow(ZOMBIE_WINDOW_TICKS, ZOMBIE_TARGET) }.add(Bukkit.getCurrentTick())) {
+            com.github.lupi13.limpi.quests.QuestManager.clearQuests(owner, com.github.lupi13.limpi.quests.MachineVsZombie)
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onZombieDamaged(event: org.bukkit.event.entity.EntityDamageByEntityEvent) {
+        val victim = event.entity
+        if (!zombie(victim)) return
+        val player = event.damageSource.causingEntity as? Player ?: return
+        if (striking == player.uniqueId) return
+        tainted.getOrPut(victim.uniqueId) { HashSet() }.add(player.uniqueId)
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onZombieGone(event: com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent) {
+        if (tainted.isNotEmpty()) tainted.remove(event.entity.uniqueId)
+    }
+
+    @EventHandler
+    fun onQuit(event: org.bukkit.event.player.PlayerQuitEvent) { zombieKills.remove(event.player.uniqueId) }
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onShotGone(event: com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent) {
@@ -320,6 +393,6 @@ object TurretRuntime : Listener {
 
     fun closeAll() {
         turrets.values.toList().forEach { it.effect.close() }
-        turrets.clear(); shots.clear(); locks.clear()
+        turrets.clear(); byBlock.clear(); shots.clear(); locks.clear(); tainted.clear(); zombieKills.clear()
     }
 }

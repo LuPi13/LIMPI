@@ -48,7 +48,7 @@ object AbilityManager : Listener {
         ShieldStrikePlus, RoaringFlame, MetalSmith, LinearBow, Cloak, SuperCloak, BlightRanger,
         BackStab, Berserker, BlockThrower, Counter, FocusBow, HawkEye, HawkEyePlus, LavaJump,
         HandCannon, PulseCannon, ChargeShot, ChargeShotPlus, ExplosionMove, RealHandCannon, TimeLeaper, TimeLeaperPlus, Chronobreak, AlchemyPlus, VolleyShot, PerfectReload,
-        Turret
+        Turret, GuardExpert
         )
 
     /**
@@ -351,9 +351,16 @@ object AbilityManager : Listener {
         return when {
             target is Player -> teammate(target.name)
             target is Tameable && target.isTamed -> target.owner.let { owner -> ownedByAlly(owner?.uniqueId) { owner?.name } }
-            else -> com.github.lupi13.limpi.turret.TurretRuntime.ownerOf(target)
-                ?.let { owner -> ownedByAlly(owner) { org.bukkit.Bukkit.getOfflinePlayer(owner).name } } ?: false
+            else -> com.github.lupi13.limpi.turret.TurretRuntime.ownerOf(target)?.let { owner -> alliedOwner(player, owner) } ?: false
         }
+    }
+
+    /** [owner]가 [player] 본인이거나 같은 팀(scoreboard) 플레이어인지. 포탑·길들인 몹 주인과 금 포탑 효과에 씁니다. */
+    fun alliedOwner(player: Player, owner: java.util.UUID): Boolean {
+        if (owner == player.uniqueId) return true
+        val team = player.scoreboard.getEntryTeam(player.name) ?: return false
+        val name = org.bukkit.Bukkit.getPlayer(owner)?.name ?: org.bukkit.Bukkit.getOfflinePlayer(owner).name ?: return false
+        return team.hasEntry(name)
     }
 
 

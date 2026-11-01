@@ -142,3 +142,8 @@ class KillWindow(private val window: Int, private val target: Int) {
 
     val size: Int get() = times.size
 }
+
+/** 에메랄드 포탑 회복량: 1초 회복량 × 공격 속도(맞닿은 금 포탑 가속). */
+object TurretHeal {
+    fun amount(perSecond: Double, speed: Double): Double = (perSecond.coerceAtLeast(0.0) * speed.coerceAtLeast(0.0))
+}

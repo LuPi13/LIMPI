@@ -9,7 +9,7 @@ import org.bukkit.Material
 /** 포탑 설치: 철 주괴와 레드스톤으로 주변의 적을 쏘는 포탑을 세웁니다. 상위 능력은 [TurretAbility]에 종류를 더합니다. */
 object Turret : TurretAbility(
     grade = Grade.RARE,
-    displayName = Component.text("포탑 설치", NamedTextColor.WHITE),
+    displayName = Component.text("포탑 설치", NamedTextColor.GRAY),
     codeName = "turret",
     material = Material.DISPENSER,
     description = listOf(

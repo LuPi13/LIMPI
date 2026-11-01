@@ -16,7 +16,7 @@ import org.bukkit.Material
  */
 object GuardExpert : TurretAbility(
     grade = Grade.EPIC,
-    displayName = Component.text("경비 전문가", NamedTextColor.WHITE),
+    displayName = Component.text("경비 전문가", NamedTextColor.GRAY),
     codeName = "guard_expert",
     material = Material.DROPPER,
     description = listOf(

@@ -127,6 +127,7 @@ object TurretRuntime : Listener {
             val (yaw, pitch) = TurretFacing.rotation(attachedTo, TurretFacing.initial(attachedTo, owner.location.direction))
             shulker.setRotation(yaw, pitch)
             shulker.getAttribute(Attribute.MAX_HEALTH)?.baseValue = stats.maxHealth
+            kind.armor(stats).takeIf { it > 0.0 }?.let { armor -> shulker.getAttribute(Attribute.ARMOR)?.baseValue = armor }
             shulker.health = stats.maxHealth
             shulker.persistentDataContainer.set(TURRET_KEY, PersistentDataType.STRING, owner.uniqueId.toString())
         }

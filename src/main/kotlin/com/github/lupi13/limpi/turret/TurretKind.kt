@@ -56,8 +56,11 @@ abstract class TurretKind(
         return base.copy(extra = extra)
     }
 
-    /** 맞닿은 포탑의 공격 속도에 더하는 몫(금 포탑 0.25 = +25%). */
+    /** 맞닿은 포탑의 공격 속도에 더하는 몫(금 포탑 0.5 = +50%). */
     open fun speedBonus(stats: TurretStats): Double = 0.0
+
+    /** 포탑 몸체(셜커)의 방어력. */
+    open fun armor(stats: TurretStats): Double = 0.0
 
     /** 목표를 향해 한 발 쏩니다. 기본은 중력을 받는 투척물(눈덩이에 [ammo] 겉모습). */
     open fun fire(turret: TurretRuntime.PlacedTurret, target: LivingEntity) = TurretRuntime.throwShot(turret, target)
@@ -115,6 +118,7 @@ data class TurretStats(
 }
 
 private const val COPPER_BURN = "burn_seconds"
+private const val COPPER_ARMOR = "armor"
 private const val GOLD_SPEED = "speed_bonus"
 
 /** 철 포탑: 철 주괴로 설치, 철 조각 모양의 투척물을 쏩니다. */
@@ -139,10 +143,15 @@ object CopperTurretKind : TurretKind(
     color = DyeColor.ORANGE,
     ammo = Material.COPPER_INGOT,
     defaults = TurretStats(ingotCost = 1, redstoneCost = 1, fireIntervalTicks = 40, damage = 2.0, maxHealth = 40.0, decayPerSecond = 1.0,
-        range = 2.0, extra = mapOf(COPPER_BURN to 3.0)),
+        range = 2.0, extra = mapOf(COPPER_BURN to 3.0, COPPER_ARMOR to 10.0)),
 ) {
     override fun extraFields(prefix: String): List<AbilityField> =
-        listOf(number(TurretStats.key(prefix, BURN), defaults.extra(BURN), 0.0, 600.0)) // 불이 붙어 있는 시간(초)
+        listOf(
+            number(TurretStats.key(prefix, BURN), defaults.extra(BURN), 0.0, 600.0), // 불이 붙어 있는 시간(초)
+            number(TurretStats.key(prefix, ARMOR), defaults.extra(ARMOR), 0.0, 30.0), // 방어력(바닐라 방어 공식)
+        )
+
+    override fun armor(stats: TurretStats): Double = stats.extra(ARMOR)
 
     override fun fire(turret: TurretRuntime.PlacedTurret, target: LivingEntity) {
         val owner = Bukkit.getPlayer(turret.owner) ?: return
@@ -172,6 +181,7 @@ object CopperTurretKind : TurretKind(
     }
 
     const val BURN = COPPER_BURN
+    const val ARMOR = COPPER_ARMOR
 }
 
 /** 금 포탑: 공격하지 않고, 맞닿은 여섯 면의 포탑(나와 같은 팀 플레이어의 포탑)의 공격 속도를 금 포탑 하나당 [SPEED]만큼 올립니다. */
@@ -182,12 +192,12 @@ object GoldTurretKind : TurretKind(
     color = DyeColor.YELLOW,
     ammo = Material.GOLD_NUGGET,
     defaults = TurretStats(ingotCost = 1, redstoneCost = 1, fireIntervalTicks = 20, damage = 0.0, maxHealth = 30.0, decayPerSecond = 1.0,
-        range = 1.0, extra = mapOf(GOLD_SPEED to 0.25)),
+        range = 1.0, extra = mapOf(GOLD_SPEED to 0.5)),
 ) {
     override val attacks: Boolean get() = false
 
     override fun extraFields(prefix: String): List<AbilityField> =
-        listOf(number(TurretStats.key(prefix, SPEED), defaults.extra(SPEED), 0.0, 10.0)) // 맞닿은 포탑 공격 속도 증가(0.25 = +25%)
+        listOf(number(TurretStats.key(prefix, SPEED), defaults.extra(SPEED), 0.0, 10.0)) // 맞닿은 포탑 공격 속도 증가(0.5 = +50%)
 
     override fun speedBonus(stats: TurretStats): Double = stats.extra(SPEED)
 

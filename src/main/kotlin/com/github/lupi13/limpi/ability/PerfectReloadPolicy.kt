@@ -2,6 +2,7 @@ package com.github.lupi13.limpi.ability
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 
 /**
  * 완벽한 재장전의 게이지 판정·표시와 석궁 장전 시간 계산(Bukkit 없이 시험).
@@ -13,6 +14,9 @@ object PerfectReloadPolicy {
     /** 바닐라 석궁 장전 시간: 1.25초에서 빠른 장전 단계마다 0.25초 빠름(0 미만 없음). */
     const val BASE_CHARGE_TICKS = 25
     const val TICKS_PER_QUICK_CHARGE = 5
+
+    /** 게이지 한 칸. `|`는 액션바에서 너무 얇아 차지샷 게이지와 같은 굵은 막대(굵게)를 씁니다. */
+    const val BAR = "┃"
 
     enum class State { RUNNING, PERFECT, MISSED }
 
@@ -51,7 +55,7 @@ object PerfectReloadPolicy {
         while (from < colors.size) {
             var to = from
             while (to < colors.size && colors[to] == colors[from]) to++
-            text = text.append(Component.text("|".repeat(to - from), colors[from]))
+            text = text.append(Component.text(BAR.repeat(to - from), colors[from], TextDecoration.BOLD))
             from = to
         }
         return text

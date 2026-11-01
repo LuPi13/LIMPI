@@ -29,7 +29,7 @@ class PerfectReloadPolicyTest {
     @Test fun `action bar text is the white title followed by one bar per tick`() {
         val title = Component.text("완벽한 재장전", NamedTextColor.WHITE)
         val text = PerfectReloadPolicy.render(title, 19, 3, 10, State.RUNNING)
-        assertEquals("완벽한 재장전 |||||||||||||||||||", PlainTextComponentSerializer.plainText().serialize(text))
+        assertEquals("완벽한 재장전 " + "┃".repeat(19), PlainTextComponentSerializer.plainText().serialize(text))
         assertEquals(NamedTextColor.WHITE, text.color())
     }
 

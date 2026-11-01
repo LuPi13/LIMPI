@@ -8,6 +8,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
@@ -123,6 +124,7 @@ object PerfectReload : Ability(
 
     private fun succeed(player: Player, session: Session) {
         show(player, session, State.PERFECT)
+        player.playSound(player.location, Sound.BLOCK_VAULT_INSERT_ITEM, 1f, 2f)
         session.phase = Phase.BOOST
         session.level = player.activeItem.getEnchantmentLevel(Enchantment.QUICK_CHARGE)
         session.elapsed = player.activeItemUsedTime

@@ -6,7 +6,7 @@ import java.util.UUID
 
 class TurretPolicyTest {
     @Test fun `aim lands on targets within range at any height`() {
-        for ((x, y) in listOf(1.0 to 0.0, 5.0 to 0.0, 10.0 to 0.0, 7.0 to 3.0, 8.0 to -4.0, 3.0 to 6.0, 9.5 to 2.0)) {
+        for ((x, y) in listOf(1.0 to 0.0, 5.0 to 0.0, 10.0 to 0.0, 16.0 to 0.0, 7.0 to 3.0, 8.0 to -4.0, 3.0 to 6.0, 9.5 to 2.0, 15.0 to 5.0, 14.0 to -8.0)) {
             val pitch = TurretAim.pitch(x, y, 1.5)
             assertEquals(y, TurretAim.heightAt(pitch, x, 1.5), 0.2, "target ($x, $y) pitch $pitch")
         }

@@ -23,8 +23,6 @@ abstract class TurretKind(
     val color: DyeColor,
     /** 투사체 겉모습. */
     val ammo: Material,
-    /** 시야 반경(블록). */
-    val range: Double = 10.0,
     /** 투사체 초기 속도(블록/틱). */
     val speed: Double = 1.5,
     /** 이 종류의 기본 수치. */
@@ -50,6 +48,8 @@ data class TurretStats(
     val damage: Double,
     val maxHealth: Double,
     val decayPerSecond: Double,
+    /** 시야 반경(블록). */
+    val range: Double,
 ) {
     companion object {
         fun key(prefix: String, name: String) = if (prefix.isEmpty()) name else "${prefix}_$name"
@@ -61,6 +61,7 @@ data class TurretStats(
             number(key(prefix, "damage"), defaults.damage, 0.0, 1024.0), // 한 발의 피해
             number(key(prefix, "max_health"), defaults.maxHealth, 1.0, 1024.0), // 포탑 최대 체력(설치 시 가득)
             number(key(prefix, "decay_per_second"), defaults.decayPerSecond, 0.0, 1024.0), // 1초마다 줄어드는 체력
+            number(key(prefix, "range"), defaults.range, 1.0, 64.0), // 시야 반경(블록)
         )
 
         fun read(settings: AbilitySettings, prefix: String) = TurretStats(
@@ -70,6 +71,7 @@ data class TurretStats(
             settings.getDouble(key(prefix, "damage")),
             settings.getDouble(key(prefix, "max_health")),
             settings.getDouble(key(prefix, "decay_per_second")),
+            settings.getDouble(key(prefix, "range")),
         )
     }
 }
@@ -81,5 +83,6 @@ object IronTurretKind : TurretKind(
     itemName = "철 주괴",
     color = DyeColor.LIGHT_GRAY,
     ammo = Material.IRON_NUGGET,
-    defaults = TurretStats(ingotCost = 1, redstoneCost = 1, fireIntervalTicks = 20, damage = 4.0, maxHealth = 30.0, decayPerSecond = 1.0),
+    defaults = TurretStats(ingotCost = 1, redstoneCost = 1, fireIntervalTicks = 20, damage = 4.0, maxHealth = 30.0, decayPerSecond = 1.0,
+        range = 16.0),
 )

@@ -174,7 +174,7 @@ object TurretRuntime : Listener {
     /** 반경 안에서 주인의 적이고 블록에 가리지 않은 가장 가까운 생명체. */
     private fun findTarget(turret: PlacedTurret, owner: Player): LivingEntity? {
         val center = turret.center()
-        return center.world.getNearbyLivingEntities(center, turret.kind.range).asSequence()
+        return center.world.getNearbyLivingEntities(center, turret.stats.range).asSequence()
             .filter { shootable(turret, owner, it) }
             .minByOrNull { it.location.distanceSquared(center) }
     }
@@ -184,7 +184,7 @@ object TurretRuntime : Listener {
         if (target is Player && (target.gameMode == GameMode.SPECTATOR || target.gameMode == GameMode.CREATIVE)) return false
         val center = turret.center()
         if (target.world.uid != center.world.uid) return false
-        val range = turret.kind.range
+        val range = turret.stats.range
         if (target.boundingBox.center.toLocation(center.world).distanceSquared(center) > range * range) return false
         return AbilityManager.isEnemy(owner, target) && turret.entity.hasLineOfSight(target)
     }

@@ -183,14 +183,16 @@ object TurretRuntime : Listener {
         if (!projectile.persistentDataContainer.has(SHOT_KEY, PersistentDataType.STRING)) return
         val hit = event.hitEntity
         if (hit == null) { shots.remove(projectile.uniqueId); return } // 블록: 바닐라처럼 깨짐
-        if (isTurret(hit)) { event.isCancelled = true; return } // 포탑은 통과
         event.isCancelled = true // 바닐라 눈덩이 타격(0 피해·넉백) 대신 능력 피해만
+        val owner = projectile.shooter as? Player
+        // 포탑·주인·주인의 적이 아닌 대상(아군 등)은 통과합니다.
+        if (isTurret(hit) || owner == null || !owner.isOnline || hit !is org.bukkit.entity.Damageable ||
+            !AbilityManager.isEnemy(owner, hit)) return
         val shot = shots.remove(projectile.uniqueId)
         hit.world.spawnParticle(Particle.ITEM, projectile.location, 6, 0.1, 0.1, 0.1, 0.05, ItemStack(shot?.kind?.ammo ?: org.bukkit.Material.IRON_NUGGET))
         projectile.remove()
-        val owner = projectile.shooter as? Player ?: return
-        val target = hit as? org.bukkit.entity.Damageable ?: return
-        if (shot == null || !owner.isOnline) return
+        val target: org.bukkit.entity.Damageable = hit
+        if (shot == null) return
         val accepted = shot.kind.onHit(shot, owner, target)
         if (accepted && hit is Mob && hit is Enemy && !hit.isDead) aggro(hit, shot.turret)
     }

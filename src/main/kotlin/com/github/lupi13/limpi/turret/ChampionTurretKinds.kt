@@ -35,8 +35,8 @@ object DiamondTurretKind : TurretKind(
     color = DyeColor.LIGHT_BLUE,
     ammo = Material.DIAMOND,
     speed = 2.0,
-    defaults = TurretStats(ingotCost = 1, redstoneCost = 2, fireIntervalTicks = 15, damage = 7.0, maxHealth = 50.0, decayPerSecond = 1.0,
-        range = 20.0, extra = mapOf(DIAMOND_PIERCE to 1.0)),
+    defaults = TurretStats(ingotCost = 1, redstoneCost = 2, fireIntervalTicks = 12, damage = 8.0, maxHealth = 50.0, decayPerSecond = 0.5,
+        range = 32.0, extra = mapOf(DIAMOND_PIERCE to 1.0)),
 ) {
     override fun extraFields(prefix: String): List<AbilityField> =
         listOf(integer(TurretStats.key(prefix, PIERCE), defaults.extra(PIERCE).toInt(), 0, 16)) // 처음 맞힌 적 뒤로 더 꿰뚫는 수
@@ -46,31 +46,44 @@ object DiamondTurretKind : TurretKind(
     const val PIERCE = DIAMOND_PIERCE
 }
 
-/** 메아리 포탑: 벽을 무시하고 사거리 안의 적에게 워든처럼 음파를 쏴 방어구를 무시하는 피해를 줍니다. */
+/**
+ * 메아리 포탑: 벽을 무시하고 표적을 향해 사거리 끝까지 워든처럼 음파를 쏩니다. 음파가 지나는 직선 위(폭 [BEAM_RADIUS])의 적을
+ * 모두 맞히며 방어구를 무시하는 피해를 줍니다.
+ */
 object EchoTurretKind : TurretKind(
     id = "echo",
     trigger = Material.ECHO_SHARD,
     itemName = "메아리 조각",
     color = DyeColor.CYAN,
     ammo = Material.ECHO_SHARD,
-    defaults = TurretStats(ingotCost = 1, redstoneCost = 2, fireIntervalTicks = 60, damage = 8.0, maxHealth = 30.0, decayPerSecond = 0.25,
-        range = 10.0),
+    defaults = TurretStats(ingotCost = 1, redstoneCost = 2, fireIntervalTicks = 60, damage = 8.0, maxHealth = 30.0, decayPerSecond = 0.1,
+        range = 24.0),
 ) {
     override val needsSight: Boolean get() = false
 
     override fun fire(turret: TurretRuntime.PlacedTurret, target: LivingEntity) {
         val owner = Bukkit.getPlayer(turret.owner) ?: return
         val from = turret.center()
-        val to = target.boundingBox.center.toLocation(from.world)
-        val line = to.toVector().subtract(from.toVector())
-        val steps = line.length().toInt().coerceAtLeast(1)
-        for (i in 1..steps) from.world.spawnParticle(Particle.SONIC_BOOM, from.clone().add(line.clone().multiply(i.toDouble() / steps)), 1)
+        val direction = target.boundingBox.center.subtract(from.toVector())
+        if (direction.lengthSquared() < 1.0e-9) return
+        direction.normalize()
+        val length = turret.stats.range
+        for (i in 1..length.toInt().coerceAtLeast(1)) from.world.spawnParticle(Particle.SONIC_BOOM, from.clone().add(direction.clone().multiply(i)), 1)
         from.world.playSound(from, Sound.ENTITY_WARDEN_SONIC_BOOM, 0.6f, 1.3f)
-        TurretRuntime.strike(TurretRuntime.Shot(turret.id, this, turret.ability, turret.stats), owner, target, to)
+        val shot = TurretRuntime.Shot(turret.id, this, turret.ability, turret.stats)
+        val origin = from.toVector()
+        for (enemy in TurretRuntime.enemiesInRange(turret, owner)) {
+            if (enemy.boundingBox.clone().expand(BEAM_RADIUS).rayTrace(origin, direction, length) == null) continue
+            TurretRuntime.strike(shot, owner, enemy, enemy.boundingBox.center.toLocation(from.world))
+        }
     }
 
+    /** 음파 줄기의 굵기(판정 상자를 넓히는 양, 블록). */
+    const val BEAM_RADIUS = 0.5
+
     override fun onHit(shot: TurretRuntime.Shot, owner: Player, target: Damageable): Boolean =
-        AbilityDamage.hit(owner, target, shot.ability, shot.stats.damage, knockback = false, type = DamageType.SONIC_BOOM)
+        AbilityDamage.hit(owner, target, shot.ability, shot.stats.damage, knockback = false, type = DamageType.SONIC_BOOM,
+            direct = TurretRuntime.body(shot))
 
     override fun hitEffect(at: Location) {}
 }
@@ -118,8 +131,8 @@ object ShulkerTurretKind : TurretKind(
     itemName = "셜커 껍데기",
     color = DyeColor.PURPLE,
     ammo = Material.SHULKER_SHELL,
-    defaults = TurretStats(ingotCost = 1, redstoneCost = 2, fireIntervalTicks = 60, damage = 4.0, maxHealth = 40.0, decayPerSecond = 0.5,
-        range = 16.0, extra = mapOf(SHULKER_LEVITATION to 3.0)),
+    defaults = TurretStats(ingotCost = 1, redstoneCost = 2, fireIntervalTicks = 60, damage = 5.0, maxHealth = 40.0, decayPerSecond = 0.25,
+        range = 16.0, extra = mapOf(SHULKER_LEVITATION to 5.0)),
 ) {
     override fun extraFields(prefix: String): List<AbilityField> =
         listOf(number(TurretStats.key(prefix, LEVITATION), defaults.extra(LEVITATION), 0.0, 60.0)) // 공중부양 시간(초)
@@ -165,7 +178,7 @@ object EmeraldTurretKind : TurretKind(
     itemName = "에메랄드",
     color = DyeColor.LIME,
     ammo = Material.EMERALD,
-    defaults = TurretStats(ingotCost = 1, redstoneCost = 1, fireIntervalTicks = 20, damage = 0.0, maxHealth = 30.0, decayPerSecond = 1.0,
+    defaults = TurretStats(ingotCost = 2, redstoneCost = 1, fireIntervalTicks = 20, damage = 0.0, maxHealth = 30.0, decayPerSecond = 1.0,
         range = 1.0, extra = mapOf(EMERALD_HEAL to 1.0)),
 ) {
     override val attacks: Boolean get() = false

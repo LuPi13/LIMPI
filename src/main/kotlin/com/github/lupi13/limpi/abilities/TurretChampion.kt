@@ -64,7 +64,7 @@ object TurretChampion : TurretAbility(
             name("철 포탑", NamedTextColor.GRAY).append(cost(IronTurretKind, iron)).append(attack(iron)).append(life(iron)),
             name("구리 포탑", NamedTextColor.GOLD).append(cost(CopperTurretKind, copper)).append(attack(copper))
                 .append(white(", 범위 안의 모든 적에게 ")).append(value(copper.extra(CopperTurretKind.BURN))).append(white("초 화염"))
-                .append(life(copper)),
+                .append(life(copper)).append(white(" 방어력 ")).append(value(copper.extra(CopperTurretKind.ARMOR))).append(white(".")),
             name("금 포탑", NamedTextColor.YELLOW).append(cost(GoldTurretKind, gold)).append(white("맞닿은 포탑의 속도 +"))
                 .append(value((gold.extra(GoldTurretKind.SPEED) * 100).let { if (it % 1.0 == 0.0) it.toInt() else it })).append(white("%"))
                 .append(life(gold)),

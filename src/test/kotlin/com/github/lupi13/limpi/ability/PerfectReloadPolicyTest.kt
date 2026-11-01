@@ -17,11 +17,11 @@ class PerfectReloadPolicyTest {
         assertEquals((1..5).filter { PerfectReloadPolicy.perfect(5, 9, it) }, (1..5).toList()) // 성공 칸이 길이를 넘으면 전부
     }
 
-    @Test fun `running gauge fills yellow with green middle and the result paints every bar`() {
+    @Test fun `running gauge shows the green middle from the start and fills yellow and the result paints every bar`() {
         val y = NamedTextColor.YELLOW; val g = NamedTextColor.GREEN; val x = NamedTextColor.GRAY
-        assertEquals(List(7) { x }, PerfectReloadPolicy.colors(7, 3, 0, State.RUNNING))
-        assertEquals(listOf(y, y, g, g, x, x, x), PerfectReloadPolicy.colors(7, 3, 4, State.RUNNING))
-        assertEquals(listOf(y, y, g, g, g, y, y), PerfectReloadPolicy.colors(7, 3, 7, State.RUNNING))
+        assertEquals(listOf(x, x, g, g, g, x, x), PerfectReloadPolicy.colors(7, 3, 0, State.RUNNING))
+        assertEquals(listOf(y, y, y, y, g, x, x), PerfectReloadPolicy.colors(7, 3, 4, State.RUNNING))
+        assertEquals(List(7) { y }, PerfectReloadPolicy.colors(7, 3, 7, State.RUNNING))
         assertEquals(List(7) { NamedTextColor.AQUA }, PerfectReloadPolicy.colors(7, 3, 4, State.PERFECT))
         assertEquals(List(7) { NamedTextColor.RED }, PerfectReloadPolicy.colors(7, 3, 2, State.MISSED))
     }

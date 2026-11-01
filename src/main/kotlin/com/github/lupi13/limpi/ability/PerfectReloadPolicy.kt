@@ -30,15 +30,15 @@ object PerfectReloadPolicy {
     /** 채워진 칸이 [shown]개일 때 장전을 시작하면 성공인지(마지막 채워진 칸이 성공 구간). */
     fun perfect(length: Int, perfect: Int, shown: Int): Boolean = shown in 1..length && inWindow(length, perfect, shown - 1)
 
-    /** 칸마다의 색: 진행 중이면 채워진 칸 노랑(성공 구간은 초록)·빈 칸 회색, 성공이면 전부 하늘색, 실패면 전부 빨강. */
+    /** 칸마다의 색: 진행 중이면 채워진 칸 노랑, 아직 안 채워진 칸은 회색(성공 구간은 처음부터 초록), 성공이면 전부 하늘색, 실패면 전부 빨강. */
     fun colors(length: Int, perfect: Int, shown: Int, state: State): List<NamedTextColor> = List(length) { index ->
         when (state) {
             State.PERFECT -> NamedTextColor.AQUA
             State.MISSED -> NamedTextColor.RED
             State.RUNNING -> when {
-                index >= shown -> NamedTextColor.GRAY
+                index < shown -> NamedTextColor.YELLOW
                 inWindow(length, perfect, index) -> NamedTextColor.GREEN
-                else -> NamedTextColor.YELLOW
+                else -> NamedTextColor.GRAY
             }
         }
     }

@@ -17,7 +17,7 @@ object ArcherySpecs {
         "perfect_reload" to AbilitySpec(listOf(
             integer("gauge_length", 19, 1, 100), // 게이지 칸 수(1틱에 한 칸)
             integer("perfect_bars", 3, 1, 100), // 가운데 성공 구간 칸 수(게이지보다 길면 전부)
-            integer("quick_charge_bonus", 1, 1, 5) // 성공한 장전에 더하는 빠른 장전 단계
+            integer("quick_charge_bonus", 2, 1, 5) // 성공한 장전에 더하는 빠른 장전 단계
         )),
         "focus_bow" to AbilitySpec(listOf(
             integer("brake_ticks", 20, 0, 72000),

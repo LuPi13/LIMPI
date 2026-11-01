@@ -1,34 +1,49 @@
 package com.github.lupi13.limpi.ability
 
 import com.github.lupi13.limpi.ability.PerfectReloadPolicy.State
+import com.github.lupi13.limpi.config.AbilitySpecs
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import org.bukkit.configuration.file.YamlConfiguration
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class PerfectReloadPolicyTest {
-    @Test fun `the perfect window is the middle bars and only those count`() {
-        assertEquals(8, PerfectReloadPolicy.windowStart(19, 3))
-        assertEquals((1..19).filter { PerfectReloadPolicy.perfect(19, 3, it) }, listOf(9, 10, 11))
-        assertFalse(PerfectReloadPolicy.perfect(19, 3, 0)) // 아직 아무 칸도 채워지지 않음
-        assertFalse(PerfectReloadPolicy.perfect(19, 3, 20))
-        assertEquals((1..10).filter { PerfectReloadPolicy.perfect(10, 4, it) }, listOf(4, 5, 6, 7))
-        assertEquals((1..5).filter { PerfectReloadPolicy.perfect(5, 9, it) }, (1..5).toList()) // 성공 칸이 길이를 넘으면 전부
+    @Test fun `the perfect window is the configured bars and only those count`() {
+        assertEquals(listOf(9, 10, 11), (0..20).filter { PerfectReloadPolicy.perfect(9, 11, it) })
+        assertEquals(listOf(4), (0..20).filter { PerfectReloadPolicy.perfect(4, 4, it) })
+        assertFalse(PerfectReloadPolicy.perfect(1, 3, 0)) // 아직 아무 칸도 채워지지 않음
     }
 
-    @Test fun `running gauge shows the green middle from the start and fills yellow and the result paints every bar`() {
+    @Test fun `window bounds must lie inside the gauge in order`() {
+        PerfectReloadPolicy.validate(19, 9, 11); PerfectReloadPolicy.validate(1, 1, 1); PerfectReloadPolicy.validate(19, 1, 19)
+        assertThrows(IllegalArgumentException::class.java) { PerfectReloadPolicy.validate(19, 12, 11) }
+        assertThrows(IllegalArgumentException::class.java) { PerfectReloadPolicy.validate(10, 9, 11) }
+        assertThrows(IllegalArgumentException::class.java) { PerfectReloadPolicy.validate(10, 0, 3) }
+    }
+
+    @Test fun `perfect reload settings default to bars 9 to 11 of 19 and reject a window past the gauge`() {
+        val spec = AbilitySpecs.all.getValue("perfect_reload")
+        val (settings, _) = spec.prepare(YamlConfiguration())
+        assertEquals(listOf(19, 9, 11, 2), listOf("gauge_length", "perfect_start", "perfect_end", "quick_charge_bonus").map(settings::getInt))
+        assertThrows(IllegalArgumentException::class.java) { spec.prepare(YamlConfiguration().apply { set("gauge_length", 10) }) }
+        assertThrows(IllegalArgumentException::class.java) { spec.prepare(YamlConfiguration().apply { set("perfect_start", 12) }) }
+    }
+
+    @Test fun `running gauge shows the green window from the start and fills yellow and the result paints every bar`() {
         val y = NamedTextColor.YELLOW; val g = NamedTextColor.GREEN; val x = NamedTextColor.GRAY
-        assertEquals(listOf(x, x, g, g, g, x, x), PerfectReloadPolicy.colors(7, 3, 0, State.RUNNING))
-        assertEquals(listOf(y, y, y, y, g, x, x), PerfectReloadPolicy.colors(7, 3, 4, State.RUNNING))
-        assertEquals(List(7) { y }, PerfectReloadPolicy.colors(7, 3, 7, State.RUNNING))
-        assertEquals(List(7) { NamedTextColor.AQUA }, PerfectReloadPolicy.colors(7, 3, 4, State.PERFECT))
-        assertEquals(List(7) { NamedTextColor.RED }, PerfectReloadPolicy.colors(7, 3, 2, State.MISSED))
+        assertEquals(listOf(x, x, g, g, g, x, x), PerfectReloadPolicy.colors(7, 3, 5, 0, State.RUNNING))
+        assertEquals(listOf(y, y, y, y, g, x, x), PerfectReloadPolicy.colors(7, 3, 5, 4, State.RUNNING))
+        assertEquals(List(7) { y }, PerfectReloadPolicy.colors(7, 3, 5, 7, State.RUNNING))
+        assertEquals(listOf(g, x, x, x, x, x, x), PerfectReloadPolicy.colors(7, 1, 1, 0, State.RUNNING))
+        assertEquals(List(7) { NamedTextColor.AQUA }, PerfectReloadPolicy.colors(7, 3, 5, 4, State.PERFECT))
+        assertEquals(List(7) { NamedTextColor.RED }, PerfectReloadPolicy.colors(7, 3, 5, 2, State.MISSED))
     }
 
     @Test fun `action bar text is the white title followed by one bar per tick`() {
         val title = Component.text("완벽한 재장전", NamedTextColor.WHITE)
-        val text = PerfectReloadPolicy.render(title, 19, 3, 10, State.RUNNING)
+        val text = PerfectReloadPolicy.render(title, 19, 9, 11, 10, State.RUNNING)
         assertEquals("완벽한 재장전 " + "┃".repeat(19), PlainTextComponentSerializer.plainText().serialize(text))
         assertEquals(NamedTextColor.WHITE, text.color())
     }

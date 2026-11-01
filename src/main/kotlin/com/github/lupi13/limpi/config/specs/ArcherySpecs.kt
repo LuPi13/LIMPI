@@ -16,9 +16,13 @@ object ArcherySpecs {
         )),
         "perfect_reload" to AbilitySpec(listOf(
             integer("gauge_length", 19, 1, 100), // 게이지 칸 수(1틱에 한 칸)
-            integer("perfect_bars", 3, 1, 100), // 가운데 성공 구간 칸 수(게이지보다 길면 전부)
+            integer("perfect_start", 9, 1, 100), // 성공 구간 첫 칸(1부터, 사격 후 틱)
+            integer("perfect_end", 11, 1, 100), // 성공 구간 마지막 칸(포함, perfect_start 이상·gauge_length 이하)
             integer("quick_charge_bonus", 2, 1, 5) // 성공한 장전에 더하는 빠른 장전 단계
-        )),
+        )) { settings ->
+            com.github.lupi13.limpi.ability.PerfectReloadPolicy.validate(
+                settings.getInt("gauge_length"), settings.getInt("perfect_start"), settings.getInt("perfect_end"))
+        },
         "focus_bow" to AbilitySpec(listOf(
             integer("brake_ticks", 20, 0, 72000),
             number("brake_multiplier", 0.3, 0.0, 1.0),

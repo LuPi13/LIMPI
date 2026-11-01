@@ -50,13 +50,14 @@ object PerfectReload : Ability(
     }
 
     private fun length() = config!!.getInt("gauge_length")
-    private fun perfectBars() = config!!.getInt("perfect_bars")
+    private fun perfectStart() = config!!.getInt("perfect_start")
+    private fun perfectEnd() = config!!.getInt("perfect_end")
     private fun bonus() = config!!.getInt("quick_charge_bonus")
 
     private enum class Phase { GAUGE, BOOST }
 
     /** 사격 한 번의 게이지. 설정은 사격 순간 값으로 고정합니다(도중 reload가 판정을 바꾸지 않게). */
-    private class Session(val effect: AbilityEffect, val startedTick: Int, val length: Int, val perfect: Int, val bonus: Int) {
+    private class Session(val effect: AbilityEffect, val startedTick: Int, val length: Int, val start: Int, val end: Int, val bonus: Int) {
         var phase = Phase.GAUGE
         /** 지금 액션바에 채워져 보이는 칸 수. */
         var shown = 0
@@ -94,7 +95,7 @@ object PerfectReload : Ability(
     private fun start(player: Player, tick: Int) {
         val effect = AbilityRuntime.begin(player, codeName)
         val owner = player.uniqueId
-        val session = Session(effect, tick, length(), perfectBars(), bonus())
+        val session = Session(effect, tick, length(), perfectStart(), perfectEnd(), bonus())
         sessions[owner] = session
         effect.own { if (sessions[owner] === session) sessions.remove(owner) }
         show(player, session, State.RUNNING)
@@ -113,7 +114,7 @@ object PerfectReload : Ability(
             session.pressedAt = null
             // 화살이 없거나 다른 이유로 장전이 시작되지 않았으면 판정하지 않고 게이지를 계속 진행합니다.
             if (chargingCrossbow(player)) {
-                if (PerfectReloadPolicy.perfect(session.length, session.perfect, pressed)) succeed(player, session) else miss(player, session)
+                if (PerfectReloadPolicy.perfect(session.start, session.end, pressed)) succeed(player, session) else miss(player, session)
                 return
             }
         }
@@ -150,7 +151,7 @@ object PerfectReload : Ability(
     }
 
     private fun show(player: Player, session: Session, state: State) =
-        player.sendActionBar(PerfectReloadPolicy.render(displayName, session.length, session.perfect, session.shown, state))
+        player.sendActionBar(PerfectReloadPolicy.render(displayName, session.length, session.start, session.end, session.shown, state))
 
     private fun charged(item: ItemStack): Boolean = (item.itemMeta as? CrossbowMeta)?.hasChargedProjectiles() == true
 

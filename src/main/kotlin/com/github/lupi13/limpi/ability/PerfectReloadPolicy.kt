@@ -7,8 +7,8 @@ import net.kyori.adventure.text.format.TextDecoration
 /**
  * 완벽한 재장전의 게이지 판정·표시와 석궁 장전 시간 계산(Bukkit 없이 시험).
  *
- * 게이지는 [length]칸이고 사격 뒤 1틱마다 한 칸씩 채워집니다. 가운데 [perfect]칸이 성공 구간이며,
- * 장전을 시작한 순간 마지막으로 채워진 칸이 그 구간에 있으면 성공입니다.
+ * 게이지는 [length]칸이고 사격 뒤 1틱마다 한 칸씩 채워집니다. 칸 번호는 1부터 세며 [start]~[end]칸(양 끝 포함)이
+ * 성공 구간입니다. 장전을 시작한 순간 마지막으로 채워진 칸이 그 구간에 있으면 성공입니다.
  */
 object PerfectReloadPolicy {
     /** 바닐라 석궁 장전 시간: 1.25초에서 빠른 장전 단계마다 0.25초 빠름(0 미만 없음). */
@@ -20,37 +20,34 @@ object PerfectReloadPolicy {
 
     enum class State { RUNNING, PERFECT, MISSED }
 
-    /** 성공 구간(0부터 센 칸 번호)의 시작. 성공 칸 수는 게이지 길이를 넘지 않습니다. */
-    fun windowStart(length: Int, perfect: Int): Int {
-        require(length > 0 && perfect > 0)
-        return (length - perfect.coerceAtMost(length)) / 2
+    /** 설정 검증: 1 ≤ [start] ≤ [end] ≤ [length]. */
+    fun validate(length: Int, start: Int, end: Int) {
+        require(start in 1..end && end <= length) { "perfect_start/perfect_end must satisfy 1 <= start <= end <= gauge_length" }
     }
 
-    fun inWindow(length: Int, perfect: Int, index: Int): Boolean {
-        val start = windowStart(length, perfect)
-        return index >= start && index < start + perfect.coerceAtMost(length)
-    }
+    /** [number]번째 칸(1부터)이 성공 구간인지. */
+    fun inWindow(start: Int, end: Int, number: Int): Boolean = number in start..end
 
     /** 채워진 칸이 [shown]개일 때 장전을 시작하면 성공인지(마지막 채워진 칸이 성공 구간). */
-    fun perfect(length: Int, perfect: Int, shown: Int): Boolean = shown in 1..length && inWindow(length, perfect, shown - 1)
+    fun perfect(start: Int, end: Int, shown: Int): Boolean = shown >= 1 && inWindow(start, end, shown)
 
     /** 칸마다의 색: 진행 중이면 채워진 칸 노랑, 아직 안 채워진 칸은 회색(성공 구간은 처음부터 초록), 성공이면 전부 하늘색, 실패면 전부 빨강. */
-    fun colors(length: Int, perfect: Int, shown: Int, state: State): List<NamedTextColor> = List(length) { index ->
+    fun colors(length: Int, start: Int, end: Int, shown: Int, state: State): List<NamedTextColor> = List(length) { index ->
         when (state) {
             State.PERFECT -> NamedTextColor.AQUA
             State.MISSED -> NamedTextColor.RED
             State.RUNNING -> when {
                 index < shown -> NamedTextColor.YELLOW
-                inWindow(length, perfect, index) -> NamedTextColor.GREEN
+                inWindow(start, end, index + 1) -> NamedTextColor.GREEN
                 else -> NamedTextColor.GRAY
             }
         }
     }
 
     /** 액션바 문구: 흰색 능력 이름 뒤에 게이지. 같은 색이 이어지면 한 조각으로 묶습니다. */
-    fun render(title: Component, length: Int, perfect: Int, shown: Int, state: State): Component {
+    fun render(title: Component, length: Int, start: Int, end: Int, shown: Int, state: State): Component {
         var text = title.append(Component.text(" "))
-        val colors = colors(length, perfect, shown, state)
+        val colors = colors(length, start, end, shown, state)
         var from = 0
         while (from < colors.size) {
             var to = from

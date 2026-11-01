@@ -108,6 +108,8 @@ object EntityThrower : Ability(
 
         // Paper resolves dragon clicks to a part; hold the dragon itself so the dragon branch can apply.
         val targetEntity = (event.rightClicked as? org.bukkit.entity.EnderDragonPart)?.parent ?: event.rightClicked
+        // 포탑은 자리에 고정된 기계라 붙잡지 않습니다.
+        if (com.github.lupi13.limpi.turret.TurretRuntime.isTurret(targetEntity)) return
 
         //나를 잡고 있는 플레이어일 경우
         if (targetEntity is Player && heldEntity.containsKey(targetEntity.uniqueId) && heldEntity[targetEntity.uniqueId] == player) {

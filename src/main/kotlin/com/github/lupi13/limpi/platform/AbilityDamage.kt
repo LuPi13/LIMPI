@@ -47,6 +47,8 @@ object AbilityDamage : Listener {
         val damage = DamageNumbers.bounded(amount)
         if (damage == 0.0 || !player.isOnline || player.isDead || FileManager.delivery.blocked(player.uniqueId) ||
             !target.isValid || target.isDead || target.world.uid != player.world.uid) return false
+        // 포탑은 기계라 어떤 능력 피해도 받지 않습니다(대상 정책을 무시하는 능력 포함). 맨손·무기·바닐라 투사체로는 공격할 수 있습니다.
+        if (com.github.lupi13.limpi.turret.TurretRuntime.isTurret(target)) return false
         if (target.uniqueId == player.uniqueId) { if (!self) return false }
         else if (respectTargets && !AbilityManager.isEnemy(player, target)) return false
         val type = if (kind == HitKind.MAGIC_CONVERSION || kind == HitKind.EXECUTION) DamageType.MAGIC else DamageType.PLAYER_ATTACK

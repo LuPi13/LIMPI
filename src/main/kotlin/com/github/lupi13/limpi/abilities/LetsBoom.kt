@@ -27,10 +27,11 @@ object LetsBoom : Ability(
     fun filterExplosion(event: org.bukkit.event.entity.EntityDamageEvent) {
         val owner = exploding ?: return
         val target = event.entity
-        // 아군을 포함한 모든 생명체와 떨어진 아이템이 피해를 입는다. 장식(갑옷 거치대·마네킹)과 그 밖의 엔티티는 보호한다.
+        // 아군을 포함한 모든 생명체와 떨어진 아이템이 피해를 입는다. 장식(갑옷 거치대·마네킹)·포탑과 그 밖의 엔티티는 보호한다.
         if (target is org.bukkit.entity.Item) return
         if (target !is org.bukkit.entity.LivingEntity || target.uniqueId == owner ||
-            target is org.bukkit.entity.ArmorStand || target is org.bukkit.entity.Mannequin) event.isCancelled = true
+            target is org.bukkit.entity.ArmorStand || target is org.bukkit.entity.Mannequin ||
+            com.github.lupi13.limpi.turret.TurretRuntime.isTurret(target)) event.isCancelled = true
     }
     @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST)
     fun protectHanging(event: org.bukkit.event.hanging.HangingBreakEvent) { if (exploding != null) event.isCancelled = true }

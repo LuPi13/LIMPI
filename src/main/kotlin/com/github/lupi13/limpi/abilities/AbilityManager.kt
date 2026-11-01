@@ -316,8 +316,8 @@ object AbilityManager : Listener {
     )
     fun isEnemy(player: Player, entity: Damageable): Boolean {
         if (entity.uniqueId == player.uniqueId || entity.world.uid != player.world.uid) return false
-        // Armor stands and mannequins are decorations, not creatures.
-        if (entity is ArmorStand || entity is Mannequin) return false
+        // Armor stands and mannequins are decorations, not creatures; turrets are machines.
+        if (entity is ArmorStand || entity is Mannequin || com.github.lupi13.limpi.turret.TurretRuntime.isTurret(entity)) return false
         val settings = FileManager.players.read(player.uniqueId, com.github.lupi13.limpi.combat.EnemySettings::read)
         fun sameTeam(name: String?): Boolean = name != null && player.scoreboard.getEntryTeam(player.name)?.hasEntry(name) == true
         if (entity is Tameable && entity.isTamed) {

@@ -24,7 +24,6 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.player.PlayerDropItemEvent
-import org.bukkit.event.player.PlayerInteractAtEntityEvent
 import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
@@ -37,7 +36,7 @@ import java.util.UUID
  * [throwing]이면(전투 의무관) 쿨타임이 아닐 때 종이 1장을 버리면 [throw_speed_multiplier]배 빠르게 날아가고,
  * 날아가는 동안 적이 아닌 생명체에 닿으면 종이가 사라지며 그 대상을 회복합니다(던질 때 쿨타임).
  * 이미 체력이 가득 찬 대상에게는 쓰지 않습니다(소모·쿨타임 없음). 갑옷 거치대·마네킹·포탑은 생명체로 보지 않습니다.
- * "적이 아닌 대상"은 적대적인 몹(몬스터)이 아닌 생명체입니다. 능력 적 범위 설정은 기본이 거의 모든 몹을 적으로 보므로 쓰지 않습니다.
+ * "적이 아닌 대상"은 능력 적 범위 설정(`/ability enemy`)상 적이 아닌 생명체입니다.
  * 쿨타임은 종이의 아이템 쿨타임 표시로 보여 줍니다.
  */
 abstract class FirstAidAbility(
@@ -57,6 +56,9 @@ abstract class FirstAidAbility(
     private val lastUse = HashMap<UUID, Long>()
     /** 생명체를 우클릭한 틱. 같은 클릭에 바닐라가 이어 보내는 "허공 우클릭"으로 자신까지 회복하지 않게 합니다. */
     private val entityClickTick = HashMap<UUID, Int>()
+    /** 마지막으로 치료한 생명체 클릭(틱, 대상). 같은 클릭의 두 번째 이벤트를 걸러냅니다. */
+    private data class EntityClick(val tick: Int, val target: UUID)
+    private val lastEntityClick = HashMap<UUID, EntityClick>()
 
     private fun coolingDown(player: Player): Boolean {
         val last = lastUse[player.uniqueId] ?: return false
@@ -75,7 +77,7 @@ abstract class FirstAidAbility(
         if (target !is LivingEntity || !target.isValid || target.isDead) return false
         if (target is ArmorStand || target is Mannequin || com.github.lupi13.limpi.turret.TurretRuntime.isTurret(target)) return false
         if (target.world.uid != player.world.uid) return false
-        if (target.uniqueId != player.uniqueId && target is org.bukkit.entity.Enemy) return false // 적대적인 몹은 치료하지 않음
+        if (target.uniqueId != player.uniqueId && AbilityManager.isEnemy(player, target)) return false // 능력 적 범위상 적은 치료하지 않음
         val max = target.getAttribute(Attribute.MAX_HEALTH)?.value ?: return false
         return target.health < max
     }
@@ -89,15 +91,20 @@ abstract class FirstAidAbility(
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     fun onTreatOther(event: PlayerInteractEntityEvent) {
-        if (event is PlayerInteractAtEntityEvent) return // 같은 클릭의 두 번째 이벤트
+        // 한 번의 클릭에 위치가 담긴 이벤트(InteractAt)와 일반 이벤트가 둘 다 오거나 하나만 옵니다(서버 버전마다 다름).
+        // 둘 다 받고, 같은 틱에 같은 대상으로 두 번째가 오면 거래창 등만 막고 다시 치료하지 않습니다.
         val player = event.player
         if (player.ability != this) return
         val hand = event.hand
         if (!paper(player.inventory.getItem(hand))) return
         val target = event.rightClicked
+        val now = Bukkit.getCurrentTick()
+        val click = EntityClick(now, target.uniqueId)
+        if (lastEntityClick[player.uniqueId] == click) { event.isCancelled = true; return }
         if (target.uniqueId == player.uniqueId || !treatable(player, target)) return
         if (FileManager.delivery.blocked(player.uniqueId)) return
-        entityClickTick[player.uniqueId] = Bukkit.getCurrentTick()
+        entityClickTick[player.uniqueId] = now
+        lastEntityClick[player.uniqueId] = click
         event.isCancelled = true // 주민 거래창 등 대신 치료
         if (coolingDown(player)) return
         consume(player, hand)
@@ -176,12 +183,12 @@ abstract class FirstAidAbility(
     /** 다른 대상 회복을 퀘스트 [NeedHealing]에 셀지(응급처치만). */
     protected open val countsQuest: Boolean get() = false
 
-    override fun release(owner: UUID) { entityClickTick.remove(owner) }
+    override fun release(owner: UUID) { entityClickTick.remove(owner); lastEntityClick.remove(owner) }
     override fun resetCooldowns(owner: UUID) {
         lastUse.remove(owner)
         Bukkit.getPlayer(owner)?.setCooldown(Material.PAPER, 0)
     }
-    override fun stop() { entityClickTick.clear() }
+    override fun stop() { entityClickTick.clear(); lastEntityClick.clear() }
 
     private companion object {
         /** 던진 종이가 회복할 수 있는 비행 시간(틱). 그동안은 아무도 줍지 못합니다. */

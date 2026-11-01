@@ -76,8 +76,8 @@ object TurretRuntime : Listener {
         var lastSearch: Int = Int.MIN_VALUE / 2
         /** 지원 포탑의 마지막 주기 동작(1초마다). */
         var lastPulse: Int = Bukkit.getCurrentTick()
-        /** 마지막 검색에서 고른 표적. 쏠 때마다 아직 쏠 수 있는지 다시 확인합니다. */
-        var target: LivingEntity? = null
+        /** 마지막 검색에서 찾은 적(종류의 선호 순서). 쏠 때 이 목록에서 한가한 적을 고릅니다([TurretFocus]). */
+        var candidates: List<LivingEntity> = emptyList()
         val id: UUID get() = entity.uniqueId
         /** 포탑이 차지한 칸. 배·수레에 태워 옮길 수 있으므로 검색 주기마다 다시 셉니다([reindex]). */
         var block: BlockKey = BlockKey.of(entity.location)
@@ -103,6 +103,10 @@ object TurretRuntime : Listener {
     private val byBlock = HashMap<BlockKey, UUID>()
     private val shots = HashMap<UUID, Shot>()
     private val locks = TargetLocks()
+    private val focus = TurretFocus<UUID>()
+    /** 쏠 때 검색 목록 앞에서 살펴보는 적 수(시야 검사 횟수 상한). */
+    private const val CHOICE_LIMIT = 4
+    private const val FOCUS_PRUNE_SIZE = 64
 
     fun isTurret(entity: Entity?): Boolean = entity != null && entity.persistentDataContainer.has(TURRET_KEY, PersistentDataType.STRING)
 
@@ -150,7 +154,7 @@ object TurretRuntime : Listener {
             turrets.remove(turret.id)
             if (byBlock[turret.block] == turret.id) byBlock.remove(turret.block)
             locks.release(turret.id)
-            turret.target = null
+            turret.candidates = emptyList()
             if (entity.isValid) { breakSound(entity.location); entity.remove() } // 죽지 않고 사라질 때(주인 퇴장 등)
         }
         effect.repeat(1, 1) { tick(turret) }
@@ -181,16 +185,23 @@ object TurretRuntime : Listener {
         if (searching) {
             holdLockedMobs(turret)
             turret.speed = TurretCharge.speed(supportBonuses(turret))
-            turret.target = findTarget(turret, owner)
+            turret.candidates = turret.kind.rank(enemiesInRange(turret, owner), turret.center())
+            if (focus.size > FOCUS_PRUNE_SIZE) focus.prune(now)
         }
         turret.charge = TurretCharge.fill(turret.charge, turret.speed, interval)
         if (!TurretCharge.ready(turret.charge, interval)) return
-        val target = turret.target ?: return
-        if (!shootable(turret, owner, target)) { turret.target = null; return }
+        val target = TurretFocus.choose(turret.candidates, CHOICE_LIMIT, { shootable(turret, owner, it) }, { busy(it, now) }) ?: return
         turret.charge = TurretCharge.spend(turret.charge, interval)
         face(turret, target)
+        // 탄이 닿아 무적 시간이 끝날 때까지 다른 포탑은 이 대상을 뒤로 미룹니다.
+        val distance = target.boundingBox.center.distance(turret.center().toVector())
+        focus.reserve(target.uniqueId, now + turret.kind.flightTicks(distance) + TurretFocus.INVULNERABLE_TICKS)
         turret.kind.fire(turret, target)
     }
+
+    /** 포탑 탄이 향하는 중이거나, 막 맞아 무적 시간(피해가 깎이는 구간)인 대상. */
+    private fun busy(target: LivingEntity, now: Int): Boolean =
+        focus.busy(target.uniqueId, now) || target.noDamageTicks > target.maximumNoDamageTicks / 2
 
     /** 지원 포탑: 1초마다 맞닿은 아군 포탑에 종류의 효과를 줍니다(에메랄드 회복). 금 포탑 가속도 그 속도에 반영됩니다. */
     private fun pulse(turret: PlacedTurret, now: Int) {
@@ -237,10 +248,6 @@ object TurretRuntime : Listener {
         val (yaw, pitch) = TurretFacing.rotation(turret.entity.attachedFace, direction)
         turret.entity.setRotation(yaw, pitch)
     }
-
-    /** 반경 안에서 주인의 적이고 (시야가 필요한 종류면) 블록에 가리지 않은 생명체 중 종류가 고른 표적(기본 가장 가까운 것). */
-    private fun findTarget(turret: PlacedTurret, owner: Player): LivingEntity? =
-        turret.kind.pickTarget(enemiesInRange(turret, owner), turret.center())
 
     private fun shootable(turret: PlacedTurret, owner: Player, target: LivingEntity): Boolean {
         if (target === turret.entity || !target.isValid || target.isDead || isTurret(target)) return false
@@ -327,6 +334,7 @@ object TurretRuntime : Listener {
         striking = owner.uniqueId
         val accepted = try { shot.kind.onHit(shot, owner, target) } finally { striking = null }
         if (!accepted) return
+        focus.reserve(target.uniqueId, Bukkit.getCurrentTick() + TurretFocus.INVULNERABLE_TICKS) // 범위·관통 명중도 다른 포탑이 피하게
         if (target.isDead) {
             zombieKilled(owner, target)
             if (raid != null) raidTurretKills.getOrPut(raid) { HashSet() }.add(owner.uniqueId)
@@ -478,6 +486,6 @@ object TurretRuntime : Listener {
     fun closeAll() {
         turrets.values.toList().forEach { it.effect.close() }
         turrets.clear(); byBlock.clear(); shots.clear(); locks.clear(); tainted.clear(); zombieKills.clear()
-        raidTainted.clear(); raidTurretKills.clear()
+        raidTainted.clear(); raidTurretKills.clear(); focus.clear()
     }
 }

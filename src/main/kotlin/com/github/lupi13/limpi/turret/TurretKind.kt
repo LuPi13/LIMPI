@@ -68,9 +68,12 @@ abstract class TurretKind(
     /** 한 발이 처음 맞힌 적 뒤로 더 맞힐 수 있는 수(다이아몬드). */
     open fun pierce(stats: TurretStats): Int = 0
 
-    /** 쏠 수 있는 적 [candidates] 중 표적 고르기. 기본은 [center]에서 가장 가까운 적. */
-    open fun pickTarget(candidates: List<LivingEntity>, center: Location): LivingEntity? =
-        candidates.minByOrNull { it.location.distanceSquared(center) }
+    /** 쏠 수 있는 적 [candidates]의 선호 순서. 기본은 [center]에서 가까운 순. 쏠 때 앞에서부터 한가한 적을 고릅니다. */
+    open fun rank(candidates: List<LivingEntity>, center: Location): List<LivingEntity> =
+        candidates.sortedBy { it.location.distanceSquared(center) }
+
+    /** 쏜 순간부터 [distance] 떨어진 표적에 닿기까지의 어림 틱(표적 분산용). 기본은 탄속으로 계산. */
+    open fun flightTicks(distance: Double): Int = TurretFocus.flightTicks(distance, speed)
 
     /** 지원 포탑의 1초마다 동작. [neighbors]는 맞닿은 아군(주인 본인·같은 팀) 포탑, 속도는 [TurretRuntime.PlacedTurret.speed]. */
     open fun pulse(turret: TurretRuntime.PlacedTurret, neighbors: List<TurretRuntime.PlacedTurret>) {}
@@ -196,6 +199,8 @@ object CopperTurretKind : TurretKind(
     override fun hitEffect(at: Location) {
         at.world.spawnParticle(Particle.FLAME, at, 6, 0.2, 0.3, 0.2, 0.02)
     }
+
+    override fun flightTicks(distance: Double): Int = 0
 
     const val BURN = COPPER_BURN
     const val ARMOR = COPPER_ARMOR

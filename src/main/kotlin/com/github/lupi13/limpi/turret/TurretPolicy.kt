@@ -147,3 +147,50 @@ class KillWindow(private val window: Int, private val target: Int) {
 object TurretHeal {
     fun amount(perSecond: Double, speed: Double): Double = (perSecond.coerceAtLeast(0.0) * speed.coerceAtLeast(0.0))
 }
+
+/**
+ * 표적 분산: 포탑 탄이 날아가는 중이거나 막 맞아 무적 시간(10틱)인 대상은 피해가 거의 들어가지 않으므로 뒤로 미룹니다.
+ * 대상 → "이 틱까지는 바쁨" 기록만 두고, 지난 기록은 가끔 지웁니다.
+ */
+class TurretFocus<K> {
+    private val busyUntil = HashMap<K, Int>()
+
+    /** [key]를 [until] 틱까지 바쁨으로 둡니다(더 늦은 기록만 남김). */
+    fun reserve(key: K, until: Int) {
+        val current = busyUntil[key]
+        if (current == null || until > current) busyUntil[key] = until
+    }
+
+    fun busy(key: K, now: Int): Boolean = (busyUntil[key] ?: return false) > now
+
+    /** 끝난 기록을 지웁니다. */
+    fun prune(now: Int) { busyUntil.values.removeIf { it <= now } }
+
+    val size: Int get() = busyUntil.size
+
+    fun clear() = busyUntil.clear()
+
+    companion object {
+        /** 바닐라 무적 시간 중 피해가 깎이는 구간(맞은 뒤 10틱). */
+        const val INVULNERABLE_TICKS = 10
+
+        /**
+         * 선호 순서 [ranked]의 앞에서 [limit]개까지 보며, 쏠 수 있는([usable]) 첫 한가한 대상을 고릅니다.
+         * 모두 바쁘면 쏠 수 있는 첫 대상(대상이 하나뿐이어도 계속 쏨). [usable]은 시야 검사가 있어 꼭 필요한 만큼만 부릅니다.
+         */
+        fun <T> choose(ranked: List<T>, limit: Int, usable: (T) -> Boolean, busy: (T) -> Boolean): T? {
+            var fallback: T? = null
+            for (candidate in ranked.asSequence().take(limit)) {
+                if (fallback != null && busy(candidate)) continue // 대안이 이미 있으면 바쁜 대상은 시야 검사도 생략
+                if (!usable(candidate)) continue
+                if (!busy(candidate)) return candidate
+                fallback = candidate
+            }
+            return fallback
+        }
+
+        /** 거리와 탄속으로 어림한 도착까지의 틱. */
+        fun flightTicks(distance: Double, speed: Double): Int =
+            if (speed <= 0.0 || !distance.isFinite()) 0 else kotlin.math.ceil(distance.coerceAtLeast(0.0) / speed).toInt()
+    }
+}

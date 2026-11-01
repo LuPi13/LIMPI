@@ -61,6 +61,8 @@ object EchoTurretKind : TurretKind(
 ) {
     override val needsSight: Boolean get() = false
 
+    override fun flightTicks(distance: Double): Int = 0 // 음파는 바로 닿음
+
     override fun fire(turret: TurretRuntime.PlacedTurret, target: LivingEntity) {
         val owner = Bukkit.getPlayer(turret.owner) ?: return
         val from = turret.center()
@@ -103,8 +105,9 @@ object AmethystTurretKind : TurretKind(
         integer(TurretStats.key(prefix, SLOW_LEVEL), defaults.extra(SLOW_LEVEL).toInt(), 1, 10), // 구속 단계(2 = 구속 II)
     )
 
-    override fun pickTarget(candidates: List<LivingEntity>, center: Location): LivingEntity? =
-        super.pickTarget(candidates.filter { !it.hasPotionEffect(PotionEffectType.SLOWNESS) }, center) ?: super.pickTarget(candidates, center)
+    /** 구속이 없는 적을 먼저, 그 안에서 가까운 순. */
+    override fun rank(candidates: List<LivingEntity>, center: Location): List<LivingEntity> =
+        candidates.sortedWith(compareBy<LivingEntity>({ it.hasPotionEffect(PotionEffectType.SLOWNESS) }, { it.location.distanceSquared(center) }))
 
     override fun onHit(shot: TurretRuntime.Shot, owner: Player, target: Damageable): Boolean {
         val accepted = super.onHit(shot, owner, target)
@@ -164,6 +167,11 @@ object ShulkerTurretKind : TurretKind(
     override fun hitEffect(at: Location) {
         at.world.spawnParticle(Particle.END_ROD, at, 6, 0.2, 0.2, 0.2, 0.02)
     }
+
+    /** 셜커 탄환은 느리게(틱당 약 0.3블록) 따라갑니다. */
+    override fun flightTicks(distance: Double): Int = TurretFocus.flightTicks(distance, BULLET_SPEED)
+
+    private const val BULLET_SPEED = 0.3
 
     const val LEVITATION = SHULKER_LEVITATION
 }

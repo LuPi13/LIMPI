@@ -291,6 +291,9 @@ object TurretRuntime : Listener {
         shots[projectile.uniqueId] = Shot(turret.id, turret.kind, turret.ability, turret.stats)
     }
 
+    /** 탄을 쏜 포탑의 몸체(피해의 직접 가해자). 포탑이 이미 사라졌으면 null(그때는 주인이 직접 가해자). */
+    fun body(shot: Shot): Entity? = turrets[shot.turret]?.entity?.takeIf { it.isValid && !it.isDead }
+
     /** 포탑의 효과 범위로 대상에게 물약 효과를 겁니다(포탑이 사라지면 함께 정리). 포탑이 이미 없으면 걸지 않습니다. */
     fun potion(shot: Shot, target: LivingEntity, effect: org.bukkit.potion.PotionEffect) {
         turrets[shot.turret]?.effect?.potion(target, effect)

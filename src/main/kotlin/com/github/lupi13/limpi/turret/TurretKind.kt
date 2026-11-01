@@ -78,9 +78,13 @@ abstract class TurretKind(
     /** 목표를 향해 한 발 쏩니다. 기본은 중력을 받는 투척물(눈덩이에 [ammo] 겉모습). */
     open fun fire(turret: TurretRuntime.PlacedTurret, target: LivingEntity) = TurretRuntime.throwShot(turret, target)
 
-    /** 투사체가 [target]에 맞았을 때. 기본은 주인의 능력 피해. 피해가 실제로 들어갔으면 true. */
+    /**
+     * 투사체가 [target]에 맞았을 때. 기본은 주인의 능력 피해. 피해가 실제로 들어갔으면 true.
+     * 피해의 원인은 주인(처치 보상·경험치·습격 영웅), 직접 가해자는 포탑 몸체입니다.
+     */
     open fun onHit(shot: TurretRuntime.Shot, owner: Player, target: Damageable): Boolean =
-        com.github.lupi13.limpi.platform.AbilityDamage.hit(owner, target, shot.ability, shot.stats.damage, knockback = false)
+        com.github.lupi13.limpi.platform.AbilityDamage.hit(owner, target, shot.ability, shot.stats.damage, knockback = false,
+            direct = TurretRuntime.body(shot))
 
     /** 명중 지점의 연출. 기본은 탄 조각. */
     open fun hitEffect(at: Location) {

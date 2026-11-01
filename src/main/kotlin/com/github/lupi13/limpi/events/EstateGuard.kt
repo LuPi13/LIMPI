@@ -66,7 +66,8 @@ class EstateGuard : Listener {
         is Projectile -> entity.shooter as? Player
         is TNTPrimed -> playerOf(entity.source)
         is AreaEffectCloud -> entity.source as? Player
-        else -> null
+        // 포탑의 피해는 직접 가해자가 포탑 몸체이므로 주인의 행동으로 봅니다.
+        else -> com.github.lupi13.limpi.turret.TurretRuntime.ownerOf(entity)?.let(org.bukkit.Bukkit::getPlayer)
     }
 
     // ---- players ----

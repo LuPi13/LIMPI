@@ -42,7 +42,7 @@ object AbilityDamage : Listener {
      */
     fun hit(player: Player, target: Damageable, ability: String, amount: Double,
             kind: HitKind = HitKind.ABILITY, chain: ChainBudget? = null, self: Boolean = false, respectTargets: Boolean = true,
-            knockback: Boolean = true, type: DamageType? = null): Boolean {
+            knockback: Boolean = true, type: DamageType? = null, direct: org.bukkit.entity.Entity? = null): Boolean {
         check(Bukkit.isPrimaryThread())
         val damage = DamageNumbers.bounded(amount)
         if (damage == 0.0 || !player.isOnline || player.isDead || FileManager.delivery.blocked(player.uniqueId) ||
@@ -53,7 +53,8 @@ object AbilityDamage : Listener {
         else if (respectTargets && !AbilityManager.isEnemy(player, target)) return false
         // [type]을 주면 그 피해 종류(예: 방어구를 무시하는 음파)로 줍니다.
         val damageType = type ?: if (kind == HitKind.MAGIC_CONVERSION || kind == HitKind.EXECUTION) DamageType.MAGIC else DamageType.PLAYER_ATTACK
-        val source = DamageSource.builder(damageType).withCausingEntity(player).withDirectEntity(player).build()
+        // [direct]를 주면 직접 가해자는 그 엔티티(예: 포탑 몸체), 원인은 여전히 [player]입니다(처치 귀속·경험치 유지).
+        val source = DamageSource.builder(damageType).withCausingEntity(player).withDirectEntity(direct ?: player).build()
         val receipt = HitReceipt()
         DamageContext.with(AbilityHit(player.uniqueId, ability, kind, chain, target.uniqueId, receipt, knockback)) { target.damage(damage, source) }
         return receipt.accepted

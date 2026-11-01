@@ -67,8 +67,8 @@ object TurretRuntime : Listener {
         val ability: String,
         val effect: AbilityEffect,
     ) {
-        /** 충전식 발사([TurretCharge]). 처음에는 가득 차 있어 적이 보이면 바로 쏩니다. */
-        var charge: Double = stats.fireIntervalTicks.toDouble()
+        /** 충전식 발사([TurretCharge]). 설치 직후에는 비어 있어 한 간격이 지나야 첫 발을 쏩니다(설치 후 피할 시간). */
+        var charge: Double = TurretCharge.INITIAL
         /** 맞닿은 지원 포탑(금)을 반영한 공격 속도. 검색 주기마다 다시 셉니다. */
         var speed: Double = 1.0
         var lastSearch: Int = Int.MIN_VALUE / 2

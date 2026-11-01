@@ -108,6 +108,9 @@ object TurretDecay {
  * 정확합니다. 표적이 없으면 간격에서 멈춰 기다리므로 적이 들어오면 바로 쏩니다.
  */
 object TurretCharge {
+    /** 설치 직후의 충전량. 0이라 설치하고 공격 간격만큼 지나야 첫 발을 쏩니다(PvP에서 설치를 보고 피할 시간). */
+    const val INITIAL = 0.0
+
     /** 맞닿은 지원 포탑들의 기여([bonuses])를 더한 공격 속도(1 = 기본). */
     fun speed(bonuses: Iterable<Double>): Double = 1.0 + bonuses.sumOf { it.coerceAtLeast(0.0) }
 

@@ -28,6 +28,22 @@ class TurretSupportTest {
         assertEquals(7, shots(40, 1.25, 200)) // 구리 2초 → 1.6초(32틱마다)
     }
 
+    @Test fun `a new turret waits one full interval before its first shot`() {
+        fun firstShot(interval: Int, speed: Double): Int {
+            var charge = TurretCharge.INITIAL
+            for (tick in 1..10_000) {
+                charge = TurretCharge.fill(charge, speed, interval)
+                if (TurretCharge.ready(charge, interval)) return tick
+            }
+            return -1
+        }
+        assertEquals(60, firstShot(60, 1.0)) // 메아리: 설치 후 3초
+        assertEquals(20, firstShot(20, 1.0))
+        assertEquals(40, firstShot(40, 1.0))
+        assertEquals(1, firstShot(1, 1.0))
+        assertEquals(40, firstShot(60, 1.5)) // 금 1개(+50%)가 붙으면 그만큼 빨리
+    }
+
     @Test fun `a full charge waits for a target and fires at once`() {
         var charge = TurretCharge.fill(20.0, 1.0, 20)
         assertTrue(TurretCharge.ready(charge, 20))

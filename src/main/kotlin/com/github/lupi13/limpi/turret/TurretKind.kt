@@ -62,6 +62,19 @@ abstract class TurretKind(
     /** 포탑 몸체(셜커)의 방어력. */
     open fun armor(stats: TurretStats): Double = 0.0
 
+    /** false면 벽 너머의 적도 표적으로 삼습니다(메아리). */
+    open val needsSight: Boolean get() = true
+
+    /** 한 발이 처음 맞힌 적 뒤로 더 맞힐 수 있는 수(다이아몬드). */
+    open fun pierce(stats: TurretStats): Int = 0
+
+    /** 쏠 수 있는 적 [candidates] 중 표적 고르기. 기본은 [center]에서 가장 가까운 적. */
+    open fun pickTarget(candidates: List<LivingEntity>, center: Location): LivingEntity? =
+        candidates.minByOrNull { it.location.distanceSquared(center) }
+
+    /** 지원 포탑의 1초마다 동작. [neighbors]는 맞닿은 아군(주인 본인·같은 팀) 포탑, 속도는 [TurretRuntime.PlacedTurret.speed]. */
+    open fun pulse(turret: TurretRuntime.PlacedTurret, neighbors: List<TurretRuntime.PlacedTurret>) {}
+
     /** 목표를 향해 한 발 쏩니다. 기본은 중력을 받는 투척물(눈덩이에 [ammo] 겉모습). */
     open fun fire(turret: TurretRuntime.PlacedTurret, target: LivingEntity) = TurretRuntime.throwShot(turret, target)
 

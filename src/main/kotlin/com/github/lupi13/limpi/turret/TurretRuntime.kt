@@ -53,6 +53,7 @@ object TurretRuntime : Listener {
     /** 주변 검색 주기(틱). */
     const val SEARCH_INTERVAL_TICKS = 10L
     private const val DECAY_INTERVAL_TICKS = 20L
+    private const val PULSE_INTERVAL_TICKS = 20
     /** 셜커 껍데기를 열어 둔 정도. 닫혀 있으면 방어 +20이고 화살을 튕겨 내므로 조금 엽니다. */
     private const val PEEK = 0.3f
     /** 투사체가 출발하는 중심에서의 거리. 셜커 판정 상자(반폭 0.5) 밖이어야 자기 몸에 맞지 않습니다. */
@@ -72,11 +73,12 @@ object TurretRuntime : Listener {
         /** 맞닿은 지원 포탑(금)을 반영한 공격 속도. 검색 주기마다 다시 셉니다. */
         var speed: Double = 1.0
         var lastSearch: Int = Int.MIN_VALUE / 2
+        /** 지원 포탑의 마지막 주기 동작(1초마다). */
+        var lastPulse: Int = Bukkit.getCurrentTick()
         /** 마지막 검색에서 고른 표적. 쏠 때마다 아직 쏠 수 있는지 다시 확인합니다. */
         var target: LivingEntity? = null
         val id: UUID get() = entity.uniqueId
-        /** 포탑이 차지한 칸(셜커는 움직이지 않음). */
-        /** 배·수레에 태워 옮길 수 있으므로 검색 주기마다 다시 셉니다([reindex]). */
+        /** 포탑이 차지한 칸. 배·수레에 태워 옮길 수 있으므로 검색 주기마다 다시 셉니다([reindex]). */
         var block: BlockKey = BlockKey.of(entity.location)
             internal set
         /** 투사체가 나가는 중심점. */
@@ -84,7 +86,12 @@ object TurretRuntime : Listener {
     }
 
     /** 날아가는 투사체에서 쏜 포탑을 찾지 못할 때(포탑이 먼저 사라짐)를 위해 필요한 값을 따로 둡니다. */
-    class Shot(val turret: UUID, val kind: TurretKind, val ability: String, val stats: TurretStats)
+    class Shot(val turret: UUID, val kind: TurretKind, val ability: String, val stats: TurretStats) {
+        /** 남은 관통 횟수(0이면 처음 맞힌 적에서 사라짐). */
+        var piercesLeft: Int = kind.pierce(stats)
+        /** 이미 맞힌 대상(관통하는 탄이 같은 대상을 또 맞히지 않게). */
+        val struck = HashSet<UUID>()
+    }
 
     data class BlockKey(val world: UUID, val x: Int, val y: Int, val z: Int) {
         fun offset(dx: Int, dy: Int, dz: Int) = BlockKey(world, x + dx, y + dy, z + dz)
@@ -167,7 +174,7 @@ object TurretRuntime : Listener {
         val now = Bukkit.getCurrentTick()
         val searching = TurretSchedule.due(now, turret.lastSearch, SEARCH_INTERVAL_TICKS.toInt())
         if (searching) { turret.lastSearch = now; reindex(turret) }
-        if (!turret.kind.attacks) return
+        if (!turret.kind.attacks) { pulse(turret, now); return }
         val owner = Bukkit.getPlayer(turret.owner) ?: return
         val interval = turret.stats.fireIntervalTicks
         if (searching) {
@@ -184,6 +191,20 @@ object TurretRuntime : Listener {
         turret.kind.fire(turret, target)
     }
 
+    /** 지원 포탑: 1초마다 맞닿은 아군 포탑에 종류의 효과를 줍니다(에메랄드 회복). 금 포탑 가속도 그 속도에 반영됩니다. */
+    private fun pulse(turret: PlacedTurret, now: Int) {
+        if (!TurretSchedule.due(now, turret.lastPulse, PULSE_INTERVAL_TICKS)) return
+        turret.lastPulse = now
+        val supporter = Bukkit.getPlayer(turret.owner) ?: return
+        turret.speed = TurretCharge.speed(supportBonuses(turret))
+        turret.kind.pulse(turret, neighbors(turret).filter { AbilityManager.alliedOwner(supporter, it.owner) })
+    }
+
+    /** 맞닿은 여섯 면의 살아 있는 포탑. */
+    fun neighbors(turret: PlacedTurret): List<PlacedTurret> = TURRET_NEIGHBOR_OFFSETS.mapNotNull { (dx, dy, dz) ->
+        byBlock[turret.block.offset(dx, dy, dz)]?.let(turrets::get)?.takeIf { it.entity.isValid && !it.entity.isDead }
+    }
+
     /** 포탑이 탈것에 실려 다른 칸으로 옮겨졌으면 칸 색인을 지금 칸으로 고칩니다(금 포탑 효과가 원래 자리에 남지 않게). */
     private fun reindex(turret: PlacedTurret) {
         val current = BlockKey.of(turret.entity.location)
@@ -194,10 +215,9 @@ object TurretRuntime : Listener {
     }
 
     /** 맞닿은 여섯 면의 지원 포탑이 주는 속도 몫. 지원 포탑 주인이 이 포탑 주인 본인이거나 같은 팀일 때만. */
-    private fun supportBonuses(turret: PlacedTurret): List<Double> = TURRET_NEIGHBOR_OFFSETS.mapNotNull { (dx, dy, dz) ->
-        val neighbor = byBlock[turret.block.offset(dx, dy, dz)]?.let(turrets::get) ?: return@mapNotNull null
+    private fun supportBonuses(turret: PlacedTurret): List<Double> = neighbors(turret).mapNotNull { neighbor ->
         val bonus = neighbor.kind.speedBonus(neighbor.stats)
-        if (bonus <= 0.0 || !neighbor.entity.isValid || neighbor.entity.isDead) return@mapNotNull null
+        if (bonus <= 0.0) return@mapNotNull null
         val supporter = Bukkit.getPlayer(neighbor.owner) ?: return@mapNotNull null
         if (!AbilityManager.alliedOwner(supporter, turret.owner)) return@mapNotNull null
         bonus
@@ -217,13 +237,9 @@ object TurretRuntime : Listener {
         turret.entity.setRotation(yaw, pitch)
     }
 
-    /** 반경 안에서 주인의 적이고 블록에 가리지 않은 가장 가까운 생명체. */
-    private fun findTarget(turret: PlacedTurret, owner: Player): LivingEntity? {
-        val center = turret.center()
-        return center.world.getNearbyLivingEntities(center, turret.stats.range).asSequence()
-            .filter { shootable(turret, owner, it) }
-            .minByOrNull { it.location.distanceSquared(center) }
-    }
+    /** 반경 안에서 주인의 적이고 (시야가 필요한 종류면) 블록에 가리지 않은 생명체 중 종류가 고른 표적(기본 가장 가까운 것). */
+    private fun findTarget(turret: PlacedTurret, owner: Player): LivingEntity? =
+        turret.kind.pickTarget(enemiesInRange(turret, owner), turret.center())
 
     private fun shootable(turret: PlacedTurret, owner: Player, target: LivingEntity): Boolean {
         if (target === turret.entity || !target.isValid || target.isDead || isTurret(target)) return false
@@ -232,7 +248,7 @@ object TurretRuntime : Listener {
         if (target.world.uid != center.world.uid) return false
         val range = turret.stats.range
         if (target.boundingBox.center.toLocation(center.world).distanceSquared(center) > range * range) return false
-        return AbilityManager.isEnemy(owner, target) && turret.entity.hasLineOfSight(target)
+        return AbilityManager.isEnemy(owner, target) && (!turret.kind.needsSight || turret.entity.hasLineOfSight(target))
     }
 
     /** 기본 발사: 중력을 받는 눈덩이에 종류의 탄 겉모습을 씌워, 낙차를 계산한 각도로 쏩니다. 발사자는 주인입니다. */
@@ -267,6 +283,18 @@ object TurretRuntime : Listener {
         from.world.playSound(from, Sound.BLOCK_DISPENSER_LAUNCH, 0.6f, 1.6f)
     }
 
+    /** 종류가 직접 만든 투사체(셜커 탄환 등)를 포탑 탄으로 등록합니다. 명중 처리는 눈덩이와 같습니다. */
+    fun registerShot(turret: PlacedTurret, projectile: org.bukkit.entity.Projectile) {
+        projectile.isPersistent = false
+        projectile.persistentDataContainer.set(SHOT_KEY, PersistentDataType.STRING, turret.id.toString())
+        shots[projectile.uniqueId] = Shot(turret.id, turret.kind, turret.ability, turret.stats)
+    }
+
+    /** 포탑의 효과 범위로 대상에게 물약 효과를 겁니다(포탑이 사라지면 함께 정리). 포탑이 이미 없으면 걸지 않습니다. */
+    fun potion(shot: Shot, target: LivingEntity, effect: org.bukkit.potion.PotionEffect) {
+        turrets[shot.turret]?.effect?.potion(target, effect)
+    }
+
     // ---- 투사체 ----
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -280,10 +308,12 @@ object TurretRuntime : Listener {
         // 포탑·주인·주인의 적이 아닌 대상(아군 등)은 통과합니다.
         if (isTurret(hit) || owner == null || !owner.isOnline || hit !is org.bukkit.entity.Damageable ||
             !AbilityManager.isEnemy(owner, hit)) return
-        val shot = shots.remove(projectile.uniqueId)
+        val shot = shots[projectile.uniqueId] ?: run { projectile.remove(); return }
+        if (!shot.struck.add(hit.uniqueId)) return // 관통 중 같은 대상은 통과
         val at = projectile.location
-        projectile.remove()
-        if (shot != null) strike(shot, owner, hit, at)
+        if (shot.piercesLeft > 0) shot.piercesLeft-- // 관통: 탄은 계속 날아감
+        else { shots.remove(projectile.uniqueId); projectile.remove() }
+        strike(shot, owner, hit, at)
     }
 
     /** 명중: 종류의 연출과 피해, 피해가 들어간 공격적인 몹은 이 포탑에 고정, 포탑으로 쓰러뜨린 좀비는 퀘스트에 기록. */

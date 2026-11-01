@@ -42,7 +42,7 @@ object AbilityDamage : Listener {
      */
     fun hit(player: Player, target: Damageable, ability: String, amount: Double,
             kind: HitKind = HitKind.ABILITY, chain: ChainBudget? = null, self: Boolean = false, respectTargets: Boolean = true,
-            knockback: Boolean = true): Boolean {
+            knockback: Boolean = true, type: DamageType? = null): Boolean {
         check(Bukkit.isPrimaryThread())
         val damage = DamageNumbers.bounded(amount)
         if (damage == 0.0 || !player.isOnline || player.isDead || FileManager.delivery.blocked(player.uniqueId) ||
@@ -51,8 +51,9 @@ object AbilityDamage : Listener {
         if (com.github.lupi13.limpi.turret.TurretRuntime.isTurret(target)) return false
         if (target.uniqueId == player.uniqueId) { if (!self) return false }
         else if (respectTargets && !AbilityManager.isEnemy(player, target)) return false
-        val type = if (kind == HitKind.MAGIC_CONVERSION || kind == HitKind.EXECUTION) DamageType.MAGIC else DamageType.PLAYER_ATTACK
-        val source = DamageSource.builder(type).withCausingEntity(player).withDirectEntity(player).build()
+        // [type]을 주면 그 피해 종류(예: 방어구를 무시하는 음파)로 줍니다.
+        val damageType = type ?: if (kind == HitKind.MAGIC_CONVERSION || kind == HitKind.EXECUTION) DamageType.MAGIC else DamageType.PLAYER_ATTACK
+        val source = DamageSource.builder(damageType).withCausingEntity(player).withDirectEntity(player).build()
         val receipt = HitReceipt()
         DamageContext.with(AbilityHit(player.uniqueId, ability, kind, chain, target.uniqueId, receipt, knockback)) { target.damage(damage, source) }
         return receipt.accepted

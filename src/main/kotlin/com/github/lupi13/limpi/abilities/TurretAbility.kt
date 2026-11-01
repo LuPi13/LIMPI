@@ -56,7 +56,7 @@ abstract class TurretAbility(
         val now = System.currentTimeMillis()
         val cooldown = cooldownTicks() * 50
         val last = lastPlaced[player.uniqueId]
-        if (last != null && now - last < cooldown) { AbilityManager.showCooldown(player, cooldown, last); return }
+        if (last != null && now - last < cooldown) return // 쿨타임이 짧아 남은 시간은 표시하지 않음
 
         val space = clicked.getRelative(event.blockFace)
         if (!TurretRuntime.spaceFree(space)) return

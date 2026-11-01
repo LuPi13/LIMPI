@@ -79,7 +79,6 @@ object TurretChampion : TurretAbility(
                 .append(life(shulker)),
             name("에메랄드 포탑", NamedTextColor.GREEN).append(cost(EmeraldTurretKind, emerald)).append(white("1초마다 맞닿은 포탑 체력 "))
                 .append(value(emerald.extra(EmeraldTurretKind.HEAL))).append(white(" 회복(에메랄드 포탑 제외)")).append(life(emerald)),
-            white("쿨타임: ").append(seconds(cooldownTicks())).append(white("초"))
         )
     }
 }

@@ -63,7 +63,6 @@ object GuardExpert : TurretAbility(
             Component.text("금 포탑", NamedTextColor.YELLOW).append(cost(GoldTurretKind, gold)).append(white(": 공격하지 않고, 맞닿은 면의 포탑의 공격 속도를 "))
                 .append(value((gold.extra(GoldTurretKind.SPEED) * 100).let { if (it % 1.0 == 0.0) it.toInt() else it }))
                 .append(white("% 올립니다. 여러 금 포탑에 맞닿으면 효과가 더해집니다. ")).append(life(gold)),
-            white("쿨타임: ").append(seconds(cooldownTicks())).append(white("초"))
         )
     }
 }

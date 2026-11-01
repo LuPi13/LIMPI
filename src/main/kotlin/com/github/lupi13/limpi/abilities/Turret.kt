@@ -36,7 +36,6 @@ object Turret : TurretAbility(
                 .append(white("의 피해를 줍니다.")),
             white("포탑의 체력은 ").append(value(stats.maxHealth)).append(white("이며 1초마다 ")).append(value(stats.decayPerSecond))
                 .append(white("씩 줄어듭니다.")),
-            white("쿨타임: ").append(value(seconds(cooldownTicks()))).append(white("초"))
         )
     }
 }

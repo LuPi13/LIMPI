@@ -17,7 +17,7 @@ object QuestManager {
         DodgeMaster, YourDodge, EnoughDodge, ShouldDodge, DodgeCliche, ColdDodge,
         PerfectDistance, FireStrike, MasterSmith, MoebiusReactor, IntoTheDark,
         GiveAll, NogadaKing, TriggerFinger, NoHurt, BoldForBoom, LightTime, DarkTime, Lotto, WhyDidYouDoThat,
-        MachineVsZombie, TowerDefense
+        MachineVsZombie, TowerDefense, NeedHealing
     )
 
 

@@ -204,5 +204,5 @@ object AbilitySpecs {
         com.github.lupi13.limpi.config.specs.CloakSpecs.all + com.github.lupi13.limpi.config.specs.StealthSpecs.all +
         com.github.lupi13.limpi.config.specs.ArcherySpecs.all + com.github.lupi13.limpi.config.specs.HandCannonSpecs.all +
         com.github.lupi13.limpi.config.specs.TimeLeapSpecs.all + com.github.lupi13.limpi.config.specs.AlchemyPlusSpecs.all +
-        com.github.lupi13.limpi.config.specs.TurretSpecs.all
+        com.github.lupi13.limpi.config.specs.TurretSpecs.all + com.github.lupi13.limpi.config.specs.MedicSpecs.all
 }

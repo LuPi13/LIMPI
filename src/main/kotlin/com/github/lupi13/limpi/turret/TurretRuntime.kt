@@ -76,7 +76,9 @@ object TurretRuntime : Listener {
         var target: LivingEntity? = null
         val id: UUID get() = entity.uniqueId
         /** 포탑이 차지한 칸(셜커는 움직이지 않음). */
-        val block: BlockKey = BlockKey.of(entity.location)
+        /** 배·수레에 태워 옮길 수 있으므로 검색 주기마다 다시 셉니다([reindex]). */
+        var block: BlockKey = BlockKey.of(entity.location)
+            internal set
         /** 투사체가 나가는 중심점. */
         fun center(): Location = entity.location.add(0.0, 0.5, 0.0)
     }
@@ -162,12 +164,13 @@ object TurretRuntime : Listener {
     private fun tick(turret: PlacedTurret) {
         val entity = turret.entity
         if (!entity.isValid || entity.isDead) { turret.effect.close(); return }
+        val now = Bukkit.getCurrentTick()
+        val searching = TurretSchedule.due(now, turret.lastSearch, SEARCH_INTERVAL_TICKS.toInt())
+        if (searching) { turret.lastSearch = now; reindex(turret) }
         if (!turret.kind.attacks) return
         val owner = Bukkit.getPlayer(turret.owner) ?: return
-        val now = Bukkit.getCurrentTick()
         val interval = turret.stats.fireIntervalTicks
-        if (TurretSchedule.due(now, turret.lastSearch, SEARCH_INTERVAL_TICKS.toInt())) {
-            turret.lastSearch = now
+        if (searching) {
             holdLockedMobs(turret)
             turret.speed = TurretCharge.speed(supportBonuses(turret))
             turret.target = findTarget(turret, owner)
@@ -179,6 +182,15 @@ object TurretRuntime : Listener {
         turret.charge = TurretCharge.spend(turret.charge, interval)
         face(turret, target)
         turret.kind.fire(turret, target)
+    }
+
+    /** 포탑이 탈것에 실려 다른 칸으로 옮겨졌으면 칸 색인을 지금 칸으로 고칩니다(금 포탑 효과가 원래 자리에 남지 않게). */
+    private fun reindex(turret: PlacedTurret) {
+        val current = BlockKey.of(turret.entity.location)
+        if (current == turret.block) return
+        if (byBlock[turret.block] == turret.id) byBlock.remove(turret.block)
+        turret.block = current
+        byBlock[current] = turret.id
     }
 
     /** 맞닿은 여섯 면의 지원 포탑이 주는 속도 몫. 지원 포탑 주인이 이 포탑 주인 본인이거나 같은 팀일 때만. */

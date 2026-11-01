@@ -112,6 +112,9 @@ object TurretRuntime : Listener {
             shulker.attachedFace = attachedTo
             shulker.color = kind.color
             shulker.peek = PEEK
+            // AI가 없어 머리를 스스로 돌리지 않으므로 처음 방향을 넣습니다(넣지 않으면 늘 +z).
+            val (yaw, pitch) = TurretFacing.rotation(attachedTo, TurretFacing.initial(attachedTo, owner.location.direction))
+            shulker.setRotation(yaw, pitch)
             shulker.getAttribute(Attribute.MAX_HEALTH)?.baseValue = stats.maxHealth
             shulker.health = stats.maxHealth
             shulker.persistentDataContainer.set(TURRET_KEY, PersistentDataType.STRING, owner.uniqueId.toString())
@@ -156,7 +159,16 @@ object TurretRuntime : Listener {
         val target = turret.target ?: return
         if (!shootable(turret, owner, target)) { turret.target = null; return }
         turret.lastShot = now
+        face(turret, target)
         turret.kind.fire(turret, target)
+    }
+
+    /** 쏘기 전에 머리를 표적 쪽으로 돌립니다. */
+    private fun face(turret: PlacedTurret, target: LivingEntity) {
+        val direction = target.boundingBox.center.subtract(turret.center().toVector())
+        if (direction.lengthSquared() < 1.0e-9) return
+        val (yaw, pitch) = TurretFacing.rotation(turret.entity.attachedFace, direction)
+        turret.entity.setRotation(yaw, pitch)
     }
 
     /** 반경 안에서 주인의 적이고 블록에 가리지 않은 가장 가까운 생명체. */

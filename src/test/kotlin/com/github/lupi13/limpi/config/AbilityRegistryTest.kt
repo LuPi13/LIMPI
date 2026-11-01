@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 class AbilityRegistryTest {
     @Test fun `ability registry can be constructed without a server plugin or starting any tasks`() {
         val abilities = AbilityManager.abilities
-        assertEquals(77, abilities.size); assertEquals(77, abilities.map { it.codeName }.toSet().size)
+        assertEquals(78, abilities.size); assertEquals(78, abilities.map { it.codeName }.toSet().size)
         abilities.forEach { assertSame(it, AbilityManager.getAbilityByCodeName(it.codeName)) }
         assertNull(AbilityManager.getAbilityByCodeName("unknown"))
     }

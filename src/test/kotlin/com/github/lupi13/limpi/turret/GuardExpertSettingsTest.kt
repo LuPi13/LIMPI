@@ -10,7 +10,7 @@ class GuardExpertSettingsTest {
 
     @Test fun `guard expert defaults per kind with id prefixes`() {
         val (settings, _) = spec.prepare(YamlConfiguration())
-        assertEquals(20, settings.getInt("cooldown_ticks"))
+        assertEquals(10, settings.getInt("cooldown_ticks"))
         assertEquals(TurretStats(1, 1, 20, 4.0, 30.0, 1.0, 16.0), IronTurretKind.stats(settings, "iron"))
         assertEquals(TurretStats(1, 1, 40, 2.0, 40.0, 1.0, 2.0, mapOf("burn_seconds" to 3.0, "armor" to 10.0)), CopperTurretKind.stats(settings, "copper"))
         assertEquals(10.0, CopperTurretKind.armor(CopperTurretKind.stats(settings, "copper")))

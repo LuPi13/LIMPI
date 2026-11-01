@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 class TurretSettingsTest {
     @Test fun `turret settings default to the requested values without prefixes`() {
         val (settings, _) = AbilitySpecs.all.getValue("turret").prepare(YamlConfiguration())
-        assertEquals(20, settings.getInt("cooldown_ticks"))
+        assertEquals(10, settings.getInt("cooldown_ticks"))
         assertFalse(settings.getBoolean("allow_in_others_estate"))
         assertEquals(TurretStats(1, 1, 20, 4.0, 30.0, 1.0, 16.0), IronTurretKind.stats(settings, ""))
         assertEquals(Material.IRON_INGOT, IronTurretKind.trigger)

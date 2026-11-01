@@ -12,7 +12,7 @@ import com.github.lupi13.limpi.turret.TurretKind
  */
 object TurretSpecs {
     fun spec(kinds: List<TurretKind>): AbilitySpec = AbilitySpec(listOf(
-        integer("cooldown_ticks", 20, 0, 72000), // 설치 쿨타임
+        integer("cooldown_ticks", 10, 0, 72000), // 설치 쿨타임(10틱 = 0.5초)
         flag("allow_in_others_estate", false), // 내가 지을 수 없는 남의 사유지 안에 설치 허용
     ) + kinds.flatMap { kind -> kind.fields(prefix(kinds, kind)) })
 

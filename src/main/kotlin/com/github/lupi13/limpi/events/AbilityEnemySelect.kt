@@ -78,7 +78,7 @@ class AbilityEnemySelect: Listener {
             }
             else {
                 lore.add(Component.text("공격하지 않음", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
-                lore.add(Component.text("나를 적대시할 때만 공격", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+                lore.add(Component.text("나 또는 내 팀을 적대시할 때만 공격", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                 lore.add(Component.text("항상 공격", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
                 when (category) {
                     NON_AGGRESSIVE -> {

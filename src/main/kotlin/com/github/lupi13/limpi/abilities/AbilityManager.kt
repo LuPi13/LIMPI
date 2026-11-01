@@ -335,7 +335,25 @@ object AbilityManager : Listener {
         }
         return com.github.lupi13.limpi.combat.EnemyPolicy.hostile(group, group?.let(settings::mode) ?: 2,
             sameTeam = (entity as? Player)?.let { sameTeam(it.name) } ?: false,
-            targetingOwner = (entity as? Mob)?.target?.uniqueId == player.uniqueId)
+            targetingAlly = isAlly(player, (entity as? Mob)?.target))
+    }
+
+    /**
+     * [target]이 [player]의 아군인지: 본인, 같은 팀(scoreboard) 플레이어, 본인이나 팀원이 길들인 몹·세운 포탑.
+     * 몹 분류의 "나 또는 내 팀을 적대시할 때만 공격"(모드 1)이 몹의 표적에 이 판정을 씁니다. 길들인 몹·포탑은 설명에 적지 않습니다.
+     */
+    fun isAlly(player: Player, target: Entity?): Boolean {
+        if (target == null) return false
+        if (target.uniqueId == player.uniqueId) return true
+        val team = player.scoreboard.getEntryTeam(player.name)
+        fun teammate(name: String?) = team != null && name != null && team.hasEntry(name)
+        fun ownedByAlly(owner: java.util.UUID?, name: () -> String?) = owner != null && (owner == player.uniqueId || teammate(name()))
+        return when {
+            target is Player -> teammate(target.name)
+            target is Tameable && target.isTamed -> target.owner.let { owner -> ownedByAlly(owner?.uniqueId) { owner?.name } }
+            else -> com.github.lupi13.limpi.turret.TurretRuntime.ownerOf(target)
+                ?.let { owner -> ownedByAlly(owner) { org.bukkit.Bukkit.getOfflinePlayer(owner).name } } ?: false
+        }
     }
 
 

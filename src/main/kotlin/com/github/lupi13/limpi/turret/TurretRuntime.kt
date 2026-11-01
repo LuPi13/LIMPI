@@ -85,6 +85,12 @@ object TurretRuntime : Listener {
 
     fun isTurret(entity: Entity?): Boolean = entity != null && entity.persistentDataContainer.has(TURRET_KEY, PersistentDataType.STRING)
 
+    /** 포탑이면 주인 UUID, 아니면 null. */
+    fun ownerOf(entity: Entity?): UUID? {
+        val raw = entity?.persistentDataContainer?.get(TURRET_KEY, PersistentDataType.STRING) ?: return null
+        return try { UUID.fromString(raw) } catch (_: IllegalArgumentException) { null }
+    }
+
     fun turretsOf(owner: UUID): List<PlacedTurret> = turrets.values.filter { it.owner == owner }
 
     /** 포탑을 세울 수 있는 칸: 비었거나 풀처럼 대체 가능한 칸이고, 살아 있는 엔티티와 겹치지 않음. */

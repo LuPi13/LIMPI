@@ -24,9 +24,9 @@ class EnemyPolicyTest {
     }
     @Test fun `mob categories respect no attack conditional hostility and all attack`() {
         for (group in listOf(TargetGroup.NON_AGGRESSIVE, TargetGroup.NEUTRAL, TargetGroup.AGGRESSIVE)) {
-            assertFalse(EnemyPolicy.hostile(group, 0, targetingOwner = true))
-            assertFalse(EnemyPolicy.hostile(group, 1, targetingOwner = false))
-            assertTrue(EnemyPolicy.hostile(group, 1, targetingOwner = true))
+            assertFalse(EnemyPolicy.hostile(group, 0, targetingAlly = true))
+            assertFalse(EnemyPolicy.hostile(group, 1, targetingAlly = false))
+            assertTrue(EnemyPolicy.hostile(group, 1, targetingAlly = true))
             assertTrue(EnemyPolicy.hostile(group, 2))
         }
     }

@@ -21,14 +21,14 @@ data class EnemySettings(private val modes: Map<TargetGroup, Int>) {
 
 object EnemyPolicy {
     fun hostile(group: TargetGroup?, mode: Int, sameTeam: Boolean = false, hasPlayerOwner: Boolean = false,
-                targetingOwner: Boolean = false, self: Boolean = false): Boolean {
+                targetingAlly: Boolean = false, self: Boolean = false): Boolean {
         require(mode in 0..2)
         if (self) return false
         return when (group) {
             TargetGroup.PLAYER -> when (mode) { 0 -> false; 1 -> !sameTeam; else -> true }
             TargetGroup.TAMED -> when (mode) { 0 -> !hasPlayerOwner; 1 -> !sameTeam; else -> true }
             null -> true
-            else -> when (mode) { 0 -> false; 1 -> targetingOwner; else -> true }
+            else -> when (mode) { 0 -> false; 1 -> targetingAlly; else -> true }
         }
     }
     fun cycle(mode: Int, forward: Boolean): Int { require(mode in 0..2); return (mode + if (forward) 1 else 2) % 3 }

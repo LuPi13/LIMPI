@@ -102,3 +102,40 @@ object TurretDecay {
         return (health - decay).coerceAtLeast(0.0)
     }
 }
+
+/**
+ * 충전식 발사: 매 틱 공격 속도만큼 충전하고 간격 이상이면 쏩니다. 금 포탑처럼 속도를 올리는 효과가 있어도 소수 간격이
+ * 정확합니다. 표적이 없으면 간격에서 멈춰 기다리므로 적이 들어오면 바로 쏩니다.
+ */
+object TurretCharge {
+    /** 맞닿은 지원 포탑들의 기여([bonuses])를 더한 공격 속도(1 = 기본). */
+    fun speed(bonuses: Iterable<Double>): Double = 1.0 + bonuses.sumOf { it.coerceAtLeast(0.0) }
+
+    fun fill(charge: Double, speed: Double, interval: Int): Double = (charge + speed).coerceAtMost(interval.toDouble())
+
+    fun ready(charge: Double, interval: Int): Boolean = charge >= interval
+
+    fun spend(charge: Double, interval: Int): Double = charge - interval
+}
+
+/** 맞닿은 여섯 면의 칸 좌표 차이. */
+val TURRET_NEIGHBOR_OFFSETS: List<Triple<Int, Int, Int>> = listOf(
+    Triple(1, 0, 0), Triple(-1, 0, 0), Triple(0, 1, 0), Triple(0, -1, 0), Triple(0, 0, 1), Triple(0, 0, -1)
+)
+
+/** 최근 [window]틱 안의 기록이 [target]개 이상인지 셉니다(퀘스트 "1분 안에 10마리"). */
+class KillWindow(private val window: Int, private val target: Int) {
+    init { require(window > 0 && target > 0) }
+    private val times = ArrayDeque<Int>()
+
+    /** [now]에 하나를 더하고, 창 안의 개수가 [target]에 닿았으면 true(그때 기록을 비움). */
+    fun add(now: Int): Boolean {
+        times.addLast(now)
+        while (times.isNotEmpty() && now.toLong() - times.first() >= window) times.removeFirst()
+        if (times.size < target) return false
+        times.clear()
+        return true
+    }
+
+    val size: Int get() = times.size
+}

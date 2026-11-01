@@ -63,9 +63,6 @@ object GuardExpert : TurretAbility(
             Component.text("금 포탑", NamedTextColor.YELLOW).append(cost(GoldTurretKind, gold)).append(white(": 공격하지 않고, 맞닿은 면의 포탑의 공격 속도를 "))
                 .append(value((gold.extra(GoldTurretKind.SPEED) * 100).let { if (it % 1.0 == 0.0) it.toInt() else it }))
                 .append(white("% 올립니다. 여러 금 포탑에 맞닿으면 효과가 더해집니다. ")).append(life(gold)),
-            white("포탑은 회복 물약으로 회복할 수 있습니다."),
-            white("포탑은 설치하고 공격 간격만큼 지난 뒤부터 공격합니다."),
-            white("포탑에게 공격받은 공격적인 몹은 그 포탑이 사라질 때까지 포탑을 노립니다."),
             white("쿨타임: ").append(seconds(cooldownTicks())).append(white("초"))
         )
     }

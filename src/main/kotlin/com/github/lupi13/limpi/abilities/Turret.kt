@@ -35,9 +35,7 @@ object Turret : TurretAbility(
                 .append(value(seconds(stats.fireIntervalTicks))).append(white("초마다 투사체를 쏴 ")).append(value(stats.damage))
                 .append(white("의 피해를 줍니다.")),
             white("포탑의 체력은 ").append(value(stats.maxHealth)).append(white("이며 1초마다 ")).append(value(stats.decayPerSecond))
-                .append(white("씩 줄어듭니다. 회복 물약으로 회복할 수 있습니다.")),
-            white("포탑은 설치하고 공격 간격만큼 지난 뒤부터 공격합니다."),
-            white("포탑에게 공격받은 공격적인 몹은 그 포탑이 사라질 때까지 포탑을 노립니다."),
+                .append(white("씩 줄어듭니다.")),
             white("쿨타임: ").append(value(seconds(cooldownTicks()))).append(white("초"))
         )
     }

@@ -60,7 +60,6 @@ object TurretChampion : TurretAbility(
         val shulker = stats(ShulkerTurretKind); val emerald = stats(EmeraldTurretKind)
         listOf(
             Component.text("경비 전문가", NamedTextColor.GRAY).append(white(" 능력을 계승합니다.")),
-            white("포탑은 설치하고 공격 간격만큼 지난 뒤부터 공격합니다."),
             name("철 포탑", NamedTextColor.GRAY).append(cost(IronTurretKind, iron)).append(attack(iron)).append(life(iron)),
             name("구리 포탑", NamedTextColor.GOLD).append(cost(CopperTurretKind, copper)).append(attack(copper))
                 .append(white(", 범위 안의 모든 적에게 ")).append(value(copper.extra(CopperTurretKind.BURN))).append(white("초 화염"))
@@ -80,8 +79,6 @@ object TurretChampion : TurretAbility(
                 .append(life(shulker)),
             name("에메랄드 포탑", NamedTextColor.GREEN).append(cost(EmeraldTurretKind, emerald)).append(white("1초마다 맞닿은 포탑 체력 "))
                 .append(value(emerald.extra(EmeraldTurretKind.HEAL))).append(white(" 회복(에메랄드 포탑 제외)")).append(life(emerald)),
-            white("포탑은 회복 물약으로 회복할 수 있습니다."),
-            white("포탑에게 공격받은 공격적인 몹은 그 포탑이 사라질 때까지 포탑을 노립니다."),
             white("쿨타임: ").append(seconds(cooldownTicks())).append(white("초"))
         )
     }

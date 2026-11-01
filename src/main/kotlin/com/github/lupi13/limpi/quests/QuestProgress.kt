@@ -27,6 +27,7 @@ object QuestProgressDefinitions {
     val CANNON_SHOTS = QuestProgress(listOf(QuestCounter("hand_cannon_shots", 1000)))
     val TIME_HEALED = QuestProgress(listOf(QuestCounter("time_leaper_healed", 2000, 10, "체력")))
     val TIME_LOST = QuestProgress(listOf(QuestCounter("time_leaper_lost", 500, 10, "체력")))
+    val FIRST_AID_OTHERS = QuestProgress(listOf(QuestCounter("first_aid_others", 50)))
     val HARMONY = QuestProgress(listOf(QuestCounter("harmony_sword", 10, label = "검"), QuestCounter("harmony_arrow", 10, label = "화살")))
 }
 

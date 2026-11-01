@@ -27,6 +27,8 @@ object GuardExpert : TurretAbility(
 ) {
     override val kinds: List<TurretKind> = listOf(IronTurretKind, CopperTurretKind, GoldTurretKind)
 
+    override val relatedQuest: List<com.github.lupi13.limpi.quests.Quest> by lazy { listOf(com.github.lupi13.limpi.quests.TowerDefense) }
+
     override val howToGet: Component by lazy {
         Component.text("퀘스트 ", NamedTextColor.WHITE)
             .append(MachineVsZombie.displayName)
@@ -62,6 +64,7 @@ object GuardExpert : TurretAbility(
                 .append(value((gold.extra(GoldTurretKind.SPEED) * 100).let { if (it % 1.0 == 0.0) it.toInt() else it }))
                 .append(white("% 올립니다. 여러 금 포탑에 맞닿으면 효과가 더해집니다. ")).append(life(gold)),
             white("포탑은 회복 물약으로 회복할 수 있습니다."),
+            white("포탑은 설치하고 공격 간격만큼 지난 뒤부터 공격합니다."),
             white("포탑에게 공격받은 공격적인 몹은 그 포탑이 사라질 때까지 포탑을 노립니다."),
             white("쿨타임: ").append(seconds(cooldownTicks())).append(white("초"))
         )

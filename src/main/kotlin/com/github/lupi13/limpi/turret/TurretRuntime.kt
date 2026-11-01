@@ -1,6 +1,7 @@
 package com.github.lupi13.limpi.turret
 
 import com.github.lupi13.limpi.abilities.AbilityManager
+import com.github.lupi13.limpi.abilities.ability
 import com.github.lupi13.limpi.platform.AbilityEffect
 import com.github.lupi13.limpi.platform.AbilityRuntime
 import org.bukkit.Bukkit
@@ -319,10 +320,15 @@ object TurretRuntime : Listener {
     /** 명중: 종류의 연출과 피해, 피해가 들어간 공격적인 몹은 이 포탑에 고정, 포탑으로 쓰러뜨린 좀비는 퀘스트에 기록. */
     fun strike(shot: Shot, owner: Player, target: org.bukkit.entity.Damageable, at: Location) {
         shot.kind.hitEffect(at)
+        val raid = (target as? org.bukkit.entity.Raider)?.raid?.id // 죽으면 습격에서 빠지므로 먼저 기억
         striking = owner.uniqueId
         val accepted = try { shot.kind.onHit(shot, owner, target) } finally { striking = null }
         if (!accepted) return
-        if (target.isDead) { zombieKilled(owner, target); return }
+        if (target.isDead) {
+            zombieKilled(owner, target)
+            if (raid != null) raidTurretKills.getOrPut(raid) { HashSet() }.add(owner.uniqueId)
+            return
+        }
         if (target is Mob && target is Enemy) aggro(target, shot.turret)
     }
 
@@ -349,10 +355,42 @@ object TurretRuntime : Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onZombieDamaged(event: org.bukkit.event.entity.EntityDamageByEntityEvent) {
         val victim = event.entity
-        if (!zombie(victim)) return
+        val raid = (victim as? org.bukkit.entity.Raider)?.raid?.id
+        if (!zombie(victim) && raid == null) return
         val player = event.damageSource.causingEntity as? Player ?: return
         if (striking == player.uniqueId) return
-        tainted.getOrPut(victim.uniqueId) { HashSet() }.add(player.uniqueId)
+        if (zombie(victim)) tainted.getOrPut(victim.uniqueId) { HashSet() }.add(player.uniqueId)
+        if (raid != null) raidTainted.getOrPut(raid) { HashSet() }.add(player.uniqueId)
+    }
+
+    // ---- 퀘스트: 타워 디펜스 ----
+
+    /** 습격 id → 그 습격에서 습격자를 포탑 말고 다른 방법으로 때린 플레이어. */
+    private val raidTainted = HashMap<Int, MutableSet<UUID>>()
+    /** 습격 id → 그 습격에서 자기 포탑으로 습격자를 쓰러뜨린 플레이어. */
+    private val raidTurretKills = HashMap<Int, MutableSet<UUID>>()
+
+    /**
+     * 습격 승리: 경비 전문가 능력을 가진 승리자 중, 그 습격의 습격자를 직접(포탑 말고) 한 번도 때리지 않았고 자기 포탑으로
+     * 습격자를 하나 이상 쓰러뜨린 플레이어는 퀘스트 완료.
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onRaidFinish(event: org.bukkit.event.raid.RaidFinishEvent) {
+        val id = event.raid.id
+        val tainted = raidTainted.remove(id).orEmpty()
+        val killers = raidTurretKills.remove(id).orEmpty()
+        for (winner in event.winners) {
+            if (winner.uniqueId in tainted || winner.uniqueId !in killers) continue
+            if (winner.ability !== com.github.lupi13.limpi.abilities.GuardExpert) continue
+            com.github.lupi13.limpi.quests.QuestManager.clearQuests(winner, com.github.lupi13.limpi.quests.TowerDefense)
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onRaidStop(event: org.bukkit.event.raid.RaidStopEvent) {
+        // 승리로 끝난 습격은 onRaidFinish가 기록을 정리합니다(두 이벤트의 순서에 기대지 않음).
+        if (event.reason == org.bukkit.event.raid.RaidStopEvent.Reason.FINISHED) return
+        raidTainted.remove(event.raid.id); raidTurretKills.remove(event.raid.id)
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -437,5 +475,6 @@ object TurretRuntime : Listener {
     fun closeAll() {
         turrets.values.toList().forEach { it.effect.close() }
         turrets.clear(); byBlock.clear(); shots.clear(); locks.clear(); tainted.clear(); zombieKills.clear()
+        raidTainted.clear(); raidTurretKills.clear()
     }
 }

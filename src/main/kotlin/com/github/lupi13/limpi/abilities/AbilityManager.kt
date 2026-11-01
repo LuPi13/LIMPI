@@ -48,7 +48,7 @@ object AbilityManager : Listener {
         ShieldStrikePlus, RoaringFlame, MetalSmith, LinearBow, Cloak, SuperCloak, BlightRanger,
         BackStab, Berserker, BlockThrower, Counter, FocusBow, HawkEye, HawkEyePlus, LavaJump,
         HandCannon, PulseCannon, ChargeShot, ChargeShotPlus, ExplosionMove, RealHandCannon, TimeLeaper, TimeLeaperPlus, Chronobreak, AlchemyPlus, VolleyShot, PerfectReload,
-        Turret, GuardExpert
+        Turret, GuardExpert, TurretChampion
         )
 
     /**

@@ -37,6 +37,8 @@ import java.util.UUID
  * [throwing]이면(전투 의무관) 쿨타임이 아닐 때 종이 1장을 버리면 [throw_speed_multiplier]배 빠르게 날아가고,
  * 날아가는 동안 적이 아닌 생명체에 닿으면 종이가 사라지며 그 대상을 회복합니다(던질 때 쿨타임).
  * 이미 체력이 가득 찬 대상에게는 쓰지 않습니다(소모·쿨타임 없음). 갑옷 거치대·마네킹·포탑은 생명체로 보지 않습니다.
+ * "적이 아닌 대상"은 적대적인 몹(몬스터)이 아닌 생명체입니다. 능력 적 범위 설정은 기본이 거의 모든 몹을 적으로 보므로 쓰지 않습니다.
+ * 쿨타임은 종이의 아이템 쿨타임 표시로 보여 줍니다.
  */
 abstract class FirstAidAbility(
     grade: Grade,
@@ -58,13 +60,13 @@ abstract class FirstAidAbility(
 
     private fun coolingDown(player: Player): Boolean {
         val last = lastUse[player.uniqueId] ?: return false
-        val cooldown = cooldownTicks() * 50
-        if (System.currentTimeMillis() - last >= cooldown) return false
-        AbilityManager.showCooldown(player, cooldown, last)
-        return true
+        return System.currentTimeMillis() - last < cooldownTicks() * 50
     }
 
-    private fun startCooldown(player: Player) { lastUse[player.uniqueId] = System.currentTimeMillis() }
+    private fun startCooldown(player: Player) {
+        lastUse[player.uniqueId] = System.currentTimeMillis()
+        player.setCooldown(Material.PAPER, cooldownTicks()) // 핫바의 종이에 쿨타임 표시
+    }
 
     private fun paper(item: ItemStack?): Boolean = item != null && item.type == Material.PAPER && item.amount > 0 && !AbilityManager.active(item)
 
@@ -73,7 +75,7 @@ abstract class FirstAidAbility(
         if (target !is LivingEntity || !target.isValid || target.isDead) return false
         if (target is ArmorStand || target is Mannequin || com.github.lupi13.limpi.turret.TurretRuntime.isTurret(target)) return false
         if (target.world.uid != player.world.uid) return false
-        if (target.uniqueId != player.uniqueId && AbilityManager.isEnemy(player, target)) return false
+        if (target.uniqueId != player.uniqueId && target is org.bukkit.entity.Enemy) return false // 적대적인 몹은 치료하지 않음
         val max = target.getAttribute(Attribute.MAX_HEALTH)?.value ?: return false
         return target.health < max
     }
@@ -129,12 +131,11 @@ abstract class FirstAidAbility(
         val stack = item.itemStack
         // 한 장만 버릴 때(Q). 묶음 버리기(Ctrl+Q)는 평범하게 떨어뜨립니다.
         if (stack.amount != 1 || !paper(stack)) return
-        val last = lastUse[player.uniqueId]
-        if (last != null && System.currentTimeMillis() - last < cooldownTicks() * 50) return // 쿨타임이면 평범한 버리기
+        if (coolingDown(player)) return // 쿨타임이면 평범한 버리기
         startCooldown(player)
         item.velocity = item.velocity.multiply(config!!.getDouble("throw_speed_multiplier"))
         item.pickupDelay = THROW_FLIGHT_TICKS
-        player.world.playSound(player.location, Sound.ITEM_BOOK_PAGE_TURN, 1f, 1.4f)
+        player.world.playSound(player.location, Sound.BLOCK_DISPENSER_LAUNCH, 1f, 2f)
         fly(player, item)
     }
 
@@ -156,8 +157,7 @@ abstract class FirstAidAbility(
     /** [target]을 서서히 회복합니다. 회복하는 사람([healer])의 효과라 그가 나가거나 죽으면 멈춥니다. */
     private fun treat(healer: Player, target: LivingEntity) {
         val steps = HealOverTime.steps(healAmount(), healSeconds())
-        target.world.playSound(target.location, Sound.ITEM_BOOK_PAGE_TURN, 1f, 1.2f)
-        target.world.spawnParticle(Particle.HEART, target.location.add(0.0, target.height + 0.3, 0.0), 2, 0.3, 0.1, 0.3, 0.0)
+        target.world.playSound(target.location, Sound.ITEM_LEAD_TIED, 1f, 0.5f)
         if (target.uniqueId != healer.uniqueId && countsQuest) QuestManager.progress(healer, NeedHealing)
         if (steps.isEmpty()) return
         val effect = AbilityRuntime.begin(healer, codeName)
@@ -177,7 +177,10 @@ abstract class FirstAidAbility(
     protected open val countsQuest: Boolean get() = false
 
     override fun release(owner: UUID) { entityClickTick.remove(owner) }
-    override fun resetCooldowns(owner: UUID) { lastUse.remove(owner) }
+    override fun resetCooldowns(owner: UUID) {
+        lastUse.remove(owner)
+        Bukkit.getPlayer(owner)?.setCooldown(Material.PAPER, 0)
+    }
     override fun stop() { entityClickTick.clear() }
 
     private companion object {

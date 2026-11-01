@@ -42,6 +42,19 @@ class TurretPolicyTest {
         assertNull(locks.lockedTo(mob)); assertTrue(locks.allows(mob, player))
     }
 
+    @Test fun `firing every tick-run fires exactly once per interval`() {
+        fun shots(interval: Int, ticks: Int): Int {
+            var last = Int.MIN_VALUE / 2; var count = 0
+            for (now in 0 until ticks) if (TurretSchedule.due(now, last, interval)) { last = now; count++ }
+            return count
+        }
+        assertEquals(20, shots(1, 20))
+        assertEquals(1, shots(20, 20))
+        assertEquals(2, shots(10, 20))
+        assertEquals(3, shots(7, 20))
+        assertTrue(TurretSchedule.due(0, Int.MIN_VALUE / 2, 72000))
+    }
+
     @Test fun `decay never goes below zero`() {
         assertEquals(29.0, TurretDecay.next(30.0, 1.0))
         assertEquals(0.0, TurretDecay.next(0.5, 1.0))

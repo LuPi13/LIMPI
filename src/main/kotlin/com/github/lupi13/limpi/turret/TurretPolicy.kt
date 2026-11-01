@@ -89,6 +89,12 @@ class TargetLocks {
     fun clear() = byMob.clear()
 }
 
+/** 매 틱 도는 포탑 작업의 주기 판정. */
+object TurretSchedule {
+    /** 마지막 실행([last]) 뒤 [interval]틱 이상 지났는지. */
+    fun due(now: Int, last: Int, interval: Int): Boolean = now.toLong() - last >= interval
+}
+
 /** 자연 감소: 1초마다 [decay]씩 줄인 체력(0 미만 없음). */
 object TurretDecay {
     fun next(health: Double, decay: Double): Double {

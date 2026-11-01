@@ -62,18 +62,18 @@ object TurretChampion : TurretAbility(
             Component.text("경비 전문가", NamedTextColor.GRAY).append(white(" 능력을 계승합니다.")),
             name("철 포탑", NamedTextColor.GRAY).append(cost(IronTurretKind, iron)).append(attack(iron)).append(life(iron)),
             name("구리 포탑", NamedTextColor.GOLD).append(cost(CopperTurretKind, copper)).append(attack(copper))
-                .append(white(", 범위 안의 모든 적에게 ")).append(value(copper.extra(CopperTurretKind.BURN))).append(white("초 화염"))
+                .append(white(", 범위 안의 모든 ")).append(Component.text("적", NamedTextColor.RED)).append(white("에게 ")).append(value(copper.extra(CopperTurretKind.BURN))).append(white("초 화염"))
                 .append(life(copper)).append(white(" 방어력 ")).append(value(copper.extra(CopperTurretKind.ARMOR))).append(white(".")),
             name("금 포탑", NamedTextColor.YELLOW).append(cost(GoldTurretKind, gold)).append(white("맞닿은 포탑의 속도 +"))
                 .append(value((gold.extra(GoldTurretKind.SPEED) * 100).let { if (it % 1.0 == 0.0) it.toInt() else it })).append(white("%"))
                 .append(life(gold)),
             name("다이아몬드 포탑", NamedTextColor.AQUA).append(cost(DiamondTurretKind, diamond)).append(attack(diamond))
-                .append(white(", 적 ")).append(value(DiamondTurretKind.pierce(diamond))).append(white("명 관통")).append(life(diamond)),
+                .append(white(", ")).append(Component.text("적", NamedTextColor.RED)).append(white(" ")).append(value(DiamondTurretKind.pierce(diamond))).append(white("명 관통")).append(life(diamond)),
             name("메아리 포탑", NamedTextColor.DARK_AQUA).append(cost(EchoTurretKind, echo)).append(attack(echo))
                 .append(white(", 벽을 무시하고 방어구를 무시하는 음파")).append(life(echo)),
             name("자수정 포탑", NamedTextColor.LIGHT_PURPLE).append(cost(AmethystTurretKind, amethyst)).append(attack(amethyst))
                 .append(white(", 구속 ")).append(value(amethyst.extra(AmethystTurretKind.SLOW_LEVEL).toInt())).append(white("단계 "))
-                .append(value(amethyst.extra(AmethystTurretKind.SLOW_SECONDS))).append(white("초, 구속이 없는 적을 먼저 노림")).append(life(amethyst)),
+                .append(value(amethyst.extra(AmethystTurretKind.SLOW_SECONDS))).append(white("초, 구속이 없는 ")).append(Component.text("적", NamedTextColor.RED)).append(white("을 먼저 노림")).append(life(amethyst)),
             name("셜커 포탑", NamedTextColor.DARK_PURPLE).append(cost(ShulkerTurretKind, shulker)).append(attack(shulker))
                 .append(white(", 따라가는 탄환, 공중부양 ")).append(value(shulker.extra(ShulkerTurretKind.LEVITATION))).append(white("초"))
                 .append(life(shulker)),

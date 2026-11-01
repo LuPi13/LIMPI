@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 
 private fun white(text: String) = Component.text(text, NamedTextColor.WHITE)
 private fun item(text: String) = Component.text(text, NamedTextColor.YELLOW)
+private fun enemy() = Component.text("적", NamedTextColor.RED)
 private fun value(number: Number): Component =
     Component.text(if (number is Double && number % 1.0 == 0.0) number.toInt().toString() else number.toString(), NamedTextColor.GREEN)
 private fun seconds(ticks: Int): Component = value(if (ticks % 20 == 0) ticks / 20 else ticks / 20.0)
@@ -32,7 +33,7 @@ object FirstAid : FirstAidAbility(
     internal fun firstAidLines(amount: Double, duration: Double, cooldownTicks: Int): List<Component> = listOf(
         item("종이").append(white("를 들고 우클릭하면 ")).append(item("종이")).append(white(" 1개를 소모해 자신의 체력을 "))
             .append(value(amount)).append(white(" 회복합니다.")),
-        white("적이 아닌 대상을 보고 우클릭하면 그 대상의 체력을 ").append(value(amount)).append(white(" 회복합니다.")),
+        enemy().append(white("이 아닌 대상을 보고 우클릭하면 그 대상의 체력을 ")).append(value(amount)).append(white(" 회복합니다.")),
         white("회복은 ").append(value(duration)).append(white("초에 걸쳐 서서히 진행됩니다.")),
         white("쿨타임: ").append(seconds(cooldownTicks)).append(white("초"))
     )
@@ -62,7 +63,7 @@ object CombatMedic : FirstAidAbility(
             listOf(
                 white("쿨타임이 아닐 때 ").append(item("종이")).append(white("를 던지면 ")).append(value(config!!.getDouble("throw_speed_multiplier")))
                     .append(white("배 빠르게 날아가고,")),
-                white("적이 아닌 대상에 맞으면 그 대상을 회복합니다. 던질 때 쿨타임이 적용됩니다."),
+                enemy().append(white("이 아닌 대상에 맞으면 그 대상을 회복합니다. 던질 때 쿨타임이 적용됩니다.")),
                 white("쿨타임: ").append(seconds(cooldownTicks())).append(white("초"))
             )
     }

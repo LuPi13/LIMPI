@@ -53,11 +53,11 @@ object GuardExpert : TurretAbility(
             item("주괴").append(white("를 들고 블록을 우클릭하면, 그 주괴와 인벤토리의 ")).append(item("레드스톤"))
                 .append(white("을 소모해 포탑을 설치합니다.")),
             Component.text("철 포탑", NamedTextColor.GRAY).append(cost(IronTurretKind, iron)).append(white(": 주변 ")).append(value(iron.range))
-                .append(white("블록 안의 보이는 적에게 ")).append(seconds(iron.fireIntervalTicks)).append(white("초마다 투사체를 쏴 "))
+                .append(white("블록 안의 보이는 ")).append(Component.text("적", NamedTextColor.RED)).append(white("에게 ")).append(seconds(iron.fireIntervalTicks)).append(white("초마다 투사체를 쏴 "))
                 .append(value(iron.damage)).append(white("의 피해를 줍니다. ")).append(life(iron)),
             Component.text("구리 포탑", NamedTextColor.GOLD).append(cost(CopperTurretKind, copper)).append(white(": 주변 "))
-                .append(value(copper.range)).append(white("블록 안에 적이 다가오면 ")).append(seconds(copper.fireIntervalTicks))
-                .append(white("초마다 범위 안의 모든 적에게 ")).append(value(copper.damage)).append(white("의 피해를 주고 "))
+                .append(value(copper.range)).append(white("블록 안에 ")).append(Component.text("적", NamedTextColor.RED)).append(white("이 다가오면 ")).append(seconds(copper.fireIntervalTicks))
+                .append(white("초마다 범위 안의 모든 ")).append(Component.text("적", NamedTextColor.RED)).append(white("에게 ")).append(value(copper.damage)).append(white("의 피해를 주고 "))
                 .append(value(copper.extra(CopperTurretKind.BURN))).append(white("초간 불을 붙입니다. ")).append(life(copper))
                 .append(white(" 방어력 ")).append(value(copper.extra(CopperTurretKind.ARMOR))).append(white(".")),
             Component.text("금 포탑", NamedTextColor.YELLOW).append(cost(GoldTurretKind, gold)).append(white(": 공격하지 않고, 맞닿은 면의 포탑의 공격 속도를 "))

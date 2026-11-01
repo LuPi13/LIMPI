@@ -232,9 +232,7 @@ object HawkEye : HawkEyeAbility(
             .append(Component.text("적", NamedTextColor.RED))
             .append(Component.text(" 하나에게", NamedTextColor.WHITE)),
         Component.text("발광을 부여합니다. 발광이 부여된 적을 처치하면", NamedTextColor.WHITE),
-        Component.text("전리품이 2배로 증가하며, 무작위", NamedTextColor.WHITE),
-        Component.text("아이템 하나를 추가로 떨어뜨립니다.", NamedTextColor.WHITE),
-        Component.text("주의! 플레이어의 전리품은 2배로 증가하지 않습니다.", NamedTextColor.YELLOW)
+        Component.text("무작위 아이템 하나를 추가로 떨어뜨립니다.", NamedTextColor.WHITE)
     ),
     acquisition = AcquisitionType.GACHA,
     bonusSound = { Sound.ITEM_ARMOR_EQUIP_LEATHER }

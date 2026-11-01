@@ -16,7 +16,7 @@ object HeavySnowball : Ability(
     codeName = "heavy_snowball",
     material = Material.SNOWBALL,
     description = listOf(
-        Component.text("눈덩이에 피해를 부여합니다.", NamedTextColor.WHITE)
+        Component.text("눈덩이", NamedTextColor.YELLOW).append(Component.text("에 피해를 부여합니다.", NamedTextColor.WHITE))
     ),
     needFile = true
 ) {

@@ -34,7 +34,7 @@ object Counter : Ability(
     codeName = "counter",
     material = Material.DIAMOND_SWORD,
     description = listOf(
-        Component.text("검을 들고 우클릭하면 반격 태세에 들어갑니다.", NamedTextColor.WHITE),
+        Component.text("검", NamedTextColor.YELLOW).append(Component.text("을 들고 우클릭하면 반격 태세에 들어갑니다.", NamedTextColor.WHITE)),
         Component.text("직후 피해를 입으면 피해를 무시하고", NamedTextColor.WHITE),
         Component.text("전방에 강하게 반격합니다.", NamedTextColor.WHITE)
     ),

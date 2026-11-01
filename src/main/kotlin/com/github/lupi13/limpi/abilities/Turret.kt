@@ -13,7 +13,7 @@ object Turret : TurretAbility(
     codeName = "turret",
     material = Material.DISPENSER,
     description = listOf(
-        Component.text("철 주괴를 들고 블록을 우클릭하면", NamedTextColor.WHITE),
+        Component.text("철 주괴", NamedTextColor.YELLOW).append(Component.text("를 들고 블록을 우클릭하면", NamedTextColor.WHITE)),
         Component.text("주변의 ", NamedTextColor.WHITE).append(Component.text("적", NamedTextColor.RED))
             .append(Component.text("을 공격하는 포탑을 설치합니다.", NamedTextColor.WHITE))
     )

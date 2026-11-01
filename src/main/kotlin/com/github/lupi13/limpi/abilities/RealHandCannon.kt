@@ -34,7 +34,7 @@ object RealHandCannon : Ability(
         Component.text("왼손이 핸드'캐논'으로 고정됩니다.", NamedTextColor.WHITE),
         Component.text("")
             .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
-            .append(Component.text("키를 누르면 인벤토리 내의 화약 1개를 소비해", NamedTextColor.WHITE)),
+            .append(Component.text("키를 누르면 인벤토리 내의 ", NamedTextColor.WHITE).append(Component.text("화약", NamedTextColor.YELLOW)).append(Component.text(" 1개를 소비해", NamedTextColor.WHITE))),
         Component.text("지형을 파괴하는 짧은 곡사포를 발사합니다.", NamedTextColor.WHITE)
     ),
     needFile = true,
@@ -69,7 +69,7 @@ object RealHandCannon : Ability(
         meta.lore(listOf(
             Component.text("")
                 .append(Component.keybind().keybind("key.swapOffhand").color(NamedTextColor.AQUA))
-                .append(Component.text("키를 누르면 화약 1개로 곡사포를 발사합니다.", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false)
+                .append(Component.text("키를 누르면 ", NamedTextColor.WHITE).append(Component.text("화약", NamedTextColor.YELLOW)).append(Component.text(" 1개로 곡사포를 발사합니다.", NamedTextColor.WHITE))).decoration(TextDecoration.ITALIC, false)
         ))
         item.itemMeta = meta
         item

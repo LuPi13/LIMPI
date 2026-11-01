@@ -21,8 +21,8 @@ object HarmonyArrow : Ability(
     codeName = "harmony_arrow",
     material = Material.ARCHER_POTTERY_SHERD,
     description = listOf(
-        Component.text("화살로 피해를 누적시키면", NamedTextColor.WHITE),
-        Component.text("다음 검격이 강화됩니다.", NamedTextColor.WHITE)
+        Component.text("화살", NamedTextColor.YELLOW).append(Component.text("로 피해를 누적시키면", NamedTextColor.WHITE)),
+        Component.text("다음 ", NamedTextColor.WHITE).append(Component.text("검", NamedTextColor.YELLOW)).append(Component.text("격이 강화됩니다.", NamedTextColor.WHITE))
     ),
     needFile = true,
     relatedQuest = listOf(LineBetweenSwordAndArrow)

@@ -34,8 +34,8 @@ object VolleyShot : Ability(
     codeName = "volley_shot",
     material = Material.BOW,
     description = listOf(
-        Component.text("양손에 활과 화살을 들고 사격하면", NamedTextColor.WHITE),
-        Component.text("손에 든 화살을 전부 발사합니다.", NamedTextColor.WHITE)
+        Component.text("양손에 ", NamedTextColor.WHITE).append(Component.text("활", NamedTextColor.YELLOW)).append(Component.text("과 ", NamedTextColor.WHITE)).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("을 들고 사격하면", NamedTextColor.WHITE)),
+        Component.text("손에 든 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("을 전부 발사합니다.", NamedTextColor.WHITE))
     ),
     needFile = true
 ) {

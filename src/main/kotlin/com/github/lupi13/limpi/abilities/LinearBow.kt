@@ -21,7 +21,7 @@ object LinearBow : Ability(
     codeName = "linear_bow",
     material = Material.ARROW,
     description = listOf(
-        Component.text("최대로 당겨 쏜 화살이 잠시 후 직선 방향의", NamedTextColor.WHITE),
+        Component.text("최대로 당겨 쏜 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("이 잠시 후 직선 방향의", NamedTextColor.WHITE)),
         Component.text("히트스캔 방식으로 발사됩니다.", NamedTextColor.WHITE),
         Component.text("벽에 부딪히지 않으면 사라집니다.", NamedTextColor.WHITE)
     ),

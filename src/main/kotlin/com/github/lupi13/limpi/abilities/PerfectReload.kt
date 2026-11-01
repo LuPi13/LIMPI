@@ -34,7 +34,7 @@ object PerfectReload : Ability(
     codeName = "perfect_reload",
     material = Material.CROSSBOW,
     description = listOf(
-        Component.text("석궁 사격 후 제시된 타이밍에 재장전 시", NamedTextColor.WHITE),
+        Component.text("석궁", NamedTextColor.YELLOW).append(Component.text(" 사격 후 제시된 타이밍에 재장전 시", NamedTextColor.WHITE)),
         Component.text("재장전 속도가 빨라집니다.", NamedTextColor.WHITE)
     ),
     needFile = true

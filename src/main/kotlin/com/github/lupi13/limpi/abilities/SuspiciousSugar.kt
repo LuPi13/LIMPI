@@ -20,7 +20,7 @@ object SuspiciousSugar : Ability(
     codeName = "suspicious_sugar",
     material = Material.SUGAR,
     description = listOf(
-        Component.text("설탕을 우클릭하면 무작위 상태 효과를 얻습니다.", NamedTextColor.WHITE),
+        Component.text("설탕", NamedTextColor.YELLOW).append(Component.text("을 우클릭하면 무작위 상태 효과를 얻습니다.", NamedTextColor.WHITE)),
         Component.text("확률적으로 해당 상태 효과를", NamedTextColor.WHITE),
         Component.text("주변 엔티티에게도 적용시킵니다.", NamedTextColor.WHITE)
     ),

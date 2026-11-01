@@ -18,7 +18,7 @@ object FirstAid : FirstAidAbility(
     displayName = Component.text("응급처치", NamedTextColor.YELLOW),
     codeName = "first_aid",
     description = listOf(
-        white("종이를 들고 우클릭하면 자신이나"),
+        item("종이").append(white("를 들고 우클릭하면 자신이나")),
         white("바라보는 대상의 체력을 회복합니다.")
     ),
     acquisition = AcquisitionType.GACHA,
@@ -46,7 +46,7 @@ object CombatMedic : FirstAidAbility(
     codeName = "combat_medic",
     description = listOf(
         Component.text("응급처치", NamedTextColor.YELLOW).append(white(" 능력을 계승합니다.")),
-        white("종이를 던져 멀리 있는 대상을 회복합니다.")
+        item("종이").append(white("를 던져 멀리 있는 대상을 회복합니다."))
     ),
     acquisition = AcquisitionType.QUEST,
     throwing = true

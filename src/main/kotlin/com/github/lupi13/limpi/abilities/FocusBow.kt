@@ -24,7 +24,7 @@ object FocusBow : Ability(
     codeName = "focus_bow",
     material = Material.ARCHER_POTTERY_SHERD,
     description = listOf(
-        Component.text("공중에서 활시위를 당기면 시야가 확대되고", NamedTextColor.WHITE),
+        Component.text("공중에서 ", NamedTextColor.WHITE).append(Component.text("활", NamedTextColor.YELLOW)).append(Component.text("시위를 당기면 시야가 확대되고", NamedTextColor.WHITE)),
         Component.text("제자리에서 아주 느리게 낙하합니다.", NamedTextColor.WHITE)
     ),
     needFile = true

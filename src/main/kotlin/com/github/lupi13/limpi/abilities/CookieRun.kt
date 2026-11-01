@@ -15,7 +15,7 @@ object CookieRun : Ability(
     codeName = "cookie_run",
     material = Material.COOKIE,
     description = listOf(
-        Component.text("쿠키를 먹으면 신속 효과를 얻습니다.", NamedTextColor.WHITE)
+        Component.text("쿠키", NamedTextColor.YELLOW).append(Component.text("를 먹으면 신속 효과를 얻습니다.", NamedTextColor.WHITE))
     ),
     needFile = true
 ) {

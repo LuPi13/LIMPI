@@ -20,7 +20,7 @@ object GuardExpert : TurretAbility(
     codeName = "guard_expert",
     material = Material.DROPPER,
     description = listOf(
-        Component.text("철·구리·금 주괴를 들고 블록을 우클릭하면", NamedTextColor.WHITE),
+        Component.text("철·구리·금 주괴", NamedTextColor.YELLOW).append(Component.text("를 들고 블록을 우클릭하면", NamedTextColor.WHITE)),
         Component.text("서로 다른 역할의 포탑을 설치합니다.", NamedTextColor.WHITE)
     ),
     acquisition = AcquisitionType.QUEST
@@ -50,7 +50,7 @@ object GuardExpert : TurretAbility(
             .append(value(stats.decayPerSecond)).append(white(" 감소."))
         listOf(
             Component.text("포탑 설치", NamedTextColor.GRAY).append(white(" 능력을 계승합니다.")),
-            item("주괴").append(white("를 들고 블록을 우클릭하면, 그 주괴와 인벤토리의 ")).append(item("레드스톤"))
+            item("주괴").append(white("를 들고 블록을 우클릭하면, 그 ")).append(item("주괴")).append(white("와 인벤토리의 ")).append(item("레드스톤"))
                 .append(white("을 소모해 포탑을 설치합니다.")),
             Component.text("철 포탑", NamedTextColor.GRAY).append(cost(IronTurretKind, iron)).append(white(": 주변 ")).append(value(iron.range))
                 .append(white("블록 안의 보이는 ")).append(Component.text("적", NamedTextColor.RED)).append(white("에게 ")).append(seconds(iron.fireIntervalTicks)).append(white("초마다 투사체를 쏴 "))
@@ -62,7 +62,7 @@ object GuardExpert : TurretAbility(
                 .append(white(" 방어력 ")).append(value(copper.extra(CopperTurretKind.ARMOR))).append(white(".")),
             Component.text("금 포탑", NamedTextColor.YELLOW).append(cost(GoldTurretKind, gold)).append(white(": 공격하지 않고, 맞닿은 면의 포탑의 공격 속도를 "))
                 .append(value((gold.extra(GoldTurretKind.SPEED) * 100).let { if (it % 1.0 == 0.0) it.toInt() else it }))
-                .append(white("% 올립니다. 여러 금 포탑에 맞닿으면 효과가 더해집니다. ")).append(life(gold)),
+                .append(white("% 올립니다. 여러 ")).append(Component.text("금 포탑", NamedTextColor.YELLOW)).append(white("에 맞닿으면 효과가 더해집니다. ")).append(life(gold)),
         )
     }
 }

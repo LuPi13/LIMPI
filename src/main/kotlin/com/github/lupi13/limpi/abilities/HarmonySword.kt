@@ -22,8 +22,8 @@ object HarmonySword : Ability(
     codeName = "harmony_sword",
     material = Material.BLADE_POTTERY_SHERD,
     description = listOf(
-        Component.text("검으로 피해를 누적시키면", NamedTextColor.WHITE),
-        Component.text("다음 화살이 강화됩니다.", NamedTextColor.WHITE)
+        Component.text("검", NamedTextColor.YELLOW).append(Component.text("으로 피해를 누적시키면", NamedTextColor.WHITE)),
+        Component.text("다음 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("이 강화됩니다.", NamedTextColor.WHITE))
     ),
     needFile = true,
     relatedQuest = listOf(LineBetweenSwordAndArrow)

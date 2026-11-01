@@ -20,7 +20,7 @@ object ChainLightning : Ability(
     codeName = "chain_lightning",
     material = Material.SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE,
     description = listOf(
-        Component.text("공격이 주변 적에게도 피해를 입힙니다.", NamedTextColor.WHITE)
+        Component.text("공격이 주변 ", NamedTextColor.WHITE).append(Component.text("적", NamedTextColor.RED)).append(Component.text("에게도 피해를 입힙니다.", NamedTextColor.WHITE))
     ),
     needFile = true
 ){

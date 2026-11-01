@@ -34,8 +34,8 @@ object BladeLeaper : Ability(
     codeName = "blade_leaper",
     material = Material.GOLDEN_SWORD,
     description = listOf(
-        Component.text("검을 우클릭하여 전방으로 던지고,", NamedTextColor.WHITE),
-        Component.text("잠시 후 검 위치로 점멸 공격합니다.", NamedTextColor.WHITE),
+        Component.text("검", NamedTextColor.YELLOW).append(Component.text("을 우클릭하여 전방으로 던지고,", NamedTextColor.WHITE)),
+        Component.text("잠시 후 ", NamedTextColor.WHITE).append(Component.text("검", NamedTextColor.YELLOW)).append(Component.text(" 위치로 점멸 공격합니다.", NamedTextColor.WHITE)),
     ),
     needFile = true
 ){

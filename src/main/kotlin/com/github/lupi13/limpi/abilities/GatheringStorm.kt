@@ -21,11 +21,11 @@ object GatheringStorm : Ability(
     codeName = "gathering_storm",
     material = Material.TRIDENT,
     description = listOf(
-        Component.text("삼지창의 ", NamedTextColor.WHITE)
+        Component.text("삼지창", NamedTextColor.YELLOW).append(Component.text("의 ", NamedTextColor.WHITE))
             .append(Component.text("집전", NamedTextColor.AQUA))
             .append(Component.text(" 마법부여를 대폭 강화합니다.", NamedTextColor.WHITE)),
         Component.text("집전", NamedTextColor.AQUA)
-            .append(Component.text(" 삼지창이 부딪힌 곳에", NamedTextColor.WHITE)),
+            .append(Component.text(" ", NamedTextColor.WHITE).append(Component.text("삼지창", NamedTextColor.YELLOW)).append(Component.text("이 부딪힌 곳에", NamedTextColor.WHITE))),
         Component.text("번개 폭풍을 생성합니다.", NamedTextColor.WHITE)
     ),
     needFile = true

@@ -25,7 +25,7 @@ object Muspell : Ability(
     codeName = "muspell",
     material = Material.FIRE_CHARGE,
     description = listOf(
-        Component.text("일반 화살을 유도력 있는", NamedTextColor.WHITE),
+        Component.text("일반 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("을 유도력 있는", NamedTextColor.WHITE)),
         Component.text("불덩이로 변환합니다.", NamedTextColor.WHITE),
     ),
     needFile = true

@@ -33,7 +33,7 @@ object Transcendence : Ability(
     codeName = "transcendence",
     material = Material.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE,
     description = listOf(
-        Component.text("검과 화살로 피해를 누적하면", NamedTextColor.WHITE),
+        Component.text("검", NamedTextColor.YELLOW).append(Component.text("과 ", NamedTextColor.WHITE)).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("로 피해를 누적하면", NamedTextColor.WHITE)),
         Component.text("잠시동안 두 무기가 조화를 이루고", NamedTextColor.WHITE),
         Component.text("강력한 효과를 얻습니다.", NamedTextColor.WHITE)
     ),

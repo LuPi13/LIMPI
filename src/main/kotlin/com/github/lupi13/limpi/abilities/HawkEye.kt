@@ -228,10 +228,10 @@ object HawkEye : HawkEyeAbility(
     displayName = Component.text("매의 눈", NamedTextColor.YELLOW),
     codeName = "hawk_eye",
     description = listOf(
-        Component.text("검을 우클릭하면 주변 무작위 ", NamedTextColor.WHITE)
+        Component.text("검", NamedTextColor.YELLOW).append(Component.text("을 우클릭하면 주변 무작위 ", NamedTextColor.WHITE))
             .append(Component.text("적", NamedTextColor.RED))
             .append(Component.text(" 하나에게", NamedTextColor.WHITE)),
-        Component.text("발광을 부여합니다. 발광이 부여된 적을 처치하면", NamedTextColor.WHITE),
+        Component.text("발광을 부여합니다. 발광이 부여된 ", NamedTextColor.WHITE).append(Component.text("적", NamedTextColor.RED)).append(Component.text("을 처치하면", NamedTextColor.WHITE)),
         Component.text("무작위 아이템 하나를 추가로 떨어뜨립니다.", NamedTextColor.WHITE)
     ),
     acquisition = AcquisitionType.GACHA,

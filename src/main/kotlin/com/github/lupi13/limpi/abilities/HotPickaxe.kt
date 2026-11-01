@@ -14,8 +14,8 @@ object HotPickaxe : Ability(
     codeName = "hot_pickaxe",
     material = Material.NETHERITE_PICKAXE,
     description = listOf(
-        Component.text("곡괭이로 광물을 캐면 익혀서 나옵니다.", NamedTextColor.WHITE),
-        Component.text("적을 곡괭이로 공격하면 불태웁니다.", NamedTextColor.WHITE)
+        Component.text("곡괭이", NamedTextColor.YELLOW).append(Component.text("로 광물을 캐면 익혀서 나옵니다.", NamedTextColor.WHITE)),
+        Component.text("적", NamedTextColor.RED).append(Component.text("을 ", NamedTextColor.WHITE)).append(Component.text("곡괭이", NamedTextColor.YELLOW)).append(Component.text("로 공격하면 불태웁니다.", NamedTextColor.WHITE))
     ),
     needFile = true,
     relatedQuest = listOf(com.github.lupi13.limpi.quests.MasterSmith)

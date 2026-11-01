@@ -15,7 +15,7 @@ object AlchemyPlus : Ability(
     material = Material.RAW_GOLD,
     description = listOf(
         Component.text("연금술", NamedTextColor.GOLD).append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),
-        Component.text("석탄 확률이 크게 줄고, 금 확률이 크게 늘어납니다.", NamedTextColor.WHITE)
+        Component.text("석탄", NamedTextColor.YELLOW).append(Component.text(" 확률이 크게 줄고, ", NamedTextColor.WHITE)).append(Component.text("금", NamedTextColor.YELLOW)).append(Component.text(" 확률이 크게 늘어납니다.", NamedTextColor.WHITE))
     ),
     needFile = true
 ){

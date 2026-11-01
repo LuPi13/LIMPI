@@ -22,7 +22,7 @@ object SuperCloak : CloakAbility(
             .append(Component.text(" 능력을 계승합니다.", NamedTextColor.WHITE)),
         Component.text("투명화 중 받는 피해가 감소하고,", NamedTextColor.WHITE),
         Component.text("움직이지 않으면 게이지를 소모하지 않습니다.", NamedTextColor.WHITE),
-        Component.text("적을 처치하면 게이지를 회복합니다.", NamedTextColor.WHITE),
+        Component.text("적", NamedTextColor.RED).append(Component.text("을 처치하면 게이지를 회복합니다.", NamedTextColor.WHITE)),
     ),
     acquisition = AcquisitionType.QUEST,
 ) {

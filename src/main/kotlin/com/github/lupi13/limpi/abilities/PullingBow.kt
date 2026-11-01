@@ -15,7 +15,7 @@ object PullingBow : Ability(
     codeName = "pulling_bow",
     material = Material.TRIPWIRE_HOOK,
     description = listOf(
-        Component.text("자신이 쏜 화살의 넉백 방향을", NamedTextColor.WHITE),
+        Component.text("자신이 쏜 ", NamedTextColor.WHITE).append(Component.text("화살", NamedTextColor.YELLOW)).append(Component.text("의 넉백 방향을", NamedTextColor.WHITE)),
         Component.text("끌어당기는 방향으로 바꿉니다.", NamedTextColor.WHITE),
         Component.text("밀어내기", NamedTextColor.AQUA)
             .append(Component.text(" 마법부여에 영향을 받습니다.", NamedTextColor.WHITE))

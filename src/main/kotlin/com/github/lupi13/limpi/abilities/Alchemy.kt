@@ -16,7 +16,7 @@ object Alchemy : Ability(
     codeName = "alchemy",
     material = Material.RAW_GOLD,
     description = listOf(
-        Component.text("구리 주괴를 손에 들고 우클릭하면", NamedTextColor.WHITE),
+        Component.text("구리 주괴", NamedTextColor.YELLOW).append(Component.text("를 손에 들고 우클릭하면", NamedTextColor.WHITE)),
         Component.text("10개를 소모하여 다른 광물로 변환합니다.", NamedTextColor.WHITE)
     ),
     needFile = true

@@ -35,7 +35,7 @@ object BlockThrower : Ability(
     codeName = "block_thrower",
     material = Material.STONE,
     description = listOf(
-        Component.text("손에 든 블록을 허공에 우클릭하면 던지고,", NamedTextColor.WHITE),
+        Component.text("손에 든 ", NamedTextColor.WHITE).append(Component.text("블록", NamedTextColor.YELLOW)).append(Component.text("을 허공에 우클릭하면 던지고,", NamedTextColor.WHITE)),
         Component.text("떨어진 자리에 설치합니다.", NamedTextColor.WHITE),
         Component.text("적", NamedTextColor.RED)
             .append(Component.text("이 맞으면 피해를 줍니다.", NamedTextColor.WHITE))
@@ -44,13 +44,13 @@ object BlockThrower : Ability(
 ) {
     override val details: List<Component> by settingsCached {
         listOf(
-            Component.text("손에 든 단단한 블록을 허공에 우클릭하면 던지고,", NamedTextColor.WHITE),
+            Component.text("손에 든 단단한 ", NamedTextColor.WHITE).append(Component.text("블록", NamedTextColor.YELLOW)).append(Component.text("을 허공에 우클릭하면 던지고,", NamedTextColor.WHITE)),
             Component.text("떨어진 자리에 설치합니다.", NamedTextColor.WHITE),
             Component.text("적", NamedTextColor.RED)
                 .append(Component.text("이 맞으면 ", NamedTextColor.WHITE))
                 .append(Component.text("${config!!.getDouble("damage")}", NamedTextColor.GREEN))
-                .append(Component.text("의 피해를 주고 블록은 떨어집니다.", NamedTextColor.WHITE)),
-            Component.text("설치할 수 없는 자리에서도 블록이 떨어집니다.", NamedTextColor.WHITE),
+                .append(Component.text("의 피해를 주고 ", NamedTextColor.WHITE).append(Component.text("블록", NamedTextColor.YELLOW)).append(Component.text("은 떨어집니다.", NamedTextColor.WHITE))),
+            Component.text("설치할 수 없는 자리에서도 ", NamedTextColor.WHITE).append(Component.text("블록", NamedTextColor.YELLOW)).append(Component.text("이 떨어집니다.", NamedTextColor.WHITE)),
             Component.text("이름·인챈트 등 정보가 붙은 블록은 던지지 않습니다.", NamedTextColor.GRAY),
             Component.text("투척 간격: ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getInt("cooldown_ms") / 1000.0}", NamedTextColor.GREEN))

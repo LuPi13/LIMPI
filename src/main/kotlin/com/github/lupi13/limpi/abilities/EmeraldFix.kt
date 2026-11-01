@@ -16,7 +16,7 @@ object EmeraldFix : Ability(
     codeName = "emerald_fix",
     material = Material.EMERALD,
     description = listOf(
-        Component.text("에메랄드를 사용하여 아이템을 수리합니다.", NamedTextColor.WHITE)
+        Component.text("에메랄드", NamedTextColor.YELLOW).append(Component.text("를 사용하여 아이템을 수리합니다.", NamedTextColor.WHITE))
     ),
     needFile = true,
     relatedQuest = listOf(com.github.lupi13.limpi.quests.MasterSmith)

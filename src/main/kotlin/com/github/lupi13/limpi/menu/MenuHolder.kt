@@ -12,7 +12,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.InventoryHolder
 import org.bukkit.plugin.Plugin
 
-enum class MenuKind { STOCK, SHOP, SELL, MARKET, ABILITY_SELECT, ABILITY_DICTIONARY, ABILITY_SHOP, ABILITY_ENEMY, CHEST_SHOP }
+enum class MenuKind { STOCK, SHOP, SELL, MARKET, ABILITY_SELECT, ABILITY_DICTIONARY, ABILITY_SHOP, ABILITY_ENEMY, CHEST_SHOP, CASINO }
 sealed interface MenuAction {
     data class Page(val index: Int) : MenuAction
     data class AbilityCode(val code: String) : MenuAction
@@ -22,6 +22,8 @@ sealed interface MenuAction {
     data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
     data class ShopQuote(val code: String, val price: Long) : MenuAction
     data class ChestQuote(val product: String, val price: Long) : MenuAction
+    /** [screen] routes the click, [version] refuses a click on a state that has already moved on. */
+    data class Casino(val screen: String, val action: String, val argument: Int = 0, val version: Long = 0) : MenuAction
 }
 
 /** Server-owned identity and actions: titles and item names carry no authority. */

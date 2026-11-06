@@ -72,3 +72,27 @@ EstateWorlds: []  # 사유지를 살 수 있는 월드 이름 목록(예: [world
 #=== Notice Configuration ===#
 NoticeRetentionDays: 30  # 서버 시작 시와 공지 등록 시 이 일수보다 오래된 공지를 삭제 (0 이하면 삭제 안 함)
 #=== Notice Configuration End ===#
+
+#=== Casino Configuration ===#
+EnableCasino: true  # 카지노 활성화 여부. 금융 시스템도 켜져 있어야 함. 꺼도 서버 시작 시 중단된 공유 판의 정산·환불은 수행
+CasinoMinBet: 100  # 최소 베팅(원), 1 이상 정수
+CasinoMaxBet: 100000  # 최대 베팅(원). 공유 게임은 한 판의 플레이어별 합계에 적용
+CasinoMaxPayout: 10000000  # 한 판 최대 지급액(원). 마인즈·크래시는 이 금액에 닿으면 자동 수령
+CasinoMinesRtpPercent: 97  # 마인즈 환수율(%), 1~100 정수
+CasinoCrashRtpPercent: 97  # 크래시 환수율(%), 1~100 정수
+CasinoCrashGrowth: 0.08  # 크래시 배율 상승 속도(초당 로그 증가량). 0.08이면 약 8.7초에 2배
+CasinoCrashMaxMultiplier: 1000  # 크래시 최대 배율, 2 이상 정수
+CasinoCrashBettingSeconds: 15  # 크래시 첫 베팅 후 대기 시간(초)
+CasinoRaceRtpPercent: 97  # 양 경주 환수율(%), 1~100 정수. 집이 배당하므로 플레이어끼리 돈이 오가지 않음
+CasinoRaceOddsPercent: [30, 25, 18, 13, 9, 5]  # 양 6마리의 우승 확률(%). 합계 100. 경주마다 무작위로 배정
+CasinoRaceBettingSeconds: 30  # 양 경주 첫 베팅 후 대기 시간(초)
+CasinoBlackjackBettingSeconds: 15  # 블랙잭 2인 이상일 때 첫 베팅 후 대기 시간(초)
+CasinoBlackjackTurnSeconds: 20  # 블랙잭 차례 제한(초). 넘기면 자동 Stand
+CasinoSlotSymbols:  # 슬롯 심볼. weight: 등장 가중치, triple: 줄에 3개, pair: 앞 2개 같을 때 배당(줄 베팅의 배수, 줄 베팅 = 베팅액/5). 바꾸면 시작 로그의 환수율을 확인
+  COAL: {weight: 34, triple: 6, pair: 1}
+  IRON: {weight: 26, triple: 11, pair: 1}
+  GOLD: {weight: 18, triple: 25, pair: 1}
+  EMERALD: {weight: 12, triple: 60, pair: 2}
+  DIAMOND: {weight: 7, triple: 200, pair: 5}
+  NETHERITE: {weight: 3, triple: 500, pair: 10}
+#=== Casino Configuration End ===#

@@ -58,6 +58,10 @@ class FileManager {
         private lateinit var chestService: com.github.lupi13.limpi.chest.ChestService
         private lateinit var estateService: com.github.lupi13.limpi.estate.EstateService
         private lateinit var noticeBoard: com.github.lupi13.limpi.notice.NoticeBoard
+        private lateinit var casinoServices: com.github.lupi13.limpi.casino.CasinoServices
+        /** False when the casino settings are invalid: rounds still recover, new ones stay off until the file is fixed. */
+        var casinoSettingsValid = false
+            private set
         private val financial = mutableMapOf<String, YamlConfiguration>()
         val players: PlayerRepository get() = repository
         val bank: BankService get() = bankService
@@ -80,6 +84,7 @@ class FileManager {
         val chests: com.github.lupi13.limpi.chest.ChestService get() = chestService
         val estates: com.github.lupi13.limpi.estate.EstateService get() = estateService
         val notices: com.github.lupi13.limpi.notice.NoticeBoard get() = noticeBoard
+        val casino: com.github.lupi13.limpi.casino.CasinoServices get() = casinoServices
 
         /** Finished delivery/removal/transition/escrow records and their ledger rows are only kept for RecordRetentionDays. */
         private fun pruneRecords(owner: Plugin) {
@@ -139,6 +144,15 @@ class FileManager {
             estateService.damaged().keys.forEach { owner.logger.warning("Estate record $it cannot be read; it is not protected and estate purchases are paused (see /limpi review)") }
             noticeBoard = com.github.lupi13.limpi.notice.NoticeBoard(state)
             com.github.lupi13.limpi.commands.Notice.prune(owner)
+            val casinoSettings = try {
+                com.github.lupi13.limpi.casino.CasinoSettings.read(owner.config).also { casinoSettingsValid = true }
+            } catch (failure: IllegalArgumentException) {
+                casinoSettingsValid = false
+                owner.logger.severe("Casino settings are invalid, the casino stays off: ${failure.message}")
+                com.github.lupi13.limpi.casino.CasinoSettings()
+            }
+            casinoServices = com.github.lupi13.limpi.casino.CasinoServices(state, repository, casinoSettings)
+            casinoServices.damaged().forEach { owner.logger.warning("Casino record ${it.key} cannot be read; it was kept (see /limpi review)") }
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal, abilityTransitions, chestService)
             financial.clear()
         }

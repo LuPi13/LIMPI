@@ -16,7 +16,12 @@ class RecoveryCommands(private val plugin: Plugin) {
     private fun offline(owner: UUID) = require(plugin.server.getPlayer(owner) == null) { "소유자가 오프라인일 때 저장 상태를 확인하세요." }
 
     fun review(sender: CommandSender) {
-        val records = com.github.lupi13.limpi.recovery.PendingReviews.list(FileManager.transactions)
+        val casino = FileManager.casino.damaged().map {
+            com.github.lupi13.limpi.recovery.PendingReview(it.owner, it.owner?.let { id -> runCatching { FileManager.players.profile(id).name }.getOrNull() } ?: "소유자 없음",
+                "casino", it.key, "MALFORMED", "카지노 판 기록 형식 오류: 해당 플레이어는 이 게임의 새 판을 시작할 수 없습니다",
+                "/limpi casino discard ${it.key} <근거> (DB 백업에서 복원할 수 없을 때)")
+        }
+        val records = com.github.lupi13.limpi.recovery.PendingReviews.list(FileManager.transactions, casino)
         if (records.isEmpty()) sender.sendMessage(Component.text("확인 대기 기록이 없습니다.", NamedTextColor.GRAY))
         records.forEach { record ->
             sender.sendMessage(Component.text("${record.name} / ${record.owner} / ${record.kind} / ${record.id} / ${record.state}", NamedTextColor.WHITE))
@@ -48,6 +53,13 @@ class RecoveryCommands(private val plugin: Plugin) {
         val request = UUID.randomUUID()
         FileManager.estates.discard(request, actor(sender), id, args.drop(3).joinToString(" "))
         sender.sendMessage("사유지 기록 ${id}을(를) 정리했습니다. 원본은 감사 거래에 보관했습니다: $request")
+    }
+
+    /** casino discard <record key> <note>: a round document that cannot be read; the payload stays in the ledger. */
+    fun casino(sender: CommandSender, args: Array<String>) {
+        val request = UUID.randomUUID()
+        FileManager.casino.discard(request, actor(sender), args[2], args.drop(3).joinToString(" "))
+        sender.sendMessage("카지노 기록 ${args[2]}을(를) 정리했습니다. 원본은 감사 거래에 보관했습니다: $request (걸린 돈은 자동으로 돌려주지 않으니 필요하면 /financial add)")
     }
 
     /** chest resolve <owner> <window> before|after <note> */

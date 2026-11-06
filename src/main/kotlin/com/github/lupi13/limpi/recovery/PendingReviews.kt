@@ -10,7 +10,8 @@ data class PendingReview(val owner: UUID?, val name: String, val kind: String, v
 
 /** Read-only discovery also keeps malformed frozen payloads visible to administrators. */
 object PendingReviews {
-    fun list(store: StateStore): List<PendingReview> {
+    /** [casino] comes from the casino services, which alone know how to read their rounds. */
+    fun list(store: StateStore, casino: List<PendingReview> = emptyList()): List<PendingReview> {
         val names = mutableMapOf<UUID, String>()
         return (KINDS.flatMap { (prefix, kind) ->
             store.documents("$prefix/").map { (key, payload) ->
@@ -43,7 +44,7 @@ object PendingReviews {
                 }
                 PendingReview(owner, name, kind, id, state, reason, command)
             }
-        } + damagedEstates(store, names)).sortedWith(compareBy({ it.owner?.toString().orEmpty() }, { it.kind }, { it.id }))
+        } + damagedEstates(store, names) + casino).sortedWith(compareBy({ it.owner?.toString().orEmpty() }, { it.kind }, { it.id }))
     }
     /** Estate documents that cannot be read are not protected until an administrator restores or discards them. */
     private fun damagedEstates(store: StateStore, names: MutableMap<UUID, String>): List<PendingReview> =

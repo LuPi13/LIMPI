@@ -31,11 +31,25 @@ commands:
     usage: 잘못된 사용법입니다. /notice help를 확인하세요.
     aliases: ['no', nt]
 
+  casino:
+    description: command about the casino games
+    usage: 잘못된 사용법이거나, config.yml에서 카지노가 비활성화 되어 있습니다.
+    aliases: [ca]
+
   limpi:
     description: LIMPI help for every system
     usage: 잘못된 사용법입니다. /limpi help를 확인하세요.
 
 permissions:
+  limpi.casino.play:
+    description: Play the casino games
+    default: true
+  limpi.casino.admin.inspect:
+    description: Inspect a player's running casino rounds
+    default: op
+  limpi.admin.recovery.casino:
+    description: Discard a casino round record that cannot be read, keeping it in the ledger (/limpi casino discard)
+    default: op
   limpi.notice.show:
     description: Read current and past notices
     default: true
@@ -167,6 +181,7 @@ permissions:
       limpi.admin.recovery.escrow: true
       limpi.admin.recovery.chest: true
       limpi.admin.recovery.estate: true
+      limpi.admin.recovery.casino: true
   limpi.admin.recovery.review:
     description: List every pending recovery record with its resolve command (/limpi review)
     default: op

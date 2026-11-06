@@ -65,7 +65,7 @@ class CommandIndexTest {
             }
         }
         val permissions = descriptor.getConfigurationSection("permissions")!!.getKeys(false)
-        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes + CommandDefinitions.estate.routes + CommandDefinitions.notice.routes + CommandDefinitions.limpi.routes) {
+        for (route in CommandDefinitions.ability.routes + CommandDefinitions.financial.routes + CommandDefinitions.chest.routes + CommandDefinitions.estate.routes + CommandDefinitions.notice.routes + CommandDefinitions.casino.routes + CommandDefinitions.limpi.routes) {
             route.permission?.let { assertTrue(it in permissions, "Missing declared permission $it") }
         }
     }
@@ -128,7 +128,7 @@ class CommandIndexTest {
             org.bukkit.configuration.file.YamlConfiguration().apply { loadFromString(stream.readBytes().toString(Charsets.UTF_8)) }
         }
         val aliases = descriptor.getConfigurationSection("commands")!!.getKeys(false).associateWith { descriptor.getList("commands.$it.aliases").orEmpty() }
-        assertEquals(mapOf("financial" to listOf("fi", "fc"), "ability" to listOf("ab"), "chest" to listOf("ch"), "estate" to listOf("es"), "notice" to listOf("no", "nt"), "limpi" to emptyList<Any>()), aliases)
+        assertEquals(mapOf("financial" to listOf("fi", "fc"), "ability" to listOf("ab"), "chest" to listOf("ch"), "estate" to listOf("es"), "notice" to listOf("no", "nt"), "casino" to listOf("ca"), "limpi" to emptyList<Any>()), aliases)
         assertEquals(CommandHelp.ALIASES, aliases.filterValues { it.isNotEmpty() }.mapValues { (_, list) -> list.map { it as String } })
     }
 }

@@ -87,6 +87,13 @@ object CommandDefinitions {
         route("write", "limpi.notice.admin.write", false, 2, Int.MAX_VALUE, "write <내용|JSON 텍스트>", "공지를 등록하고 접속 중인 플레이어에게 보여줍니다.", true, short = "공지 등록"),
         route("delete", "limpi.notice.admin.delete", false, 3, 3, "delete <날짜> <번호>", "공지를 삭제합니다. 번호는 다시 쓰지 않습니다.", true, mapOf(1 to "noticeDates", 2 to "noticeNumbers"), short = "공지 삭제"),
     ))
+    val casino = CommandIndex(listOf(
+        route("help", null, false, 1, 1, "help", "사용 가능한 카지노 명령을 확인합니다.", true, short = "명령어 사용법"),
+        route("help admin", null, false, 2, 2, "help admin", "사용 가능한 관리자 명령을 확인합니다.", true, short = "관리자 명령어", adminHelp = true),
+        route("inspect", "limpi.casino.admin.inspect", false, 2, 2, "inspect <플레이어>", "플레이어의 진행 중인 카지노 판과 걸린 돈을 조회합니다.", true, mapOf(1 to "players"), short = "진행 중인 판 조회"),
+        route("open", "limpi.casino.play", true, 1, 1, "open", "카지노 메뉴를 엽니다. /casino만 입력해도 열립니다.", short = "카지노 메뉴"),
+        route("mines", "limpi.casino.play", true, 1, 1, "mines", "지뢰를 피해 칸을 열고 배율을 쌓습니다.", short = "마인즈"),
+    ))
     /** /limpi: the help hub and, under help admin, every recovery command for interrupted records (always registered). */
     val limpi = CommandIndex(listOf(
         route("help", null, false, 1, 1, "help", "LIMPI의 모든 도움말을 모아 봅니다.", true, short = "전체 도움말"),
@@ -102,6 +109,7 @@ object CommandDefinitions {
         route("escrow resolve", "limpi.admin.recovery.escrow", false, 6, Int.MAX_VALUE, "escrow resolve <owner UUID> <매물 UUID> removed|retained <근거>", "오프라인 장터 회수 판단을 기록합니다.", true, mapOf(4 to "removalDecision"), short = "장터 회수 판단 기록"),
         route("estate discard", "limpi.admin.recovery.estate", false, 4, Int.MAX_VALUE, "estate discard <사유지 기록 UUID> <근거>", "읽을 수 없는 사유지 기록을 원장에 보관하고 지웁니다.", true, short = "손상 사유지 기록 정리"),
         route("chest resolve", "limpi.admin.recovery.chest", false, 6, Int.MAX_VALUE, "chest resolve <owner UUID> <창 기록 UUID> before|after <근거>", "오프라인 상자 창 기록 판단을 기록합니다.", true, mapOf(4 to "chestDecision"), short = "상자 창 기록 판단"),
+        route("casino discard", "limpi.admin.recovery.casino", false, 4, Int.MAX_VALUE, "casino discard <기록 키> <근거>", "읽을 수 없는 카지노 판 기록을 원장에 보관하고 지웁니다.", true, short = "손상 카지노 기록 정리"),
     ))
-    val all: Map<String, CommandIndex> get() = mapOf("ability" to ability, "financial" to financial, "chest" to chest, "estate" to estate, "notice" to notice)
+    val all: Map<String, CommandIndex> get() = mapOf("ability" to ability, "financial" to financial, "chest" to chest, "estate" to estate, "notice" to notice, "casino" to casino)
 }

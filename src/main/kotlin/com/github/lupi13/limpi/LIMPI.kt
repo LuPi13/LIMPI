@@ -25,6 +25,7 @@ import java.io.PrintStream
 class LIMPI : JavaPlugin() {
     private var gacha: GachaEvents? = null
     private var backups: com.github.lupi13.limpi.platform.BackupScheduler? = null
+    private var casino: com.github.lupi13.limpi.events.casino.CasinoEvents? = null
     override fun onEnable() {
         // Plugin startup logic
         System.setOut(PrintStream(System.out, true, "UTF-8"))
@@ -82,6 +83,12 @@ class LIMPI : JavaPlugin() {
             server.pluginManager.registerEvents(StockEvents(), this)
             server.pluginManager.registerEvents(MarketEvents(), this)
             StockEvents.stockFlow()
+            if (config.getBoolean("EnableCasino") && FileManager.casinoSettingsValid) {
+                casino = com.github.lupi13.limpi.events.casino.CasinoEvents(this).also {
+                    server.pluginManager.registerEvents(it, this)
+                    it.start()
+                }
+            }
         }
         if (config.getBoolean("EnableAbilitySystem")) {
             server.pluginManager.registerEvents(AbilityManager, this)
@@ -114,6 +121,8 @@ class LIMPI : JavaPlugin() {
         getCommand("estate")!!.tabCompleter = com.github.lupi13.limpi.commands.EstateTab(this)
         getCommand("notice")!!.setExecutor(com.github.lupi13.limpi.commands.Notice(this))
         getCommand("notice")!!.tabCompleter = com.github.lupi13.limpi.commands.NoticeTab(this)
+        getCommand("casino")!!.setExecutor(com.github.lupi13.limpi.commands.Casino(this, casino))
+        getCommand("casino")!!.tabCompleter = com.github.lupi13.limpi.commands.CasinoTab(this)
         getCommand("limpi")!!.setExecutor(com.github.lupi13.limpi.commands.Limpi(this, DeliveryCommands(FileManager.deliveries, FileManager.delivery, this),
             com.github.lupi13.limpi.commands.RemovalCommands(this), com.github.lupi13.limpi.commands.TransitionCommands(this), com.github.lupi13.limpi.commands.RecoveryCommands(this)))
         getCommand("limpi")!!.tabCompleter = com.github.lupi13.limpi.commands.LimpiTab(this)
@@ -135,6 +144,8 @@ class LIMPI : JavaPlugin() {
         // Plugin shutdown logic
         backups?.close()
         backups = null
+        casino?.stop()
+        casino = null
         StockEvents.stop()
         ChestEvents.closeAll()
         EstateEvents.stop()

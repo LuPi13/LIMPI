@@ -38,14 +38,16 @@ class ConfigMergeTest {
         val tickets = listOf("TicketMoneyPrice", "SelectMoneyPrice")
         val stock = listOf("StockVolatility", "StockReversion", "StockFeePercent")
         val estate = listOf("EnableEstateSystem", "EstatePricePerBlock", "EstateRefundPercent", "EstateMaxWidth", "EstateMaxHeight", "EstateMaxCount", "EstateWorlds")
+        val casino = listOf("EnableCasino", "CasinoMinBet", "CasinoMaxBet", "CasinoMaxPayout", "CasinoMinesRtpPercent", "CasinoCrashRtpPercent", "CasinoCrashGrowth", "CasinoCrashMaxMultiplier",
+            "CasinoCrashBettingSeconds", "CasinoRaceRtpPercent", "CasinoRaceOddsPercent", "CasinoRaceBettingSeconds", "CasinoBlackjackBettingSeconds", "CasinoBlackjackTurnSeconds", "CasinoSlotSymbols")
         val history = mapOf(
-            "1.4.0.yml" to listOf("SellRecoveryHours") + stock + tickets + estate,
-            "1.1.1.yml" to listOf("SellRecoveryHours") + stock + tickets + estate + "NoticeRetentionDays",
-            "before-816e68c.yml" to listOf("SellRecoveryHours") + stock + tickets + chest + estate + "NoticeRetentionDays",
-            "before-ca07fea.yml" to listOf("HelpUrl", "SellRecoveryHours") + stock + tickets + chest + estate + "NoticeRetentionDays",
-            "before-4722e13.yml" to listOf("HelpUrl", "SellRecoveryHours") + stock + listOf("BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") + tickets + chest + estate + "NoticeRetentionDays",
+            "1.4.0.yml" to listOf("SellRecoveryHours") + stock + tickets + estate + casino,
+            "1.1.1.yml" to listOf("SellRecoveryHours") + stock + tickets + estate + "NoticeRetentionDays" + casino,
+            "before-816e68c.yml" to listOf("SellRecoveryHours") + stock + tickets + chest + estate + "NoticeRetentionDays" + casino,
+            "before-ca07fea.yml" to listOf("HelpUrl", "SellRecoveryHours") + stock + tickets + chest + estate + "NoticeRetentionDays" + casino,
+            "before-4722e13.yml" to listOf("HelpUrl", "SellRecoveryHours") + stock + listOf("BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") + tickets + chest + estate + "NoticeRetentionDays" + casino,
             "before-803fc3f.yml" to listOf("HelpUrl", "SellRecoveryHours") + stock + listOf("RecordRetentionDays", "BackupIntervalMinutes", "BackupKeep", "DebugTransactionTiming") +
-                tickets + chest + estate + "NoticeRetentionDays",
+                tickets + chest + estate + "NoticeRetentionDays" + casino,
         )
         for ((name, added) in history) {
             val old = javaClass.classLoader.getResourceAsStream("config-history/$name")!!.use { it.readBytes().toString(Charsets.UTF_8) }.replace("\r\n", "\n")
@@ -56,10 +58,10 @@ class ConfigMergeTest {
             // The same file with Windows newlines keeps them.
             assertEquals(result.text.replace("\n", "\r\n"), ConfigMerge.merge(template, old.replace("\n", "\r\n"))!!.text, name)
         }
-        // 2.6.1 had none of the replaced settings: only the estate section is added, with its comments in place.
+        // 2.6.1 had none of the replaced settings: only the estate and casino sections are added, with its comments in place.
         val previous = javaClass.classLoader.getResourceAsStream("config-history/before-estate.yml")!!.use { it.readBytes().toString(Charsets.UTF_8) }.replace("\r\n", "\n")
         val upgraded = ConfigMerge.merge(template, previous)!!
-        assertEquals(estate, upgraded.added)
+        assertEquals(estate + casino, upgraded.added)
         assertEquals(template, upgraded.text)
     }
 

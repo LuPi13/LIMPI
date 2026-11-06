@@ -47,16 +47,28 @@ class BlackjackTest {
         assertEquals(listOf(200L, 0L), settled.results.map { it.payout }) // 19 beats 17, 11 loses.
     }
 
-    @Test fun `a natural pays three to two rounded down and a dealer natural beats everything else`() {
+    @Test fun `a natural pays three to two rounded down and pushes against a dealer natural`() {
         val odd = BjSeat(first, 101, listOf(card(1), card(13)), BjHand.BLACKJACK)
         assertEquals(252, BlackjackPolicy.payout(odd, listOf(card(10), card(7)), maxPayout))
         assertEquals(101, BlackjackPolicy.payout(odd, listOf(card(1), card(10)), maxPayout))
-        val dealt = BlackjackPolicy.deal(betting(first), listOf(card(10), card(1), card(9), card(13)))
-        assertNull(dealt.turn) // Nobody acts into a dealer natural.
-        assertEquals(0L, BlackjackPolicy.settle(dealt, maxPayout).results.single().payout)
     }
 
-    @Test fun `a natural on either side leaves nobody to act right after the deal, and the final hand matches the settlement`() {
+    @Test fun `a hidden dealer natural still lets the player choose and then beats every total`() {
+        // Player 10, 2 against a dealer A, K: the reported hand.
+        val dealt = BlackjackPolicy.deal(betting(first), listOf(card(10), card(1), card(2), card(13), card(9), card(5)))
+        assertEquals(first, dealt.turn!!.owner)
+        assertEquals(listOf(card(1), card(13)), BlackjackPolicy.dealerHand(dealt))
+        val stood = BlackjackPolicy.stand(dealt, first)
+        assertNull(stood.turn); assertEquals(0L, BlackjackPolicy.settle(stood, maxPayout).results.single().payout)
+        // 21 made with three cards is not a natural, and a double loses the whole doubled stake.
+        val hit = BlackjackPolicy.hit(dealt, first) // 10, 2, 9 = 21 stands by itself.
+        assertEquals(BjHand.STOOD, hit.seats.single().state)
+        assertEquals(0L, BlackjackPolicy.settle(hit, maxPayout).results.single().payout)
+        val doubled = BlackjackPolicy.settle(BlackjackPolicy.double(dealt, first), maxPayout).results.single()
+        assertEquals(200, doubled.seat.bet); assertEquals(0L, doubled.payout)
+    }
+
+    @Test fun `the player's own natural has nothing to choose, and the final hand matches the settlement`() {
         val playerNatural = BlackjackPolicy.deal(betting(first), listOf(card(1), card(9), card(13), card(7), card(5)))
         assertNull(playerNatural.turn)
         assertEquals(listOf(card(9), card(7)), BlackjackPolicy.dealerHand(playerNatural))

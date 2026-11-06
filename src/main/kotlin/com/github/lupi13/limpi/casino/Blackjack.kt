@@ -42,7 +42,7 @@ object BlackjackPolicy {
     fun soft(cards: List<Int>): Boolean = cards.any { Cards.rank(it) == 1 } && cards.sumOf(::value) + 10 <= 21
     fun natural(cards: List<Int>) = cards.size == 2 && total(cards) == 21
 
-    /** Two cards each. A dealer natural is revealed at once: every other hand has lost before it can double. */
+    /** Two cards each. A dealer natural stays hidden and every hand still plays; only the player's own natural skips the turn. */
     fun deal(table: BjTable, shoe: List<Int>): BjTable {
         require(table.phase == BjPhase.BETTING && table.seats.isNotEmpty())
         val rest = shoe.toMutableList()
@@ -51,11 +51,7 @@ object BlackjackPolicy {
         val dealerFirst = draw()
         val second = first.map { it.copy(cards = it.cards + draw()) }
         val dealer = listOf(dealerFirst, draw())
-        val seats = second.map { seat -> when {
-            natural(seat.cards) -> seat.copy(state = BjHand.BLACKJACK)
-            natural(dealer) -> seat.copy(state = BjHand.STOOD)
-            else -> seat
-        } }
+        val seats = second.map { seat -> if (natural(seat.cards)) seat.copy(state = BjHand.BLACKJACK) else seat }
         return table.copy(phase = BjPhase.PLAYING, seats = seats, dealer = dealer, shoe = rest, version = table.version + 1)
     }
 

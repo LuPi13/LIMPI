@@ -14,6 +14,7 @@ data class DamagedCasinoRecord(val key: String, val owner: UUID?, val payload: S
 
 class CasinoServices(private val store: StateStore, players: PlayerRepository, val settings: CasinoSettings, random: Random = SecureRandom()) {
     val mines = MinesService(store, players, settings, random)
+    val slot = SlotService(store, players, settings, random)
 
     /** For administrators: what this player has at stake right now. */
     fun describe(owner: UUID): List<String> {

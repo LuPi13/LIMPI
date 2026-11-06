@@ -93,6 +93,7 @@ object CommandDefinitions {
         route("inspect", "limpi.casino.admin.inspect", false, 2, 2, "inspect <플레이어>", "플레이어의 진행 중인 카지노 판과 걸린 돈을 조회합니다.", true, mapOf(1 to "players"), short = "진행 중인 판 조회"),
         route("open", "limpi.casino.play", true, 1, 1, "open", "카지노 메뉴를 엽니다. /casino만 입력해도 열립니다.", short = "카지노 메뉴"),
         route("mines", "limpi.casino.play", true, 1, 1, "mines", "지뢰를 피해 칸을 열고 배율을 쌓습니다.", short = "마인즈"),
+        route("slot", "limpi.casino.play", true, 1, 1, "slot", "광물 슬롯머신을 돌립니다.", short = "슬롯머신"),
     ))
     /** /limpi: the help hub and, under help admin, every recovery command for interrupted records (always registered). */
     val limpi = CommandIndex(listOf(

@@ -57,6 +57,8 @@ class RaceScreen(private val plugin: Plugin) : CasinoScreen {
         if (views[player.uniqueId] === holder) views.remove(player.uniqueId)
     }
 
+    override fun release(id: UUID) { views.remove(id) }
+
     override fun click(player: Player, holder: MenuHolder, action: MenuAction.Casino, click: ClickType) {
         CasinoUi.guarded(plugin, player, { drawAll() }) {
             when (action.action) {

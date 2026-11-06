@@ -9,6 +9,7 @@
 | [상자](chest.md) | `/chest help` (`/ch help`) | 돈으로 사는 개인 상자, 자동 저장, 엔더화 |
 | [사유지](estate.md) | `/estate help` (`/es help`) | 땅 구매·보호·공유·매각 |
 | [공지](notice.md) | `/notice help` (`/no help`, `/nt help`) | 서버 공지 보기, 지난 공지 다시 보기 |
+| [카지노](casino.md) | `/casino help` (`/ca help`) | 마인즈, 슬롯머신, 블랙잭, 크래시, 양 경주 |
 
 ## 빠른 참조
 
@@ -77,6 +78,17 @@
 | `/notice show <날짜> [번호]` | 지난 공지 보기 |
 | `/notice list` | 보관 중인 공지 목록 |
 | `/notice unread` | 읽지 않은 공지 보기 |
+
+### 카지노
+
+| 명령어 | 하는 일 |
+| --- | --- |
+| `/casino` | 카지노 메뉴 |
+| `/casino mines` | 마인즈 |
+| `/casino slot` | 슬롯머신 |
+| `/casino blackjack` | 블랙잭 |
+| `/casino crash` | 크래시 |
+| `/casino race` | 양 경주 |
 
 ### 기타
 

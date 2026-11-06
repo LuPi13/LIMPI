@@ -64,6 +64,9 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
         try { startIfEveryoneBet(room) } catch (failure: Exception) { plugin.logger.log(Level.WARNING, "Blackjack table ${room.round} could not start yet", failure) }
     }
 
+    /** A window that never opened (dead on the next tick) gets no close event, so leaving the game clears the view too. */
+    override fun release(id: UUID) { rooms.forEach { it.views.remove(id) } }
+
     private fun startIfEveryoneBet(room: Room) {
         val table = room.table ?: return
         if (table.phase == BjPhase.BETTING && room.members.all { table.seat(it) != null }) deal(room)

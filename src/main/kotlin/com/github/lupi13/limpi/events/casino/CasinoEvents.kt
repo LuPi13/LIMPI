@@ -64,9 +64,10 @@ class CasinoEvents(private val plugin: Plugin) : Listener {
     @EventHandler
     fun click(event: InventoryClickEvent) {
         val holder = event.view.topInventory.holder as? MenuHolder ?: return
-        if (holder.kind != MenuKind.CASINO || event.clickedInventory !== event.view.topInventory) return
+        if (holder.kind != MenuKind.CASINO) return
         if (event.click !in setOf(ClickType.LEFT, ClickType.RIGHT, ClickType.SHIFT_LEFT, ClickType.SHIFT_RIGHT)) return
         val player = event.whoClicked as? Player ?: return
+        // Raw slots of the player's own inventory are past the window, where no action is ever registered.
         val action = holder.actions[event.rawSlot] as? MenuAction.Casino ?: return
         if (action.screen == "menu") {
             if (action.action == "game") screens[action.argument].open(player) else openMenu(player)

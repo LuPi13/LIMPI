@@ -153,7 +153,7 @@ class FileManager {
             }
             casinoServices = com.github.lupi13.limpi.casino.CasinoServices(state, repository, casinoSettings)
             if (casinoSettingsValid) owner.logger.info("Casino slot return before rounding: ${"%.2f".format(com.github.lupi13.limpi.casino.SlotPolicy.returnRate(casinoSettings.slotSymbols) * 100)}%")
-            casinoServices.recover(owner.logger::info)
+            casinoServices.recover(owner.logger::warning)
             casinoServices.damaged().forEach { owner.logger.warning("Casino record ${it.key} cannot be read; it was kept (see /limpi review)") }
             deliveryController = DeliveryController(owner, DeliveryService(deliveryJournal), marketEscrow, removalJournal, abilityTransitions, chestService)
             financial.clear()

@@ -51,6 +51,8 @@ class CrashScreen(private val plugin: Plugin) : CasinoScreen {
         if (views[player.uniqueId] === holder) views.remove(player.uniqueId)
     }
 
+    override fun release(id: UUID) { views.remove(id) }
+
     /** Leaving counts as a click on the cash button at this tick. Past the frozen end it pays nothing, like a late click. */
     override fun quit(player: Player) {
         val running = round ?: return

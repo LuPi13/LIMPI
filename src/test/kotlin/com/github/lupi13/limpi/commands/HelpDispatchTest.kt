@@ -67,7 +67,7 @@ class HelpDispatchTest {
                 "financial" to Financial(plugin, AccountCommands(com.github.lupi13.limpi.economy.BankService(store, players), players, plugin),
                     DeliveryCommands(journal, controller, plugin), true, MarketCommands(plugin),
                     CheckCommands(plugin, com.github.lupi13.limpi.items.Check(plugin)), CatalogCommands(plugin)),
-                "ability" to Ability(plugin, true), "chest" to Chest(plugin, true), "notice" to Notice(plugin))
+                "ability" to Ability(plugin, true), "chest" to Chest(plugin, true), "notice" to Notice(plugin), "casino" to Casino(plugin, null))
             for ((root, executor) in executors) {
                 val normal = run(executor, "help")
                 assertEquals("━━━━━ /$root 도움말 ━━━━━ [웹 도움말]", normal.first(), root)

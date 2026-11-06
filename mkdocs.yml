@@ -15,6 +15,7 @@ nav:
       - 상자: chest.md
       - 사유지: estate.md
       - 공지: notice.md
+      - 카지노: casino.md
   - 관리자 명령어: admin.md
 
 theme:

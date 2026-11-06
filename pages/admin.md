@@ -89,6 +89,17 @@ diamond: 500
 - `config.yml`의 `EnableEstateSystem`을 꺼도 이미 산 사유지의 보호, 목록·테두리 보기, 매각, 공유, 관리자 명령은 그대로 됩니다. 새 구매만 멈춥니다. 구매에는 금융 시스템도 켜져 있어야 합니다.
 - 사유지 기록이 손상되어 읽을 수 없으면 그 구역은 보호되지 않고, 모든 플레이어의 새 사유지 구매가 멈추며, 그 주인은 사유지 명령을 쓸 수 없습니다. `/limpi review`에 표시됩니다. 가능하면 DB 백업에서 복원하고, 복원할 수 없으면 [`/limpi estate discard`](#limpi)로 정리합니다.
 
+## 카지노 { #casino }
+
+| 명령어 | 권한 | 설명 |
+| --- | --- | --- |
+| `/casino inspect <플레이어>` | `limpi.casino.admin.inspect` | 플레이어의 진행 중인 판과 걸린 돈을 봅니다. 오프라인 플레이어도 되고 콘솔에서도 됩니다. |
+
+- 기본값은 베팅 100~100,000원, 한 판 최대 지급 1,000만 원, 환수율 약 97%입니다. [설정](#config)에서 바꿀 수 있습니다.
+- 설정 값이 잘못되면 카지노가 열리지 않고 서버 로그에 어떤 값이 틀렸는지 남습니다. 중단된 판의 정산·환불은 그대로 합니다.
+- 슬롯 배당표를 바꾸면 서버를 켤 때 로그에 나오는 환수율을 확인하세요.
+- 판 기록이 손상되면 지우지 않고 `/limpi review`에 표시합니다. 마인즈는 해당 플레이어가 새 판을 시작할 수 없습니다. 가능하면 DB 백업에서 복원하고, 복원할 수 없으면 [`/limpi casino discard`](#limpi)로 정리합니다.
+
 ## 거래 복구 `/limpi` { #limpi }
 
 돈·아이템 거래 도중 서버가 꺼지거나 오류가 나면, 기록이 **확인 대기** 상태로 남습니다. 대부분은 플레이어가 다시 접속할 때 자동으로 정리되고, 자동으로 판단할 수 없는 것만 관리자가 처리합니다. 게임 안에서는 `/limpi help admin`으로 이 명령들을 볼 수 있습니다. 시스템을 꺼도 쓸 수 있고, 콘솔에서도 됩니다.
@@ -105,6 +116,7 @@ diamond: 500
 | `/limpi escrow <소유자 UUID>` | `limpi.admin.recovery.escrow` | 중단된 장터 등록·회수 기록을 봅니다. |
 | <code>/limpi escrow resolve &lt;소유자 UUID&gt; &lt;매물 UUID&gt; removed&#124;retained &lt;근거&gt;</code> | `limpi.admin.recovery.escrow` | 장터 회수 판단을 기록합니다. |
 | `/limpi estate discard <사유지 기록 UUID> <근거>` | `limpi.admin.recovery.estate` | 읽을 수 없는 사유지 기록을 지웁니다. 원래 내용은 거래 장부에 그대로 보관합니다. 정상 기록은 지울 수 없습니다(`/estate remove` 사용). |
+| `/limpi casino discard <기록 키> <근거>` | `limpi.admin.recovery.casino` | 읽을 수 없는 카지노 판 기록을 지웁니다. 원래 내용은 거래 장부에 보관합니다. 걸린 돈은 자동으로 돌려주지 않으니 필요하면 `/financial add`를 쓰세요. 정상 기록은 지울 수 없습니다. |
 | <code>/limpi chest resolve &lt;소유자 UUID&gt; &lt;창 기록 UUID&gt; before&#124;after &lt;근거&gt;</code> | `limpi.admin.recovery.chest` | 상자 창 기록을 정리합니다. `before`는 상자를 연 시점 내용으로, `after`는 창을 닫으며 기록된 내용으로 확정합니다(닫기 기록이 있을 때만). |
 
 권한 `limpi.admin.recovery`를 주면 위 복구 명령을 모두 쓸 수 있습니다.
@@ -149,6 +161,7 @@ diamond: 500
 | `limpi.estate.admin.inspect` | OP | 사유지 조회 |
 | `limpi.estate.admin.remove` | OP | 사유지 회수 |
 | `limpi.estate.admin.bypass` | OP | 모든 사유지에서 건축·사용 |
+| `limpi.casino.admin.inspect` | OP | 진행 중인 카지노 판 조회 |
 | `limpi.admin.recovery` | OP | 아래 복구 권한 전부 |
 | `limpi.admin.recovery.review` | OP | `/limpi review` |
 | `limpi.admin.recovery.delivery` | OP | 지급 복구 |
@@ -157,6 +170,7 @@ diamond: 500
 | `limpi.admin.recovery.escrow` | OP | 장터 등록·회수 복구 |
 | `limpi.admin.recovery.chest` | OP | 상자 창 기록 복구 |
 | `limpi.admin.recovery.estate` | OP | 손상된 사유지 기록 정리 |
+| `limpi.admin.recovery.casino` | OP | 손상된 카지노 기록 정리 |
 | `limpi.notice.admin.write` | OP | 공지 등록 |
 | `limpi.notice.admin.delete` | OP | 공지 삭제 |
 
@@ -179,7 +193,7 @@ diamond: 500
 | 설정 | 기본값 | 뜻 |
 | --- | --- | --- |
 | `HelpUrl` | `https://lupi13.github.io/LIMPI/` | 게임 안 도움말과 접속 메시지에 거는 웹 도움말 주소. 비우면 링크를 숨깁니다. |
-| `EnableFinancialSystem` / `EnableAbilitySystem` / `EnableChestSystem` / `EnableEstateSystem` | `true` | 시스템 켜기/끄기 |
+| `EnableFinancialSystem` / `EnableAbilitySystem` / `EnableChestSystem` / `EnableEstateSystem` / `EnableCasino` | `true` | 시스템 켜기/끄기. 카지노에는 금융 시스템도 필요 |
 | `InitialMoney` | 1000 | 첫 소지금(원) |
 | `InitialTicket` / `InitialCOMMON` / `InitialRARE` / `InitialEPIC` | 10 / 1 / 1 / 1 | 첫 접속 때 주는 뽑기권·선택권 수 |
 | `TicketMoneyPrice` | 2000 | 뽑기권 가격(원) |
@@ -198,6 +212,13 @@ diamond: 500
 | `EstateMaxWidth` / `EstateMaxHeight` | 128 / 0 | 한 구역의 최대 가로·세로(1~1024), 최대 높이(0이면 제한 없음) |
 | `EstateMaxCount` | 10 | 1인당 최대 사유지 개수 |
 | `EstateWorlds` | `[]` | 사유지를 살 수 있는 월드 이름 목록. 비어 있으면 모든 월드 |
+| `CasinoMinBet` / `CasinoMaxBet` / `CasinoMaxPayout` | 100 / 100000 / 10000000 | 최소·최대 베팅(공유 게임은 한 판의 플레이어별 합계), 한 판 최대 지급(원) |
+| `CasinoMinesRtpPercent` / `CasinoCrashRtpPercent` / `CasinoRaceRtpPercent` | 97 | 게임별 환수율(%) |
+| `CasinoCrashGrowth` / `CasinoCrashMaxMultiplier` | 0.08 / 1000 | 크래시 상승 속도(약 8.7초에 2배), 최대 배율 |
+| `CasinoCrashBettingSeconds` / `CasinoRaceBettingSeconds` / `CasinoBlackjackBettingSeconds` | 15 / 30 / 15 | 첫 베팅 후 대기 시간(초) |
+| `CasinoBlackjackTurnSeconds` | 20 | 블랙잭 차례 제한(초) |
+| `CasinoRaceOddsPercent` | `[30, 25, 18, 13, 9, 5]` | 양 6마리의 우승 확률(%), 합계 100 |
+| `CasinoSlotSymbols` | | 슬롯 심볼별 등장 가중치와 배당 |
 | `NoticeRetentionDays` | 30 | 공지 보관 일수(0 이하면 지우지 않음) |
 | `RecordRetentionDays` | 7 | 서버를 켤 때 이 일수가 지난 **끝난** 기록(완료된 지급·회수·능력 전환·장터 기록, 확정된 뽑기·선택 결과, 입금한 수표, 거래 장부)을 정리합니다(0 이하면 정리하지 않음). 처리 중이거나 확인 대기인 기록, 팔리지 않은 매물, 입금하지 않은 수표는 남깁니다. |
 | `BackupIntervalMinutes` / `BackupKeep` | 60 / 24 | 자동 백업 주기(분)와 남길 개수 |

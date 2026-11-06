@@ -15,7 +15,7 @@ object WebHelp {
     private fun root(base: String?): String? = base?.trim()?.ifEmpty { null }?.let { if (it.endsWith('/')) it else "$it/" }
 
     /**
-     * [system] (ability, financial, chest, notice) links to that system's page and its section of the admin page;
+     * [system] (ability, financial, chest, estate, notice, casino) links to that system's page and its section of the admin page;
      * null (/limpi help) links to the front page and the top of the admin page.
      */
     fun links(base: String?, admin: Boolean, system: String?): List<Link> {

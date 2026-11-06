@@ -2,7 +2,7 @@
 
 **LuPi13's Integrated Minecraft Plug-In**의 명령어 안내 페이지입니다.
 
-접속할 때 나오는 **[도움말 보기]**를 누르면 이 페이지로 옵니다. 게임 안에서는 `/limpi help`로 모든 도움말을 모아 볼 수 있고, `/ability help`(`/ab help`), `/financial help`(`/fc help`), `/chest help`(`/ch help`), `/estate help`(`/es help`), `/notice help`(`/nt help`)는 채팅에 명령어 사용법을 보여 줍니다. 첫 줄의 **[웹 도움말]**을 누르면 이 사이트에서 그 시스템의 페이지가 열립니다.
+접속할 때 나오는 **[도움말 보기]**를 누르면 이 페이지로 옵니다. 게임 안에서는 `/limpi help`로 모든 도움말을 모아 볼 수 있고, `/ability help`(`/ab help`), `/financial help`(`/fc help`), `/chest help`(`/ch help`), `/estate help`(`/es help`), `/notice help`(`/nt help`), `/casino help`(`/ca help`)는 채팅에 명령어 사용법을 보여 줍니다. 첫 줄의 **[웹 도움말]**을 누르면 이 사이트에서 그 시스템의 페이지가 열립니다.
 
 <div class="grid cards" markdown>
 
@@ -26,6 +26,10 @@
 
     서버 공지 보기
 
+- **[카지노](casino.md)**
+
+    마인즈·슬롯머신·블랙잭·크래시·양 경주
+
 - **[관리자 명령어](admin.md)**
 
     서버 관리자(OP)가 쓰는 능력 지정, 잔액 조정, 상점·주식 관리, 상자 조회, 사유지 회수, 공지 등록, 거래 복구 명령어와 설정 파일
@@ -41,6 +45,7 @@
 | `/chest` | `/ch` |
 | `/estate` | `/es` |
 | `/notice` | `/no`, `/nt` |
+| `/casino` | `/ca` |
 
 하위 명령어는 대소문자를 구분하지 않고, 탭 키로 자동 완성할 수 있습니다. 탭 완성과 게임 안 도움말에는 내가 쓸 수 있는 명령어만 나옵니다.
 

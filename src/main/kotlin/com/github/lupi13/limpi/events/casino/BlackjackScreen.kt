@@ -197,7 +197,7 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
     private val suitDyes = listOf(Material.BLACK_DYE, Material.RED_DYE, Material.PINK_DYE, Material.GRAY_DYE) // ♠♥♦♣
 
     private fun cardItem(card: Int): ItemStack = CasinoUi.item(suitDyes[Cards.suit(card)],
-        CasinoUi.text(Cards.label(card), if (Cards.red(card)) NamedTextColor.RED else NamedTextColor.WHITE), amount = Cards.rank(card))
+        CasinoUi.text(Cards.label(card), if (Cards.red(card)) NamedTextColor.RED else NamedTextColor.WHITE), amount = minOf(Cards.rank(card), 10)) // J, Q and K score 10, so they show 10.
 
     /** Seven card slots. A longer hand folds its earliest cards into the first slot so the total stays honest. */
     private fun drawCards(holder: MenuHolder, row: Int, cards: List<Int>, hidden: Boolean = false) {

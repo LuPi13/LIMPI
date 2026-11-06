@@ -28,9 +28,7 @@ import org.bukkit.inventory.meta.BookMeta
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitTask
-import java.math.BigDecimal
 import java.math.BigInteger
-import java.math.RoundingMode
 import java.time.Clock
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -121,16 +119,12 @@ class StockEvents : Listener {
             runCatching { Accounts.integralBalance(profile) }.getOrNull()?.takeIf { it >= 0 }?.let(::moneyDisplay)
                 ?: Component.text("계좌 복구 필요", NamedTextColor.RED)
 
-        /** Percent of the previous price, as in the original menu: ▲ red / plain blue / "-100%" unchanged. */
+        /** Percent change from the previous price, as in the book: ▲ red / ▼ blue / white when unchanged, for the menu's dark background. */
         private fun change(current: Long, previous: Long?): Component {
             if (previous == null || previous <= 0) return Component.text("-(확인 불가)", NamedTextColor.WHITE)
-            val percent = BigDecimal.valueOf(current).multiply(BigDecimal.valueOf(100))
-                .divide(BigDecimal.valueOf(previous), 0, RoundingMode.DOWN).toLong()
-            return when {
-                percent == 100L -> Component.text("-100%", NamedTextColor.WHITE)
-                percent >= 100L -> Component.text("▲${percent}%", NamedTextColor.RED)
-                else -> Component.text("${percent}%", NamedTextColor.BLUE)
-            }
+            val move = StockMove("", current, previous)
+            val text = "${StockSummary.percentText(move.changeTenths)}%"
+            return if (move.direction == 0) Component.text(text, NamedTextColor.WHITE) else signed(move.direction, text)
         }
 
         private fun previous(data: FileConfiguration, code: String): Long? =

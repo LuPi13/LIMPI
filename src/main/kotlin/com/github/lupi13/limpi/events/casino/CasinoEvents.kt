@@ -29,7 +29,7 @@ interface CasinoScreen {
 }
 
 class CasinoEvents(private val plugin: Plugin) : Listener {
-    private val screens: List<CasinoScreen> = listOf(MinesScreen(plugin), SlotScreen(plugin))
+    private val screens: List<CasinoScreen> = listOf(MinesScreen(plugin), SlotScreen(plugin), BlackjackScreen(plugin), CrashScreen(plugin))
     private val byCode = screens.associateBy { it.code }
     private var task: BukkitTask? = null
 
@@ -37,6 +37,8 @@ class CasinoEvents(private val plugin: Plugin) : Listener {
     private val entries = listOf(
         Entry(11, "mines", Material.TNT, "마인즈", listOf("5x5 판에서 지뢰를 피해 칸을 엽니다.", "열수록 배율이 오르고, 언제든 수령할 수 있습니다.")),
         Entry(12, "slot", Material.LEVER, "슬롯머신", listOf("광물 3x3 릴을 돌립니다.", "가로 3줄과 대각선 2줄에서 같은 광물을 맞추세요.")),
+        Entry(13, "blackjack", Material.PAPER, "블랙잭", listOf("최대 4명이 딜러와 승부합니다.", "21에 가까울수록 이기고, 블랙잭은 3:2로 받습니다.")),
+        Entry(14, "crash", Material.FIREWORK_ROCKET, "크래시", listOf("모두 함께 오르는 배율을 지켜봅니다.", "터지기 전에 수령하면 그 배율만큼 받습니다.")),
     )
 
     fun start() { task = plugin.server.scheduler.runTaskTimer(plugin, Runnable { screens.forEach { it.tick() } }, 1L, 1L) }

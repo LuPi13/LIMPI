@@ -50,6 +50,10 @@ class SlotTest {
         assertEquals(10_000_000, SlotPolicy.payout(100_000, List(9) { SlotSymbol.NETHERITE }, symbols, 10_000_000))
     }
 
+    @Test fun `the pay table shows multiples of the whole bet`() {
+        assertEquals(listOf("1.2", "0.2", "100", "2", "0"), listOf(6, 1, 500, 10, 0).map(SlotPolicy::betMultiple))
+    }
+
     @Test fun `a spin settles bet and pay in one commit and a replay does not pay twice`() = withService { store, service ->
         val request = UUID.randomUUID()
         val spin = service.spin(request, owner, 1000)

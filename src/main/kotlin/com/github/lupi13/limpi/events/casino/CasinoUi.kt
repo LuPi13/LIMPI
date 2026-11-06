@@ -12,6 +12,8 @@ import com.github.lupi13.limpi.economy.BankException
 import com.github.lupi13.limpi.menu.MenuAction
 import com.github.lupi13.limpi.menu.MenuHolder
 import com.github.lupi13.limpi.menu.MenuKind
+import io.papermc.paper.datacomponent.DataComponentTypes
+import io.papermc.paper.datacomponent.item.TooltipDisplay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -42,8 +44,9 @@ object CasinoUi {
         meta.displayName(name.decoration(TextDecoration.ITALIC, false))
         if (lore.isNotEmpty()) meta.lore(lore)
         itemMeta = meta
+        // A real rocket would add its flight duration above the lore.
+        if (material == Material.FIREWORK_ROCKET) setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.FIREWORKS).build())
     }
-    fun filler(material: Material = Material.BLACK_STAINED_GLASS_PANE) = item(material, Component.empty())
 
     fun multiplier(centi: Long) = "${centi / 100}.${(centi % 100).toString().padStart(2, '0')}"
 

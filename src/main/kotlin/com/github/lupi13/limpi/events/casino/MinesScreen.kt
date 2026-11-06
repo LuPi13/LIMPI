@@ -18,7 +18,7 @@ import org.bukkit.event.inventory.ClickType
 import org.bukkit.plugin.Plugin
 import java.util.UUID
 
-/** Left panel and a 5x5 board. The stored round is the truth; only the last finished board is kept in memory, to show it. */
+/** A window five rows high: left panel and a 5x5 board. The stored round is the truth; only the last finished board is kept in memory, to show it. */
 class MinesScreen(private val plugin: Plugin) : CasinoScreen {
     override val code = "mines"
     private val mineCounts = mutableMapOf<UUID, Int>()
@@ -29,7 +29,7 @@ class MinesScreen(private val plugin: Plugin) : CasinoScreen {
     private fun count(player: Player) = mineCounts[player.uniqueId] ?: 3
 
     override fun open(player: Player) {
-        val holder = CasinoUi.holder("마인즈")
+        val holder = CasinoUi.holder("마인즈", 45)
         draw(player, holder)
         openMenu(plugin, player, holder.inventory)
     }
@@ -39,12 +39,11 @@ class MinesScreen(private val plugin: Plugin) : CasinoScreen {
         inventory.clear(); holder.actions.clear()
         val round = try { FileManager.casino.mines.current(player.uniqueId) } catch (failure: CasinoDamaged) {
             plugin.logger.warning("Casino record ${failure.key} cannot be read; it was kept (see /limpi review)")
-            CasinoUi.back(holder, 53)
+            CasinoUi.back(holder, 44)
             inventory.setItem(22, CasinoUi.item(Material.BARRIER, CasinoUi.text("이 게임의 진행 기록에 문제가 있습니다.", NamedTextColor.RED), listOf(CasinoUi.text("관리자에게 확인을 요청하세요."))))
             return
         }
-        for (index in 0 until inventory.size) inventory.setItem(index, CasinoUi.filler())
-        CasinoUi.back(holder, 53)
+        CasinoUi.back(holder, 44)
         if (round == null) drawIdle(player, holder) else drawRound(holder, round)
     }
 

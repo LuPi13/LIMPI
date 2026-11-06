@@ -62,6 +62,29 @@ class RaceTest {
         assertEquals(100_000, balance(store, second))
     }
 
+    @Test fun `right click takes bets back before the start and the last one ends the round`() = withService { store, service ->
+        service.bet(UUID.randomUUID(), first, id, 0, 1000, odds)
+        service.bet(UUID.randomUUID(), first, id, 1, 500, odds)
+        assertEquals(mapOf(0 to 400L, 1 to 500L), service.withdraw(UUID.randomUUID(), first, id, 0, 600)!!.bets[first])
+        assertEquals(99_100, balance(store, first))
+        assertThrows(CasinoUnavailable::class.java) { service.withdraw(UUID.randomUUID(), first, id, 2, 100) }
+        // More than was placed only takes back what was placed.
+        assertEquals(mapOf(1 to 500L), service.withdraw(UUID.randomUUID(), first, id, 0, 5000)!!.bets[first])
+        assertEquals(99_500, balance(store, first))
+        val request = UUID.randomUUID()
+        assertNull(service.withdraw(request, first, id, 1, 500))
+        assertEquals(100_000, balance(store, first)); assertNull(service.round(id))
+        assertNull(service.withdraw(request, first, id, 1, 500)) // The same click again pays nothing.
+        assertEquals(100_000, balance(store, first))
+    }
+
+    @Test fun `bets cannot be taken back after the start`() = withService { store, service ->
+        service.bet(UUID.randomUUID(), first, id, 0, 1000, odds)
+        service.start(id)
+        assertThrows(CasinoUnavailable::class.java) { service.withdraw(UUID.randomUUID(), first, id, 0, 1000) }
+        assertEquals(99_000, balance(store, first))
+    }
+
     @Test fun `no money refuses the bet and the first bet fixes the odds`() = withService(balance = 100) { store, service ->
         assertThrows(BankException::class.java) { service.bet(UUID.randomUUID(), first, id, 0, 200, odds) }
         assertEquals(100, balance(store, first)); assertNull(service.round(id))

@@ -18,7 +18,6 @@ import org.bukkit.event.inventory.ClickType
 import org.bukkit.plugin.Plugin
 import java.util.UUID
 import java.util.logging.Level
-import kotlin.math.ln
 
 /**
  * One round shared by everyone. Nothing runs until the first bet. The multiplier comes from the server's tick count, and
@@ -34,7 +33,7 @@ class CrashScreen(private val plugin: Plugin) : CasinoScreen {
     private var startedAt = 0L
     private var crashedCenti: Long? = null
     private var resultUntil = 0L
-    private val heights = ArrayDeque<Int>()
+    private var crashedAt = 0L
 
     private val settings get() = CasinoUi.settings
     private val service get() = FileManager.casino.crash
@@ -97,7 +96,7 @@ class CrashScreen(private val plugin: Plugin) : CasinoScreen {
         }
     }
 
-    private fun reset() { round = null; crashedCenti = null; id = UUID.randomUUID(); heights.clear() }
+    private fun reset() { round = null; crashedCenti = null; id = UUID.randomUUID() }
 
     private fun step() {
         if (crashedCenti != null) {
@@ -119,19 +118,14 @@ class CrashScreen(private val plugin: Plugin) : CasinoScreen {
                 val multiplier = current()
                 if (multiplier >= active.crashCenti) { crash(active); return }
                 active.uncashed.filter { (_, bet) -> CrashPolicy.payout(bet, multiplier, settings.maxPayout) >= settings.maxPayout }.keys.forEach { cash(it, multiplier) }
-                if ((now - startedAt) % 4 == 0L) {
-                    heights.addLast(heightOf(multiplier)); while (heights.size > 7) heights.removeFirst()
-                    drawAll()
-                }
+                if ((now - startedAt) % 4 == 0L) drawAll()
             }
         }
     }
 
-    private fun heightOf(multiplier: Long) = (ln(multiplier / 100.0) / ln(GRAPH_TOP) * 5).toInt().coerceIn(0, 4)
-
     private fun crash(active: CrashRound) {
         val finished = service.finish(UUID.randomUUID(), id)
-        round = finished; crashedCenti = active.crashCenti
+        round = finished; crashedCenti = active.crashCenti; crashedAt = now
         resultUntil = now + RESULT_TICKS
         sound(Sound.ENTITY_GENERIC_EXPLODE)
         finished.uncashed.forEach { (owner, bet) ->
@@ -146,19 +140,24 @@ class CrashScreen(private val plugin: Plugin) : CasinoScreen {
 
     private fun draw(viewer: UUID, holder: MenuHolder) {
         val inventory = holder.inventory
-        holder.actions.clear()
-        for (index in 0 until inventory.size) inventory.setItem(index, CasinoUi.filler())
+        inventory.clear(); holder.actions.clear()
         val active = round
         val crashed = crashedCenti
-        // Graph: columns 1-7, newest on the right, one row higher each time the multiplier grows enough.
-        heights.forEachIndexed { index, height ->
-            val column = index + 1 + (7 - heights.size)
-            for (row in 0..height) inventory.setItem((4 - row) * 9 + column, CasinoUi.item(
-                if (crashed != null) Material.RED_STAINED_GLASS_PANE else if (height >= 3) Material.ORANGE_STAINED_GLASS_PANE else Material.LIME_STAINED_GLASS_PANE, Component.empty()))
-        }
         val running = active != null && active.phase == CrashPhase.RUNNING && crashed == null
         val shown = crashed ?: if (running) current() else 100
-        inventory.setItem(4, CasinoUi.item(if (crashed != null) Material.TNT else Material.FIREWORK_ROCKET,
+        // Graph: columns 1-7 of the top five rows, colored by how far the multiplier has come.
+        if (running || crashed != null) {
+            val pane = when {
+                crashed != null -> Material.RED_STAINED_GLASS_PANE
+                shown >= 500 -> Material.ORANGE_STAINED_GLASS_PANE
+                shown >= 200 -> Material.YELLOW_STAINED_GLASS_PANE
+                else -> Material.LIME_STAINED_GLASS_PANE
+            }
+            CrashPolicy.graph((if (crashed != null) crashedAt else now) - startedAt, settings.crashGrowth).forEachIndexed { index, height ->
+                for (row in 0..height) inventory.setItem((CrashPolicy.GRAPH_ROWS - 1 - row) * 9 + index + 1, CasinoUi.item(pane, Component.empty()))
+            }
+        }
+        inventory.setItem(8, CasinoUi.item(if (crashed != null) Material.TNT else Material.FIREWORK_ROCKET,
             CasinoUi.text("${if (crashed != null) "크래시! " else ""}${CasinoUi.multiplier(shown)}배", if (crashed != null) NamedTextColor.RED else NamedTextColor.GOLD), players(active)))
         CasinoUi.back(holder, 53)
         val player = plugin.server.getPlayer(viewer) ?: return
@@ -188,9 +187,5 @@ class CrashScreen(private val plugin: Plugin) : CasinoScreen {
         CasinoUi.text("$name: ${bet}원" + if (cashed != null) " → ${CasinoUi.multiplier(cashed)}배 수령" else "", if (cashed != null) NamedTextColor.GREEN else NamedTextColor.WHITE)
     }.orEmpty()
 
-    private companion object {
-        const val RESULT_TICKS = 100L
-        /** Top of the graph: 5 rows reach this multiplier, on a log scale so a long round keeps moving. */
-        const val GRAPH_TOP = 10.0
-    }
+    private companion object { const val RESULT_TICKS = 100L }
 }

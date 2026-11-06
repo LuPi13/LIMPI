@@ -43,6 +43,10 @@ object SlotPolicy {
             .min(BigInteger.valueOf(maxPayout)).toLong()
     }
 
+    /** A line multiple as a multiple of the whole bet, for the pay table: 6 -> "1.2", 500 -> "100". */
+    fun betMultiple(lineMultiple: Int): String =
+        java.math.BigDecimal(lineMultiple).divide(java.math.BigDecimal(LINES.size)).stripTrailingZeros().toPlainString()
+
     /** Exact expected return of one line (and so of the whole spin, the lines being equal stakes) before rounding and the cap. */
     fun returnRate(symbols: List<SlotSymbolRule>): Double {
         val total = symbols.sumOf { it.weight }.toDouble()

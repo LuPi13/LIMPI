@@ -26,6 +26,21 @@ object CrashPolicy {
     fun multiplierCenti(ticks: Long, growthPerSecond: Double): Long =
         StrictMath.floor(100 * StrictMath.exp(growthPerSecond * ticks / 20.0)).toLong()
 
+    const val GRAPH_COLUMNS = 7
+    const val GRAPH_ROWS = 5
+
+    /**
+     * Height (0 = bottom row only) of each graph column drawn so far. On a log scale the multiplier is a straight line in
+     * time, so the graph is a rising staircase. Its width is the time to 2x; when the line reaches the top right the time
+     * span doubles and the staircase folds back to half, so it keeps climbing in a round of any length.
+     */
+    fun graph(ticks: Long, growthPerSecond: Double): List<Int> {
+        var span = StrictMath.log(2.0) / growthPerSecond * 20
+        while (span <= ticks) span *= 2
+        val drawn = (ticks / span * GRAPH_COLUMNS).toInt() + 1
+        return List(drawn.coerceAtMost(GRAPH_COLUMNS)) { column -> ((column + 1) * GRAPH_ROWS - 1) / GRAPH_COLUMNS }
+    }
+
     fun payout(bet: Long, multiplierCenti: Long, maxPayout: Long): Long =
         (BigInteger.valueOf(bet) * BigInteger.valueOf(multiplierCenti) / BigInteger.valueOf(100)).min(BigInteger.valueOf(maxPayout)).toLong()
 }

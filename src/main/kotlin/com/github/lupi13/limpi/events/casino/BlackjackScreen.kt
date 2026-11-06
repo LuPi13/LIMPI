@@ -168,7 +168,9 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
 
     private fun drawAll(room: Room) { room.views.forEach { (id, holder) -> draw(room, id, holder) } }
 
-    private fun cardItem(card: Int): ItemStack = CasinoUi.item(if (Cards.red(card)) Material.RED_DYE else Material.PAPER,
+    private val suitDyes = listOf(Material.BLACK_DYE, Material.RED_DYE, Material.PINK_DYE, Material.GRAY_DYE) // ♠♥♦♣
+
+    private fun cardItem(card: Int): ItemStack = CasinoUi.item(suitDyes[Cards.suit(card)],
         CasinoUi.text(Cards.label(card), if (Cards.red(card)) NamedTextColor.RED else NamedTextColor.WHITE), amount = Cards.rank(card))
 
     /** Seven card slots. A longer hand folds its earliest cards into the first slot so the total stays honest. */
@@ -198,8 +200,7 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
 
     private fun draw(room: Room, viewer: UUID, holder: MenuHolder) {
         val inventory = holder.inventory
-        holder.actions.clear()
-        for (index in 0 until inventory.size) inventory.setItem(index, CasinoUi.filler())
+        inventory.clear(); holder.actions.clear()
         val table = room.table; val settled = room.settled
         // Dealer row.
         inventory.setItem(0, CasinoUi.item(Material.WITHER_SKELETON_SKULL, CasinoUi.text("딜러", NamedTextColor.GOLD)))

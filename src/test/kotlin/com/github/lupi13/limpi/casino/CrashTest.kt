@@ -45,6 +45,20 @@ class CrashTest {
         assertEquals(10_000_000, CrashPolicy.payout(100_000, 100_000, 10_000_000))
     }
 
+    @Test fun `the graph climbs to the top row before two times and keeps climbing after folding back`() {
+        val toDouble = (StrictMath.log(2.0) / 0.08 * 20).toLong() // About 173 ticks.
+        assertEquals(listOf(0), CrashPolicy.graph(0, 0.08))
+        // Every step of the way the staircase gets wider, and it reaches all rows before 2x.
+        val widths = (0 until toDouble).map { CrashPolicy.graph(it, 0.08).size }
+        assertEquals(widths.sorted(), widths); assertEquals(CrashPolicy.GRAPH_COLUMNS, widths.last())
+        val full = CrashPolicy.graph(toDouble - 1, 0.08)
+        assertEquals(listOf(0, 1, 2, 2, 3, 4, 4), full); assertEquals(CrashPolicy.GRAPH_ROWS - 1, full.max())
+        // Past 2x the span doubles: half as wide, still rising.
+        assertEquals(4, CrashPolicy.graph(toDouble + 1, 0.08).size)
+        assertEquals(CrashPolicy.GRAPH_COLUMNS, CrashPolicy.graph(toDouble * 2 - 1, 0.08).size)
+        assertEquals(4, CrashPolicy.graph(toDouble * 2 + 2, 0.08).size)
+    }
+
     @Test fun `bets freeze in the round and cannot come after the start or twice`() = withService { store, service ->
         service.bet(UUID.randomUUID(), first, id, 1000)
         assertEquals(99_000, balance(store, first))

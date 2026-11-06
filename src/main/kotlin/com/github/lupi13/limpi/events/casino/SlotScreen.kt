@@ -35,7 +35,7 @@ class SlotScreen(private val plugin: Plugin) : CasinoScreen {
         SlotSymbol.COAL -> "석탄"; SlotSymbol.IRON -> "철"; SlotSymbol.GOLD -> "금"
         SlotSymbol.EMERALD -> "에메랄드"; SlotSymbol.DIAMOND -> "다이아몬드"; SlotSymbol.NETHERITE -> "네더라이트"
     }
-    private fun cell(symbol: SlotSymbol) = CasinoUi.item(material(symbol), CasinoUi.text(label(symbol), NamedTextColor.AQUA))
+    private fun cell(symbol: SlotSymbol) = CasinoUi.item(material(symbol), CasinoUi.text(label(symbol)))
 
     override fun open(player: Player) {
         val holder = CasinoUi.holder("슬롯머신")
@@ -45,20 +45,23 @@ class SlotScreen(private val plugin: Plugin) : CasinoScreen {
 
     private fun draw(player: Player, holder: MenuHolder) {
         val inventory = holder.inventory
-        holder.actions.clear()
-        for (index in 0 until inventory.size) inventory.setItem(index, CasinoUi.filler())
+        inventory.clear(); holder.actions.clear()
         val shown = last[player.uniqueId]
         reels.forEachIndexed { index, slot -> inventory.setItem(slot, shown?.let { cell(it[index]) } ?: CasinoUi.item(Material.GRAY_STAINED_GLASS_PANE, CasinoUi.text("?", NamedTextColor.GRAY))) }
         inventory.setItem(48, CasinoUi.betItem(player)); holder.actions[48] = MenuAction.Casino(code, "bet")
         inventory.setItem(49, CasinoUi.item(Material.LEVER, CasinoUi.text("돌리기", NamedTextColor.GREEN), listOf(CasinoUi.money("베팅: ", CasinoUi.betAmount(player)))))
         holder.actions[49] = MenuAction.Casino(code, "spin")
-        inventory.setItem(50, CasinoUi.item(Material.BOOK, CasinoUi.text("배당표 (줄 베팅 = 베팅액/5)", NamedTextColor.YELLOW), payTable()))
+        inventory.setItem(50, CasinoUi.item(Material.BOOK, CasinoUi.text("배당표", NamedTextColor.YELLOW), payTable()))
         CasinoUi.back(holder, 53)
     }
 
     private fun payTable(): List<Component> {
-        val lines = CasinoUi.settings.slotSymbols.map { CasinoUi.text("${label(it.symbol)}: 3개 ${it.triple}배 / 앞 2개 ${it.pair}배") }
-        return lines + CasinoUi.text("가로 3줄과 대각선 2줄, 총 ${SlotPolicy.LINES.size}줄", NamedTextColor.GRAY)
+        val lines = CasinoUi.settings.slotSymbols.map {
+            CasinoUi.text("${label(it.symbol)}: 3개 ${SlotPolicy.betMultiple(it.triple)}배 / 2개 ${SlotPolicy.betMultiple(it.pair)}배")
+        }
+        return listOf(CasinoUi.text("베팅액에 곱할 배수입니다.", NamedTextColor.GRAY)) + lines + listOf(
+            CasinoUi.text("가로 3줄과 대각선 2줄을 각각 계산해 모두 더합니다.", NamedTextColor.GRAY),
+            CasinoUi.text("2개는 줄의 첫 칸부터 연속으로 같을 때입니다.", NamedTextColor.GRAY))
     }
 
     override fun click(player: Player, holder: MenuHolder, action: MenuAction.Casino, click: ClickType) {
@@ -90,7 +93,7 @@ class SlotScreen(private val plugin: Plugin) : CasinoScreen {
             }
             val player = animation.player
             if (animation.ticks == STOP || animation.ticks == STOP * 2) player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_BASEDRUM, 0.8f, 1f)
-            else player.playSound(player.location, Sound.UI_BUTTON_CLICK, 0.15f, 2f)
+            else player.playSound(player.location, Sound.UI_BUTTON_CLICK, 0.4f, 2f)
             if (stopped == 3) {
                 iterator.remove()
                 announce(player, animation.spin)

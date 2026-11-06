@@ -3,6 +3,7 @@ package com.github.lupi13.limpi.events.casino
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.casino.CasinoStale
+import com.github.lupi13.limpi.casino.CasinoUnavailable
 import com.github.lupi13.limpi.casino.RACE_SHEEP
 import com.github.lupi13.limpi.casino.RacePhase
 import com.github.lupi13.limpi.casino.RacePolicy
@@ -22,7 +23,7 @@ import java.util.UUID
 import java.util.logging.Level
 
 /**
- * Each row is a lane: the sheep to bet on in column 0, the track in columns 1-6, the goal in column 7, controls in column 8.
+ * Each row is a lane: a sheep starting in column 0, where it takes bets, the goal in column 7, controls in column 8.
  * The first bet starts the countdown, and the race on screen is drawn from the frozen winner and seed.
  */
 class RaceScreen(private val plugin: Plugin) : CasinoScreen {
@@ -65,10 +66,16 @@ class RaceScreen(private val plugin: Plugin) : CasinoScreen {
                 "amount" -> CasinoUi.adjustBet(player, click)
                 "sheep" -> {
                     if (settled != null) throw CasinoStale()
-                    val first = round == null
-                    round = service.bet(UUID.randomUUID(), player.uniqueId, id, action.argument, CasinoUi.betAmount(player), shownOdds())
-                    if (first) deadline = now + settings.raceBettingSeconds * 20L
-                    player.playSound(player.location, Sound.ENTITY_SHEEP_AMBIENT, 0.8f, 1f)
+                    if (click.isRightClick) {
+                        if (round == null) throw CasinoUnavailable("이 양에 베팅한 금액이 없습니다.")
+                        round = service.withdraw(UUID.randomUUID(), player.uniqueId, id, action.argument, CasinoUi.betAmount(player))
+                        player.playSound(player.location, Sound.UI_BUTTON_CLICK, 0.8f, 0.8f)
+                    } else {
+                        val first = round == null
+                        round = service.bet(UUID.randomUUID(), player.uniqueId, id, action.argument, CasinoUi.betAmount(player), shownOdds())
+                        if (first) deadline = now + settings.raceBettingSeconds * 20L
+                        player.playSound(player.location, Sound.ENTITY_SHEEP_AMBIENT, 0.8f, 1f)
+                    }
                 }
             }
         }
@@ -132,8 +139,7 @@ class RaceScreen(private val plugin: Plugin) : CasinoScreen {
 
     private fun draw(viewer: UUID, holder: MenuHolder) {
         val inventory = holder.inventory
-        holder.actions.clear()
-        for (index in 0 until inventory.size) inventory.setItem(index, CasinoUi.filler())
+        inventory.clear(); holder.actions.clear()
         val active = round
         val laneOdds = shownOdds()
         val canBet = settled == null && (active == null || active.phase == RacePhase.BETTING)
@@ -144,13 +150,15 @@ class RaceScreen(private val plugin: Plugin) : CasinoScreen {
             val multiplier = CasinoUi.multiplier(RacePolicy.multiplierCenti(laneOdds[sheep], settings.raceRtpPercent))
             val lore = mutableListOf(CasinoUi.text("우승 확률: ${laneOdds[sheep]}%"), CasinoUi.text("배당: ${multiplier}배", NamedTextColor.GREEN))
             mine[sheep]?.let { lore += CasinoUi.money("내 베팅: ", it) }
-            if (canBet) lore += CasinoUi.text("클릭하여 베팅 금액만큼 겁니다.", NamedTextColor.GRAY)
+            if (canBet) {
+                lore += CasinoUi.text("좌클릭: 베팅 금액만큼 걸기", NamedTextColor.GRAY)
+                lore += CasinoUi.text("우클릭: 베팅 금액만큼 빼기", NamedTextColor.GRAY)
+                holder.actions[row] = MenuAction.Casino(code, "sheep", sheep)
+            }
             val color = if (winner == sheep) NamedTextColor.GOLD else NamedTextColor.WHITE
-            inventory.setItem(row, CasinoUi.item(wool[sheep], CasinoUi.text("${names[sheep]} 양" + if (winner == sheep) " 우승!" else "", color), lore))
-            if (canBet) holder.actions[row] = MenuAction.Casino(code, "sheep", sheep)
-            for (column in 1..RacePolicy.LENGTH) inventory.setItem(row + column, CasinoUi.item(Material.GREEN_STAINED_GLASS_PANE, Component.empty()))
-            inventory.setItem(row + 7, CasinoUi.item(Material.BLACK_CONCRETE, CasinoUi.text("결승선", NamedTextColor.YELLOW)))
-            inventory.setItem(row + positions[sheep] + 1, CasinoUi.item(wool[sheep], CasinoUi.text("${names[sheep]} 양", color)))
+            inventory.setItem(row + RacePolicy.LENGTH, CasinoUi.item(Material.BLACK_CONCRETE, CasinoUi.text("결승선", NamedTextColor.YELLOW)))
+            // The sheep itself is the lane's only item: it leaves the betting column when the race starts.
+            inventory.setItem(row + positions[sheep], CasinoUi.item(wool[sheep], CasinoUi.text("${names[sheep]} 양" + if (winner == sheep) " 우승!" else "", color), lore))
         }
         val player = plugin.server.getPlayer(viewer)
         if (canBet && player != null) { inventory.setItem(8, CasinoUi.betItem(player)); holder.actions[8] = MenuAction.Casino(code, "amount") }

@@ -11,7 +11,8 @@ import java.util.Random
 import java.util.UUID
 
 object RacePolicy {
-    const val LENGTH = 6
+    /** Steps from the start column to the goal column. */
+    const val LENGTH = 7
     const val FRAMES = 30
 
     fun assignOdds(odds: List<Int>, random: Random): List<Int> = odds.shuffled(random)
@@ -78,6 +79,28 @@ class RaceService(private val store: StateStore, private val players: PlayerRepo
         }
         players.invalidateChanged(committed)
         return round(id) ?: throw CasinoStale()
+    }
+
+    /**
+     * Takes back up to [amount] from one sheep before the gate opens; nothing is decided yet, so this costs nothing. The
+     * last bet leaving removes the round, which also stops the countdown. Returns the round left, or null.
+     */
+    fun withdraw(request: UUID, owner: UUID, id: UUID, sheep: Int, amount: Long): RaceRound? {
+        require(sheep in 0 until RACE_SHEEP && amount > 0)
+        val committed = store.execute(request, BankService.fingerprint("CASINO_RACE_WITHDRAW", owner.toString(), id.toString(), sheep.toString(), amount.toString())) { tx ->
+            val round = read(tx, id)
+            if (round.phase != RacePhase.BETTING) throw CasinoUnavailable("이미 출발했습니다.")
+            val mine = round.bets[owner].orEmpty()
+            val placed = mine[sheep] ?: throw CasinoUnavailable("이 양에 베팅한 금액이 없습니다.")
+            val back = minOf(placed, amount)
+            credit(tx, owner, back)
+            val left = if (placed == back) mine - sheep else mine + (sheep to placed - back)
+            val bets = if (left.isEmpty()) round.bets - owner else round.bets + (owner to left)
+            tx.put(key(id), if (bets.isEmpty()) null else encode(round.copy(bets = bets, version = round.version + 1)))
+            YamlConfiguration().apply { set("actor", owner.toString()); set("game", "race"); set("round", id.toString()); set("sheep", sheep); set("withdraw", back) }.saveToString()
+        }
+        players.invalidateChanged(committed)
+        return round(id)
     }
 
     fun start(id: UUID): RaceRound {

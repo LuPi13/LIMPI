@@ -112,6 +112,10 @@ class MinesTest {
         assertEquals(1000, BetSelector.tenTimes(100, settings)); assertEquals(100, BetSelector.tenth(500, settings))
     }
 
+    @Test fun `a timer beeps once a second for its last three seconds only`() {
+        assertEquals(listOf(60L, 40L, 20L), (100L downTo -5L).filter(::countdownBeep))
+    }
+
     @Test fun `settings read the packaged defaults and refuse a typo instead of paying it`() {
         val config = javaClass.classLoader.getResourceAsStream("config.yml")!!.use { stream ->
             org.bukkit.configuration.file.YamlConfiguration().apply { loadFromString(stream.readBytes().toString(Charsets.UTF_8)) }

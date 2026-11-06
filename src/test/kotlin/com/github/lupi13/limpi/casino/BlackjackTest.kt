@@ -56,6 +56,17 @@ class BlackjackTest {
         assertEquals(0L, BlackjackPolicy.settle(dealt, maxPayout).results.single().payout)
     }
 
+    @Test fun `a natural on either side leaves nobody to act right after the deal, and the final hand matches the settlement`() {
+        val playerNatural = BlackjackPolicy.deal(betting(first), listOf(card(1), card(9), card(13), card(7), card(5)))
+        assertNull(playerNatural.turn)
+        assertEquals(listOf(card(9), card(7)), BlackjackPolicy.dealerHand(playerNatural))
+        assertEquals(250, BlackjackPolicy.settle(playerNatural, maxPayout).results.single().payout)
+        // The dealer shown card by card is the dealer that gets paid against.
+        val drawing = BlackjackPolicy.stand(BlackjackPolicy.deal(betting(first), listOf(card(10), card(5), card(9), card(8), card(2), card(9))), first)
+        assertEquals(BlackjackPolicy.settle(drawing, maxPayout).dealer, BlackjackPolicy.dealerHand(drawing))
+        assertEquals(listOf(card(5), card(8), card(2), card(9)), BlackjackPolicy.dealerHand(drawing))
+    }
+
     @Test fun `a hit past twenty one busts and the dealer does not draw for nobody`() {
         val dealt = BlackjackPolicy.deal(betting(first), listOf(card(10), card(5), card(9), card(8), card(5), card(2)))
         val bust = BlackjackPolicy.hit(dealt, first)

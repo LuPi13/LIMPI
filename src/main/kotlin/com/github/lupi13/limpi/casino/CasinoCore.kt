@@ -126,6 +126,9 @@ data class CasinoSettings(
     }
 }
 
+/** True on the ticks where a timer has exactly 3, 2 or 1 seconds left. */
+fun countdownBeep(ticksLeft: Long): Boolean = ticksLeft == 60L || ticksLeft == 40L || ticksLeft == 20L
+
 /** The one bet control: left/right step by the leading digit (100, 200 ... 1000, 2000 ...), shift by ten times. */
 object BetSelector {
     private fun unit(amount: Long): Long { var unit = 1L; while (unit * 10 <= amount) unit *= 10; return unit }

@@ -6,6 +6,7 @@ import com.github.lupi13.limpi.casino.CasinoStale
 import com.github.lupi13.limpi.casino.CrashPhase
 import com.github.lupi13.limpi.casino.CrashPolicy
 import com.github.lupi13.limpi.casino.CrashRound
+import com.github.lupi13.limpi.casino.countdownBeep
 import com.github.lupi13.limpi.menu.MenuAction
 import com.github.lupi13.limpi.menu.MenuHolder
 import com.github.lupi13.limpi.menu.openMenu
@@ -106,6 +107,7 @@ class CrashScreen(private val plugin: Plugin) : CasinoScreen {
         val active = round ?: return
         when (active.phase) {
             CrashPhase.BETTING -> {
+                if (countdownBeep(deadline - now)) CasinoUi.beep(views.keys, plugin)
                 if (now >= deadline) {
                     round = service.start(id); startedAt = now
                     sound(Sound.BLOCK_NOTE_BLOCK_PLING)

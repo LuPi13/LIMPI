@@ -97,6 +97,11 @@ object CasinoUi {
         redraw()
     }
 
+    /** The last seconds of any timer, for whoever is watching. */
+    fun beep(viewers: Collection<UUID>, plugin: Plugin) {
+        viewers.forEach { id -> plugin.server.getPlayer(id)?.let { it.playSound(it.location, Sound.BLOCK_NOTE_BLOCK_HAT, 1f, 1.5f) } }
+    }
+
     fun refuse(player: Player, message: String) {
         player.sendMessage(Component.text(message, NamedTextColor.RED)); EconomyText.deny(player)
     }

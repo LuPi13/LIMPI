@@ -11,6 +11,7 @@ import com.github.lupi13.limpi.casino.BjTable
 import com.github.lupi13.limpi.casino.BlackjackPolicy
 import com.github.lupi13.limpi.casino.CasinoStale
 import com.github.lupi13.limpi.casino.Cards
+import com.github.lupi13.limpi.casino.countdownBeep
 import com.github.lupi13.limpi.menu.MenuAction
 import com.github.lupi13.limpi.menu.MenuHolder
 import com.github.lupi13.limpi.menu.openMenu
@@ -39,6 +40,10 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
         var round: UUID = UUID.randomUUID()
         var table: BjTable? = null
         var settled: BjSettlement? = null
+        /** The dealer's final hand while it is turned over card by card; the pay commits with the last card. */
+        var revealing: List<Int>? = null
+        var revealed = 0
+        var nextReveal = 0L
         var deadline = 0L
         var resultUntil = 0L
         val members: Set<UUID> get() = views.keys + table?.seats.orEmpty().map { it.owner }
@@ -79,30 +84,40 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
         advance(room)
     }
 
-    /** After any change: settle when the dealer is next, otherwise give the next seat its full time. */
+    /** After any change: when no seat is left to act, the dealer starts turning cards over. A natural gets here right after the deal. */
     private fun advance(room: Room) {
         val table = room.table ?: return
-        if (table.phase == BjPhase.PLAYING && table.turn == null) settle(room)
+        if (table.phase == BjPhase.PLAYING && table.turn == null && room.revealing == null) {
+            room.revealing = BlackjackPolicy.dealerHand(table)
+            room.revealed = 1
+            room.nextReveal = now + REVEAL_TICKS
+        }
         drawAll(room)
     }
 
     private fun settle(room: Room) {
         val settlement = FileManager.casino.blackjack.settle(UUID.randomUUID(), room.round)
-        room.settled = settlement; room.table = null
+        room.settled = settlement; room.table = null; room.revealing = null
         room.resultUntil = now + RESULT_TICKS
         settlement.results.forEach { announce(settlement, it) }
     }
 
     private fun announce(settlement: BjSettlement, result: BjResult) {
         val player = plugin.server.getPlayer(result.seat.owner) ?: return
-        val dealer = BlackjackPolicy.total(settlement.dealer)
+        val dealerNatural = BlackjackPolicy.natural(settlement.dealer)
+        val dealer = if (dealerNatural) "딜러 블랙잭" else "딜러 ${BlackjackPolicy.total(settlement.dealer)}"
+        val won = result.payout > result.seat.bet
         val message = when {
-            result.payout > result.seat.bet -> Component.text("블랙잭 승리! ", NamedTextColor.GREEN).append(moneyDisplay(result.payout)).append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE))
-            result.payout == result.seat.bet -> Component.text("블랙잭 무승부. ", NamedTextColor.YELLOW).append(moneyDisplay(result.payout)).append(Component.text("원을 돌려받았습니다.", NamedTextColor.WHITE))
-            else -> Component.text("블랙잭 패배. (딜러 $dealer) ", NamedTextColor.RED).append(moneyDisplay(result.seat.bet)).append(Component.text("원을 잃었습니다.", NamedTextColor.RED))
+            won -> Component.text(if (result.seat.state == BjHand.BLACKJACK) "블랙잭! " else "블랙잭 승리! ", NamedTextColor.GREEN).append(moneyDisplay(result.payout)).append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE))
+            result.payout == result.seat.bet -> Component.text("블랙잭 무승부. ($dealer) ", NamedTextColor.YELLOW).append(moneyDisplay(result.payout)).append(Component.text("원을 돌려받았습니다.", NamedTextColor.WHITE))
+            else -> Component.text("블랙잭 패배. ($dealer) ", NamedTextColor.RED).append(moneyDisplay(result.seat.bet)).append(Component.text("원을 잃었습니다.", NamedTextColor.RED))
         }
         player.sendMessage(message)
-        player.playSound(player.location, if (result.payout > result.seat.bet) Sound.ENTITY_PLAYER_LEVELUP else Sound.BLOCK_NOTE_BLOCK_BASS, 0.8f, 1f)
+        when {
+            won -> player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1f)
+            result.payout == result.seat.bet -> player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_PLING, 0.8f, 1f)
+            else -> player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_BASS, 0.8f, 0.7f)
+        }
     }
 
     private fun sound(room: Room, sound: Sound) {
@@ -114,7 +129,7 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
         for (room in rooms.toList()) try { tick(room) } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Blackjack table ${room.round} stopped; its record is kept and finishes at the next restart", failure)
             room.views.keys.forEach { id -> plugin.server.getPlayer(id)?.let { CasinoUi.refuse(it, "정산 중 문제가 발생했습니다. 서버 재시작 시 정산됩니다.") } }
-            room.table = null; room.settled = null; room.round = UUID.randomUUID()
+            room.table = null; room.settled = null; room.revealing = null; room.round = UUID.randomUUID()
         }
         rooms.removeAll { it.members.isEmpty() && it.table == null && it.settled == null }
     }
@@ -124,8 +139,19 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
             if (now >= room.resultUntil) { room.settled = null; room.round = UUID.randomUUID(); drawAll(room) }
             return
         }
+        room.revealing?.let { hand ->
+            if (now >= room.nextReveal) {
+                room.revealed++
+                room.nextReveal = now + REVEAL_TICKS
+                sound(room, Sound.ITEM_BOOK_PAGE_TURN)
+                if (room.revealed >= hand.size) settle(room)
+                drawAll(room)
+            }
+            return
+        }
         val table = room.table ?: return
         val turn = table.turn
+        if ((table.phase == BjPhase.BETTING || turn != null) && countdownBeep(room.deadline - now)) CasinoUi.beep(room.views.keys, plugin)
         when {
             table.phase == BjPhase.BETTING -> if (now >= room.deadline) deal(room)
             turn != null && (now >= room.deadline || plugin.server.getPlayer(turn.owner) == null) -> {
@@ -204,10 +230,12 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
         val table = room.table; val settled = room.settled
         // Dealer row.
         inventory.setItem(0, CasinoUi.item(Material.WITHER_SKELETON_SKULL, CasinoUi.text("딜러", NamedTextColor.GOLD)))
-        val dealer = settled?.dealer ?: table?.dealer.orEmpty()
+        val revealing = room.revealing
+        val dealer = settled?.dealer ?: revealing?.take(room.revealed) ?: table?.dealer.orEmpty()
+        val open = settled != null || revealing != null
         if (dealer.isNotEmpty()) {
-            drawCards(holder, 0, dealer, hidden = settled == null)
-            if (settled != null) inventory.setItem(8, CasinoUi.item(Material.CLOCK, CasinoUi.text("딜러 합계: ${BlackjackPolicy.total(dealer)}", NamedTextColor.GOLD)))
+            drawCards(holder, 0, dealer, hidden = !open)
+            if (open) inventory.setItem(8, CasinoUi.item(Material.CLOCK, CasinoUi.text("딜러 합계: ${BlackjackPolicy.total(dealer)}", NamedTextColor.GOLD)))
         }
         // Seats.
         val seats = settled?.results?.map { it.seat } ?: table?.seats.orEmpty()
@@ -243,12 +271,15 @@ class BlackjackScreen(private val plugin: Plugin) : CasinoScreen {
                 holder.actions[50] = MenuAction.Casino(code, "double", 0, table.version)
             }
         }
-        if (table != null) {
+        if (table != null && revealing == null) {
             val seconds = ((room.deadline - now).coerceAtLeast(0) + 19) / 20
             val label = if (table.phase == BjPhase.BETTING) "베팅 마감까지 ${seconds}초" else "${turn?.let { plugin.server.getOfflinePlayer(it.owner).name } ?: ""} 차례: ${seconds}초"
             inventory.setItem(52, CasinoUi.item(Material.CLOCK, CasinoUi.text(label, NamedTextColor.YELLOW), amount = seconds.toInt()))
         }
     }
 
-    private companion object { const val RESULT_TICKS = 100L }
+    private companion object {
+        const val RESULT_TICKS = 100L
+        const val REVEAL_TICKS = 20L
+    }
 }

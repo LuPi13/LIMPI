@@ -9,6 +9,7 @@ import com.github.lupi13.limpi.casino.RacePhase
 import com.github.lupi13.limpi.casino.RacePolicy
 import com.github.lupi13.limpi.casino.RaceRound
 import com.github.lupi13.limpi.casino.RaceSettlement
+import com.github.lupi13.limpi.casino.countdownBeep
 import com.github.lupi13.limpi.menu.MenuAction
 import com.github.lupi13.limpi.menu.MenuHolder
 import com.github.lupi13.limpi.menu.openMenu
@@ -102,6 +103,7 @@ class RaceScreen(private val plugin: Plugin) : CasinoScreen {
         val active = round ?: return
         when (active.phase) {
             RacePhase.BETTING -> {
+                if (countdownBeep(deadline - now)) CasinoUi.beep(views.keys, plugin)
                 if (now >= deadline) {
                     val started = service.start(id)
                     round = started; startedAt = now

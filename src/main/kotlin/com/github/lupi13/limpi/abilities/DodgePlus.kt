@@ -66,10 +66,14 @@ abstract class DodgeVariant(
             AbilityManager.showCooldown(player, cooldown, last)
             return
         }
+        if (!canDodge(player)) return // 쿨타임을 쓰지 않습니다.
         lastDodgeTime[player.uniqueId] = now
         performDodge(player)
         afterDodge(player)
     }
+
+    /** 지금 회피가 성립하는지. 거짓이면 쿨타임 없이 끝나므로, 이유는 능력이 직접 알립니다. */
+    protected open fun canDodge(player: Player): Boolean = true
 
     /** 기본 회피(이동 방향 수평 가속). */
     protected open fun performDodge(player: Player) {

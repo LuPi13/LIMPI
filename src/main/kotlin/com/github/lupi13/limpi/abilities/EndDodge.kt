@@ -1,6 +1,9 @@
 package com.github.lupi13.limpi.abilities
 
 import com.github.lupi13.limpi.FileManager
+import com.github.lupi13.limpi.ability.CollisionBox
+import com.github.lupi13.limpi.ability.GroundPath
+import com.github.lupi13.limpi.ability.GroundPoint
 import com.github.lupi13.limpi.platform.AbilityRuntime
 import com.github.lupi13.limpi.quests.Quest
 import com.github.lupi13.limpi.quests.YourDodge
@@ -11,6 +14,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Particle
 import org.bukkit.Sound
+import org.bukkit.World
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.event.player.PlayerTeleportEvent
@@ -43,7 +47,9 @@ object EndDodge : DodgeVariant(
             Component.text("빠르게 이동할수록 더 멀리 이동합니다. (최대 ", NamedTextColor.WHITE)
                 .append(Component.text("${config!!.getDouble("max_distance")}", NamedTextColor.GREEN))
                 .append(Component.text("블록)", NamedTextColor.WHITE)),
-            Component.text("발 밑이 끊기거나 벽에 막히면 그 앞에서 멈춥니다.", NamedTextColor.WHITE),
+            Component.text("걸어서 넘을 수 있는 턱은 넘어가고, 발 밑이 끊기거나", NamedTextColor.WHITE),
+            Component.text("벽에 막히면 그 앞에서 멈춥니다.", NamedTextColor.WHITE),
+            Component.text("이동할 수 없으면 쿨타임이 돌지 않습니다.", NamedTextColor.WHITE),
             Component.text("쿨타임이 아닐 때 도착 예정 위치가 자신에게만 표시됩니다.", NamedTextColor.WHITE),
             cooldownLine()
         )
@@ -52,9 +58,23 @@ object EndDodge : DodgeVariant(
     private const val STEPS = 100
     private const val PREVIEW_PERIOD = 3L
 
+    /** 이보다 가까우면(0.5블록 제곱) 이동할 수 없는 것으로 봅니다. */
+    private const val MIN_MOVE_SQUARED = 0.25
+
+    /** 블록의 실제 충돌 모양으로 걷는 경로. 불러오지 않은 청크는 읽지 않고 막힌 것으로 봅니다. */
+    private fun ground(world: World) = GroundPath({ x, y, z ->
+        when {
+            !world.isChunkLoaded(x shr 4, z shr 4) -> null
+            y < world.minHeight || y >= world.maxHeight -> emptyList()
+            else -> world.getBlockAt(x, y, z).collisionShape.boundingBoxes.map {
+                CollisionBox(it.minX, it.minY, it.minZ, it.maxX, it.maxY, it.maxZ)
+            }
+        }
+    })
+
     /**
      * 회피했을 때 순간이동할 위치. 회피([performDodge])와 미리보기([start])가 같은 계산을 씁니다.
-     * 이동 방향으로 [STEPS]칸씩 나아가다 발 밑이 끊기거나 벽에 막히면 그 앞에서 멈춥니다.
+     * 이동 방향으로 [STEPS]번 나누어 나아가며 지면을 따라 턱을 넘고, 발 밑이 끊기거나 벽에 막히면 그 앞에서 멈춥니다.
      */
     private fun destinationOf(player: Player): Location {
         val config = config!!
@@ -67,21 +87,16 @@ object EndDodge : DodgeVariant(
         val distance = min(config.getDouble("max_distance"),
             if (speed >= 0.1) speed * config.getDouble("speed_distance_multiplier") else config.getDouble("distance"))
         val step = direction.multiply(distance / STEPS)
+        val end = ground(origin.world).walk(GroundPoint(origin.x, origin.y, origin.z), step.x, step.z, STEPS)
+        return origin.clone().apply { x = end.x; y = end.y; z = end.z }
+    }
 
-        // The path is horizontal, so whether a step is standable depends only on its block column: several steps share
-        // one column, and each column is looked up once.
-        val destination = origin.clone()
-        var column: Long? = null
-        for (i in 1..STEPS) {
-            val candidate = destination.clone().add(step)
-            val key = (candidate.blockX.toLong() shl 32) or (candidate.blockZ.toLong() and 0xffffffffL)
-            if (key != column) {
-                if (!standable(candidate)) break
-                column = key
-            }
-            destination.add(step)
-        }
-        return destination
+    /** 미리보기가 보이지 않는 경우와 같습니다. 쿨타임을 쓰지 않고 웅크린 사람에게만 알립니다. */
+    override fun canDodge(player: Player): Boolean {
+        if (destinationOf(player).distanceSquared(player.location) >= MIN_MOVE_SQUARED) return true
+        player.sendActionBar(Component.text("이동할 수 없습니다.", NamedTextColor.RED))
+        player.playSound(player.location, Sound.UI_BUTTON_CLICK, 1f, 2f)
+        return false
     }
 
     override fun performDodge(player: Player) {
@@ -122,7 +137,7 @@ object EndDodge : DodgeVariant(
                 val last = lastDodgeTime[player.uniqueId]
                 if (last != null && now - last <= cooldown) continue
                 val destination = destinationOf(player)
-                if (destination.distanceSquared(player.location) < 0.25 || !standable(destination)) continue
+                if (destination.distanceSquared(player.location) < MIN_MOVE_SQUARED) continue
                 val center = destination.add(0.0, 0.1, 0.0)
                 for (i in 0 until 8) {
                     val angle = Math.PI / 4 * i
@@ -134,9 +149,7 @@ object EndDodge : DodgeVariant(
         }
     }
 
-    /** 발 밑이 막혀 있고 발/머리 위치가 통과 가능한지. 불러오지 않은 청크는 읽지 않고 막힌 것으로 봅니다. */
+    /** 바로 발 밑에 지면이 있고 플레이어가 들어갈 자리가 있는지. */
     private fun standable(location: Location): Boolean =
-        location.world.isChunkLoaded(location.blockX shr 4, location.blockZ shr 4) &&
-        !location.clone().subtract(0.0, 0.1, 0.0).block.isPassable &&
-            location.block.isPassable && location.clone().add(0.0, 1.0, 0.0).block.isPassable
+        ground(location.world).standable(GroundPoint(location.x, location.y, location.z))
 }

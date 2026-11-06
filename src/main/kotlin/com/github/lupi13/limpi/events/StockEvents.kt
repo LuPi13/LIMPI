@@ -140,15 +140,8 @@ class StockEvents : Listener {
             val data = FileManager.getStockConfig()
             val stockPrice = price(data, code).units
             val stockBefore = previous(data, code)?.takeIf { it > 0 } ?: stockPrice
-            val stockChangePercent = BigDecimal.valueOf(stockPrice).multiply(BigDecimal.valueOf(100))
-                .divide(BigDecimal.valueOf(stockBefore), 0, RoundingMode.DOWN).toLong()
-            val disp = if (stockChangePercent == 100L) {
-                Component.text("-100%", NamedTextColor.BLACK)
-            } else if (stockChangePercent >= 100L) {
-                Component.text("▲${stockChangePercent}%", NamedTextColor.RED)
-            } else {
-                Component.text("▼${stockChangePercent}%", NamedTextColor.BLUE)
-            }
+            val move = StockMove(code, stockPrice, stockBefore)
+            val disp = signed(move.direction, "${StockSummary.percentText(move.changeTenths)}%")
             return Component.text("${data.getString("$code.name")} ($code)", NamedTextColor.DARK_AQUA)
                 .append(Component.text(":\n", NamedTextColor.BLACK))
                 .append(moneyDisplay(stockBefore))

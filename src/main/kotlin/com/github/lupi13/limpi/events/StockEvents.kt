@@ -159,6 +159,56 @@ class StockEvents : Listener {
                 .append(Component.text(")\n\n", NamedTextColor.BLACK))
         }
 
+        private fun signed(direction: Int, text: String): Component = when {
+            direction > 0 -> Component.text("▲$text", NamedTextColor.RED)
+            direction < 0 -> Component.text("▼$text", NamedTextColor.BLUE)
+            else -> Component.text(text, NamedTextColor.BLACK)
+        }
+
+        private fun marketLines(summary: MarketSummary): Component {
+            var lines = Component.text("상승 ", NamedTextColor.BLACK).append(Component.text("${summary.rising}", NamedTextColor.RED))
+                .append(Component.text(" / 하락 ", NamedTextColor.BLACK)).append(Component.text("${summary.falling}", NamedTextColor.BLUE))
+                .append(Component.text("\n", NamedTextColor.BLACK))
+            for ((label, move) in listOf("최고" to summary.best, "최저" to summary.worst)) {
+                if (move == null) continue
+                lines = lines.append(Component.text("$label: ${move.name} ", NamedTextColor.BLACK))
+                    .append(signed(move.direction, "${StockSummary.percentText(move.changeTenths)}%"))
+                    .append(Component.text("\n", NamedTextColor.BLACK))
+            }
+            return lines
+        }
+
+        /** The player's own stocks at the current prices. Delisted ones have no price and are left out, and a damaged holding shows no sum at all. */
+        private fun portfolioLines(player: Player, data: FileConfiguration, listed: Set<String>): Component {
+            val damaged = Component.text("\n보유 데이터에 오류가 있습니다.", NamedTextColor.RED)
+            val positions = mutableListOf<StockPosition>()
+            var delisted = 0
+            try {
+                val profile = FileManager.players.snapshot(player.uniqueId)
+                val codes = profile.getConfigurationSection("stock")?.getKeys(false).orEmpty().filter { it.matches(Regex("[A-Z0-9]{4}")) }
+                for (code in codes) {
+                    val holding = FileManager.stocks.holding(profile, code)
+                    if (holding.count == 0L) continue
+                    if (code in listed) positions += StockPosition(holding.count, holding.costBasis.units, price(data, code).units) else delisted++
+                }
+            } catch (failure: Exception) {
+                plugin.logger.log(Level.WARNING, "Stock holdings of ${player.name} cannot be summed for the book", failure)
+                return damaged
+            }
+            if (positions.isEmpty() && delisted == 0) return Component.text("\n보유 주식 없음", NamedTextColor.GRAY)
+            val summary = StockSummary.portfolio(positions)
+            val direction = summary.profit.signum()
+            var lines = Component.text("\n내 평가액: ", NamedTextColor.BLACK).append(moneyDisplay(summary.value.toString()))
+                .append(Component.text("원\n손익: ", NamedTextColor.BLACK))
+                .append(signed(direction, "${summary.profit.abs()}원"))
+            summary.profitTenths?.let { tenths ->
+                val sign = if (tenths > 0) "+" else if (tenths < 0) "-" else ""
+                lines = lines.append(Component.text(" ($sign${StockSummary.percentText(tenths)}%)", NamedTextColor.BLACK))
+            }
+            if (delisted > 0) lines = lines.append(Component.text("\n(상장 중지 ${delisted}종목 제외)", NamedTextColor.DARK_GRAY))
+            return lines
+        }
+
         fun showBook(player: Player) {
             try {
                 val data = FileManager.getStockConfig()
@@ -169,30 +219,12 @@ class StockEvents : Listener {
                 val date = now.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"))
                 val time = now.format(DateTimeFormatter.ofPattern("HH시 mm분"))
 
-                var page: Component = Component.text("\n${date}\n${time} 부\n\n", NamedTextColor.DARK_GREEN)
-                    .append(Component.text("주식 가격 변동\n\n\n\n", NamedTextColor.BLACK, TextDecoration.BOLD))
-
-                val initialSum = stocks.fold(BigDecimal.ZERO) { sum, code -> sum + BigDecimal.valueOf(price(data, code, "initialPrice").units) }
-                val currentSum = stocks.fold(BigDecimal.ZERO) { sum, code -> sum + BigDecimal.valueOf(price(data, code).units) }
-                val lospi = currentSum.multiply(BigDecimal.valueOf(100)).divide(initialSum, 2, RoundingMode.HALF_UP)
-                val stringLOSPI = if (lospi >= BigDecimal.valueOf(100)) {
-                    Component.text("▲${lospi.toPlainString()}%", NamedTextColor.RED)
-                } else {
-                    Component.text("▼${lospi.toPlainString()}%", NamedTextColor.BLUE)
-                }
-
-                val standDatetime = requireNotNull(data.getString("lastStockStand") ?: FileManager.getMiscConfig().getString("lastStockStand"))
-                val standYear = standDatetime.substring(0, standDatetime.indexOf("-"))
-                val standMonth = standDatetime.substring(standDatetime.indexOf("-") + 1, standDatetime.lastIndexOf("-"))
-                val standDay = standDatetime.substring(standDatetime.lastIndexOf("-") + 1, standDatetime.indexOf(" "))
-                val standHour = standDatetime.substring(standDatetime.indexOf(" ") + 1, standDatetime.indexOf(":"))
-                val standMinute = standDatetime.substring(standDatetime.indexOf(":") + 1, standDatetime.lastIndexOf(":"))
-                val standDate = "${standYear}년 ${standMonth}월 ${standDay}일"
-                val standTime = "${standHour}시 ${standMinute}분"
-
-                page = page.append(Component.text("LOSPI: ", NamedTextColor.BLACK)
-                    .append(stringLOSPI)
-                    .append(Component.text("\n(기준 시점: $standDate ${standTime})\n\n", NamedTextColor.BLACK)))
+                // A book page holds 14 lines; the header leaves room for the two summaries, whose long names may wrap.
+                val moves = stocks.map { StockMove(data.getString("$it.name") ?: it, price(data, it).units, previous(data, it)) }
+                val page: Component = Component.text("${date}\n${time} 부\n\n", NamedTextColor.DARK_GREEN)
+                    .append(Component.text("주식 가격 변동\n\n", NamedTextColor.BLACK, TextDecoration.BOLD))
+                    .append(marketLines(StockSummary.market(moves)))
+                    .append(portfolioLines(player, data, stocks.toSet()))
                 meta.addPages(page)
                 for (group in stocks.chunked(3)) {
                     var stockPage: Component = Component.text("")

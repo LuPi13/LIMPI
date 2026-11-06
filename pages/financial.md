@@ -13,7 +13,7 @@
 | `/financial sell price [아이템]` | 지금 1개를 팔면 받는 가격을 봅니다. 아이템을 생략하면 손에 든 아이템입니다. |
 | `/financial shop` | 서버 상점을 엽니다. |
 | `/financial stock` | 주식 거래창을 엽니다. |
-| `/financial stock show` | 상장된 종목 정보를 봅니다. |
+| `/financial stock show` | 상장된 종목 정보를 봅니다. 첫 장에 이번 변동의 상승·하락 수와 최고·최저 종목, 내 평가액과 손익이 나옵니다. |
 | `/financial stock holdings` | 내 보유 수량, 원가, 손익을 봅니다. 상장 중지된 종목도 나옵니다. |
 | `/financial market` | 플레이어 장터를 엽니다. |
 | `/financial market add <코드> <가격>` | 손에 든 아이템을 장터에 올립니다. |

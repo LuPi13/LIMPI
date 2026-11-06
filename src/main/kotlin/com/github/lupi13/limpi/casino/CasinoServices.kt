@@ -17,11 +17,13 @@ class CasinoServices(private val store: StateStore, players: PlayerRepository, v
     val slot = SlotService(store, players, settings, random)
     val blackjack = BlackjackService(store, players, settings, random)
     val crash = CrashService(store, players, settings, random)
+    val race = RaceService(store, players, settings, random)
 
     /** Server start: shared rounds cannot wait for anyone, so they finish now. Mines rounds simply stay until their player returns. */
     fun recover(log: (String) -> Unit) {
         blackjack.recover(log)
         crash.recover(log)
+        race.recover(log)
     }
 
     /** For administrators: what this player has at stake right now. */
@@ -32,6 +34,7 @@ class CasinoServices(private val store: StateStore, players: PlayerRepository, v
             { lines += "마인즈 기록 손상 (/limpi review)" })
         blackjack.tables().filter { it.seat(owner) != null }.forEach { lines += "블랙잭 베팅 ${it.seat(owner)!!.bet}원, ${it.phase}, 카드 ${it.seat(owner)!!.cards.size}장" }
         crash.rounds().filter { owner in it.uncashed }.forEach { lines += "크래시 베팅 ${it.bets[owner]}원, ${it.phase}" }
+        race.rounds().filter { owner in it.bets }.forEach { lines += "양 경주 베팅 ${it.total(owner)}원, ${it.phase}" }
         return lines
     }
 
@@ -55,6 +58,7 @@ class CasinoServices(private val store: StateStore, players: PlayerRepository, v
         when (key.removePrefix(CasinoKeys.TABLE_PREFIX).substringBefore('/')) {
             CasinoGame.BLACKJACK.code -> BlackjackService.decode(key, payload)
             CasinoGame.CRASH.code -> CrashService.decode(key, payload)
+            CasinoGame.RACE.code -> RaceService.decode(key, payload)
             else -> throw IllegalArgumentException("Unknown casino table $key")
         }
     }

@@ -96,6 +96,7 @@ object CommandDefinitions {
         route("slot", "limpi.casino.play", true, 1, 1, "slot", "광물 슬롯머신을 돌립니다.", short = "슬롯머신"),
         route("blackjack", "limpi.casino.play", true, 1, 1, "blackjack", "최대 4명이 함께 딜러와 블랙잭을 합니다.", short = "블랙잭"),
         route("crash", "limpi.casino.play", true, 1, 1, "crash", "오르는 배율이 터지기 전에 수령합니다.", short = "크래시"),
+        route("race", "limpi.casino.play", true, 1, 1, "race", "양 6마리의 경주에 베팅합니다.", short = "양 경주"),
     ))
     /** /limpi: the help hub and, under help admin, every recovery command for interrupted records (always registered). */
     val limpi = CommandIndex(listOf(

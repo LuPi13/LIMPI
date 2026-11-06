@@ -259,6 +259,7 @@ object Transcendence : Ability(
                         30, 0.01, 0.01, 0.01, 0.01, 1.0f
                     )
 
+                    /*
                     for (nearbyPlayer in player.world.getNearbyEntities(player.location, 100.0, 100.0, 100.0)
                         .filterIsInstance<Player>()) {
                         nearbyPlayer.sendMessage(
@@ -266,6 +267,7 @@ object Transcendence : Ability(
                                 .append(Component.text("님이 통달 상태에 돌입합니다...", NamedTextColor.BLUE))
                         )
                     }
+                    */
                 }
 
                 if (ticks <= 25) {

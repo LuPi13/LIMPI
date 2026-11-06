@@ -72,7 +72,7 @@ class MinesScreen(private val plugin: Plugin) : CasinoScreen {
         for (cell in 0 until MinesPolicy.CELLS) {
             if (cell in round.revealed) inventory.setItem(slot(cell), CasinoUi.item(Material.EMERALD, CasinoUi.text("안전", NamedTextColor.GREEN)))
             else {
-                inventory.setItem(slot(cell), CasinoUi.item(Material.LIGHT_GRAY_STAINED_GLASS_PANE, CasinoUi.text("클릭하여 열기", NamedTextColor.YELLOW)))
+                inventory.setItem(slot(cell), CasinoUi.item(Material.LIGHT_BLUE_STAINED_GLASS_PANE, CasinoUi.text("클릭하여 열기", NamedTextColor.YELLOW)))
                 holder.actions[slot(cell)] = MenuAction.Casino(code, "reveal", cell, round.version)
             }
         }

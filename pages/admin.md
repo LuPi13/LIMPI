@@ -219,6 +219,8 @@ diamond: 500
 | `CasinoBlackjackTurnSeconds` | 20 | 블랙잭 차례 제한(초) |
 | `CasinoRaceOddsPercent` | `[30, 25, 18, 13, 9, 5]` | 양 6마리의 우승 확률(%), 합계 100 |
 | `CasinoSlotSymbols` | | 슬롯 심볼별 등장 가중치와 배당 |
+| `CasinoJackpotMinProfit` | 100000 | 잭팟 서버 공지에 필요한 최소 수익(지급액 - 베팅액, 원) |
+| `CasinoJackpotMinesMultiplier` / `CasinoJackpotSlotMultiplier` / `CasinoJackpotCrashMultiplier` / `CasinoJackpotRaceMultiplier` | 50 / 40 / 50 / 19 | 게임별 잭팟 공지 배율(지급액 ÷ 베팅액). 최소 수익도 함께 넘어야 합니다 |
 | `NoticeRetentionDays` | 30 | 공지 보관 일수(0 이하면 지우지 않음) |
 | `RecordRetentionDays` | 7 | 서버를 켤 때 이 일수가 지난 **끝난** 기록(완료된 지급·회수·능력 전환·장터 기록, 확정된 뽑기·선택 결과, 입금한 수표, 거래 장부)을 정리합니다(0 이하면 정리하지 않음). 처리 중이거나 확인 대기인 기록, 팔리지 않은 매물, 입금하지 않은 수표는 남깁니다. |
 | `BackupIntervalMinutes` / `BackupKeep` | 60 / 24 | 자동 백업 주기(분)와 남길 개수 |

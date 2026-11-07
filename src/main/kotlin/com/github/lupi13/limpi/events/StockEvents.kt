@@ -62,10 +62,42 @@ class StockEvents : Listener {
             plugin.config.getDouble("StockBaseRange"),
         )
 
+        private fun rumorPolicy() = StockRumorPolicy(
+            plugin.config.getInt("StockRumorChancePercent"),
+            plugin.config.getInt("StockRumorTruthPercent"),
+            plugin.config.getInt("StockRumorMinPercent"),
+            plugin.config.getInt("StockRumorMaxPercent"),
+        )
+
+        private fun stockTitle(data: FileConfiguration, code: String) = "${data.getString("$code.name") ?: code} ($code)"
+
+        /** A rumor still waiting after a restart was told already and is not told again. */
+        private fun tellRumor(stocks: FileConfiguration, rumors: StockRumorPolicy) {
+            if (StockRumor.read(stocks) != null) return
+            val rumor = rumors.roll(codes(stocks), random) ?: return
+            rumor.write(stocks)
+            FileManager.saveStock()
+            val (before, after) = StockRumorText.split(StockRumorText.pick(rumor.good, random))
+            plugin.server.broadcast(Component.text(if (rumor.good) "[호재 소문] " else "[악재 소문] ", if (rumor.good) NamedTextColor.RED else NamedTextColor.BLUE)
+                .append(Component.text(before, NamedTextColor.WHITE))
+                .append(Component.text(stockTitle(stocks, rumor.code), NamedTextColor.AQUA))
+                .append(Component.text(after, NamedTextColor.WHITE)))
+        }
+
+        /** Judged by where the price went, so a rumor stopped by the end of the base's range does not read as true. */
+        private fun rumorOutcome(stocks: FileConfiguration, rumor: StockRumor, current: Long, previous: Long): Component {
+            val direction = current.compareTo(previous)
+            val held = if (rumor.good) direction > 0 else direction < 0
+            return Component.text(if (held) "[소문 적중] " else "[헛소문] ", if (held) NamedTextColor.GREEN else NamedTextColor.GRAY)
+                .append(Component.text(stockTitle(stocks, rumor.code) + " ", NamedTextColor.AQUA))
+                .append(change(current, previous))
+        }
+
         fun stockFlow() {
             stop()
             val settings = policy()
             val base = basePolicy()
+            val rumors = rumorPolicy()
             val schedule = StockSchedule(Math.multiplyExact(plugin.config.getLong("StockInterval"), 60_000L))
             val data = FileManager.getStockConfig()
             for (code in codes(data)) {
@@ -83,7 +115,10 @@ class StockEvents : Listener {
                 if (schedule.due(now, lastUpdate)) {
                     try {
                         val old = codes(stocks).associateWith { price(stocks, it).units }
-                        val shifts = old.mapValues { (code, _) -> base.next(StockCatalog.baseShift(stocks, code), random.nextGaussian()) }
+                        val rumor = StockRumor.read(stocks)
+                        val shifts = old.mapValues { (code, _) ->
+                            base.next(StockCatalog.baseShift(stocks, code), random.nextGaussian(), rumor?.takeIf { it.code == code }?.jump ?: 0.0)
+                        }
                         val updated = old.mapValues { (code, current) ->
                             settings.next(price(stocks, code, "initialPrice").units, current, random.nextGaussian(),
                                 shifts.getValue(code), StockCatalog.baseShift(stocks, code))
@@ -93,10 +128,15 @@ class StockEvents : Listener {
                             stocks.set("$code.currentPrice", current)
                             stocks.set("$code.baseShift", shifts.getValue(code))
                         }
+                        StockRumor.clear(stocks)
                         stocks.set("_meta.lastUpdate", schedule.boundary(now))
                         FileManager.saveStock()
                         beforePrice.putAll(old)
                         plugin.server.broadcast(Component.text("주식 가격이 변동되었습니다.", NamedTextColor.GREEN))
+                        // The rumored stock may have been delisted in the meantime; then nothing moved and there is no outcome.
+                        rumor?.takeIf { it.code in updated }?.let {
+                            plugin.server.broadcast(rumorOutcome(stocks, it, updated.getValue(it.code), old.getValue(it.code)))
+                        }
                         val notice = Component.text("여기를 눌러 주식 변동을 확인하세요.", NamedTextColor.LIGHT_PURPLE)
                             .hoverEvent(HoverEvent.showText(Component.text("/fc stock show")))
                             .clickEvent(ClickEvent.runCommand("/fc stock show"))
@@ -110,6 +150,11 @@ class StockEvents : Listener {
                 if (next - now <= 60_000 && warnedBoundary != next) {
                     warnedBoundary = next
                     plugin.server.broadcast(Component.text("주식이 1분 후 변동됩니다!", NamedTextColor.YELLOW))
+                    try {
+                        tellRumor(stocks, rumors)
+                    } catch (failure: Exception) {
+                        plugin.logger.log(Level.SEVERE, "Stock rumor failed; prices still move as usual", failure)
+                    }
                 }
             }, 0L, 20L)
         }

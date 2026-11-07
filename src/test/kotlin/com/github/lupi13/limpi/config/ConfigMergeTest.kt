@@ -37,7 +37,8 @@ class ConfigMergeTest {
         val chest = listOf("EnableChestSystem", "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice")
         val tickets = listOf("TicketMoneyPrice", "SelectMoneyPrice")
         val base = listOf("StockBaseVolatility", "StockBaseReversion", "StockBaseRange")
-        val stock = listOf("StockVolatility", "StockReversion") + base + "StockFeePercent"
+        val rumor = listOf("StockRumorChancePercent", "StockRumorTruthPercent", "StockRumorMinPercent", "StockRumorMaxPercent")
+        val stock = listOf("StockVolatility", "StockReversion") + base + "StockFeePercent" + rumor
         val estate = listOf("EnableEstateSystem", "EstatePricePerBlock", "EstateBasePrice", "EstateRefundPercent", "EstateMaxWidth", "EstateMaxHeight", "EstateMaxCount", "EstateWorlds")
         val casino = listOf("EnableCasino", "CasinoMinBet", "CasinoMaxBet", "CasinoMaxPayout", "CasinoMinesRtpPercent", "CasinoCrashRtpPercent", "CasinoCrashGrowth", "CasinoCrashMaxMultiplier",
             "CasinoCrashBettingSeconds", "CasinoRaceRtpPercent", "CasinoRaceOddsPercent", "CasinoRaceBettingSeconds", "CasinoBlackjackBettingSeconds", "CasinoBlackjackTurnSeconds", "CasinoSlotSymbols",
@@ -63,7 +64,7 @@ class ConfigMergeTest {
         // 2.6.1 had none of the replaced settings: only the death loss and the estate and casino sections are added, with its comments in place.
         val previous = javaClass.classLoader.getResourceAsStream("config-history/before-estate.yml")!!.use { it.readBytes().toString(Charsets.UTF_8) }.replace("\r\n", "\n")
         val upgraded = ConfigMerge.merge(template, previous)!!
-        assertEquals(listOf("DeathMoneyLossPercent") + base + estate + casino, upgraded.added)
+        assertEquals(listOf("DeathMoneyLossPercent") + base + rumor + estate + casino, upgraded.added)
         // 2.19.0 lowered the default noise; an existing file keeps the values it already has, comments included.
         val kept = lines(previous).filter { it.startsWith("StockVolatility") || it.startsWith("StockReversion") }
         assertTrue(kept[0].startsWith("StockVolatility: 0.025") && kept[1].startsWith("StockReversion: 0.005"))

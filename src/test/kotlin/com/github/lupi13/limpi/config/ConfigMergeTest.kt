@@ -37,7 +37,7 @@ class ConfigMergeTest {
         val chest = listOf("EnableChestSystem", "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice")
         val tickets = listOf("TicketMoneyPrice", "SelectMoneyPrice")
         val stock = listOf("StockVolatility", "StockReversion", "StockFeePercent")
-        val estate = listOf("EnableEstateSystem", "EstatePricePerBlock", "EstateRefundPercent", "EstateMaxWidth", "EstateMaxHeight", "EstateMaxCount", "EstateWorlds")
+        val estate = listOf("EnableEstateSystem", "EstatePricePerBlock", "EstateBasePrice", "EstateRefundPercent", "EstateMaxWidth", "EstateMaxHeight", "EstateMaxCount", "EstateWorlds")
         val casino = listOf("EnableCasino", "CasinoMinBet", "CasinoMaxBet", "CasinoMaxPayout", "CasinoMinesRtpPercent", "CasinoCrashRtpPercent", "CasinoCrashGrowth", "CasinoCrashMaxMultiplier",
             "CasinoCrashBettingSeconds", "CasinoRaceRtpPercent", "CasinoRaceOddsPercent", "CasinoRaceBettingSeconds", "CasinoBlackjackBettingSeconds", "CasinoBlackjackTurnSeconds", "CasinoSlotSymbols",
             "CasinoJackpotMinProfit", "CasinoJackpotMinesMultiplier", "CasinoJackpotSlotMultiplier", "CasinoJackpotCrashMultiplier", "CasinoJackpotRaceMultiplier")

@@ -51,7 +51,7 @@ data class Estate(val id: UUID, val owner: UUID, val name: String, val region: E
 }
 
 /** config.yml Estate* settings. A malformed value refuses purchases instead of guessing. */
-data class EstateSettings(val pricePerBlock: Money, val refundPercent: Int, val maxWidth: Int, val maxHeight: Int,
+data class EstateSettings(val pricePerBlock: Money, val basePrice: Money, val refundPercent: Int, val maxWidth: Int, val maxHeight: Int,
                           val maxCount: Int, val worlds: Set<String>) {
     init {
         require(refundPercent in 0..100) { "EstateRefundPercent must be 0..100" }
@@ -66,7 +66,7 @@ data class EstateSettings(val pricePerBlock: Money, val refundPercent: Int, val 
     companion object {
         /** Wider boxes would put too many chunk entries into the protection index. */
         const val MAX_WIDTH = 1024
-        val DEFAULT = EstateSettings(Money(4), 50, 128, 0, 10, emptySet())
+        val DEFAULT = EstateSettings(Money(2), Money(50_000), 50, 128, 0, 10, emptySet())
 
         fun read(config: ConfigurationSection): EstateSettings {
             fun integer(path: String): Long = when (val value = config.get(path)) {
@@ -75,9 +75,10 @@ data class EstateSettings(val pricePerBlock: Money, val refundPercent: Int, val 
             }
             fun int(path: String): Int = integer(path).let { require(it in Int.MIN_VALUE..Int.MAX_VALUE) { "$path is too large" }; it.toInt() }
             val price = integer("EstatePricePerBlock").also { require(it >= 0) { "EstatePricePerBlock must not be negative" } }
+            val base = integer("EstateBasePrice").also { require(it >= 0) { "EstateBasePrice must not be negative" } }
             val worlds = requireNotNull(config.getList("EstateWorlds")) { "EstateWorlds must be a list" }
                 .map { requireNotNull(it as? String) { "EstateWorlds must contain world names" } }.toSet()
-            return EstateSettings(Money(price), int("EstateRefundPercent"), int("EstateMaxWidth"), int("EstateMaxHeight"), int("EstateMaxCount"), worlds)
+            return EstateSettings(Money(price), Money(base), int("EstateRefundPercent"), int("EstateMaxWidth"), int("EstateMaxHeight"), int("EstateMaxCount"), worlds)
         }
     }
 }
@@ -102,7 +103,8 @@ object EstatePolicy {
         if (others.isNotEmpty()) throw EstateOverlap("선택한 지역의 일부가 다른 사람의 사유지와 겹칩니다.", others)
         val own = existing.filter { it.owner == owner }.mapNotNull { region.intersection(it.region) }
         if (own.isNotEmpty()) throw EstateOverlap("선택한 지역의 일부가 본인의 다른 사유지와 겹칩니다.", own)
-        return try { settings.pricePerBlock.times(region.volume) } catch (failure: ArithmeticException) {
+        // The base price keeps a few blocks around a chest from being an almost free vault.
+        return try { settings.basePrice + settings.pricePerBlock.times(region.volume) } catch (failure: ArithmeticException) {
             throw EstateUnavailable("선택한 구역이 너무 큽니다.")
         }
     }

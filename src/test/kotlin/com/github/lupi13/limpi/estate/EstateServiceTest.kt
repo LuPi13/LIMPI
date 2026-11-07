@@ -15,7 +15,8 @@ class EstateServiceTest {
     private val owner = UUID.randomUUID()
     private val other = UUID.randomUUID()
     private val world = UUID.randomUUID()
-    private val settings = EstateSettings.DEFAULT
+    /** A plain 4 per block, so the tests of the other rules can count blocks; the default price has its own tests. */
+    private val settings = EstateSettings.DEFAULT.copy(pricePerBlock = Money(4), basePrice = Money(0))
     private fun box(x1: Int, y1: Int, z1: Int, x2: Int, y2: Int, z2: Int) = EstateRegion.of(world, x1, y1, z1, x2, y2, z2)
 
     // Unit on purpose: JUnit silently skips test methods that return a value.
@@ -142,15 +143,60 @@ class EstateServiceTest {
         assertNotNull(service.quote(owner, box(5, 5, 5, 5, 5, 5), "world", settings))
     }
 
+    @Test fun `the default price is a base price plus two per block`() = withService(100_000_000) { _, service ->
+        val prices = EstateSettings.DEFAULT
+        fun quote(region: EstateRegion) = service.quote(owner, region, "world", prices).units
+        assertEquals(50_004, quote(box(0, 0, 0, 1, 0, 0))) // a double chest
+        assertEquals(66_384, quote(box(0, 0, 0, 15, 31, 15)))
+        assertEquals(115_536, quote(box(0, 0, 0, 31, 31, 31)))
+        assertEquals(246_608, quote(box(0, -64, 0, 15, 319, 15)))
+        assertEquals(836_432, quote(box(0, -64, 0, 31, 319, 31)))
+        assertEquals(12_632_912, quote(box(0, -64, 0, 127, 319, 127)))
+    }
+
+    @Test fun `the base price is paid on every purchase and half of it comes back on selling`() = withService { store, service ->
+        val prices = EstateSettings.DEFAULT
+        val region = box(0, 0, 0, 1, 0, 0)
+        val estate = service.buy(UUID.randomUUID(), owner, "금고", region, "world", 50_004, prices)
+        assertEquals(Money(50_004), estate.paid); assertEquals(1_000_000 - 50_004, balance(store))
+        service.buy(UUID.randomUUID(), owner, "금고2", box(5, 0, 0, 6, 0, 0), "world", 50_004, prices)
+        assertEquals(1_000_000 - 100_008, balance(store))
+        assertEquals(25_002, service.refund(estate, prices).units)
+        service.sell(UUID.randomUUID(), owner, estate.id, 25_002, prices)
+        assertEquals(1_000_000 - 100_008 + 25_002, balance(store))
+    }
+
+    @Test fun `a player who cannot pay the base price cannot buy even one block`() = withService(50_000) { store, service ->
+        val failure = assertThrows(BankException::class.java) { service.buy(UUID.randomUUID(), owner, "a", box(0, 0, 0, 0, 0, 0), "world", 50_002, EstateSettings.DEFAULT) }
+        assertEquals(BankFailure.INSUFFICIENT_FUNDS, failure.reason)
+        assertEquals(50_000, balance(store)); assertTrue(service.owned(owner).isEmpty())
+    }
+
+    @Test fun `a price too large for money is refused`() = withService { _, service ->
+        val region = box(0, 0, 0, 0, 0, 0)
+        assertThrows(EstateUnavailable::class.java) { service.quote(owner, region, "world", settings.copy(pricePerBlock = Money(1), basePrice = Money(Long.MAX_VALUE))) }
+    }
+
+    @Test fun `the packaged config is the default price`() {
+        val config = javaClass.classLoader.getResourceAsStream("config.yml")!!.use { stream ->
+            org.bukkit.configuration.file.YamlConfiguration().apply { loadFromString(stream.readBytes().toString(Charsets.UTF_8)) }
+        }
+        assertEquals(EstateSettings.DEFAULT, EstateSettings.read(config))
+    }
+
     @Test fun `settings are read strictly`() {
         val config = org.bukkit.configuration.file.YamlConfiguration().apply {
-            set("EstatePricePerBlock", 4); set("EstateRefundPercent", 50); set("EstateMaxWidth", 128); set("EstateMaxHeight", 0)
+            set("EstatePricePerBlock", 2); set("EstateBasePrice", 50_000); set("EstateRefundPercent", 50); set("EstateMaxWidth", 128); set("EstateMaxHeight", 0)
             set("EstateMaxCount", 10); set("EstateWorlds", emptyList<String>())
         }
         assertEquals(EstateSettings.DEFAULT, EstateSettings.read(config))
         config.set("EstateWorlds", listOf("world")); assertEquals(setOf("world"), EstateSettings.read(config).worlds)
         config.set("EstatePricePerBlock", 1.5); assertThrows(IllegalArgumentException::class.java) { EstateSettings.read(config) }
-        config.set("EstatePricePerBlock", 4); config.set("EstateRefundPercent", 101)
+        config.set("EstatePricePerBlock", 4); config.set("EstateBasePrice", -1)
+        assertThrows(IllegalArgumentException::class.java) { EstateSettings.read(config) }
+        config.set("EstateBasePrice", null); assertThrows(IllegalArgumentException::class.java) { EstateSettings.read(config) }
+        config.set("EstateBasePrice", 0); assertEquals(Money(0), EstateSettings.read(config).basePrice)
+        config.set("EstateRefundPercent", 101)
         assertThrows(IllegalArgumentException::class.java) { EstateSettings.read(config) }
         config.set("EstateRefundPercent", 50); config.set("EstateMaxWidth", 5000)
         assertThrows(IllegalArgumentException::class.java) { EstateSettings.read(config) }

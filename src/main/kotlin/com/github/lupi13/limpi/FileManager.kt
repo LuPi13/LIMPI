@@ -161,10 +161,10 @@ class FileManager {
 
         /** Bundled default prices are copied only when the file does not exist; an edited file is never overwritten. */
         fun setup() {
-            for (name in listOf("sellPrice", "shopPrice")) {
+            for (name in listOf("sellPrice", "shopPrice", "shopCategory")) {
                 if (!java.nio.file.Files.exists(financialPath(name))) plugin.saveResource("financial/$name.yml", false)
             }
-            for (name in listOf("misc", "sellPrice", "shopPrice", "stock")) {
+            for (name in listOf("misc", "sellPrice", "shopPrice", "shopCategory", "stock")) {
                 financial[name] = YamlFiles.read(financialPath(name))
             }
         }
@@ -172,6 +172,7 @@ class FileManager {
         fun getMiscConfig(): FileConfiguration = financial.getValue("misc")
         fun getSellPriceConfig(): FileConfiguration = financial.getValue("sellPrice")
         fun getShopPriceConfig(): FileConfiguration = financial.getValue("shopPrice")
+        fun getShopCategoryConfig(): FileConfiguration = financial.getValue("shopCategory")
         fun getStockConfig(): FileConfiguration = financial.getValue("stock")
 
         fun saveSellPrice() = saveFinancial("sellPrice")

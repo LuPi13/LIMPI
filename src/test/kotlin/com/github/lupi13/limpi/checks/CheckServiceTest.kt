@@ -38,6 +38,66 @@ class CheckServiceTest {
         }
     }
 
+    @Test fun `death takes the percentage as a redeemable check without any delivery`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store, balance = 1_001); val checks = service(store)
+            val result = checks.forfeit(issue, issuer, 50)
+            assertEquals(500, result.amount, "rounded down"); assertEquals(issue, result.check)
+            assertEquals(501, money(store, issuer))
+            assertEquals(CheckState.ISSUED, checks.find(issue)?.state); assertEquals(issuer, checks.find(issue)?.issuer)
+            assertTrue(DeliveryJournal(store).pending(issuer).isEmpty(), "the item goes to the ground, not the claim box")
+            assertEquals("preserved", YamlFiles.parse(store.get(SqliteProfilePersistence.key(issuer))).getString("custom"))
+            checks.redeem(UUID.randomUUID(), issue, recipient)
+            assertEquals(510, money(store, recipient), "whoever picks it up can pay it in")
+        }
+    }
+
+    @Test fun `death with too little to take changes nothing and records no check`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store, balance = 1); val checks = service(store)
+            assertEquals(0, checks.forfeit(issue, issuer, 50).amount)
+            assertEquals(1, money(store, issuer)); assertNull(checks.find(issue))
+        }
+    }
+
+    @Test fun `the same death is settled once`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            setup(store, balance = 1_000); val checks = service(store)
+            assertFalse(checks.forfeit(issue, issuer, 100).replayed)
+            val again = checks.forfeit(issue, issuer, 100)
+            assertTrue(again.replayed); assertEquals(1_000, again.amount); assertEquals(0, money(store, issuer))
+        }
+    }
+
+    @Test fun `a death settlement that fails to commit takes nothing`() {
+        var fault = false
+        SqliteStateStore(directory.resolve("state.db"), beforeCommit = { if (fault) error("commit fault") }).use { store ->
+            setup(store, balance = 1_000); val checks = service(store); fault = true
+            assertThrows(IllegalStateException::class.java) { checks.forfeit(issue, issuer, 50) }
+            assertEquals(1_000, money(store, issuer)); assertNull(checks.find(issue))
+        }
+    }
+
+    @Test fun `a damaged balance is refused and kept`() {
+        SqliteStateStore(directory.resolve("state.db")).use { store ->
+            store.atomic { tx -> tx.put(SqliteProfilePersistence.key(issuer), "name: issuer\nmoney: -5\n") }
+            val checks = service(store)
+            assertThrows(Exception::class.java) { checks.forfeit(issue, issuer, 50) }
+            assertEquals(-5, money(store, issuer)); assertNull(checks.find(issue))
+        }
+    }
+
+    @Test fun `the configured percentage is a whole number from 0 to 100`() {
+        assertEquals(0, DeathLoss.percent(0)); assertEquals(50, DeathLoss.percent(50)); assertEquals(100, DeathLoss.percent(100))
+        listOf(-1, 101, 12.5, "50", null).forEach { assertNull(DeathLoss.percent(it), "$it") }
+    }
+
+    @Test fun `the loss is rounded down and survives the largest balance`() {
+        assertEquals(0, DeathLoss.amount(1, 50)); assertEquals(1, DeathLoss.amount(3, 50)); assertEquals(1_000, DeathLoss.amount(1_000, 100))
+        assertEquals(Long.MAX_VALUE, DeathLoss.amount(Long.MAX_VALUE, 100))
+        assertEquals(Long.MAX_VALUE / 2, DeathLoss.amount(Long.MAX_VALUE, 50))
+    }
+
     @Test fun `issuance commit failure leaves no debit check delivery or receipt and retry succeeds`() {
         var fault = false
         SqliteStateStore(directory.resolve("state.db"), beforeCommit = { if (fault) error("commit fault") }).use { store ->

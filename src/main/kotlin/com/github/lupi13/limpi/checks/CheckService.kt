@@ -16,6 +16,15 @@ enum class CheckFailure(val message: String) {
 class CheckException(val reason: CheckFailure) : IllegalStateException(reason.message)
 data class CheckReceipt(val transaction: UUID, val check: UUID, val amount: Long, val replayed: Boolean)
 
+object DeathLoss {
+    /** DeathMoneyLossPercent as configured, or null when it is not a whole number from 0 to 100: a typo must not take money. */
+    fun percent(raw: Any?): Int? = (raw as? Int)?.takeIf { it in 0..100 }
+
+    /** Rounded down, so a loss never exceeds the percentage. */
+    fun amount(balance: Long, percent: Int): Long =
+        (java.math.BigInteger.valueOf(balance) * java.math.BigInteger.valueOf(percent.toLong()) / java.math.BigInteger.valueOf(100)).toLong()
+}
+
 class CheckService(private val store: StateStore, private val deliveries: DeliveryJournal, private val players: PlayerRepository) {
     fun find(id: UUID): CheckRecord? = store.get(key(id))?.let { decode(it).also { value -> check(value.id == id) } }
 
@@ -31,6 +40,26 @@ class CheckService(private val store: StateStore, private val deliveries: Delive
             tx.put(key(request), encode(check))
             deliveries.stage(tx, request, issuer, "check issue $request", listOf(grant))
             receipt(request, check, issuer.toString(), before.units, before.units - amount)
+        }
+        return result(committed)
+    }
+
+    /**
+     * Death takes [percent] of the balance as of this commit and records a check for it, with no delivery: the caller drops
+     * the item where the player died. The amount is 0 when there is nothing to take, and then no check exists.
+     */
+    fun forfeit(request: UUID, owner: UUID, percent: Int): CheckReceipt {
+        require(percent in 1..100) { "잃는 비율은 1~100이어야 합니다." }
+        val committed = store.execute(request, BankService.fingerprint("CHECK_DEATH_LOSS", owner.toString(), percent.toString())) { tx ->
+            val account = Accounts.read(tx, owner); val before = Accounts.balance(account)
+            val amount = DeathLoss.amount(before.units, percent); val money = Money(amount)
+            val check = CheckRecord(request, owner, money, CheckState.ISSUED)
+            if (amount > 0) {
+                check(tx.get(key(request)) == null)
+                Accounts.write(tx, owner, account, before - money)
+                tx.put(key(request), encode(check))
+            }
+            receipt(request, check, owner.toString(), before.units, before.units - amount)
         }
         return result(committed)
     }

@@ -37,6 +37,15 @@ class CommandIndexTest {
         assertEquals(listOf("help", "me"), routes.map { it.id })
         assertTrue(CommandDefinitions.ability.complete(listOf("set", ""), true, true, { false }) { error("unauthorized provider") }.isEmpty())
     }
+    @Test fun `shop set offers the tabs after the price and nothing after that`() {
+        val permission = allow("limpi.financial.admin.catalog")
+        val tabs = com.github.lupi13.limpi.economy.ShopTab.categories.map { it.code }
+        val provide = { kind: String -> if (kind == "shopTabs") tabs else error("unexpected $kind") }
+        assertEquals(tabs, CommandDefinitions.financial.complete(listOf("shop", "set", "TORCH", "4", ""), true, false, permission, provide))
+        assertEquals(listOf("farming"), CommandDefinitions.financial.complete(listOf("shop", "set", "TORCH", "4", "fa"), true, false, permission, provide))
+        assertTrue(CommandDefinitions.financial.complete(listOf("shop", "set", "TORCH", "4", "other", ""), true, false, permission) { error("too many arguments") }.isEmpty())
+        assertTrue(CommandDefinitions.financial.complete(listOf("shop", "set", "TORCH", "4", ""), true, false, { false }) { error("unauthorized provider") }.isEmpty())
+    }
     @Test fun `nested literals and dynamic argument values share case insensitive prefix filtering`() {
         val permission = allow("limpi.financial.admin.stock")
         assertEquals(listOf("restore"), CommandDefinitions.financial.complete(listOf("STOCK", "res"), true, false, permission) { emptyList() })

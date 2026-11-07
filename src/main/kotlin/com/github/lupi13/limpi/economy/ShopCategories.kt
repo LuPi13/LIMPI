@@ -10,6 +10,9 @@ enum class ShopTab(val code: String, val label: String) {
     companion object {
         /** The tabs an item can be filed under. */
         val categories = entries.filter { it != ALL }
+
+        /** A command argument; [ALL] is not something an item can be filed under. */
+        fun category(argument: String): ShopTab? = categories.firstOrNull { it.code == argument.lowercase(Locale.ROOT) }
     }
 }
 

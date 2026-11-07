@@ -177,6 +177,7 @@ class FileManager {
 
         fun saveSellPrice() = saveFinancial("sellPrice")
         fun saveShopPrice() = saveFinancial("shopPrice")
+        fun saveShopCategory() = saveFinancial("shopCategory")
         fun saveStock() = saveFinancial("stock")
         fun replaceStock(value: YamlConfiguration) {
             val copy = YamlFiles.parse(value.saveToString())

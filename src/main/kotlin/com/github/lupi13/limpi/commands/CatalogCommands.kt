@@ -28,7 +28,7 @@ class CatalogCommands(private val plugin: Plugin) {
             val action = args[1].lowercase(Locale.ROOT)
             if (kind == "sell" && action == "price") { price(sender, args); return true }
             require(sender.hasPermission("limpi.financial.admin.catalog")) { "권한이 부족합니다!" }
-            require((action == "set" && (args.size == 4 || (kind == "sell" && args.size == 6))) || (action == "remove" && args.size == 3)) {
+            require((action == "set" && (args.size == 4 || (kind == "sell" && args.size == 6) || (kind == "shop" && args.size == 5))) || (action == "remove" && args.size == 3)) {
                 "잘못된 형식입니다. /financial $kind [set/remove]"
             }
             val material = Functions.toMaterial(args[2])
@@ -37,7 +37,11 @@ class CatalogCommands(private val plugin: Plugin) {
             }
             val name = material.name.lowercase(Locale.ROOT)
             val config = if (kind == "sell") FileManager.getSellPriceConfig() else FileManager.getShopPriceConfig()
-            val numbers = args.drop(3).map { it.toLongOrNull()?.takeIf { value -> value >= 0 } }
+            // Checked before anything is saved: a mistyped tab leaves the price alone too.
+            val tab = if (kind == "shop" && args.size == 5) ShopTab.category(args[4]) ?: run {
+                sender.sendMessage(EconomyText.invalidNumber(args[4], "은(는) 올바르지 않은 탭입니다! (${ShopTab.categories.joinToString(", ") { it.code }})")); return true
+            } else null
+            val numbers = args.drop(3).take(if (kind == "shop") 1 else 3).map { it.toLongOrNull()?.takeIf { value -> value >= 0 } }
             numbers.indexOfFirst { it == null }.takeIf { it >= 0 }?.let { sender.sendMessage(EconomyText.invalidNumber(args[3 + it])); return true }
             val value: Any? = when {
                 action == "remove" -> null
@@ -75,6 +79,15 @@ class CatalogCommands(private val plugin: Plugin) {
                     .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE))
             })
             if (kind == "sell") warnShop(sender, name)
+            if (kind == "shop") {
+                val categories = FileManager.getShopCategoryConfig()
+                if (tab != null || (value == null && categories.contains(name))) {
+                    categories.set(name, tab?.code)
+                    FileManager.saveShopCategory()
+                }
+                if (tab != null) sender.sendMessage(Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material))
+                    .append(Component.text("의 상점 탭: ", NamedTextColor.WHITE)).append(Component.text(tab.label, NamedTextColor.GREEN)))
+            }
         } catch (failure: IllegalArgumentException) {
             sender.sendMessage(Component.text(failure.message ?: "잘못된 형식입니다.", NamedTextColor.RED))
         } catch (failure: Exception) {

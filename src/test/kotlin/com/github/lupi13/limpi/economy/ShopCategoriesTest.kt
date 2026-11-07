@@ -51,6 +51,12 @@ class ShopCategoriesTest {
         assertEquals(listOf("b", "c", "d", "missing"), categories.filter(listOf("a", "b", "c", "d", "missing"), ShopTab.OTHER) { it })
     }
 
+    @Test fun `a command names a category but never the all tab`() {
+        assertEquals(ShopTab.FARMING, ShopTab.category("farming"))
+        assertEquals(ShopTab.OTHER, ShopTab.category("OTHER"))
+        for (argument in listOf("all", "농사·음식", "", "food")) assertNull(ShopTab.category(argument), argument)
+    }
+
     @Test fun `each tab pages on its own`() {
         val decoration = bundled.filter(codes, ShopTab.DECORATION) { it }
         assertEquals(38, decoration.size)

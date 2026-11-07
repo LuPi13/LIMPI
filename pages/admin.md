@@ -208,7 +208,8 @@ diamond: 500
 | `StockVolatility` / `StockReversion` | 0.025 / 0.005 | 주식 1회 변동 폭(로그 가격 표준 편차)과 기준 가격으로 돌아오는 비율. 기본값이면 대부분 기준 가격의 0.5~1.5배 사이 |
 | `StockFeePercent` | 3 | 주식 매수·매도 수수료(%) |
 | `ChestUnlockPrice` / `ChestUpgradePrice` / `ChestAutoStorePrice` / `ChestEnderPrice` | | 상자 상점 가격([상자](chest.md#shop) 참고) |
-| `EstatePricePerBlock` | 4 | 사유지 블록 1칸당 가격(원) |
+| `EstatePricePerBlock` | 2 | 사유지 블록 1칸당 가격(원). 기존 `config.yml`의 값은 자동으로 바뀌지 않습니다 |
+| `EstateBasePrice` | 50000 | 사유지를 살 때마다 칸 가격에 더하는 기본료(원). 매각 환불 계산에 포함됩니다 |
 | `EstateRefundPercent` | 50 | 매각할 때 돌려주는 비율(구매 때 낸 금액의 %) |
 | `EstateMaxWidth` / `EstateMaxHeight` | 128 / 0 | 한 구역의 최대 가로·세로(1~1024), 최대 높이(0이면 제한 없음) |
 | `EstateMaxCount` | 10 | 1인당 최대 사유지 개수 |

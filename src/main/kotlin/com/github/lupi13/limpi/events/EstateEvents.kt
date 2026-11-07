@@ -109,7 +109,7 @@ class EstateEvents : Listener {
                 .append(Component.text("${region.volume}칸", NamedTextColor.AQUA))
                 .append(Component.text("(${region.width}×${region.depth}×높이 ${region.height})", NamedTextColor.GRAY))
                 .append(Component.text(" X ", NamedTextColor.WHITE))
-                .append(Component.text("${settings.pricePerBlock.units}원/칸 = ${price.units}원", NamedTextColor.GOLD))
+                .append(Component.text("${settings.pricePerBlock.units}원/칸${if (settings.basePrice.units > 0) " + 기본료 ${settings.basePrice.units}원" else ""} = ${price.units}원", NamedTextColor.GOLD))
                 .append(Component.text("입니다.", NamedTextColor.WHITE)))
             fun button(text: String, color: NamedTextColor, hover: String, click: ClickEvent<*>) =
                 Component.text(text, color).hoverEvent(HoverEvent.showText(Component.text(hover))).clickEvent(click)

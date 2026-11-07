@@ -125,4 +125,46 @@ class SalePricingTest {
         }
         assertFalse(shop.contains("emerald"))
     }
+
+    /** A misspelled key would only show up as a warning on a running server. */
+    @Test fun `every bundled price names a real item`() {
+        for (file in listOf("sellPrice.yml", "shopPrice.yml")) {
+            for (code in YamlFiles.read(Path.of("src/main/resources/financial/$file")).getKeys(false)) {
+                assertNotNull(org.bukkit.Material.getMaterial(code.uppercase(java.util.Locale.ROOT)), "$file: $code")
+            }
+        }
+    }
+
+    @Test fun `the shop sells what 2_18 added and cobblestone but not stone`() {
+        val shop = YamlFiles.read(Path.of("src/main/resources/financial/shopPrice.yml"))
+        val expected = mapOf("paper" to 12, "sugar" to 12, "snowball" to 2, "cookie" to 5, "amethyst_shard" to 10, "calcite" to 8,
+            "soul_sand" to 8, "soul_soil" to 8, "magma_block" to 15, "shroomlight" to 30, "dandelion" to 10, "peony" to 10,
+            "brown_mushroom" to 10, "red_mushroom" to 10, "vine" to 10, "lily_pad" to 15, "cactus" to 10, "kelp" to 5,
+            "cocoa_beans" to 10, "sweet_berries" to 10, "amethyst_block" to 40, "egg" to 10)
+        for ((code, price) in expected) assertEquals(price, shop.getInt(code), code)
+        assertEquals(3, shop.getInt("cobblestone"))
+        assertFalse(shop.contains("stone"))
+    }
+
+    @Test fun `what 2_18 added sells for its base and shares the base's count`() {
+        val bundled = SellCatalog.of(YamlFiles.read(Path.of("src/main/resources/financial/sellPrice.yml")))
+        fun sale(vararg lines: Pair<String, Long>) =
+            bundled.quote(lines.mapIndexed { slot, (code, amount) -> SaleLine(slot, code, amount) }, emptyMap(), 0, recovery).total.units
+        for ((code, price) in mapOf("cod" to 5, "salmon" to 8, "pufferfish" to 15, "tropical_fish" to 20, "beef" to 2, "white_wool" to 2,
+            "apple" to 3, "sweet_berries" to 1, "glow_berries" to 1, "crying_obsidian" to 5, "wither_rose" to 5, "sculk_catalyst" to 20,
+            "diamond_ore" to 120, "deepslate_diamond_ore" to 120, "iron_ore" to 8, "gold_ore" to 12, "copper_ore" to 2, "coal_ore" to 3,
+            "lapis_ore" to 3, "redstone_ore" to 2, "emerald_ore" to 10, "nether_quartz_ore" to 2,
+            "beacon" to 1000, "conduit" to 300, "mace" to 300)) assertEquals(price.toLong(), sale(code to 1), code)
+        for ((raw, cooked) in listOf("beef" to "cooked_beef", "porkchop" to "cooked_porkchop", "mutton" to "cooked_mutton",
+            "chicken" to "cooked_chicken", "rabbit" to "cooked_rabbit")) assertEquals(sale(raw to 200), sale(raw to 100, cooked to 100), cooked)
+        assertEquals(sale("emerald" to 100), sale("emerald" to 50, "emerald_ore" to 50))
+        assertEquals(sale("nether_star" to 5), sale("nether_star" to 2, "beacon" to 3))
+    }
+
+    /** Hawk eye drops random items, so these would double what its extra items sell for; a shulker box would take its contents along. */
+    @Test fun `netherite gear, shulker boxes and the dragon egg have no sale price`() {
+        val sell = YamlFiles.read(Path.of("src/main/resources/financial/sellPrice.yml"))
+        for (code in listOf("netherite_sword", "netherite_pickaxe", "netherite_axe", "netherite_shovel", "netherite_hoe", "netherite_helmet",
+            "netherite_chestplate", "netherite_leggings", "netherite_boots", "shulker_box", "dragon_egg")) assertFalse(sell.contains(code), code)
+    }
 }

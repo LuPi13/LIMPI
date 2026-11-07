@@ -206,7 +206,10 @@ diamond: 500
 | `PickUpChange` / `PickUpSpoiler` | 30 / 3 | 픽업 변경 주기(분), `/ability pickup`에 미리 보여 줄 픽업 수 |
 | `SellRecoveryHours` | 12 | 감소형 판매가의 판매 개수가 절반으로 회복되는 시간 |
 | `StockInterval` | 10 | 주식 변동 주기(분) |
-| `StockVolatility` / `StockReversion` | 0.025 / 0.005 | 주식 1회 변동 폭(로그 가격 표준 편차)과 기준 가격으로 돌아오는 비율. 기본값이면 대부분 기준 가격의 0.5~1.5배 사이 |
+| `StockVolatility` / `StockReversion` | 0.015 / 0.02 | 주식 1회 변동 중 되돌아오는 부분의 크기(로그 가격 표준 편차)와 기준 가격으로 돌아오는 비율 |
+| `StockBaseVolatility` / `StockBaseReversion` / `StockBaseRange` | 0.02 / 0.0005 / 5 | 기준 가격 1회 변동 크기(현재 가격도 함께 움직이며 되돌아오지 않음), 처음 기준 가격으로 돌아오는 비율, 움직이는 범위(5면 처음 기준 가격의 1/5~5배, 1이면 고정) |
+| `StockRumorChancePercent` / `StockRumorTruthPercent` | 15 / 55 | 변동 1분 전에 한 종목의 소문이 돌 확률(0이면 소문 없음)과 소문이 맞을 확률. 수수료 3%에서 60으로 올리면 호재 소문을 따라 사는 것만으로 이득이 남음 |
+| `StockRumorMinPercent` / `StockRumorMaxPercent` | 15 / 40 | 소문으로 움직이는 크기. 오를 때 +40%면 내릴 때 -28.6%(÷1.4) |
 | `StockFeePercent` | 3 | 주식 매수·매도 수수료(%) |
 | `ChestUnlockPrice` / `ChestUpgradePrice` / `ChestAutoStorePrice` / `ChestEnderPrice` | | 상자 상점 가격([상자](chest.md#shop) 참고) |
 | `EstatePricePerBlock` | 2 | 사유지 블록 1칸당 가격(원). 기존 `config.yml`의 값은 자동으로 바뀌지 않습니다 |

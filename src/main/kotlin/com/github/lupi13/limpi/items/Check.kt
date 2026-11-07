@@ -20,6 +20,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Event
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
@@ -97,6 +98,29 @@ class Check(private val plugin: Plugin) : Listener {
     private fun reject(player: Player) {
         player.playSound(player.location, Sound.BLOCK_VAULT_REJECT_REWARDED_PLAYER, 1F, 2F)
         player.sendMessage(Component.text("수표가 유효하지 않습니다.", NamedTextColor.RED))
+    }
+
+    /**
+     * Last, so a death another plugin cancelled costs nothing. Dropped directly instead of through the event's drops, which
+     * keepInventory ignores. Money and check commit first: a failure on either side of the drop only ever logs, and death goes on.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun death(event: PlayerDeathEvent) {
+        val player = event.entity
+        val raw = plugin.config.get("DeathMoneyLossPercent", 50)
+        val percent = DeathLoss.percent(raw)
+        if (percent == null) { plugin.logger.severe("DeathMoneyLossPercent must be a whole number from 0 to 100, not $raw; ${player.name} lost nothing"); return }
+        if (percent == 0 || FileManager.delivery.blocked(player.uniqueId)) return
+        val request = UUID.randomUUID()
+        try {
+            val result = FileManager.checks.forfeit(request, player.uniqueId, percent)
+            if (result.amount == 0L) return
+            val dropped = player.world.dropItemNaturally(player.location, item(result.check, Money(result.amount), player.name))
+            if (!dropped.isValid) plugin.logger.severe("Death check ${result.check} (${result.amount}) of ${player.uniqueId} did not reach the world; it stays unredeemed, see /financial check inspect")
+            player.sendMessage(Component.text("사망하여 ", NamedTextColor.RED).append(moneyDisplay(result.amount)).append(Component.text("원을 수표로 잃어버렸습니다.", NamedTextColor.RED)))
+        } catch (failure: Exception) {
+            plugin.logger.log(Level.SEVERE, "Death money loss $request failed for ${player.uniqueId}", failure)
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

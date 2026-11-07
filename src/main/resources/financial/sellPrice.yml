@@ -209,6 +209,57 @@ nether_wart: {price: 2, half: 256, floor: 1}
 nether_wart_block: {same: nether_wart, count: 9}
 pumpkin: {price: 3, half: 128, floor: 1}
 melon: {price: 3, half: 128, floor: 1}
+apple: {price: 3, half: 64, floor: 1}
+sweet_berries: {price: 1, half: 64, floor: 0}
+glow_berries: {price: 1, half: 64, floor: 0}
+
+# --- 낚시(시간당 몇백 원 수준, 2.18.0) ---
+cod: {price: 5, half: 32, floor: 1}
+salmon: {price: 8, half: 32, floor: 1}
+pufferfish: {price: 15, half: 16, floor: 1}
+tropical_fish: {price: 20, half: 16, floor: 1}
+
+# --- 고기·양털(구워도 값이 오르지 않음, 2.18.0) ---
+beef: {price: 2, half: 64, floor: 1}
+porkchop: {price: 2, half: 64, floor: 1}
+mutton: {price: 2, half: 64, floor: 1}
+chicken: {price: 2, half: 64, floor: 1}
+rabbit: {price: 2, half: 64, floor: 1}
+cooked_beef: {same: beef, count: 1}
+cooked_porkchop: {same: porkchop, count: 1}
+cooked_mutton: {same: mutton, count: 1}
+cooked_chicken: {same: chicken, count: 1}
+cooked_rabbit: {same: rabbit, count: 1}
+white_wool: {price: 2, half: 64, floor: 0}               # 양털 농장은 0원까지
+
+# --- 섬세한 손길로 캔 광석(기준 아이템 1개 값, 2.18.0) ---
+diamond_ore: {same: diamond, count: 1}
+deepslate_diamond_ore: {same: diamond, count: 1}
+iron_ore: {same: raw_iron, count: 1}
+deepslate_iron_ore: {same: raw_iron, count: 1}
+gold_ore: {same: raw_gold, count: 1}
+deepslate_gold_ore: {same: raw_gold, count: 1}
+copper_ore: {same: raw_copper, count: 1}
+deepslate_copper_ore: {same: raw_copper, count: 1}
+coal_ore: {same: coal, count: 1}
+deepslate_coal_ore: {same: coal, count: 1}
+lapis_ore: {same: lapis_lazuli, count: 1}
+deepslate_lapis_ore: {same: lapis_lazuli, count: 1}
+redstone_ore: {same: redstone, count: 1}
+deepslate_redstone_ore: {same: redstone, count: 1}
+emerald_ore: {same: emerald, count: 1}
+deepslate_emerald_ore: {same: emerald, count: 1}
+nether_quartz_ore: {same: quartz, count: 1}
+
+# --- 네더·엔드 재료(물물교환·위더 농장, 2.18.0) ---
+crying_obsidian: {price: 5, half: 32, floor: 1}
+wither_rose: {price: 5, half: 16, floor: 1}
+sculk_catalyst: {price: 20, half: 8, floor: 2}
+
+# --- 고급 제작품(핵심 재료 값, 2.18.0). 네더라이트 장비·셜커 상자·드래곤 알은 넣지 않는다 ---
+beacon: {same: nether_star, count: 1}
+conduit: {same: heart_of_the_sea, count: 1}
+mace: {same: heavy_core, count: 1}
 
 # 0원(목록에 없음): 흙·돌·모래·자갈·네더랙, 대나무, 다시마, 선인장, 수박 조각,
 #   썩은 살점, 화살, 깃털, 달걀, 금 조각, 가공품(장비·도구·황금 사과·인첸트 책 등)

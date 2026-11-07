@@ -195,6 +195,7 @@ diamond: 500
 | `HelpUrl` | `https://lupi13.github.io/LIMPI/` | 게임 안 도움말과 접속 메시지에 거는 웹 도움말 주소. 비우면 링크를 숨깁니다. |
 | `EnableFinancialSystem` / `EnableAbilitySystem` / `EnableChestSystem` / `EnableEstateSystem` / `EnableCasino` | `true` | 시스템 켜기/끄기. 카지노에는 금융 시스템도 필요 |
 | `InitialMoney` | 1000 | 첫 소지금(원) |
+| `DeathMoneyLossPercent` | 50 | 사망 시 계좌 잔액 중 수표로 죽은 자리에 떨어뜨릴 비율(%), 0~100 정수. 0이면 잃지 않고 메시지도 없습니다 |
 | `InitialTicket` / `InitialCOMMON` / `InitialRARE` / `InitialEPIC` | 10 / 1 / 1 / 1 | 첫 접속 때 주는 뽑기권·선택권 수 |
 | `TicketMoneyPrice` | 2000 | 뽑기권 가격(원) |
 | `SelectMoneyPrice` | COMMON 1500 ~ MYTHIC 5000 | 등급별 선택권 가격(원). TROLL 선택권은 팔지 않음 |

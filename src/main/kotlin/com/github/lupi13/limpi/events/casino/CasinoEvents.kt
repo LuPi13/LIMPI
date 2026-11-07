@@ -6,6 +6,7 @@ import com.github.lupi13.limpi.menu.MenuKind
 import com.github.lupi13.limpi.menu.openMenu
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -54,10 +55,17 @@ class CasinoEvents(private val plugin: Plugin) : Listener {
     fun openMenu(player: Player) {
         val holder = CasinoUi.holder("카지노", 27)
         for (entry in entries) {
-            holder.inventory.setItem(entry.slot, CasinoUi.item(entry.material, CasinoUi.text(entry.name, NamedTextColor.GOLD), entry.lore.map { CasinoUi.text(it) } + CasinoUi.balance(player.uniqueId)))
+            holder.inventory.setItem(entry.slot, CasinoUi.item(entry.material, CasinoUi.text(entry.name, NamedTextColor.GOLD), entry.lore.map { CasinoUi.text(it) } + CasinoUi.balance(player.uniqueId) + CasinoUi.text("우클릭: 세부 정보 보기", NamedTextColor.GRAY)))
             holder.actions[entry.slot] = MenuAction.Casino("menu", "game", screens.indexOfFirst { it.code == entry.code })
         }
         openMenu(plugin, player, holder.inventory)
+    }
+
+    /** The menu stays open. */
+    private fun showGuide(player: Player, code: String) {
+        val name = entries.first { it.code == code }.name
+        CasinoGuide.lines(code, name, CasinoUi.settings).forEach(player::sendMessage)
+        player.playSound(player.location, Sound.UI_BUTTON_CLICK, 0.5f, 1.5f)
     }
 
     @EventHandler
@@ -69,7 +77,11 @@ class CasinoEvents(private val plugin: Plugin) : Listener {
         // Raw slots of the player's own inventory are past the window, where no action is ever registered.
         val action = holder.actions[event.rawSlot] as? MenuAction.Casino ?: return
         if (action.screen == "menu") {
-            if (action.action == "game") screens[action.argument].open(player) else openMenu(player)
+            when {
+                action.action != "game" -> openMenu(player)
+                event.click.isRightClick -> showGuide(player, screens[action.argument].code)
+                else -> screens[action.argument].open(player)
+            }
             return
         }
         byCode[action.screen]?.click(player, holder, action, event.click)

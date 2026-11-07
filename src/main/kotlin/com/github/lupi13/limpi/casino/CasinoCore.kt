@@ -65,6 +65,8 @@ data class CasinoSettings(
     val slotSymbols: List<SlotSymbolRule> = listOf(
         SlotSymbolRule(SlotSymbol.COAL, 34, 6, 1), SlotSymbolRule(SlotSymbol.IRON, 26, 11, 1), SlotSymbolRule(SlotSymbol.GOLD, 18, 25, 1),
         SlotSymbolRule(SlotSymbol.EMERALD, 12, 60, 2), SlotSymbolRule(SlotSymbol.DIAMOND, 7, 200, 5), SlotSymbolRule(SlotSymbol.NETHERITE, 3, 500, 10)),
+    val jackpotMinProfit: Long = 100_000, val jackpotMinesMultiplier: Int = 50, val jackpotSlotMultiplier: Int = 40,
+    val jackpotCrashMultiplier: Int = 50, val jackpotRaceMultiplier: Int = 19,
 ) {
     init {
         require(minBet >= 1) { "CasinoMinBet must be at least 1" }
@@ -79,7 +81,12 @@ data class CasinoSettings(
             "CasinoBlackjackBettingSeconds" to blackjackBettingSeconds, "CasinoBlackjackTurnSeconds" to blackjackTurnSeconds)) {
             require(value >= 1) { "$key must be at least 1" }
         }
-        require(raceOddsPercent.size == RACE_SHEEP && raceOddsPercent.all { it > 0 } && raceOddsPercent.sum() == 100) {
+        require(jackpotMinProfit >= 1) { "CasinoJackpotMinProfit must be at least 1" }
+        for ((key, value) in listOf("CasinoJackpotMinesMultiplier" to jackpotMinesMultiplier, "CasinoJackpotSlotMultiplier" to jackpotSlotMultiplier,
+            "CasinoJackpotCrashMultiplier" to jackpotCrashMultiplier, "CasinoJackpotRaceMultiplier" to jackpotRaceMultiplier)) {
+            require(value >= 2) { "$key must be at least 2" }
+        }
+        require(raceOddsPercent.size == RACE_SHEEP &&raceOddsPercent.all { it > 0 } && raceOddsPercent.sum() == 100) {
             "CasinoRaceOddsPercent must be $RACE_SHEEP positive numbers adding up to 100"
         }
         require(slotSymbols.map { it.symbol }.toSet() == SlotSymbol.entries.toSet() && slotSymbols.size == SlotSymbol.entries.size) {
@@ -121,6 +128,9 @@ data class CasinoSettings(
                 integer("CasinoCrashBettingSeconds", fallback.crashBettingSeconds), integer("CasinoRaceRtpPercent", fallback.raceRtpPercent), odds,
                 integer("CasinoRaceBettingSeconds", fallback.raceBettingSeconds), integer("CasinoBlackjackBettingSeconds", fallback.blackjackBettingSeconds),
                 integer("CasinoBlackjackTurnSeconds", fallback.blackjackTurnSeconds), symbols,
+                long("CasinoJackpotMinProfit", fallback.jackpotMinProfit), integer("CasinoJackpotMinesMultiplier", fallback.jackpotMinesMultiplier),
+                integer("CasinoJackpotSlotMultiplier", fallback.jackpotSlotMultiplier), integer("CasinoJackpotCrashMultiplier", fallback.jackpotCrashMultiplier),
+                integer("CasinoJackpotRaceMultiplier", fallback.jackpotRaceMultiplier),
             )
         }
     }

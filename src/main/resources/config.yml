@@ -95,4 +95,9 @@ CasinoSlotSymbols:  # 슬롯 심볼. weight: 등장 가중치, triple: 줄에 3�
   EMERALD: {weight: 12, triple: 60, pair: 2}
   DIAMOND: {weight: 7, triple: 200, pair: 5}
   NETHERITE: {weight: 3, triple: 500, pair: 10}
+CasinoJackpotMinProfit: 100000  # 잭팟 서버 공지에 필요한 최소 수익(지급액 - 베팅액, 원). 아래 배율도 함께 넘어야 공지. 블랙잭은 공지 없음
+CasinoJackpotMinesMultiplier: 50  # 마인즈 잭팟 공지 배율(지급액 ÷ 베팅액), 2 이상 정수
+CasinoJackpotSlotMultiplier: 40  # 슬롯 잭팟 공지 배율, 2 이상 정수
+CasinoJackpotCrashMultiplier: 50  # 크래시 잭팟 공지 배율, 2 이상 정수
+CasinoJackpotRaceMultiplier: 19  # 양 경주 잭팟 공지 배율, 2 이상 정수. 지급액 ÷ 그 경주에 건 금액 합계. 기본 최고 배당은 19.40배
 #=== Casino Configuration End ===#

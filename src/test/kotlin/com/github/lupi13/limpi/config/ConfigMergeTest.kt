@@ -36,7 +36,8 @@ class ConfigMergeTest {
     @Test fun `every earlier shipped config is upgraded to the current template exactly`() {
         val chest = listOf("EnableChestSystem", "ChestUnlockPrice", "ChestUpgradePrice", "ChestAutoStorePrice", "ChestEnderPrice")
         val tickets = listOf("TicketMoneyPrice", "SelectMoneyPrice")
-        val stock = listOf("StockVolatility", "StockReversion", "StockFeePercent")
+        val base = listOf("StockBaseVolatility", "StockBaseReversion", "StockBaseRange")
+        val stock = listOf("StockVolatility", "StockReversion") + base + "StockFeePercent"
         val estate = listOf("EnableEstateSystem", "EstatePricePerBlock", "EstateBasePrice", "EstateRefundPercent", "EstateMaxWidth", "EstateMaxHeight", "EstateMaxCount", "EstateWorlds")
         val casino = listOf("EnableCasino", "CasinoMinBet", "CasinoMaxBet", "CasinoMaxPayout", "CasinoMinesRtpPercent", "CasinoCrashRtpPercent", "CasinoCrashGrowth", "CasinoCrashMaxMultiplier",
             "CasinoCrashBettingSeconds", "CasinoRaceRtpPercent", "CasinoRaceOddsPercent", "CasinoRaceBettingSeconds", "CasinoBlackjackBettingSeconds", "CasinoBlackjackTurnSeconds", "CasinoSlotSymbols",
@@ -62,8 +63,18 @@ class ConfigMergeTest {
         // 2.6.1 had none of the replaced settings: only the death loss and the estate and casino sections are added, with its comments in place.
         val previous = javaClass.classLoader.getResourceAsStream("config-history/before-estate.yml")!!.use { it.readBytes().toString(Charsets.UTF_8) }.replace("\r\n", "\n")
         val upgraded = ConfigMerge.merge(template, previous)!!
-        assertEquals(listOf("DeathMoneyLossPercent") + estate + casino, upgraded.added)
-        assertEquals(template, upgraded.text)
+        assertEquals(listOf("DeathMoneyLossPercent") + base + estate + casino, upgraded.added)
+        // 2.19.0 lowered the default noise; an existing file keeps the values it already has, comments included.
+        val kept = lines(previous).filter { it.startsWith("StockVolatility") || it.startsWith("StockReversion") }
+        assertTrue(kept[0].startsWith("StockVolatility: 0.025") && kept[1].startsWith("StockReversion: 0.005"))
+        assertEquals(kept, lines(upgraded.text).filter { it.startsWith("StockVolatility") || it.startsWith("StockReversion") })
+        assertEquals(template, lines(upgraded.text).joinToString("\n") { line ->
+            when {
+                line.startsWith("StockVolatility") -> lines(template).first { it.startsWith("StockVolatility") }
+                line.startsWith("StockReversion") -> lines(template).first { it.startsWith("StockReversion") }
+                else -> line
+            }
+        })
     }
 
     @Test fun `a section added by a new version comes back with its comments in place`() {

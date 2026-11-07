@@ -16,4 +16,11 @@ object StockCatalog {
         require(raw is Int || raw is Long) { "Invalid integral $field for $code" }
         return Money((raw as Number).toLong()).also { require(it.units > 0) { "Invalid price for $code" } }
     }
+
+    /** Log ratio of the moving base price to the initial price; a stock that never moved has none. */
+    fun baseShift(data: FileConfiguration, code: String): Double {
+        val raw = data.get("$code.baseShift") ?: return 0.0
+        require(raw is Number && raw.toDouble().isFinite()) { "Invalid baseShift for $code" }
+        return raw.toDouble()
+    }
 }

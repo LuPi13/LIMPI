@@ -26,15 +26,43 @@ data class StockPricePolicy(
     val stationaryDeviation: Double get() =
         if (meanReversion == 0.0) Double.POSITIVE_INFINITY else standardDeviation / Math.sqrt(meanReversion * (2 - meanReversion))
 
-    fun next(initial: Long, current: Long, gaussian: Double): Long {
-        require(initial > 0 && current > 0 && gaussian.isFinite())
-        val logCurrent = Math.log(current.toDouble())
-        val log = logCurrent + meanReversion * (Math.log(initial.toDouble()) - logCurrent) + standardDeviation * gaussian
+    /**
+     * [shift] is where the base price now stands, as a log ratio to [initial], and [previousShift] where it stood.
+     * A move of the base carries the price along at once, so only the gap made by the noise ever comes back.
+     */
+    fun next(initial: Long, current: Long, gaussian: Double, shift: Double = 0.0, previousShift: Double = shift): Long {
+        require(initial > 0 && current > 0 && gaussian.isFinite() && shift.isFinite() && previousShift.isFinite())
+        val carried = Math.log(current.toDouble()) + shift - previousShift
+        val log = carried + meanReversion * (Math.log(initial.toDouble()) + shift - carried) + standardDeviation * gaussian
         // Rounded to the nearest unit; exp saturates to 0 or infinity for extreme samples, which the bounds absorb.
         val next = Math.exp(log)
         if (next.isNaN()) throw IllegalArgumentException("Invalid stock price step")
         if (next >= Long.MAX_VALUE.toDouble()) return Long.MAX_VALUE
         return BigDecimal.valueOf(next).setScale(0, RoundingMode.HALF_UP).max(BigDecimal.ONE).longValueExact()
+    }
+}
+
+/**
+ * The base price the stock returns to wanders, as a log ratio to its initial price (2.19.0):
+ * a slow pull toward the initial price, a random step, and any [next]'s `jump`, all held within 1/[range]..[range] times it.
+ * A cheap stock therefore may not come back, which is what makes buying it a risk.
+ */
+data class StockBasePolicy(
+    val volatility: Double,
+    val reversion: Double,
+    val range: Double,
+) {
+    init {
+        require(volatility.isFinite() && volatility >= 0)
+        require(reversion.isFinite() && reversion in 0.0..1.0)
+        require(range.isFinite() && range >= 1)
+    }
+
+    fun next(shift: Double, gaussian: Double, jump: Double = 0.0): Double {
+        require(shift.isFinite() && gaussian.isFinite() && jump.isFinite())
+        val limit = Math.log(range)
+        val wandered = (shift * (1 - reversion) + volatility * gaussian).coerceIn(-limit, limit)
+        return (wandered + jump).coerceIn(-limit, limit)
     }
 }
 

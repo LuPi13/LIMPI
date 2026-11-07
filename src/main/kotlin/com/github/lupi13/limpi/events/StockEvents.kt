@@ -56,14 +56,22 @@ class StockEvents : Listener {
             plugin.config.getDouble("StockReversion"),
         )
 
+        private fun basePolicy() = StockBasePolicy(
+            plugin.config.getDouble("StockBaseVolatility"),
+            plugin.config.getDouble("StockBaseReversion"),
+            plugin.config.getDouble("StockBaseRange"),
+        )
+
         fun stockFlow() {
             stop()
             val settings = policy()
+            val base = basePolicy()
             val schedule = StockSchedule(Math.multiplyExact(plugin.config.getLong("StockInterval"), 60_000L))
             val data = FileManager.getStockConfig()
             for (code in codes(data)) {
                 price(data, code)
                 price(data, code, "initialPrice")
+                StockCatalog.baseShift(data, code)
                 (data.get("$code.previousPrice") as? Number)?.toLong()?.takeIf { it > 0 }?.let { beforePrice[code] = it }
             }
             var warnedBoundary = Long.MIN_VALUE
@@ -75,13 +83,15 @@ class StockEvents : Listener {
                 if (schedule.due(now, lastUpdate)) {
                     try {
                         val old = codes(stocks).associateWith { price(stocks, it).units }
+                        val shifts = old.mapValues { (code, _) -> base.next(StockCatalog.baseShift(stocks, code), random.nextGaussian()) }
                         val updated = old.mapValues { (code, current) ->
-                            settings.next(price(stocks, code, "initialPrice").units, current,
-                                random.nextGaussian())
+                            settings.next(price(stocks, code, "initialPrice").units, current, random.nextGaussian(),
+                                shifts.getValue(code), StockCatalog.baseShift(stocks, code))
                         }
                         for ((code, current) in updated) {
                             stocks.set("$code.previousPrice", old.getValue(code))
                             stocks.set("$code.currentPrice", current)
+                            stocks.set("$code.baseShift", shifts.getValue(code))
                         }
                         stocks.set("_meta.lastUpdate", schedule.boundary(now))
                         FileManager.saveStock()

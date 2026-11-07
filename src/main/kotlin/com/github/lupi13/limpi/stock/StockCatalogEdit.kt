@@ -25,12 +25,15 @@ object StockCatalogEdit {
         require(selected.isNotEmpty()) { "변경할 종목이 없습니다." }
         if (action != "remove") selected.forEach { StockCatalog.price(source, it) }
         // Price updates also read the base price; restoring one with a bad base would stop every update. refix rewrites it.
-        if (action == "restore") selected.forEach { StockCatalog.price(source, it, "initialPrice") }
+        if (action == "restore") selected.forEach { StockCatalog.price(source, it, "initialPrice"); StockCatalog.baseShift(source, it) }
         return YamlFiles.parse(source.saveToString()).apply {
             for (selectedCode in selected) when (action) {
                 "remove" -> set("$selectedCode.listed", false)
                 "restore" -> set("$selectedCode.listed", true)
-                "refix" -> set("$selectedCode.initialPrice", StockCatalog.price(source, selectedCode).units)
+                "refix" -> {
+                    set("$selectedCode.initialPrice", StockCatalog.price(source, selectedCode).units)
+                    set("$selectedCode.baseShift", null)
+                }
             }
             set("lastStockStand", timestamp)
         }

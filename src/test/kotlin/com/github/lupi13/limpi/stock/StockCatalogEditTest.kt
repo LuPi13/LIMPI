@@ -36,6 +36,18 @@ class StockCatalogEditTest {
         assertThrows(IllegalArgumentException::class.java) { StockCatalogEdit.edit(malformed, "refix", "all", "now") }
         assertEquals(before, malformed.saveToString())
     }
+    @Test fun `refix starts the base over from the current price and restore refuses a broken one`() {
+        val moved = source().apply { set("ABCD.baseShift", 0.7) }
+        assertEquals(0.7, StockCatalog.baseShift(moved, "ABCD"), 0.0)
+        assertEquals(0.0, StockCatalog.baseShift(moved, "EFGH"), 0.0)
+        val fixed = StockCatalogEdit.edit(moved, "refix", "ABCD", "now")
+        assertEquals(150L, fixed.getLong("ABCD.initialPrice")); assertEquals(0.0, StockCatalog.baseShift(fixed, "ABCD"), 0.0)
+        assertFalse(fixed.isSet("ABCD.baseShift"))
+        assertEquals(0.7, moved.getDouble("ABCD.baseShift"), 0.0)
+        val broken = StockCatalogEdit.edit(moved, "remove", "ABCD", "now").apply { set("ABCD.baseShift", "bad") }
+        assertThrows(IllegalArgumentException::class.java) { StockCatalogEdit.edit(broken, "restore", "ABCD", "later") }
+        assertThrows(IllegalArgumentException::class.java) { StockCatalog.baseShift(broken.apply { set("ABCD.baseShift", Double.NaN) }, "ABCD") }
+    }
     @Test fun `new definition adds timestamp in the same snapshot and preserves unrelated fields`() {
         val original = source(); val result = StockCatalogEdit.add(original, "third", "IJKL", "DIAMOND", Money(3_000_000_000), "now")
         assertEquals(3_000_000_000L, result.getLong("IJKL.currentPrice")); assertEquals("now", result.getString("lastStockStand"))

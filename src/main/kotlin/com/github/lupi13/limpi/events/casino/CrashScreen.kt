@@ -6,6 +6,7 @@ import com.github.lupi13.limpi.casino.CasinoStale
 import com.github.lupi13.limpi.casino.CrashPhase
 import com.github.lupi13.limpi.casino.CrashPolicy
 import com.github.lupi13.limpi.casino.CrashRound
+import com.github.lupi13.limpi.casino.JackpotGame
 import com.github.lupi13.limpi.casino.countdownBeep
 import com.github.lupi13.limpi.menu.MenuAction
 import com.github.lupi13.limpi.menu.MenuHolder
@@ -65,11 +66,13 @@ class CrashScreen(private val plugin: Plugin) : CasinoScreen {
     private fun cash(owner: UUID, multiplier: Long) {
         val result = service.cashOut(UUID.randomUUID(), owner, id, multiplier)
         round = service.round(id)
+        val stake = round?.bets?.get(owner)
         plugin.server.getPlayer(owner)?.let { player ->
             player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.2f)
             player.sendMessage(Component.text("크래시 수령! (${CasinoUi.multiplier(result.multiplierCenti)}배) ", NamedTextColor.GREEN)
                 .append(moneyDisplay(result.payout)).append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE)))
         }
+        if (stake != null) CasinoJackpot.announce(plugin, owner, JackpotGame.CRASH, stake, result.payout)
     }
 
     override fun click(player: Player, holder: MenuHolder, action: MenuAction.Casino, click: ClickType) {

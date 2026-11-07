@@ -4,6 +4,7 @@ import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.casino.CasinoStale
 import com.github.lupi13.limpi.casino.CasinoUnavailable
+import com.github.lupi13.limpi.casino.JackpotGame
 import com.github.lupi13.limpi.casino.RACE_SHEEP
 import com.github.lupi13.limpi.casino.RacePhase
 import com.github.lupi13.limpi.casino.RacePolicy
@@ -128,10 +129,10 @@ class RaceScreen(private val plugin: Plugin) : CasinoScreen {
         resultUntil = now + RESULT_TICKS
         sound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f)
         settlement.results.forEach { result ->
-            val player = plugin.server.getPlayer(result.owner) ?: return@forEach
-            player.sendMessage(if (result.payout > 0)
+            plugin.server.getPlayer(result.owner)?.sendMessage(if (result.payout > 0)
                 Component.text("${names[settlement.winner]} 양 우승! ", NamedTextColor.GREEN).append(moneyDisplay(result.payout)).append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE))
                 else Component.text("${names[settlement.winner]} 양 우승. ", NamedTextColor.RED).append(moneyDisplay(result.staked)).append(Component.text("원을 잃었습니다.", NamedTextColor.RED)))
+            CasinoJackpot.announce(plugin, result.owner, JackpotGame.RACE, result.staked, result.payout)
         }
         drawAll()
     }

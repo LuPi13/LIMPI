@@ -2,6 +2,7 @@ package com.github.lupi13.limpi.events.casino
 
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
+import com.github.lupi13.limpi.casino.JackpotGame
 import com.github.lupi13.limpi.casino.SlotPolicy
 import com.github.lupi13.limpi.casino.SlotSpin
 import com.github.lupi13.limpi.casino.SlotSymbol
@@ -107,7 +108,14 @@ class SlotScreen(private val plugin: Plugin) : CasinoScreen {
         val big = spin.payout >= spin.bet * 10
         player.playSound(player.location, if (big) Sound.UI_TOAST_CHALLENGE_COMPLETE else Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.2f)
         player.sendMessage(Component.text("슬롯 당첨! ", NamedTextColor.GREEN).append(moneyDisplay(spin.payout)).append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE)))
+        jackpot(player, spin)
     }
+
+    /** Waits for the reels, which would otherwise be spoiled by the chat. */
+    private fun jackpot(player: Player, spin: SlotSpin) = CasinoJackpot.announce(plugin, player.uniqueId, JackpotGame.SLOT, spin.bet, spin.payout)
+
+    /** Leaving mid-spin skips the show, and the jackpot was still won. */
+    override fun quit(player: Player) { spinning[player.uniqueId]?.let { jackpot(player, it.spin) } }
 
     /** Skipping the animation still tells the result, already in the account. */
     override fun closed(player: Player, holder: MenuHolder) {

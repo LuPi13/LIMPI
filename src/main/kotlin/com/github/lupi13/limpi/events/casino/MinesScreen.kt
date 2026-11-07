@@ -3,6 +3,7 @@ package com.github.lupi13.limpi.events.casino
 import com.github.lupi13.limpi.FileManager
 import com.github.lupi13.limpi.Functions.Companion.moneyDisplay
 import com.github.lupi13.limpi.casino.CasinoDamaged
+import com.github.lupi13.limpi.casino.JackpotGame
 import com.github.lupi13.limpi.casino.MinesOutcome
 import com.github.lupi13.limpi.casino.MinesPolicy
 import com.github.lupi13.limpi.casino.MinesRound
@@ -121,6 +122,7 @@ class MinesScreen(private val plugin: Plugin) : CasinoScreen {
                 finished[player.uniqueId] = Finished(outcome.round, null)
                 player.playSound(player.location, Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.2f)
                 player.sendMessage(Component.text("마인즈 수령! ", NamedTextColor.GREEN).append(moneyDisplay(outcome.payout)).append(Component.text("원이 계좌에 입금되었습니다.", NamedTextColor.WHITE)))
+                CasinoJackpot.announce(plugin, player.uniqueId, JackpotGame.MINES, outcome.round.bet, outcome.payout)
             }
         }
     }

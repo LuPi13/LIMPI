@@ -32,9 +32,9 @@ class ShopCategoriesTest {
     }
 
     @Test fun `what was asked for sits in its tab`() {
-        for (code in listOf("paper", "sugar", "snowball", "cookie", "amethyst_shard", "diamond")) assertEquals(ShopTab.RESOURCE, bundled.of(code), code)
+        for (code in listOf("paper", "sugar", "snowball", "amethyst_shard", "diamond")) assertEquals(ShopTab.RESOURCE, bundled.of(code), code)
         assertEquals(ShopTab.BUILDING, bundled.of("cobblestone"))
-        assertEquals(ShopTab.FARMING, bundled.of("wheat_seeds"))
+        for (code in listOf("wheat_seeds", "bread", "cookie")) assertEquals(ShopTab.FARMING, bundled.of(code), code)
         assertEquals(ShopTab.DECORATION, bundled.of("poppy"))
         assertEquals(ShopTab.OTHER, bundled.of("torch"))
     }

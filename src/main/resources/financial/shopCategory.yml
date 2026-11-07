@@ -92,11 +92,11 @@ ender_pearl: resource
 paper: resource
 sugar: resource
 snowball: resource
-cookie: resource
 amethyst_shard: resource
 
 # --- 농사·음식 ---
 bread: farming
+cookie: farming
 sugar_cane: farming
 bamboo: farming
 nether_wart: farming

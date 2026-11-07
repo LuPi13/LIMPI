@@ -21,13 +21,14 @@ sealed interface MenuAction {
     data class StockQuote(val code: String, val price: Long) : MenuAction
     data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
     data class ShopQuote(val code: String, val price: Long) : MenuAction
+    data class ShopSection(val tab: String) : MenuAction
     data class ChestQuote(val product: String, val price: Long) : MenuAction
     /** [screen] routes the click, [version] refuses a click on a state that has already moved on. */
     data class Casino(val screen: String, val action: String, val argument: Int = 0, val version: Long = 0) : MenuAction
 }
 
-/** Server-owned identity and actions: titles and item names carry no authority. */
-class MenuHolder(val kind: MenuKind, val page: Int, title: Component, size: Int = 54) : InventoryHolder {
+/** Server-owned identity and actions: titles and item names carry no authority. [section] is the tab shown, in menus that have tabs. */
+class MenuHolder(val kind: MenuKind, val page: Int, title: Component, size: Int = 54, val section: String = "") : InventoryHolder {
     init { require(size in 9..54 && size % 9 == 0) }
     private val view = Bukkit.createInventory(this, size, title)
     val actions = mutableMapOf<Int, MenuAction>()

@@ -13,6 +13,7 @@ import com.github.lupi13.limpi.platform.PaperItemCodec
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -20,6 +21,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.inventory.ClickType
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.util.Locale
 import java.util.UUID
@@ -29,10 +31,37 @@ class ShopEvents : Listener {
     companion object {
         private val plugin get() = JavaPlugin.getPlugin(LIMPI::class.java)
         val shopGUIName = Component.text("LIMPI: 구매창", NamedTextColor.DARK_GREEN, TextDecoration.BOLD)
-        fun openShopGUI(player: Player, requestedPage: Int = 0, expected: Inventory? = null) {
-            val offers = PaperShopCatalog(plugin).available()
+
+        /** The bottom row: page buttons on the ends, the tabs between them around an empty middle. */
+        private const val PREVIOUS_SLOT = 45
+        private const val NEXT_SLOT = 53
+        private val tabSlots = listOf(46, 47, 48, 50, 51, 52)
+
+        private fun tabIcon(tab: ShopTab) = when (tab) {
+            ShopTab.ALL -> Material.CHEST
+            ShopTab.BUILDING -> Material.BRICKS
+            ShopTab.RESOURCE -> Material.IRON_INGOT
+            ShopTab.FARMING -> Material.WHEAT
+            ShopTab.DECORATION -> Material.POPPY
+            ShopTab.OTHER -> Material.TORCH
+        }
+
+        private fun tabItem(tab: ShopTab, count: Int, selected: Boolean) = ItemStack(tabIcon(tab)).apply {
+            val meta = itemMeta
+            meta.displayName(Component.text(tab.label, if (selected) NamedTextColor.GREEN else NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+            meta.lore(listOf(Component.text("상품 ${count}개", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)))
+            meta.setEnchantmentGlintOverride(selected)
+            itemMeta = meta
+        }
+
+        private fun tabOf(holder: MenuHolder) = ShopTab.entries.firstOrNull { it.code == holder.section } ?: ShopTab.ALL
+
+        fun openShopGUI(player: Player, requestedPage: Int = 0, expected: Inventory? = null, tab: ShopTab = ShopTab.ALL) {
+            val available = PaperShopCatalog(plugin).available()
+            val categories = ShopCategories { FileManager.getShopCategoryConfig().get(it) }
+            val offers = categories.filter(available, tab) { it.code }
             val page = Pagination(offers.size, requestedPage)
-            val holder = MenuHolder(MenuKind.SHOP, page.page, shopGUIName)
+            val holder = MenuHolder(MenuKind.SHOP, page.page, shopGUIName, section = tab.code)
             val balance = EconomyText.balanceDisplay(player.uniqueId)
             for ((slot, offer) in offers.subList(page.start, page.end).withIndex()) {
                 val icon = PaperItemCodec.item(offer.item.payload, 1)
@@ -47,9 +76,14 @@ class ShopEvents : Listener {
                 icon.itemMeta = meta
                 holder.inventory.setItem(slot, icon); holder.actions[slot] = MenuAction.ShopQuote(offer.code, offer.price.units)
             }
-            // Same page buttons (dye, lore, slots 47/51) as the ability dictionary.
-            if (page.hasPrevious) { holder.inventory.setItem(47, AbilitySelectEvent.getPreviousPageItem()); holder.actions[47] = MenuAction.Page(page.page - 1) }
-            if (page.hasNext) { holder.inventory.setItem(51, AbilitySelectEvent.getNextPageItem()); holder.actions[51] = MenuAction.Page(page.page + 1) }
+            // Same page buttons (dye, lore) as the ability dictionary.
+            if (page.hasPrevious) { holder.inventory.setItem(PREVIOUS_SLOT, AbilitySelectEvent.getPreviousPageItem()); holder.actions[PREVIOUS_SLOT] = MenuAction.Page(page.page - 1) }
+            if (page.hasNext) { holder.inventory.setItem(NEXT_SLOT, AbilitySelectEvent.getNextPageItem()); holder.actions[NEXT_SLOT] = MenuAction.Page(page.page + 1) }
+            ShopTab.entries.forEachIndexed { index, shown ->
+                val slot = tabSlots[index]
+                holder.inventory.setItem(slot, tabItem(shown, categories.filter(available, shown) { it.code }.size, shown == tab))
+                holder.actions[slot] = MenuAction.ShopSection(shown.code)
+            }
             openMenu(plugin, player, holder.inventory, expected)
         }
     }
@@ -76,8 +110,15 @@ class ShopEvents : Listener {
         val player = event.whoClicked as? Player ?: return
         if (FileManager.delivery.blocked(player.uniqueId) || !player.hasPermission("limpi.financial.shop")) return
         val action = holder.actions[event.rawSlot] ?: return
+        val tab = tabOf(holder)
         if (action is MenuAction.Page) {
-            openShopGUI(player, action.index, top)
+            openShopGUI(player, action.index, top, tab)
+            player.playSound(player.location, Sound.ITEM_BOOK_PAGE_TURN, 1f, 1.5f)
+            return
+        }
+        if (action is MenuAction.ShopSection) {
+            if (action.tab == tab.code) return
+            openShopGUI(player, 0, top, ShopTab.entries.firstOrNull { it.code == action.tab } ?: ShopTab.ALL)
             player.playSound(player.location, Sound.ITEM_BOOK_PAGE_TURN, 1f, 1.5f)
             return
         }
@@ -97,7 +138,7 @@ class ShopEvents : Listener {
             player.sendMessage(Component.text("", NamedTextColor.AQUA).append(product)
                 .append(Component.text(" ${receipt.count}", NamedTextColor.GREEN))
                 .append(Component.text("개 구매 완료.", NamedTextColor.WHITE)))
-            if (FileManager.delivery.claim(player, quiet = true)) openShopGUI(player, holder.page, top)
+            if (FileManager.delivery.claim(player, quiet = true)) openShopGUI(player, holder.page, top, tab)
         } catch (failure: BankException) {
             if (failure.reason == BankFailure.INSUFFICIENT_FUNDS) player.sendMessage(EconomyText.insufficient(player, "원 있습니다."))
             else EconomyText.bankFailure(player, failure)
@@ -105,7 +146,7 @@ class ShopEvents : Listener {
         } catch (failure: ShopUnavailable) {
             player.sendMessage(Component.text(failure.message ?: "상품을 확인하세요.", NamedTextColor.RED))
             EconomyText.deny(player)
-            openShopGUI(player, holder.page, top)
+            openShopGUI(player, holder.page, top, tab)
         } catch (failure: Exception) {
             plugin.logger.log(Level.SEVERE, "Shop transaction $request failed", failure)
         }

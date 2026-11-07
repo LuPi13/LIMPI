@@ -186,6 +186,7 @@ diamond: 500
 | `ability/<능력>.yml` | 능력별 세부 수치(피해량, 쿨타임, 범위, 지속 시간 등) |
 | `financial/sellPrice.yml` | 아이템 판매 가격(고정·감소형) |
 | `financial/shopPrice.yml` | 상점에서 파는 아이템과 구매 가격 |
+| `financial/shopCategory.yml` | 상점 상품의 분류 탭. 여기에 없는 상품은 기타 탭에 나옵니다 |
 | `financial/stock.yml` | 주식 종목 |
 
 ### config.yml 주요 설정 { #config }

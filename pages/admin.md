@@ -31,12 +31,12 @@
 | `/financial sell set <아이템> <금액>` | `limpi.financial.admin.catalog` | 아이템의 판매 가격을 고정 금액으로 정합니다. |
 | `/financial sell set <아이템> <금액> <반감 개수> <최저 가격>` | `limpi.financial.admin.catalog` | 많이 팔수록 내려가는 판매 가격을 정합니다. 처음 금액에서 시작해 반감 개수만큼 팔 때마다 절반이 되고, 최저 가격 밑으로는 내려가지 않습니다. |
 | `/financial sell remove <아이템>` | `limpi.financial.admin.catalog` | 판매 품목에서 뺍니다(0원이 됩니다). |
-| `/financial shop set <아이템> <가격> [탭]` | `limpi.financial.admin.catalog` | 상점 구매 가격과 탭(`building`, `resource`, `farming`, `decoration`, `other`)을 정합니다. 그 아이템을 팔 때 받는 가격(감소형은 처음 가격)보다 낮게 정할 수 없습니다. 탭을 생략하면 그대로 두고, 분류가 없는 상품은 기타 탭에 나옵니다. |
+| `/financial shop set <아이템> <가격> [탭]` | `limpi.financial.admin.catalog` | 상점 구매 가격과 탭(`building`, `resource`, `farming`, `decoration`, `other`)을 정합니다. 그 아이템을 팔 때 받는 가격(감소형은 처음 가격)보다 낮게 정할 수 없습니다. 탭을 생략하면 그대로 두고, 분류가 없는 상품은 기타 탭에 나옵니다. 귀환서는 아이템 자리에 `recall_scroll`을 씁니다. |
 | `/financial shop remove <아이템>` | `limpi.financial.admin.catalog` | 상점 품목과 그 분류를 함께 뺍니다. |
 
 ### 가격 파일
 
-서버를 처음 켤 때 `financial/sellPrice.yml`, `financial/shopPrice.yml`에 기본 가격이 만들어집니다(직접 플레이 시급 약 10,000원, 다이아몬드 120원 기준). 파일이 이미 있으면 덮어쓰지 않습니다.
+서버를 처음 켤 때 `financial/sellPrice.yml`, `financial/shopPrice.yml`에 기본 가격이 만들어집니다(직접 플레이 시급 약 10,000원, 다이아몬드 120원 기준). 파일이 이미 있으면 덮어쓰지 않습니다. 그래서 2.20.0 이전부터 쓰던 서버에는 귀환서가 상점에 나오지 않으니 `/financial shop set recall_scroll 500 other`로 추가하세요.
 
 ```yaml
 # sellPrice.yml

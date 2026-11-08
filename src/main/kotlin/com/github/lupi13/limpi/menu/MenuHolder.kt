@@ -22,6 +22,8 @@ sealed interface MenuAction {
     data class MarketQuote(val id: java.util.UUID, val price: Long) : MenuAction
     data class ShopQuote(val code: String, val price: Long) : MenuAction
     data class ShopSection(val tab: String) : MenuAction
+    /** Opens another menu of [kind] (the server shop and the ability shop link to each other). */
+    data class OpenMenu(val kind: MenuKind) : MenuAction
     data class ChestQuote(val product: String, val price: Long) : MenuAction
     /** [screen] routes the click, [version] refuses a click on a state that has already moved on. */
     data class Casino(val screen: String, val action: String, val argument: Int = 0, val version: Long = 0) : MenuAction

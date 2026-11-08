@@ -106,6 +106,9 @@ class AbilityShop : Listener {
             plugin.logger.warning("Invalid ability shop product $code: ${failure.message}"); null
         }
 
+        private fun serverShopLink(player: Player) =
+            ShopLinks.shown(plugin.config.getBoolean("EnableFinancialSystem"), player.hasPermission("limpi.financial.shop"))
+
         fun openAbilityShopGUI(player: Player, expected: Inventory? = null) {
             if (!player.hasPermission("limpi.ability.shop") || !FileManager.delivery.claim(player)) return
             val holder = MenuHolder(MenuKind.ABILITY_SHOP, 0, abilityShopGUIName, 9)
@@ -116,6 +119,10 @@ class AbilityShop : Listener {
                 val offer = offer(code) ?: continue
                 holder.inventory.setItem(index + 1, getSelectTicketItem(grade, true, player))
                 holder.actions[index + 1] = MenuAction.ShopQuote(code, offer.price.units)
+            }
+            if (serverShopLink(player)) {
+                holder.inventory.setItem(ShopLinks.ABILITY_SHOP_SLOT, ShopEvents.linkItem(Material.EMERALD, "서버 상점", NamedTextColor.GREEN))
+                holder.actions[ShopLinks.ABILITY_SHOP_SLOT] = MenuAction.OpenMenu(MenuKind.SHOP)
             }
             openMenu(plugin, player, holder.inventory, expected)
         }
@@ -130,7 +137,15 @@ class AbilityShop : Listener {
         if (event.rawSlot !in 0 until top.size || event.click !in setOf(ClickType.LEFT, ClickType.SHIFT_LEFT)) return
         val player = event.whoClicked as? Player ?: return
         if (!player.hasPermission("limpi.ability.shop") || FileManager.delivery.blocked(player.uniqueId)) return
-        val quote = holder.actions[event.rawSlot] as? MenuAction.ShopQuote ?: return
+        val action = holder.actions[event.rawSlot]
+        if (action is MenuAction.OpenMenu) {
+            // Same as /financial shop: pending deliveries first.
+            if (action.kind != MenuKind.SHOP || !serverShopLink(player) || !FileManager.delivery.claim(player)) return
+            ShopEvents.openShopGUI(player, expected = top)
+            player.playSound(player.location, Sound.ITEM_BOOK_PAGE_TURN, 1f, 1.5f)
+            return
+        }
+        val quote = action as? MenuAction.ShopQuote ?: return
         val request = UUID.randomUUID()
         val bundle = event.click == ClickType.SHIFT_LEFT
         try {

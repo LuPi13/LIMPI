@@ -54,6 +54,17 @@ class ShopEvents : Listener {
             itemMeta = meta
         }
 
+        private fun abilityShopLink(player: Player) =
+            ShopLinks.shown(plugin.config.getBoolean("EnableAbilitySystem"), player.hasPermission("limpi.ability.shop"))
+
+        /** The server shop's button in the ability shop, and the other way round. */
+        fun linkItem(material: Material, name: String, color: NamedTextColor) = ItemStack(material).apply {
+            val meta = itemMeta
+            meta.displayName(Component.text(name, color).decoration(TextDecoration.ITALIC, false))
+            meta.lore(listOf(Component.text("클릭하여 ${name}으로 이동합니다.", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)))
+            itemMeta = meta
+        }
+
         private fun tabOf(holder: MenuHolder) = ShopTab.entries.firstOrNull { it.code == holder.section } ?: ShopTab.ALL
 
         fun openShopGUI(player: Player, requestedPage: Int = 0, expected: Inventory? = null, tab: ShopTab = ShopTab.ALL) {
@@ -83,6 +94,10 @@ class ShopEvents : Listener {
                 val slot = tabSlots[index]
                 holder.inventory.setItem(slot, tabItem(shown, categories.filter(available, shown) { it.code }.size, shown == tab))
                 holder.actions[slot] = MenuAction.ShopSection(shown.code)
+            }
+            if (abilityShopLink(player)) {
+                holder.inventory.setItem(ShopLinks.SERVER_SHOP_SLOT, linkItem(Material.BEACON, "능력 상점", NamedTextColor.AQUA))
+                holder.actions[ShopLinks.SERVER_SHOP_SLOT] = MenuAction.OpenMenu(MenuKind.ABILITY_SHOP)
             }
             openMenu(plugin, player, holder.inventory, expected)
         }
@@ -119,6 +134,12 @@ class ShopEvents : Listener {
         if (action is MenuAction.ShopSection) {
             if (action.tab == tab.code) return
             openShopGUI(player, 0, top, ShopTab.entries.firstOrNull { it.code == action.tab } ?: ShopTab.ALL)
+            player.playSound(player.location, Sound.ITEM_BOOK_PAGE_TURN, 1f, 1.5f)
+            return
+        }
+        if (action is MenuAction.OpenMenu) {
+            if (action.kind != MenuKind.ABILITY_SHOP || !abilityShopLink(player)) return
+            AbilityShop.openAbilityShopGUI(player, top)
             player.playSound(player.location, Sound.ITEM_BOOK_PAGE_TURN, 1f, 1.5f)
             return
         }

@@ -76,6 +76,8 @@ class LIMPI : JavaPlugin() {
         server.pluginManager.registerEvents(EstateGuard(), this)
         server.pluginManager.registerEvents(EstateEvents(), this)
         EstateEvents.startNotice()
+        // Always registered: a bought recall scroll stays usable even when the financial system is off.
+        server.pluginManager.registerEvents(com.github.lupi13.limpi.events.RecallScrollEvents(this), this)
         if (config.getBoolean("EnableFinancialSystem")) {
             server.pluginManager.registerEvents(checks, this)
             server.pluginManager.registerEvents(SellEvents(), this)

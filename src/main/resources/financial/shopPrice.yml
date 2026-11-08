@@ -141,6 +141,7 @@ cocoa_beans: 10
 sweet_berries: 10
 egg: 10
 experience_bottle: 100  # 비싸게: 30레벨 ≈ 200병 ≈ 2만 원
+recall_scroll: 500  # 귀환서(아이템 이름이 아님, 2.20.0): 걸어서 돌아오는 2~5분 ≈ 330~830원, 3분치 수입
 
 # --- 능력 재료(2.18.0) ---
 paper: 12

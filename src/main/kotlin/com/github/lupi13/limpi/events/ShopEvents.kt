@@ -64,7 +64,7 @@ class ShopEvents : Listener {
             val holder = MenuHolder(MenuKind.SHOP, page.page, shopGUIName, section = tab.code)
             val balance = EconomyText.balanceDisplay(player.uniqueId)
             for ((slot, offer) in offers.subList(page.start, page.end).withIndex()) {
-                val icon = PaperItemCodec.item(offer.item.payload, 1)
+                val icon = PaperShopCatalog.icon(offer)
                 val meta = icon.itemMeta
                 meta.lore(listOf(Component.text("가격: ", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
                     .append(moneyDisplay(offer.price.units).decoration(TextDecoration.ITALIC, false))
@@ -133,8 +133,7 @@ class ShopEvents : Listener {
             }
             val receipt = FileManager.shop.buy(request, player.uniqueId, quote.code, quote.price, event.click == ClickType.SHIFT_LEFT)
             player.playSound(player.location, Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f)
-            val product = org.bukkit.Material.matchMaterial(quote.code)?.let(com.github.lupi13.limpi.platform.ItemNames::of)
-                ?: Component.text(quote.code.lowercase(Locale.getDefault()))
+            val product = PaperShopCatalog.name(quote.code) ?: Component.text(quote.code.lowercase(Locale.getDefault()))
             player.sendMessage(Component.text("", NamedTextColor.AQUA).append(product)
                 .append(Component.text(" ${receipt.count}", NamedTextColor.GREEN))
                 .append(Component.text("개 구매 완료.", NamedTextColor.WHITE)))

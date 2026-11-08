@@ -21,6 +21,7 @@ open class CommandCompletion(private val plugin: Plugin, private val index: Comm
                     "players" -> FileManager.players.knownNames()
                     "abilities" -> AbilityManager.abilities.map { it.codeName } + "none"
                     "materials" -> Material.entries.filter { it.isItem && !it.isAir }.map { it.name }
+                    "shopItems" -> Material.entries.filter { it.isItem && !it.isAir }.map { it.name } + com.github.lupi13.limpi.economy.ShopSpecials.codes.map { it.uppercase() }
                     "shopTabs" -> com.github.lupi13.limpi.economy.ShopTab.categories.map { it.code }
                     "stocks" -> StockCatalog.codes(FileManager.getStockConfig()) + "all"
                     "archivedStocks" -> StockCatalog.allCodes(FileManager.getStockConfig()).filter { FileManager.getStockConfig().get("$it.listed") == false } + "all"

@@ -46,6 +46,13 @@ class CommandIndexTest {
         assertTrue(CommandDefinitions.financial.complete(listOf("shop", "set", "TORCH", "4", "other", ""), true, false, permission) { error("too many arguments") }.isEmpty())
         assertTrue(CommandDefinitions.financial.complete(listOf("shop", "set", "TORCH", "4", ""), true, false, { false }) { error("unauthorized provider") }.isEmpty())
     }
+    @Test fun `shop set and remove offer the recall scroll with the items but sell set does not`() {
+        val permission = allow("limpi.financial.admin.catalog")
+        val provide = { kind: String -> when (kind) { "shopItems" -> listOf("TORCH", "RECALL_SCROLL"); "materials" -> listOf("TORCH"); else -> error("unexpected $kind") } }
+        assertEquals(listOf("RECALL_SCROLL"), CommandDefinitions.financial.complete(listOf("shop", "set", "re"), true, false, permission, provide))
+        assertEquals(listOf("RECALL_SCROLL"), CommandDefinitions.financial.complete(listOf("shop", "remove", "re"), true, false, permission, provide))
+        assertTrue(CommandDefinitions.financial.complete(listOf("sell", "set", "re"), true, false, permission, provide).isEmpty())
+    }
     @Test fun `nested literals and dynamic argument values share case insensitive prefix filtering`() {
         val permission = allow("limpi.financial.admin.stock")
         assertEquals(listOf("restore"), CommandDefinitions.financial.complete(listOf("STOCK", "res"), true, false, permission) { emptyList() })

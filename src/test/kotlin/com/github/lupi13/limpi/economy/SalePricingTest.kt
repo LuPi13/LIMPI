@@ -130,9 +130,25 @@ class SalePricingTest {
     @Test fun `every bundled price names a real item`() {
         for (file in listOf("sellPrice.yml", "shopPrice.yml")) {
             for (code in YamlFiles.read(Path.of("src/main/resources/financial/$file")).getKeys(false)) {
+                if (file == "shopPrice.yml" && code in ShopSpecials.codes) continue
                 assertNotNull(org.bukkit.Material.getMaterial(code.uppercase(java.util.Locale.ROOT)), "$file: $code")
             }
         }
+    }
+
+    @Test fun `the shop sells the recall scroll for 500 under other and it is never in the sell list`() {
+        val shop = YamlFiles.read(Path.of("src/main/resources/financial/shopPrice.yml"))
+        assertEquals(500, shop.getInt(ShopSpecials.RECALL_SCROLL))
+        assertEquals("other", YamlFiles.read(Path.of("src/main/resources/financial/shopCategory.yml")).getString(ShopSpecials.RECALL_SCROLL))
+        assertFalse(YamlFiles.read(Path.of("src/main/resources/financial/sellPrice.yml")).contains(ShopSpecials.RECALL_SCROLL))
+        assertNull(org.bukkit.Material.getMaterial("RECALL_SCROLL"))
+    }
+
+    @Test fun `special products are recognised in any case and nothing else is`() {
+        assertEquals("recall_scroll", ShopSpecials.of("RECALL_SCROLL"))
+        assertEquals("recall_scroll", ShopSpecials.of("Recall_Scroll"))
+        assertNull(ShopSpecials.of("torch"))
+        assertNull(ShopSpecials.of("recall"))
     }
 
     @Test fun `the shop sells what 2_18 added and cobblestone but not stone`() {

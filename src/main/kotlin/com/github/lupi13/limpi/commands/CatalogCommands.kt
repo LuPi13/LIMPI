@@ -7,6 +7,7 @@ import com.github.lupi13.limpi.economy.*
 import com.github.lupi13.limpi.events.SellEvents
 import com.github.lupi13.limpi.events.ShopEvents
 import com.github.lupi13.limpi.platform.ItemNames
+import com.github.lupi13.limpi.platform.PaperShopCatalog
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
@@ -31,11 +32,14 @@ class CatalogCommands(private val plugin: Plugin) {
             require((action == "set" && (args.size == 4 || (kind == "sell" && args.size == 6) || (kind == "shop" && args.size == 5))) || (action == "remove" && args.size == 3)) {
                 "잘못된 형식입니다. /financial $kind [set/remove]"
             }
-            val material = Functions.toMaterial(args[2])
-            if (!material.isItem || material.isAir) {
+            // 귀환서 같은 특수 상품은 상점에만 있고 아이템 이름이 아니다.
+            val special = if (kind == "shop") ShopSpecials.of(args[2]) else null
+            val material = if (special != null) org.bukkit.Material.AIR else Functions.toMaterial(args[2])
+            if (special == null && (!material.isItem || material.isAir)) {
                 sender.sendMessage(EconomyText.invalidNumber(args[2], "은(는) 올바르지 않은 아이템입니다!")); return true
             }
-            val name = material.name.lowercase(Locale.ROOT)
+            val name = special ?: material.name.lowercase(Locale.ROOT)
+            val product = special?.let { PaperShopCatalog.name(it) } ?: ItemNames.of(material)
             val config = if (kind == "sell") FileManager.getSellPriceConfig() else FileManager.getShopPriceConfig()
             // Checked before anything is saved: a mistyped tab leaves the price alone too.
             val tab = if (kind == "shop" && args.size == 5) ShopTab.category(args[4]) ?: run {
@@ -54,7 +58,7 @@ class CatalogCommands(private val plugin: Plugin) {
                 kind == "sell" -> numbers[0]!!
                 else -> {
                     val sell = FileManager.getSellPriceConfig()
-                    val highest = CatalogPrices.highestSell(SellCatalog.of(sell), name) { sell.get(it) }
+                    val highest = if (special != null) 0L else CatalogPrices.highestSell(SellCatalog.of(sell), name) { sell.get(it) }
                     if (numbers[0]!! < highest) {
                         sender.sendMessage(Component.text("구매 가격은 판매 가격(", NamedTextColor.RED).append(moneyDisplay(highest))
                             .append(Component.text("원)보다 낮을 수 없습니다.", NamedTextColor.RED))); return true
@@ -66,14 +70,14 @@ class CatalogCommands(private val plugin: Plugin) {
             if (kind == "sell") FileManager.saveSellPrice() else FileManager.saveShopPrice()
             val label = if (kind == "sell") "판매가격" else "구매가격"
             sender.sendMessage(when {
-                value == null -> Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material))
+                value == null -> Component.text("", NamedTextColor.YELLOW).append(product)
                     .append(Component.text("의 ${label}을 삭제했습니다.", NamedTextColor.WHITE))
-                value is Map<*, *> -> Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material))
+                value is Map<*, *> -> Component.text("", NamedTextColor.YELLOW).append(product)
                     .append(Component.text("의 판매가격을 ", NamedTextColor.WHITE)).append(moneyDisplay(value["price"] as Long))
                     .append(Component.text("원에서 ", NamedTextColor.WHITE)).append(moneyDisplay(value["half"] as Long))
                     .append(Component.text("개마다 절반, 최저 ", NamedTextColor.WHITE)).append(moneyDisplay(value["floor"] as Long))
                     .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE))
-                else -> Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material))
+                else -> Component.text("", NamedTextColor.YELLOW).append(product)
                     .append(Component.text("의 ${label}을 ", NamedTextColor.WHITE))
                     .append(moneyDisplay(value as Long))
                     .append(Component.text("원으로 설정했습니다.", NamedTextColor.WHITE))
@@ -85,7 +89,7 @@ class CatalogCommands(private val plugin: Plugin) {
                     categories.set(name, tab?.code)
                     FileManager.saveShopCategory()
                 }
-                if (tab != null) sender.sendMessage(Component.text("", NamedTextColor.YELLOW).append(ItemNames.of(material))
+                if (tab != null) sender.sendMessage(Component.text("", NamedTextColor.YELLOW).append(product)
                     .append(Component.text("의 상점 탭: ", NamedTextColor.WHITE)).append(Component.text(tab.label, NamedTextColor.GREEN)))
             }
         } catch (failure: IllegalArgumentException) {
